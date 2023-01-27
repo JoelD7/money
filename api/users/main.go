@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/aws/aws-lambda-go/lambda"
+	"time"
 )
 
 type Person struct {
@@ -28,19 +29,19 @@ type Subcategory struct {
 }
 
 type SavingGoal struct {
-	SavingGoalID string  `json:"saving_goal_id,omitempty"`
-	Name         string  `json:"name,omitempty"`
-	Goal         float64 `json:"goal,omitempty"`
+	SavingGoalID string    `json:"saving_goal_id,omitempty"`
+	Name         string    `json:"name,omitempty"`
+	Goal         float64   `json:"goal,omitempty"`
+	Deadline     time.Time `json:"deadline,omitempty"`
 }
 
 func dummy() (*Person, error) {
-	return &Person{
-		PersonID:    "personid",
-		FullName:    "joel David",
-		Email:       "email",
-		Categories:  nil,
-		SavingGoals: nil,
-	}, nil
+	person, err := getItem("personid")
+	if err != nil {
+		return nil, err
+	}
+
+	return person, nil
 }
 
 func main() {
