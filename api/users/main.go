@@ -36,7 +36,7 @@ type SavingGoal struct {
 }
 
 func dummy() (*Person, error) {
-	person, err := getItem("personid")
+	person, err := getItem("personId")
 	if err != nil {
 		return nil, err
 	}
