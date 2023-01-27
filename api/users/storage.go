@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -10,6 +11,8 @@ import (
 var (
 	db        = dynamodb.New(session.New(), aws.NewConfig().WithRegion("us-east-1"))
 	tableName = "person"
+
+	errNotFound = errors.New("person not found")
 )
 
 func getItem(personId string) (*Person, error) {
@@ -28,7 +31,7 @@ func getItem(personId string) (*Person, error) {
 	}
 
 	if result.Item == nil {
-		return nil, nil
+		return nil, errNotFound
 	}
 
 	person := new(Person)
