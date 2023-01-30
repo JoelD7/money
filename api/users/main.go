@@ -1,47 +1,54 @@
 package main
 
 import (
+	"encoding/json"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"time"
+	"log"
+	"net/http"
+	"os"
 )
 
-type Person struct {
-	PersonID    string        `json:"person_id,omitempty"`
-	FullName    string        `json:"full_name,omitempty"`
-	Email       string        `json:"email,omitempty"`
-	Categories  []*Category   `json:"categories,omitempty"`
-	SavingGoals []*SavingGoal `json:"saving_goals,omitempty"`
-}
+var errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 
-type Category struct {
-	CategoryID    string         `json:"category_id,omitempty"`
-	CategoryName  string         `json:"category_name,omitempty"`
-	Budget        float64        `json:"budget,omitempty"`
-	Color         string         `json:"color,omitempty"`
-	Keywords      []string       `json:"keywords,omitempty" dynamodbav:"keywords,stringset"`
-	Subcategories []*Subcategory `json:"subcategories,omitempty"`
-}
+func dummy(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	personId := req.QueryStringParameters["personId"]
 
-type Subcategory struct {
-	SubcategoryID   string `json:"subcategory,omitempty"`
-	SubcategoryName string `json:"subcategory_name,omitempty"`
-	Color           string `json:"color,omitempty"`
-}
-
-type SavingGoal struct {
-	SavingGoalID string    `json:"saving_goal_id,omitempty"`
-	Name         string    `json:"name,omitempty"`
-	Goal         float64   `json:"goal,omitempty"`
-	Deadline     time.Time `json:"deadline,omitempty"`
-}
-
-func dummy() (*Person, error) {
-	person, err := getItem("personid")
+	person, err := getItem(personId)
 	if err != nil {
-		return nil, err
+		return serverError(err)
 	}
 
-	return person, nil
+	if person == nil {
+		return clientError(http.StatusNotFound)
+	}
+
+	personJson, err := json.Marshal(person)
+	if err != nil {
+		return serverError(err)
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       string(personJson),
+	}, nil
+}
+
+func serverError(err error) (events.APIGatewayProxyResponse, error) {
+	errorLogger.Println(err.Error())
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: http.StatusInternalServerError,
+		Body:       http.StatusText(http.StatusInternalServerError),
+	}, nil
+}
+
+// Similarly add a helper for send responses relating to client errors.
+func clientError(status int) (events.APIGatewayProxyResponse, error) {
+	return events.APIGatewayProxyResponse{
+		StatusCode: status,
+		Body:       http.StatusText(status),
+	}, nil
 }
 
 func main() {
