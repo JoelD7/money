@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/api/storage"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -10,12 +11,41 @@ import (
 	"os"
 )
 
-var errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
+type userRequest struct {
+	*events.APIGatewayProxyRequest
+	err error
+}
 
-func dummy(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	personId := req.QueryStringParameters["personId"]
+var (
+	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 
-	person, err := storage.GetPerson(personId)
+	userResources = []string{"savings", "categories", "month-budget"}
+)
+
+func apiGatewayHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	req := &userRequest{APIGatewayProxyRequest: &request}
+
+	return router(req)
+}
+
+func router(req *userRequest) (events.APIGatewayProxyResponse, error) {
+	switch req.RequestContext.Path {
+	case "/users/{user-id}":
+		js, _ := json.Marshal(req)
+		fmt.Println("req: ", string(js))
+		return events.APIGatewayProxyResponse{}, nil
+	default:
+		return events.APIGatewayProxyResponse{
+			StatusCode: http.StatusMethodNotAllowed,
+			Body:       "This method is not supported",
+		}, nil
+	}
+}
+
+func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	userID := req.QueryStringParameters["user_id"]
+
+	person, err := storage.GetPerson(userID)
 	if err != nil {
 		return serverError(err)
 	}
@@ -53,5 +83,5 @@ func clientError(status int) (events.APIGatewayProxyResponse, error) {
 }
 
 func main() {
-	lambda.Start(dummy)
+	lambda.Start(apiGatewayHandler)
 }
