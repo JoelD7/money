@@ -3,6 +3,7 @@ package storage
 import (
 	"errors"
 	"github.com/JoelD7/money/api/entities"
+	"github.com/JoelD7/money/api/shared/env"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -11,16 +12,18 @@ import (
 
 var (
 	db        *dynamodb.DynamoDB
-	tableName = "person"
+	tableName = env.GetString("USERS_TABLE_NAME", "person")
+	awsRegion = env.GetString("REGION", "us-east-1")
 
 	errNotFound = errors.New("person not found")
 )
 
 func init() {
-	dynamodbSession, err := session.NewSession(aws.NewConfig().WithRegion("us-east-1"))
+	dynamodbSession, err := session.NewSession(aws.NewConfig().WithRegion(awsRegion))
 	if err != nil {
-
+		panic(err)
 	}
+
 	db = dynamodb.New(dynamodbSession)
 }
 
