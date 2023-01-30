@@ -1,7 +1,8 @@
-package main
+package storage
 
 import (
 	"errors"
+	"github.com/JoelD7/money/api/entities"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -9,13 +10,21 @@ import (
 )
 
 var (
-	db        = dynamodb.New(session.New(), aws.NewConfig().WithRegion("us-east-1"))
+	db        *dynamodb.DynamoDB
 	tableName = "person"
 
 	errNotFound = errors.New("person not found")
 )
 
-func getItem(personId string) (*Person, error) {
+func init() {
+	dynamodbSession, err := session.NewSession(aws.NewConfig().WithRegion("us-east-1"))
+	if err != nil {
+
+	}
+	db = dynamodb.New(dynamodbSession)
+}
+
+func GetPerson(personId string) (*entities.Person, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
@@ -34,7 +43,7 @@ func getItem(personId string) (*Person, error) {
 		return nil, errNotFound
 	}
 
-	person := new(Person)
+	person := new(entities.Person)
 	err = dynamodbattribute.UnmarshalMap(result.Item, person)
 	if err != nil {
 		return nil, err

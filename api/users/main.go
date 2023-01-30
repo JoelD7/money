@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/JoelD7/money/api/storage"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
@@ -14,7 +15,7 @@ var errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 func dummy(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	personId := req.QueryStringParameters["personId"]
 
-	person, err := getItem(personId)
+	person, err := storage.GetPerson(personId)
 	if err != nil {
 		return serverError(err)
 	}
