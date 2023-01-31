@@ -29,11 +29,12 @@ func apiGatewayHandler(request events.APIGatewayProxyRequest) (events.APIGateway
 }
 
 func router(req *userRequest) (events.APIGatewayProxyResponse, error) {
-	switch req.RequestContext.Path {
+	switch req.HTTPMethod {
 	case "/users/{user-id}":
 		js, _ := json.Marshal(req)
 		fmt.Println("req: ", string(js))
 		return events.APIGatewayProxyResponse{}, nil
+	case http.MethodGet
 	default:
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusMethodNotAllowed,
