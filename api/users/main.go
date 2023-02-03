@@ -34,7 +34,8 @@ func router(req *userRequest) (events.APIGatewayProxyResponse, error) {
 		js, _ := json.Marshal(req)
 		fmt.Println("req: ", string(js))
 		return events.APIGatewayProxyResponse{}, nil
-	case http.MethodGet
+	case http.MethodGet:
+		return events.APIGatewayProxyResponse{}, nil
 	default:
 		return events.APIGatewayProxyResponse{
 			StatusCode: http.StatusMethodNotAllowed,

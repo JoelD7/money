@@ -1,8 +1,8 @@
 package router
 
 import (
-	"fmt"
 	"github.com/aws/aws-lambda-go/events"
+	"net/http"
 )
 
 type Handler func(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error)
@@ -10,32 +10,65 @@ type Handler func(request events.APIGatewayProxyRequest) (events.APIGatewayProxy
 type Router struct {
 	path           string
 	parent         *Router
-	subRouter      *Router
-	methodHandlers map[string]Handler
+	root           *Router
+	methodHandlers map[string]map[string]Handler
 }
 
 func NewRouter() *Router {
 	return &Router{
-		methodHandlers: make(map[string]Handler),
+		methodHandlers: make(map[string]map[string]Handler),
 	}
 }
 
 func (router *Router) Route(path string, fn func(r *Router)) {
-	//router.subRouter = subRouter
 	router.path = path
 	subRouter := &Router{parent: router}
+
+	if router.root == nil {
+		subRouter.root = router
+	}
+
+	if router.root != nil {
+		subRouter.root = router.root
+	}
 
 	fn(subRouter)
 }
 
-func (router *Router) Get(path string, handler Handler) {
-	endpointParts := make([]string, 0)
+func (router *Router) Get(pattern string, handler Handler) {
+	router.handlerAssigner(pattern, http.MethodGet, handler)
+}
 
-	if path != "/" {
-		endpointParts = append(endpointParts, path)
+func (router *Router) Post(pattern string, handler Handler) {
+	router.handlerAssigner(pattern, http.MethodPost, handler)
+}
+
+func (router *Router) Put(pattern string, handler Handler) {
+	router.handlerAssigner(pattern, http.MethodPut, handler)
+}
+
+func (router *Router) Delete(pattern string, handler Handler) {
+	router.handlerAssigner(pattern, http.MethodDelete, handler)
+}
+
+func (router *Router) handlerAssigner(pattern string, method string, handler Handler) {
+	endpoint := router.getEndpoint(pattern)
+
+	if router.root.methodHandlers[method][endpoint] == nil {
+		router.root.methodHandlers[method] = make(map[string]Handler)
 	}
 
-	// Search root parent in order to build full path
+	router.root.methodHandlers[method][endpoint] = handler
+}
+
+func (router *Router) getEndpoint(pattern string) string {
+	endpointParts := make([]string, 0)
+
+	if pattern != "/" {
+		endpointParts = append(endpointParts, pattern)
+	}
+
+	// Gather relative patterns from this router up to form the endpoint
 	cur := router
 	for {
 		if cur.path != "/" {
@@ -49,10 +82,10 @@ func (router *Router) Get(path string, handler Handler) {
 		cur = cur.parent
 	}
 
-	var fullEndpoint string
+	var endpoint string
 	for i := len(endpointParts) - 1; i >= 0; i-- {
-		fullEndpoint += endpointParts[i]
+		endpoint += endpointParts[i]
 	}
 
-	fmt.Println("Full endpoint: ", fullEndpoint)
+	return endpoint
 }
