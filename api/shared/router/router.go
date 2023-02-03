@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"net/http"
 )
@@ -16,7 +17,12 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
-		methodHandlers: make(map[string]map[string]Handler),
+		methodHandlers: map[string]map[string]Handler{
+			http.MethodGet:    make(map[string]Handler),
+			http.MethodPost:   make(map[string]Handler),
+			http.MethodPut:    make(map[string]Handler),
+			http.MethodDelete: make(map[string]Handler),
+		},
 	}
 }
 
@@ -24,6 +30,7 @@ func (router *Router) Route(path string, fn func(r *Router)) {
 	router.path = path
 	subRouter := &Router{parent: router}
 
+	// This means that this is the root router
 	if router.root == nil {
 		subRouter.root = router
 	}
@@ -52,10 +59,14 @@ func (router *Router) Delete(pattern string, handler Handler) {
 }
 
 func (router *Router) handlerAssigner(pattern string, method string, handler Handler) {
+	if router.isRoot() && pattern != "/" {
+		panic(fmt.Sprintf("This router is a root router. The pattern of a root routers should be '/', but is '%s'", pattern))
+	}
+
 	endpoint := router.getEndpoint(pattern)
 
-	if router.root.methodHandlers[method][endpoint] == nil {
-		router.root.methodHandlers[method] = make(map[string]Handler)
+	if router.root.methodHandlers[method][endpoint] != nil {
+		panic(fmt.Sprintf("The path '%s' already has a handler for method '%s'", endpoint, method))
 	}
 
 	router.root.methodHandlers[method][endpoint] = handler
@@ -88,4 +99,8 @@ func (router *Router) getEndpoint(pattern string) string {
 	}
 
 	return endpoint
+}
+
+func (router *Router) isRoot() bool {
+	return router.root == nil
 }
