@@ -18,8 +18,6 @@ type userRequest struct {
 
 var (
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
-
-	userResources = []string{"savings", "categories", "month-budget"}
 )
 
 func apiGatewayHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {

@@ -1,12 +1,18 @@
 package router
 
 import (
+	"errors"
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
 	"net/http"
+
+	"github.com/aws/aws-lambda-go/events"
 )
 
-type Handler func(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error)
+var (
+	errRouterIsNotRoot = errors.New("router is not root")
+)
+
+type Handler func(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error)
 
 type Router struct {
 	path           string
@@ -24,6 +30,17 @@ func NewRouter() *Router {
 			http.MethodDelete: make(map[string]Handler),
 		},
 	}
+}
+
+func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	if !router.isRoot() {
+		return &events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       http.StatusText(http.StatusInternalServerError),
+		}, errRouterIsNotRoot
+	}
+
+	return router.methodHandlers[request.HTTPMethod][request.Resource](request)
 }
 
 func (router *Router) Route(path string, fn func(r *Router)) {
