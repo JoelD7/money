@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/JoelD7/money/api/shared/router"
 	"github.com/JoelD7/money/api/storage"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -19,28 +19,6 @@ type userRequest struct {
 var (
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
-
-func apiGatewayHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	req := &userRequest{APIGatewayProxyRequest: &request}
-
-	return router(req)
-}
-
-func router(req *userRequest) (events.APIGatewayProxyResponse, error) {
-	switch req.HTTPMethod {
-	case "/users/{user-id}":
-		js, _ := json.Marshal(req)
-		fmt.Println("req: ", string(js))
-		return events.APIGatewayProxyResponse{}, nil
-	case http.MethodGet:
-		return events.APIGatewayProxyResponse{}, nil
-	default:
-		return events.APIGatewayProxyResponse{
-			StatusCode: http.StatusMethodNotAllowed,
-			Body:       "This method is not supported",
-		}, nil
-	}
-}
 
 func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	userID := req.QueryStringParameters["user_id"]
@@ -83,5 +61,7 @@ func clientError(status int) (events.APIGatewayProxyResponse, error) {
 }
 
 func main() {
-	lambda.Start(apiGatewayHandler)
+	rootRouter := router.NewRouter()
+
+	lambda.Start(rootRouter.Handle)
 }
