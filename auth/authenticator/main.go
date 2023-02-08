@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/api/shared/router"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"os"
@@ -21,13 +22,17 @@ var (
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
-type loginBody struct {
+type authBody struct {
 	Username string `json:"Username"`
 	Password string `json:"Password"`
 }
 
+func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+
+}
+
 func loginHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	reqBody := &loginBody{}
+	reqBody := &authBody{}
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
@@ -39,7 +44,12 @@ func loginHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		return clientError(err)
 	}
 
-	fmt.Println("Username: ", reqBody.Username, "Password: ", reqBody.Password)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return serverError(err)
+	}
+
+	fmt.Println("Username: ", reqBody.Username, "Password hash: ", string(hashedPassword))
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
@@ -52,7 +62,7 @@ func serverError(err error) (*events.APIGatewayProxyResponse, error) {
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusInternalServerError,
-		Body:       err.Error(),
+		Body:       http.StatusText(http.StatusInternalServerError),
 	}, nil
 }
 
@@ -65,7 +75,7 @@ func clientError(err error) (*events.APIGatewayProxyResponse, error) {
 	}, nil
 }
 
-func validateParams(login *loginBody) error {
+func validateParams(login *authBody) error {
 	if login.Username == "" {
 		return errMissingUsername
 	}
@@ -82,7 +92,7 @@ func main() {
 
 	route.Route("/auth", func(r *router.Router) {
 		r.Post("/login", loginHandler)
-
+		r.Post("/signup", signUpHandler)
 	})
 
 	lambda.Start(route.Handle)

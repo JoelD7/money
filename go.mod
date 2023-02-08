@@ -6,6 +6,7 @@ require (
 	github.com/aws/aws-lambda-go v1.37.0
 	github.com/aws/aws-sdk-go v1.44.188
 	github.com/stretchr/testify v1.8.1
+	golang.org/x/crypto v0.5.0
 )
 
 require (
