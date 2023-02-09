@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/api/shared/router"
+	"github.com/JoelD7/money/api/storage"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"golang.org/x/crypto/bcrypt"
@@ -16,44 +17,86 @@ import (
 )
 
 var (
-	errMissingUsername = errors.New("missing Username")
-	errMissingPassword = errors.New("missing Password")
+	errMissingEmail     = errors.New("missing email")
+	errMissingPassword  = errors.New("missing password")
+	errWrongCredentials = errors.New("the email or password are incorrect")
 
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
-type authBody struct {
-	Username string `json:"Username"`
-	Password string `json:"Password"`
+const (
+	passwordCost = bcrypt.DefaultCost
+)
+
+type signUpBody struct {
+	FullName string `json:"fullname"`
+	*Credentials
+}
+
+type Credentials struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-
-}
-
-func loginHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	reqBody := &authBody{}
+	reqBody := &signUpBody{}
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
 		return serverError(err)
 	}
 
-	err = validateParams(reqBody)
+	err = validateCredentials(reqBody.Credentials)
 	if err != nil {
 		return clientError(err)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), passwordCost)
 	if err != nil {
 		return serverError(err)
 	}
 
-	fmt.Println("Username: ", reqBody.Username, "Password hash: ", string(hashedPassword))
+	fmt.Println("password: ", string(hashedPassword))
+
+	err = storage.CreatePerson(reqBody.FullName, reqBody.Email, string(hashedPassword))
+	if err != nil {
+		return serverError(err)
+	}
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       "Everything ok!",
+		Body:       "Sign up succeeded",
+	}, nil
+}
+
+func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	reqBody := &Credentials{}
+
+	err := json.Unmarshal([]byte(request.Body), reqBody)
+	if err != nil {
+		return serverError(err)
+	}
+
+	err = validateCredentials(reqBody)
+	if err != nil {
+		return clientError(err)
+	}
+
+	person, err := storage.GetPerson(reqBody.Email)
+	if err != nil {
+		return clientError(err)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(person.Password), []byte(reqBody.Password))
+	if err != nil {
+		return clientError(errWrongCredentials)
+	}
+
+	//fmt.Println("FullName: ", reqBody.FullName, "Password hash: ", string(hashedPassword))
+
+	return &events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       "Logged in!",
 	}, nil
 }
 
@@ -75,9 +118,9 @@ func clientError(err error) (*events.APIGatewayProxyResponse, error) {
 	}, nil
 }
 
-func validateParams(login *authBody) error {
-	if login.Username == "" {
-		return errMissingUsername
+func validateCredentials(login *Credentials) error {
+	if login.Email == "" {
+		return errMissingEmail
 	}
 
 	if login.Password == "" {
@@ -91,7 +134,7 @@ func main() {
 	route := router.NewRouter()
 
 	route.Route("/auth", func(r *router.Router) {
-		r.Post("/login", loginHandler)
+		r.Post("/login", logInHandler)
 		r.Post("/signup", signUpHandler)
 	})
 

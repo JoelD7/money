@@ -6,6 +6,7 @@ type Person struct {
 	PersonID    string        `json:"person_id,omitempty"`
 	FullName    string        `json:"full_name,omitempty"`
 	Email       string        `json:"email,omitempty"`
+	Password    string        `json:"password,omitempty"`
 	Categories  []*Category   `json:"categories,omitempty"`
 	SavingGoals []*SavingGoal `json:"saving_goals,omitempty"`
 }
@@ -30,4 +31,8 @@ type SavingGoal struct {
 	Name         string    `json:"name,omitempty"`
 	Goal         float64   `json:"goal,omitempty"`
 	Deadline     time.Time `json:"deadline,omitempty"`
+}
+
+func NewPersonFromConfig() {
+
 }

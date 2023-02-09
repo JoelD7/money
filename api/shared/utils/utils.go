@@ -1,18 +1,19 @@
 package utils
 
 import (
-	"crypto/rand"
-	"encoding/hex"
-	"fmt"
+	"math/rand"
+	"time"
 )
 
-func GenerateDynamoID(prefix string) (string, error) {
-	buffer := make([]byte, 16)
+func GenerateDynamoID(prefix string) string {
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	_, err := rand.Read(buffer)
-	if err != nil {
-		return "", fmt.Errorf("error generating Dynamo ID: %w", err)
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]byte, 20)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 
-	return prefix + hex.EncodeToString(buffer), nil
+	return prefix + string(b)
 }
