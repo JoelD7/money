@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 var (
@@ -59,6 +60,10 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 	fmt.Println("password: ", string(hashedPassword))
 
 	err = storage.CreatePerson(reqBody.FullName, reqBody.Email, string(hashedPassword))
+	if err != nil && errors.Is(err, storage.ErrExistingUser) {
+		return clientError(err)
+	}
+
 	if err != nil {
 		return serverError(err)
 	}
@@ -112,9 +117,11 @@ func serverError(err error) (*events.APIGatewayProxyResponse, error) {
 func clientError(err error) (*events.APIGatewayProxyResponse, error) {
 	errorLogger.Println(err.Error())
 
+	responseBody := strings.ToUpper(err.Error()[0:1]) + err.Error()[1:]
+
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusBadRequest,
-		Body:       err.Error(),
+		Body:       responseBody,
 	}, nil
 }
 

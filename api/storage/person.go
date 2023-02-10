@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"strings"
 )
 
 var (
@@ -16,7 +17,8 @@ var (
 	tableName = env.GetString("USERS_TABLE_NAME", "person")
 	awsRegion = env.GetString("REGION", "us-east-1")
 
-	errNotFound = errors.New("person not found")
+	errNotFound     = errors.New("person not found")
+	ErrExistingUser = errors.New("this account already exists")
 )
 
 const (
@@ -46,11 +48,16 @@ func CreatePerson(fullName, email, password string) error {
 	}
 
 	input := &dynamodb.PutItemInput{
-		Item:      item,
-		TableName: aws.String(tableName),
+		Item:                item,
+		TableName:           aws.String(tableName),
+		ConditionExpression: aws.String("attribute_not_exists(email)"),
 	}
 
 	_, err = db.PutItem(input)
+	if err != nil && strings.Contains(err.Error(), dynamodb.ErrCodeConditionalCheckFailedException) {
+		return ErrExistingUser
+	}
+
 	if err != nil {
 		return err
 	}
