@@ -4,7 +4,8 @@ go 1.18
 
 require (
 	github.com/aws/aws-lambda-go v1.37.0
-	github.com/aws/aws-sdk-go v1.44.188
+	github.com/aws/aws-sdk-go v1.44.199
+	github.com/gusaul/go-dynamock v0.0.0-20210107061312-3e989056e1e6
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.5.0
 )

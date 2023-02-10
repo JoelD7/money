@@ -9,11 +9,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 	"strings"
 )
 
 var (
-	db        *dynamodb.DynamoDB
 	tableName = env.GetString("USERS_TABLE_NAME", "person")
 	awsRegion = env.GetString("REGION", "us-east-1")
 
@@ -25,13 +25,17 @@ const (
 	categoryPrefix = "CTG"
 )
 
+var Dynamo *DynamoDB
+
 func init() {
+	Dynamo = new(DynamoDB)
 	dynamodbSession, err := session.NewSession(aws.NewConfig().WithRegion(awsRegion))
 	if err != nil {
 		panic(err)
 	}
 
-	db = dynamodb.New(dynamodbSession)
+	svc := dynamodb.New(dynamodbSession)
+	Dynamo.Db = dynamodbiface.DynamoDBAPI(svc)
 }
 
 func CreatePerson(fullName, email, password string) error {
@@ -53,7 +57,7 @@ func CreatePerson(fullName, email, password string) error {
 		ConditionExpression: aws.String("attribute_not_exists(email)"),
 	}
 
-	_, err = db.PutItem(input)
+	_, err = Dynamo.Db.PutItem(input)
 	if err != nil && strings.Contains(err.Error(), dynamodb.ErrCodeConditionalCheckFailedException) {
 		return ErrExistingUser
 	}
@@ -75,7 +79,7 @@ func GetPerson(personId string) (*entities.Person, error) {
 		},
 	}
 
-	result, err := db.GetItem(input)
+	result, err := Dynamo.Db.GetItem(input)
 	if err != nil {
 		return nil, err
 	}

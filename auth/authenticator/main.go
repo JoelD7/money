@@ -5,7 +5,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/api/shared/router"
 	"github.com/JoelD7/money/api/storage"
 	"github.com/aws/aws-lambda-go/events"
@@ -14,19 +13,21 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
+	"regexp"
 )
 
 var (
 	errMissingEmail     = errors.New("missing email")
 	errMissingPassword  = errors.New("missing password")
 	errWrongCredentials = errors.New("the email or password are incorrect")
+	errInvalidEmail     = errors.New("email is invalid")
 
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 const (
 	passwordCost = bcrypt.DefaultCost
+	emailRegex   = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
 )
 
 type signUpBody struct {
@@ -56,8 +57,6 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 	if err != nil {
 		return serverError(err)
 	}
-
-	fmt.Println("password: ", string(hashedPassword))
 
 	err = storage.CreatePerson(reqBody.FullName, reqBody.Email, string(hashedPassword))
 	if err != nil && errors.Is(err, storage.ErrExistingUser) {
@@ -97,11 +96,8 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		return clientError(errWrongCredentials)
 	}
 
-	//fmt.Println("FullName: ", reqBody.FullName, "Password hash: ", string(hashedPassword))
-
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       "Logged in!",
 	}, nil
 }
 
@@ -117,17 +113,21 @@ func serverError(err error) (*events.APIGatewayProxyResponse, error) {
 func clientError(err error) (*events.APIGatewayProxyResponse, error) {
 	errorLogger.Println(err.Error())
 
-	responseBody := strings.ToUpper(err.Error()[0:1]) + err.Error()[1:]
-
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusBadRequest,
-		Body:       responseBody,
+		Body:       err.Error(),
 	}, nil
 }
 
 func validateCredentials(login *Credentials) error {
+	regex := regexp.MustCompile(emailRegex)
+
 	if login.Email == "" {
 		return errMissingEmail
+	}
+
+	if !regex.MatchString(login.Email) {
+		return errInvalidEmail
 	}
 
 	if login.Password == "" {
