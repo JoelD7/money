@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/JoelD7/money/api/shared/router"
-	"github.com/JoelD7/money/api/storage"
+	storage "github.com/JoelD7/money/api/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"golang.org/x/crypto/bcrypt"

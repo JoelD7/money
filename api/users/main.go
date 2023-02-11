@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/JoelD7/money/api/shared/router"
-	"github.com/JoelD7/money/api/storage"
+	"github.com/JoelD7/money/api/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"
@@ -23,7 +23,7 @@ var (
 func handler(req events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	userID := req.QueryStringParameters["user_id"]
 
-	person, err := storage.GetPerson(userID)
+	person, err := person.GetPerson(userID)
 	if err != nil {
 		return serverError(err)
 	}

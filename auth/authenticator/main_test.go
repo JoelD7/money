@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/JoelD7/money/api/storage"
+	"github.com/JoelD7/money/api/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	storage.InitDynamoMock()
+	person.InitDynamoMock()
 }
 
 func TestLoginHandler(t *testing.T) {
@@ -72,7 +72,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 		},
 		{
 			"User not found",
-			storage.ErrForceNotFound.Error(),
+			person.ErrForceNotFound.Error(),
 			Credentials{"random@gmail.com", "1234"},
 		},
 	}
@@ -87,8 +87,8 @@ func TestLoginHandlerFailed(t *testing.T) {
 			request.Body = jsonBody
 
 			if tc.description == "User not found" {
-				storage.ForceNotFound = true
-				defer func() { storage.ForceNotFound = false }()
+				person.ForceNotFound = true
+				defer func() { person.ForceNotFound = false }()
 			}
 
 			response, err = logInHandler(request)

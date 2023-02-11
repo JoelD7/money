@@ -1,4 +1,4 @@
-package storage
+package person
 
 import "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
 
