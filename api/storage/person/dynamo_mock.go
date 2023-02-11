@@ -8,9 +8,11 @@ import (
 )
 
 var (
-	ForceNotFound = false
+	ForceNotFound   = false
+	ForceUserExists = false
 
-	ErrForceNotFound = errors.New("force not found")
+	ErrForceNotFound   = errors.New("force not found")
+	ErrForceUserExists = errors.New("force user exists")
 )
 
 type MockDynamo struct{}
@@ -38,6 +40,14 @@ func (d *MockDynamo) GetItem(*dynamodb.GetItemInput) (*dynamodb.GetItemOutput, e
 			},
 		},
 	}, nil
+}
+
+func (d *MockDynamo) PutItem(input *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
+	if ForceUserExists {
+		return &dynamodb.PutItemOutput{}, ErrExistingUser
+	}
+
+	return &dynamodb.PutItemOutput{}, nil
 }
 
 func (d *MockDynamo) BatchExecuteStatement(input *dynamodb.BatchExecuteStatementInput) (*dynamodb.BatchExecuteStatementOutput, error) {
@@ -616,11 +626,6 @@ func (d *MockDynamo) ListTagsOfResourceWithContext(context aws.Context, input *d
 }
 
 func (d *MockDynamo) ListTagsOfResourceRequest(input *dynamodb.ListTagsOfResourceInput) (*request.Request, *dynamodb.ListTagsOfResourceOutput) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (d *MockDynamo) PutItem(input *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
 	//TODO implement me
 	panic("implement me")
 }

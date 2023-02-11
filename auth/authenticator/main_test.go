@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/JoelD7/money/api/storage/person"
+	storage "github.com/JoelD7/money/api/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	person.InitDynamoMock()
+	storage.InitDynamoMock()
 }
 
 func TestLoginHandler(t *testing.T) {
@@ -44,9 +44,20 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
+	storage.ForceNotFound = true
+
 	response, err := logInHandler(request)
+	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(errWrongCredentials.Error(), response.Body)
+	c.Equal(storage.ErrForceNotFound.Error(), response.Body)
+
+	storage.ForceNotFound = false
+
+	request.Body = "a"
+	response, err = logInHandler(request)
+	c.Nil(err)
+	c.Equal(http.StatusInternalServerError, response.StatusCode)
+	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 
 	type testCase struct {
 		description string
@@ -55,6 +66,11 @@ func TestLoginHandlerFailed(t *testing.T) {
 	}
 
 	testCases := []testCase{
+		{
+			"Wrong credentials",
+			errWrongCredentials.Error(),
+			Credentials{"test@gmail.com", "random"},
+		},
 		{
 			"Missing email error",
 			errMissingEmail.Error(),
@@ -70,10 +86,83 @@ func TestLoginHandlerFailed(t *testing.T) {
 			errMissingPassword.Error(),
 			Credentials{"test@gmail.com", ""},
 		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			c := require.New(t)
+
+			jsonBody, err = bodyToJSONString(tc.body)
+			c.Nil(err)
+
+			request.Body = jsonBody
+
+			response, err = logInHandler(request)
+			c.Nil(err)
+			c.Equal(http.StatusBadRequest, response.StatusCode)
+			c.Equal(tc.expectedErr, response.Body)
+		})
+	}
+}
+
+func TestSignUpHandler(t *testing.T) {
+	c := require.New(t)
+
+	body := signUpBody{
+		FullName:    "Joel",
+		Credentials: &Credentials{"test@gmail.com", "1234"},
+	}
+
+	jsonBody, err := bodyToJSONString(body)
+	c.Nil(err)
+
+	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+
+	response, err := signUpHandler(request)
+	c.Equal(http.StatusOK, response.StatusCode)
+}
+
+func TestSignUpHandlerFailed(t *testing.T) {
+	c := require.New(t)
+
+	body := signUpBody{
+		FullName:    "Joel",
+		Credentials: &Credentials{"test@gmail.com", "1234"},
+	}
+
+	storage.ForceUserExists = true
+
+	jsonBody, err := bodyToJSONString(body)
+	c.Nil(err)
+
+	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+
+	response, err := signUpHandler(request)
+	c.Equal(http.StatusBadRequest, response.StatusCode)
+	c.Equal(storage.ErrExistingUser.Error(), response.Body)
+	storage.ForceUserExists = false
+
+	type testCase struct {
+		description string
+		expectedErr string
+		body        signUpBody
+	}
+
+	testCases := []testCase{
 		{
-			"User not found",
-			person.ErrForceNotFound.Error(),
-			Credentials{"random@gmail.com", "1234"},
+			"Missing email error",
+			errMissingEmail.Error(),
+			signUpBody{"", &Credentials{"", "1234"}},
+		},
+		{
+			"Invalid email error",
+			errInvalidEmail.Error(),
+			signUpBody{"1234", &Credentials{"1234", "1234"}},
+		},
+		{
+			"Missing password error",
+			errMissingPassword.Error(),
+			signUpBody{"test@gmail.com", &Credentials{"test@gmail.com", ""}},
 		},
 	}
 
@@ -86,12 +175,8 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 			request.Body = jsonBody
 
-			if tc.description == "User not found" {
-				person.ForceNotFound = true
-				defer func() { person.ForceNotFound = false }()
-			}
-
 			response, err = logInHandler(request)
+			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
 			c.Equal(tc.expectedErr, response.Body)
 		})
