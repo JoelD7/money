@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"github.com/JoelD7/money/api/storage"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -17,9 +15,6 @@ func init() {
 
 func TestLoginHandler(t *testing.T) {
 	c := require.New(t)
-
-	expectKey, result := expectedGetItem()
-	storage.DynamoMock.ExpectGetItem().ToTable("person").WithKeys(expectKey).WillReturns(result)
 
 	body := Credentials{
 		Email:    "test@gmail.com",
@@ -39,9 +34,6 @@ func TestLoginHandler(t *testing.T) {
 func TestLoginHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	expectKey, result := expectedGetItem()
-	storage.DynamoMock.ExpectGetItem().ToTable("person").WithKeys(expectKey).WillReturns(result)
-
 	body := Credentials{
 		Email:    "test@gmail.com",
 		Password: "random",
@@ -52,36 +44,58 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
-	request.Body = jsonBody
 	response, err := logInHandler(request)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(errWrongCredentials.Error(), response.Body)
 
-	storage.DynamoMock.ExpectGetItem().ToTable("person").WithKeys(expectKey).WillReturns(result)
-}
+	type testCase struct {
+		description string
+		expectedErr string
+		body        Credentials
+	}
 
-func expectedGetItem() (map[string]*dynamodb.AttributeValue, dynamodb.GetItemOutput) {
-	expectKey := map[string]*dynamodb.AttributeValue{
-		"email": {
-			S: aws.String("test@gmail.com"),
+	testCases := []testCase{
+		{
+			"Missing email error",
+			errMissingEmail.Error(),
+			Credentials{"", "1234"},
+		},
+		{
+			"Invalid email error",
+			errInvalidEmail.Error(),
+			Credentials{"1234", "1234"},
+		},
+		{
+			"Missing password error",
+			errMissingPassword.Error(),
+			Credentials{"test@gmail.com", ""},
+		},
+		{
+			"User not found",
+			storage.ErrForceNotFound.Error(),
+			Credentials{"random@gmail.com", "1234"},
 		},
 	}
 
-	result := dynamodb.GetItemOutput{
-		Item: map[string]*dynamodb.AttributeValue{
-			"email": {
-				S: aws.String("test@gmail.com"),
-			},
-			"password": {
-				S: aws.String("$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe"),
-			},
-			"full_name": {
-				S: aws.String("Joel"),
-			},
-		},
-	}
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			c := require.New(t)
 
-	return expectKey, result
+			jsonBody, err = bodyToJSONString(tc.body)
+			c.Nil(err)
+
+			request.Body = jsonBody
+
+			if tc.description == "User not found" {
+				storage.ForceNotFound = true
+				defer func() { storage.ForceNotFound = false }()
+			}
+
+			response, err = logInHandler(request)
+			c.Equal(http.StatusBadRequest, response.StatusCode)
+			c.Equal(tc.expectedErr, response.Body)
+		})
+	}
 }
 
 func bodyToJSONString(body interface{}) (string, error) {
