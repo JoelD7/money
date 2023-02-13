@@ -3,10 +3,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/api/shared/router"
 	storage "github.com/JoelD7/money/api/storage/person"
+	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"golang.org/x/crypto/bcrypt"
@@ -69,14 +72,20 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       "Sign up succeeded",
 	}, nil
 }
 
 func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	reqBody := &Credentials{}
 
-	err := json.Unmarshal([]byte(request.Body), reqBody)
+	secret, err := secrets.GetSecret(context.Background(), "staging/money/authenticator")
+	if err != nil {
+		return serverError(err)
+	}
+
+	fmt.Println("Secret: ", *secret.SecretString)
+
+	err = json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
 		return serverError(err)
 	}
