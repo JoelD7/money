@@ -2,8 +2,10 @@ package secrets
 
 import (
 	"context"
+	"errors"
 	"github.com/JoelD7/money/api/shared/env"
 	"log"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -12,6 +14,8 @@ import (
 
 var (
 	awsRegion = env.GetString("REGION", "us-east-1")
+
+	ErrSecretNotFound = errors.New("secret not found")
 )
 
 func init() {
@@ -31,10 +35,31 @@ func GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValue
 	}
 
 	result, err := svc.GetSecretValue(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ResourceNotFoundException") {
+		return nil, ErrSecretNotFound
+	}
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 
 	return result, nil
+}
 
+func CreateSecret(ctx context.Context, name, description string, secret []byte) error {
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	svc := secretsmanager.NewFromConfig(cfg)
+
+	input := &secretsmanager.CreateSecretInput{
+		Name:                        aws.String(name),
+		Description:                 aws.String(description),
+		ForceOverwriteReplicaSecret: false,
+		SecretBinary:                secret,
+	}
+
+	_, err = svc.CreateSecret(ctx, input)
+	return err
 }
