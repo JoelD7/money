@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
@@ -35,9 +34,10 @@ var (
 )
 
 const (
-	passwordCost = bcrypt.DefaultCost
-	emailRegex   = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
-	secretName   = "staging/money/authenticator/rsakeys/v3"
+	passwordCost      = bcrypt.DefaultCost
+	emailRegex        = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
+	privateSecretName = "staging/money/rsa/private"
+	publicSecretName  = "staging/money/rsa/public"
 )
 
 type signUpBody struct {
@@ -90,12 +90,10 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	reqBody := &Credentials{}
 
-	key, err := getRSAPrivateKey()
+	_, _, err := getSecretRSAKeys()
 	if err != nil {
 		return serverError(err)
 	}
-
-	fmt.Println("Private key valid? ", key.Validate())
 
 	err = json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
@@ -142,76 +140,39 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 //	}
 //}
 
-func getRSAPrivateKey() (*rsa.PrivateKey, error) {
-	secret, err := secrets.GetSecret(context.Background(), secretName)
-	if err != nil && errors.Is(err, secrets.ErrSecretNotFound) {
-		fmt.Println("secret not found")
-		return nil, err
-	}
-
+func getSecretRSAKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	privateSecret, err := secrets.GetSecret(context.Background(), privateSecretName)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	var rsa rsaSecret
-
-	fmt.Println("keys: ", *secret.SecretString)
-
-	err = json.Unmarshal([]byte(*secret.SecretString), &rsa)
+	publicSecret, err := secrets.GetSecret(context.Background(), publicSecretName)
 	if err != nil {
-		return nil, errGettingKeysForJWT
+		return nil, nil, err
 	}
 
-	//PEM encoded private key
-	privatePEMData := []byte(rsa.Private)
-	fmt.Println(privatePEMData)
 	//Create pem block
-	privatePemBlock, _ := pem.Decode(privatePEMData)
-	fmt.Println("privatePemBlock: ", privatePemBlock)
+	privatePemBlock, _ := pem.Decode([]byte(*privateSecret.SecretString))
 	if privatePemBlock == nil || !strings.Contains(privatePemBlock.Type, "PRIVATE KEY") {
-		return nil, fmt.Errorf("failed to decode PEM privatePemBlock containing private key")
+		return nil, nil, fmt.Errorf("failed to decode PEM private block containing private key")
 	}
 
-	//Use bytes from pem block to get an rsa.PrivateKey
 	privateKey, err := x509.ParsePKCS1PrivateKey(privatePemBlock.Bytes)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return privateKey, nil
-}
+	publicPemBlock, _ := pem.Decode([]byte(*publicSecret.SecretString))
+	if privatePemBlock == nil || !strings.Contains(privatePemBlock.Type, "PRIVATE KEY") {
+		return nil, nil, fmt.Errorf("failed to decode PEM public block containing public key")
+	}
 
-//func getSecretRSAKeys() *secretsmanager.GetSecretValueOutput {
-//	secret, err := secrets.GetSecret(context.Background(), secretName)
-//	if err != nil && errors.Is(err, secrets.ErrSecretNotFound) {
-//		fmt.Println(err)
-//
-//	}
-//}
-
-func createRSAKeys(ctx context.Context) error {
-	privatekey, err := rsa.GenerateKey(rand.Reader, 2048)
+	publicKey, err := x509.ParsePKIXPublicKey(publicPemBlock.Bytes)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	publickey := &privatekey.PublicKey
-
-	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privatekey)
-	publicKeyBytes := x509.MarshalPKCS1PublicKey(publickey)
-
-	rsa := &rsaSecret{
-		Public:  string(publicKeyBytes),
-		Private: string(privateKeyBytes),
-	}
-
-	rsaBytes, err := json.Marshal(rsa)
-	if err != nil {
-		return err
-	}
-
-	secrets.CreateSecret(ctx, secretName, "RSA Keys to sign and verify JWTs", rsaBytes)
-	return nil
+	return privateKey, publicKey.(*rsa.PublicKey), nil
 }
 
 func serverError(err error) (*events.APIGatewayProxyResponse, error) {
