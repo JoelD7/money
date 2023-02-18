@@ -70,6 +70,16 @@ func TestHandleError(t *testing.T) {
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 	c.ErrorIs(err, errRouterIsNotRoot)
+
+	rootRouter = NewRouter()
+
+	rootRouter.Route("/users", func(r *Router) {
+		r.Post("/dummy", dummyHandler())
+	})
+
+	response, err = rootRouter.Handle(request)
+	c.Equal(http.StatusInternalServerError, response.StatusCode)
+	c.ErrorIs(err, errPathNotDefined)
 }
 
 func TestRoute(t *testing.T) {

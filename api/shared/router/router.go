@@ -3,13 +3,18 @@ package router
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 )
 
 var (
 	errRouterIsNotRoot = errors.New("router is not root")
+	errPathNotDefined  = errors.New("this path does not have a handler")
+
+	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 type Handler func(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error)
@@ -25,7 +30,9 @@ func NewRouter() *Router {
 	return &Router{
 		methodHandlers: map[string]map[string]Handler{
 			http.MethodGet:    make(map[string]Handler),
+			http.MethodHead:   make(map[string]Handler),
 			http.MethodPost:   make(map[string]Handler),
+			http.MethodPatch:  make(map[string]Handler),
 			http.MethodPut:    make(map[string]Handler),
 			http.MethodDelete: make(map[string]Handler),
 		},
@@ -34,10 +41,21 @@ func NewRouter() *Router {
 
 func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	if !router.isRoot() {
+		errorLogger.Println(errRouterIsNotRoot.Error())
+
 		return &events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body:       http.StatusText(http.StatusInternalServerError),
 		}, errRouterIsNotRoot
+	}
+
+	if _, ok := router.methodHandlers[request.HTTPMethod][request.Resource]; !ok {
+		errorLogger.Println(errPathNotDefined.Error())
+
+		return &events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body:       errPathNotDefined.Error(),
+		}, errPathNotDefined
 	}
 
 	return router.methodHandlers[request.HTTPMethod][request.Resource](request)
@@ -63,8 +81,16 @@ func (router *Router) Get(pattern string, handler Handler) {
 	router.handlerAssigner(pattern, http.MethodGet, handler)
 }
 
+func (router *Router) Head(pattern string, handler Handler) {
+	router.handlerAssigner(pattern, http.MethodHead, handler)
+}
+
 func (router *Router) Post(pattern string, handler Handler) {
 	router.handlerAssigner(pattern, http.MethodPost, handler)
+}
+
+func (router *Router) Patch(pattern string, handler Handler) {
+	router.handlerAssigner(pattern, http.MethodPatch, handler)
 }
 
 func (router *Router) Put(pattern string, handler Handler) {
