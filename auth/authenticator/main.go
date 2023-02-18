@@ -10,17 +10,20 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+
 	"github.com/JoelD7/money/api/shared/router"
 	storage "github.com/JoelD7/money/api/storage/person"
 	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/gbrlsnchs/jwt/v3"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var (
@@ -31,6 +34,7 @@ var (
 	errGettingKeysForJWT = errors.New("error getting keys for JWT")
 
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
+	jwtAudience = "https://localhost:3000"
 )
 
 const (
@@ -41,18 +45,13 @@ const (
 )
 
 type signUpBody struct {
-	FullName string `json:"fullname"`
+	FullName string `json:"full_name"`
 	*Credentials
 }
 
 type Credentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-}
-
-type rsaSecret struct {
-	Public  string `json:"public"`
-	Private string `json:"private"`
 }
 
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -90,12 +89,7 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	reqBody := &Credentials{}
 
-	_, _, err := getSecretRSAKeys()
-	if err != nil {
-		return serverError(err)
-	}
-
-	err = json.Unmarshal([]byte(request.Body), reqBody)
+	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
 		return serverError(err)
 	}
@@ -105,7 +99,7 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		return clientError(err)
 	}
 
-	person, err := storage.GetPerson(reqBody.Email)
+	person, err := storage.GetPersonByEmail(reqBody.Email)
 	if err != nil {
 		return clientError(err)
 	}
@@ -115,30 +109,53 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		return clientError(errWrongCredentials)
 	}
 
+	token, err := generateJWT(person.Email)
+	if err != nil {
+		return serverError(err)
+	}
+
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
+		Body:       token,
 	}, nil
 }
 
-//func generateJWT() error {
-//
-//	now := time.Now()
-//	var hs = jwt.NewRS256(jwt.RSAPublicKey(publicKey))
-//	pl := jwt.Payload{
-//		Issuer:         "gbrlsnchs",
-//		Subject:        "someone",
-//		Audience:       jwt.Audience{"https://golang.org", "https://jwt.io"},
-//		ExpirationTime: jwt.NumericDate(now.Add(24 * 30 * 12 * time.Hour)),
-//		NotBefore:      jwt.NumericDate(now.Add(30 * time.Minute)),
-//		IssuedAt:       jwt.NumericDate(now),
-//		JWTID:          "foobar",
-//	}
-//
-//	token, err := jwt.Sign(pl, hs)
-//	if err != nil {
-//		// ...
-//	}
-//}
+func generateJWT(email string) (string, error) {
+	now := time.Now()
+
+	priv, pub, err := getSecretRSAKeys()
+	if err != nil {
+		return "", err
+	}
+
+	var signingHash = jwt.NewRS256(jwt.RSAPrivateKey(priv))
+
+	payload := jwt.Payload{
+		Issuer:         "money-authenticator",
+		Subject:        email,
+		Audience:       jwt.Audience{jwtAudience},
+		ExpirationTime: jwt.NumericDate(now.Add(24 * 30 * 12 * time.Hour)),
+		NotBefore:      jwt.NumericDate(now.Add(30 * time.Minute)),
+		IssuedAt:       jwt.NumericDate(now),
+	}
+
+	token, err := jwt.Sign(payload, signingHash)
+	if err != nil {
+		return "", err
+	}
+
+	decryptingHash := jwt.NewRS256(jwt.RSAPublicKey(pub))
+	receivedPayload := &jwt.Payload{}
+
+	hd, err := jwt.Verify(token, decryptingHash, receivedPayload)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Println("Successfully verified. Header: ", hd)
+
+	return string(token), nil
+}
 
 func getSecretRSAKeys() (*rsa.PrivateKey, *rsa.PublicKey, error) {
 	privateSecret, err := secrets.GetSecret(context.Background(), privateSecretName)

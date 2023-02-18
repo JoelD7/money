@@ -23,9 +23,13 @@ var (
 
 const (
 	categoryPrefix = "CTG"
+	personPrefix   = "PS"
 )
 
-var Dynamo *DynamoDB
+var (
+	Dynamo     *DynamoDB
+	emailIndex = "email-index"
+)
 
 func init() {
 	Dynamo = new(DynamoDB)
@@ -40,6 +44,7 @@ func init() {
 
 func CreatePerson(fullName, email, password string) error {
 	person := &entities.Person{
+		PersonID:   utils.GenerateDynamoID(personPrefix),
 		FullName:   fullName,
 		Email:      email,
 		Password:   password,
@@ -73,7 +78,7 @@ func GetPerson(personId string) (*entities.Person, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
 		Key: map[string]*dynamodb.AttributeValue{
-			"email": {
+			"person_id": {
 				S: aws.String(personId),
 			},
 		},
@@ -90,6 +95,36 @@ func GetPerson(personId string) (*entities.Person, error) {
 
 	person := new(entities.Person)
 	err = dynamodbattribute.UnmarshalMap(result.Item, person)
+	if err != nil {
+		return nil, err
+	}
+
+	return person, nil
+}
+
+func GetPersonByEmail(email string) (*entities.Person, error) {
+	input := &dynamodb.QueryInput{
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":email": {
+				S: aws.String(email),
+			},
+		},
+		KeyConditionExpression: aws.String("email = :email"),
+		IndexName:              aws.String(emailIndex),
+		TableName:              aws.String(tableName),
+	}
+
+	result, err := Dynamo.Db.Query(input)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, errNotFound
+	}
+
+	person := new(entities.Person)
+	err = dynamodbattribute.UnmarshalMap(result.Items[0], person)
 	if err != nil {
 		return nil, err
 	}
