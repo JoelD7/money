@@ -15,11 +15,21 @@ package main
 
 import (
 	"context"
-	"log"
-	"strings"
-
+	"crypto/rsa"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/JoelD7/money/api/shared/env"
+	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/gbrlsnchs/jwt/v3"
+	"log"
+	"math/big"
+	"net/http"
+	"os"
+	"strings"
 )
 
 type Effect int
@@ -58,19 +68,59 @@ const (
 	Deny
 )
 
+var (
+	errInvalidToken       = errors.New("invalid token")
+	errSigningKeyNotFound = errors.New("signing key not found")
+
+	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
+)
+
+var (
+	kidSecretName = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+)
+
+type jwtPayload struct {
+	Scope          string       `json:"scope"`
+	Issuer         string       `json:"iss,omitempty"`
+	Subject        string       `json:"sub,omitempty"`
+	Audience       jwt.Audience `json:"aud,omitempty"`
+	ExpirationTime *jwt.Time    `json:"exp,omitempty"`
+	NotBefore      *jwt.Time    `json:"nbf,omitempty"`
+	IssuedAt       *jwt.Time    `json:"iat,omitempty"`
+	JWTID          string       `json:"jti,omitempty"`
+}
+
+type jwks struct {
+	Keys []jwk `json:"keys"`
+}
+
+type jwk struct {
+	Kty string `json:"kty"`
+	Kid string `json:"kid,omitempty"`
+	Use string `json:"use"`
+	N   string `json:"n"`
+	E   string `json:"e"`
+}
+
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	// Do not print the auth token unless absolutely necessary
-	// log.Println("Client token: " + event.AuthorizationToken)
-	log.Println("Method ARN: " + event.MethodArn)
+	//log.Println("Client token: " + event.AuthorizationToken)
+	//log.Println("Method ARN: " + event.MethodArn)
 
-	// validate the incoming token
-	// and produce the principal user identifier associated with the token
+	token := strings.Replace(event.AuthorizationToken, "Bearer", "", -1)
+	payload, err := getTokenPayload(token)
+	if err != nil {
+		errorLogger.Println(err)
+		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
+	}
 
-	// this could be accomplished in a number of ways:
-	// 1. Call out to OAuth provider
-	// 2. Decode a JWT token inline
-	// 3. Lookup in a self-managed DB
-	principalID := "user|a1b2c3d4"
+	err = verifyToken(payload, token)
+	if err != nil {
+		errorLogger.Println(err)
+
+		return defaultDenyAllPolicy(event.MethodArn), err
+	}
+
+	principalID := payload.Subject
 
 	// you can send a 401 Unauthorized response to the client by failing like so:
 	// return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
@@ -109,6 +159,129 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	}
 
 	return resp.APIGatewayCustomAuthorizerResponse, nil
+}
+
+func getTokenPayload(token string) (*jwtPayload, error) {
+	var payload *jwtPayload
+
+	tokenParts := strings.Split(token, ".")
+	if len(tokenParts) < 3 {
+		return nil, errInvalidToken
+	}
+
+	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(payloadPart, &payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return payload, nil
+}
+
+func defaultDenyAllPolicy(methodArn string) events.APIGatewayCustomAuthorizerResponse {
+	tmp := strings.Split(methodArn, ":")
+	apiGatewayArnTmp := strings.Split(tmp[5], "/")
+	awsAccountID := tmp[4]
+
+	resp := NewAuthorizerResponse("user", awsAccountID)
+	resp.Region = tmp[3]
+	resp.APIID = apiGatewayArnTmp[0]
+	resp.Stage = apiGatewayArnTmp[1]
+	resp.DenyAllMethods()
+
+	return resp.APIGatewayCustomAuthorizerResponse
+}
+
+func verifyToken(payload *jwtPayload, token string) error {
+	response, err := http.Get(payload.Issuer + "/auth/jwks")
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		closeErr := response.Body.Close()
+		if closeErr != nil {
+			err = closeErr
+		}
+	}()
+
+	var jwksVal jwks
+	err = json.NewDecoder(response.Body).Decode(&jwksVal)
+	if err != nil {
+		return err
+	}
+
+	publicKey, err := getPublicKey(&jwksVal)
+	if err != nil {
+		return err
+	}
+
+	decryptingHash := jwt.NewRS256(jwt.RSAPublicKey(publicKey))
+	receivedPayload := &jwt.Payload{}
+
+	hd, err := jwt.Verify([]byte(token), decryptingHash, receivedPayload)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Successfully verified. Header: ", hd)
+	fmt.Println("Received payload: ", receivedPayload)
+
+	return err
+}
+
+func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
+	kid, err := getKidFromSecret()
+	if err != nil {
+		return nil, err
+	}
+
+	var signingKey *jwk
+
+	for _, key := range jwksVal.Keys {
+		if key.Kid == kid {
+			signingKey = &key
+		}
+	}
+
+	if signingKey == nil {
+		return nil, errSigningKeyNotFound
+	}
+
+	nBytes, err := base64.RawURLEncoding.DecodeString(signingKey.N)
+	if err != nil {
+		return nil, err
+	}
+
+	n := new(big.Int)
+	n.SetBytes(nBytes)
+
+	eBytes, err := base64.RawURLEncoding.DecodeString(signingKey.E)
+	if err != nil {
+		return nil, err
+	}
+
+	e := new(big.Int)
+	e.SetBytes(eBytes)
+
+	return &rsa.PublicKey{
+		N: n,
+		E: int(e.Int64()),
+	}, nil
+}
+
+func getKidFromSecret() (string, error) {
+	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
+	if err != nil {
+		return "", err
+	}
+
+	return *kidSecret.SecretString, nil
+
 }
 
 func (hv HttpVerb) String() string {

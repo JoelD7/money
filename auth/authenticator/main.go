@@ -11,6 +11,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/api/shared/env"
 	"math/big"
 
 	"github.com/JoelD7/money/api/shared/router"
@@ -36,14 +37,20 @@ var (
 	errGettingKeysForJWT = errors.New("error getting keys for JWT")
 
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
-	jwtAudience = "https://localhost:3000"
+)
+
+var (
+	jwtAudience       = env.GetString("AUDIENCE", "https://localhost:3000")
+	jwtIssuer         = env.GetString("ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
+	jwtScope          = env.GetString("SCOPE", "read write")
+	privateSecretName = env.GetString("PRIVATE_SECRET", "staging/money/rsa/private")
+	publicSecretName  = env.GetString("PUBLIC_SECRET", "staging/money/rsa/public")
+	kidSecretName     = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 )
 
 const (
-	passwordCost      = bcrypt.DefaultCost
-	emailRegex        = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
-	privateSecretName = "staging/money/rsa/private"
-	publicSecretName  = "staging/money/rsa/public"
+	passwordCost = bcrypt.DefaultCost
+	emailRegex   = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
 )
 
 type signUpBody struct {
@@ -66,6 +73,11 @@ type jwk struct {
 	Use string `json:"use"`
 	N   string `json:"n"`
 	E   string `json:"e"`
+}
+
+type jwtPayload struct {
+	Scope string `json:"scope"`
+	*jwt.Payload
 }
 
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -140,9 +152,15 @@ func jwksHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProx
 		return serverError(err)
 	}
 
+	kid, err := getKidFromSecret()
+	if err != nil {
+		return serverError(err)
+	}
+
 	response := jwks{
 		[]jwk{
 			{
+				Kid: kid,
 				Kty: "RSA",
 				Use: "sig",
 				N:   base64.RawURLEncoding.EncodeToString(publicKey.N.Bytes()),
@@ -169,13 +187,16 @@ func generateJWT(email string) (string, error) {
 
 	var signingHash = jwt.NewRS256(jwt.RSAPrivateKey(priv))
 
-	payload := jwt.Payload{
-		Issuer:         "money-authenticator",
-		Subject:        email,
-		Audience:       jwt.Audience{jwtAudience},
-		ExpirationTime: jwt.NumericDate(now.Add(24 * 30 * 12 * time.Hour)),
-		NotBefore:      jwt.NumericDate(now.Add(30 * time.Minute)),
-		IssuedAt:       jwt.NumericDate(now),
+	payload := jwtPayload{
+		Scope: jwtScope,
+		Payload: &jwt.Payload{
+			Issuer:         jwtIssuer,
+			Subject:        email,
+			Audience:       jwt.Audience{jwtAudience},
+			ExpirationTime: jwt.NumericDate(now.Add(24 * 30 * 12 * time.Hour)),
+			NotBefore:      jwt.NumericDate(now.Add(30 * time.Minute)),
+			IssuedAt:       jwt.NumericDate(now),
+		},
 	}
 
 	token, err := jwt.Sign(payload, signingHash)
@@ -233,6 +254,19 @@ func getPublicKey() (*rsa.PublicKey, error) {
 	}
 
 	return publicKey.(*rsa.PublicKey), nil
+}
+
+// The kid of the JWK that contains the public key.
+// Is stored in a secret so that the lambda-authorizer can have access to it to verify that the key received is the
+// right one.
+func getKidFromSecret() (string, error) {
+	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
+	if err != nil {
+		return "", err
+	}
+
+	return *kidSecret.SecretString, nil
+
 }
 
 func serverError(err error) (*events.APIGatewayProxyResponse, error) {
