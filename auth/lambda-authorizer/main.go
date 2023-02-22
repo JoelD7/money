@@ -1,16 +1,3 @@
-// Copyright 2015-2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License").
-// You may not use this file except in compliance with the License.
-// A copy of the License is located at
-//
-//     http://aws.amazon.com/apache2.0/
-//
-// or in the "license" file accompanying this file. This file is distributed
-// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
-// express or implied. See the License for the specific language governing
-// permissions and limitations under the License.
-
 package main
 
 import (
@@ -19,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/api/shared/env"
 	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-lambda-go/events"
@@ -30,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type Effect int
@@ -77,17 +64,14 @@ var (
 
 var (
 	kidSecretName = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+	awsRegion     = env.GetString("REGION", "us-east-1")
+	jwtAudience   = env.GetString("AUDIENCE", "https://localhost:3000")
+	jwtIssuer     = env.GetString("ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
 )
 
 type jwtPayload struct {
-	Scope          string       `json:"scope"`
-	Issuer         string       `json:"iss,omitempty"`
-	Subject        string       `json:"sub,omitempty"`
-	Audience       jwt.Audience `json:"aud,omitempty"`
-	ExpirationTime *jwt.Time    `json:"exp,omitempty"`
-	NotBefore      *jwt.Time    `json:"nbf,omitempty"`
-	IssuedAt       *jwt.Time    `json:"iat,omitempty"`
-	JWTID          string       `json:"jti,omitempty"`
+	Scope string `json:"scope"`
+	*jwt.Payload
 }
 
 type jwks struct {
@@ -103,41 +87,20 @@ type jwk struct {
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	//log.Println("Client token: " + event.AuthorizationToken)
-	//log.Println("Method ARN: " + event.MethodArn)
+	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
-	token := strings.Replace(event.AuthorizationToken, "Bearer", "", -1)
 	payload, err := getTokenPayload(token)
 	if err != nil {
-		errorLogger.Println(err)
 		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
 	}
 
 	err = verifyToken(payload, token)
 	if err != nil {
-		errorLogger.Println(err)
-
 		return defaultDenyAllPolicy(event.MethodArn), err
 	}
 
 	principalID := payload.Subject
 
-	// you can send a 401 Unauthorized response to the client by failing like so:
-	// return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
-
-	// if the token is valid, a policy must be generated which will allow or deny access to the client
-
-	// if access is denied, the client will recieve a 403 Access Denied response
-	// if access is allowed, API Gateway will proceed with the backend integration configured on the method that was called
-
-	// this function must generate a policy that is associated with the recognized principal user identifier.
-	// depending on your use case, you might store policies in a DB, or generate them on the fly
-
-	// keep in mind, the policy is cached for 5 minutes by default (TTL is configurable in the authorizer)
-	// and will apply to subsequent calls to any method/resource in the RestApi
-	// made with the same token
-
-	//the example policy below denies access to all resources in the RestApi
 	tmp := strings.Split(event.MethodArn, ":")
 	apiGatewayArnTmp := strings.Split(tmp[5], "/")
 	awsAccountID := tmp[4]
@@ -146,17 +109,7 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	resp.Region = tmp[3]
 	resp.APIID = apiGatewayArnTmp[0]
 	resp.Stage = apiGatewayArnTmp[1]
-	resp.DenyAllMethods()
-	// resp.AllowMethod(Get, "/pets/*")
-
-	// new! -- add additional key-value pairs associated with the authenticated principal
-	// these are made available by APIGW like so: $context.authorizer.<key>
-	// additional context is cached
-	resp.Context = map[string]interface{}{
-		"stringKey":  "stringval",
-		"numberKey":  123,
-		"booleanKey": true,
-	}
+	resp.AllowAllMethods()
 
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }
@@ -166,16 +119,19 @@ func getTokenPayload(token string) (*jwtPayload, error) {
 
 	tokenParts := strings.Split(token, ".")
 	if len(tokenParts) < 3 {
+		errorLogger.Println(errInvalidToken)
 		return nil, errInvalidToken
 	}
 
 	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
 	if err != nil {
+		errorLogger.Println(err)
 		return nil, err
 	}
 
 	err = json.Unmarshal(payloadPart, &payload)
 	if err != nil {
+		errorLogger.Println(err)
 		return nil, err
 	}
 
@@ -205,33 +161,49 @@ func verifyToken(payload *jwtPayload, token string) error {
 	defer func() {
 		closeErr := response.Body.Close()
 		if closeErr != nil {
+			errorLogger.Println(closeErr)
 			err = closeErr
 		}
 	}()
 
-	var jwksVal jwks
-	err = json.NewDecoder(response.Body).Decode(&jwksVal)
+	jwksVal := new(jwks)
+	err = json.NewDecoder(response.Body).Decode(jwksVal)
 	if err != nil {
+		errorLogger.Println(err)
 		return err
 	}
 
-	publicKey, err := getPublicKey(&jwksVal)
+	publicKey, err := getPublicKey(jwksVal)
 	if err != nil {
+		errorLogger.Println(err)
 		return err
 	}
 
 	decryptingHash := jwt.NewRS256(jwt.RSAPublicKey(publicKey))
 	receivedPayload := &jwt.Payload{}
 
-	hd, err := jwt.Verify([]byte(token), decryptingHash, receivedPayload)
+	err = validateJWTPayload(token, receivedPayload, decryptingHash)
+
+	return err
+}
+
+func validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.RSASHA) error {
+	now := time.Now()
+
+	nbfValidator := jwt.NotBeforeValidator(now)
+	expValidator := jwt.ExpirationTimeValidator(now)
+	issValidator := jwt.IssuerValidator(jwtIssuer)
+	audValidator := jwt.AudienceValidator(jwt.Audience{jwtAudience})
+
+	validatePayload := jwt.ValidatePayload(payload, nbfValidator, expValidator, issValidator, audValidator)
+
+	_, err := jwt.Verify([]byte(token), decryptingHash, payload, validatePayload)
 	if err != nil {
+		errorLogger.Println(err)
 		return err
 	}
 
-	fmt.Println("Successfully verified. Header: ", hd)
-	fmt.Println("Received payload: ", receivedPayload)
-
-	return err
+	return nil
 }
 
 func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
@@ -249,11 +221,13 @@ func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 	}
 
 	if signingKey == nil {
+		errorLogger.Println(errSigningKeyNotFound)
 		return nil, errSigningKeyNotFound
 	}
 
 	nBytes, err := base64.RawURLEncoding.DecodeString(signingKey.N)
 	if err != nil {
+		errorLogger.Println(err)
 		return nil, err
 	}
 
@@ -262,6 +236,7 @@ func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 
 	eBytes, err := base64.RawURLEncoding.DecodeString(signingKey.E)
 	if err != nil {
+		errorLogger.Println(err)
 		return nil, err
 	}
 
@@ -277,6 +252,7 @@ func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 func getKidFromSecret() (string, error) {
 	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
 	if err != nil {
+		errorLogger.Println(err)
 		return "", err
 	}
 
@@ -324,10 +300,7 @@ func NewAuthorizerResponse(principalID string, AccountID string) *AuthorizerResp
 				Version: "2012-10-17",
 			},
 		},
-		// Replace the placeholder value with a default region to be used in the policy.
-		// Beware of using '*' since it will not simply mean any region, because stars will greedily expand over '/' or other separators.
-		// See https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html for more details.
-		Region:    "<<region>>",
+		Region:    awsRegion,
 		AccountID: AccountID,
 
 		// Replace the placeholder value with a default API Gateway API id to be used in the policy.
