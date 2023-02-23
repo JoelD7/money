@@ -7,16 +7,15 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/JoelD7/money/api/shared/env"
+	"github.com/JoelD7/money/api/shared/restclient"
 	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
 	"log"
 	"math/big"
-	"net/http"
 	"os"
 	"strings"
-	"time"
 )
 
 type Effect int
@@ -58,6 +57,7 @@ const (
 var (
 	errInvalidToken       = errors.New("invalid token")
 	errSigningKeyNotFound = errors.New("signing key not found")
+	errUnauthorized       = errors.New("Unauthorized")
 
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
@@ -91,7 +91,7 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 
 	payload, err := getTokenPayload(token)
 	if err != nil {
-		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
+		return events.APIGatewayCustomAuthorizerResponse{}, errUnauthorized
 	}
 
 	err = verifyToken(payload, token)
@@ -153,7 +153,7 @@ func defaultDenyAllPolicy(methodArn string) events.APIGatewayCustomAuthorizerRes
 }
 
 func verifyToken(payload *jwtPayload, token string) error {
-	response, err := http.Get(payload.Issuer + "/auth/jwks")
+	response, err := restclient.Get(payload.Issuer + "/auth/jwks")
 	if err != nil {
 		return err
 	}
@@ -188,14 +188,14 @@ func verifyToken(payload *jwtPayload, token string) error {
 }
 
 func validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.RSASHA) error {
-	now := time.Now()
+	//now := time.Now()
 
-	nbfValidator := jwt.NotBeforeValidator(now)
-	expValidator := jwt.ExpirationTimeValidator(now)
+	//nbfValidator := jwt.NotBeforeValidator(now)
+	//expValidator := jwt.ExpirationTimeValidator(now)
 	issValidator := jwt.IssuerValidator(jwtIssuer)
 	audValidator := jwt.AudienceValidator(jwt.Audience{jwtAudience})
 
-	validatePayload := jwt.ValidatePayload(payload, nbfValidator, expValidator, issValidator, audValidator)
+	validatePayload := jwt.ValidatePayload(payload, issValidator, audValidator)
 
 	_, err := jwt.Verify([]byte(token), decryptingHash, payload, validatePayload)
 	if err != nil {
