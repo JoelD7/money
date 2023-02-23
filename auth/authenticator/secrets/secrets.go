@@ -12,17 +12,29 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
+type SecretAPI interface {
+	GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)
+}
+
+type Secret struct{}
+
 var (
 	awsRegion = env.GetString("REGION", "us-east-1")
 
 	ErrSecretNotFound = errors.New("secret not found")
+
+	SecretClient SecretAPI
 )
 
 func init() {
-
+	SecretClient = &Secret{}
 }
 
 func GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+	return SecretClient.GetSecret(ctx, name)
+}
+
+func (s *Secret) GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
 	if err != nil {
 		log.Fatal(err)
@@ -38,6 +50,7 @@ func GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValue
 	if err != nil && strings.Contains(err.Error(), "ResourceNotFoundException") {
 		return nil, ErrSecretNotFound
 	}
+
 	if err != nil {
 		log.Fatal(err.Error())
 	}
