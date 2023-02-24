@@ -8,7 +8,7 @@ import (
 	"errors"
 	"github.com/JoelD7/money/api/shared/env"
 	"github.com/JoelD7/money/api/shared/restclient"
-	"github.com/JoelD7/money/auth/authenticator/secrets"
+	"github.com/JoelD7/money/api/shared/secrets"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"

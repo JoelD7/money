@@ -1,4 +1,4 @@
-package restclient
+package mocks
 
 import "net/http"
 

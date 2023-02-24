@@ -12,11 +12,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/api/shared/env"
+	"github.com/JoelD7/money/api/shared/secrets"
 	"math/big"
 
 	"github.com/JoelD7/money/api/shared/router"
 	storage "github.com/JoelD7/money/api/storage/person"
-	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"

@@ -3,8 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
-	secretsMock "github.com/JoelD7/money/api/shared/mocks/secrets"
 	"github.com/JoelD7/money/api/shared/restclient"
+	restMock "github.com/JoelD7/money/api/shared/restclient/mocks"
+	secretsMock "github.com/JoelD7/money/api/shared/secrets/mocks"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/aws"
@@ -20,7 +21,7 @@ var (
 )
 
 func init() {
-	restclient.Client = &restclient.MockClient{}
+	restclient.Client = &restMock.MockClient{}
 }
 
 func TestHandleRequest(t *testing.T) {
@@ -28,17 +29,8 @@ func TestHandleRequest(t *testing.T) {
 
 	event := dummyHandlerEvent()
 
-	data, err := os.ReadFile("samples/jwks_response.json")
+	err := mockRestClientGetFromFile("samples/jwks_response.json")
 	c.Nil(err)
-
-	r := io.NopCloser(bytes.NewReader(data))
-
-	restclient.GetFunction = func(url string) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       r,
-		}, nil
-	}
 
 	secretMock := secretsMock.InitSecretMock()
 
@@ -56,10 +48,48 @@ func TestHandlerError(t *testing.T) {
 	c := require.New(t)
 
 	event := dummyHandlerEvent()
+	authToken := event.AuthorizationToken
+
 	event.AuthorizationToken = "dummy"
 
 	_, err := handleRequest(context.Background(), event)
 	c.ErrorIs(err, errUnauthorized)
+
+	event.AuthorizationToken = "Bearer dummy.dummy.token"
+	_, err = handleRequest(context.Background(), event)
+	c.ErrorIs(err, errUnauthorized)
+
+	secretMock := secretsMock.InitSecretMock()
+
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("456"),
+		}, nil
+	})
+
+	err = mockRestClientGetFromFile("samples/jwks_response.json")
+	c.Nil(err)
+
+	event.AuthorizationToken = authToken
+	_, err = handleRequest(context.Background(), event)
+	c.ErrorIs(err, errSigningKeyNotFound)
+
+	secretsMock.ForceFailure = true
+	defer func() {
+		secretsMock.ForceFailure = false
+	}()
+
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("123"),
+		}, nil
+	})
+
+	err = mockRestClientGetFromFile("samples/jwks_response.json")
+	c.Nil(err)
+
+	_, err = handleRequest(context.Background(), event)
+	c.ErrorIs(err, secretsMock.ErrForceFailure)
 }
 
 func dummyHandlerEvent() events.APIGatewayCustomAuthorizerRequest {
@@ -68,4 +98,22 @@ func dummyHandlerEvent() events.APIGatewayCustomAuthorizerRequest {
 		AuthorizationToken: authToken,
 		MethodArn:          "arn:aws:execute-api:us-east-1:811364018000:38qslpe8d9/ESTestInvoke-stage/GET/",
 	}
+}
+
+func mockRestClientGetFromFile(filename string) error {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	r := io.NopCloser(bytes.NewReader(data))
+
+	restMock.GetFunction = func(url string) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       r,
+		}, nil
+	}
+
+	return nil
 }

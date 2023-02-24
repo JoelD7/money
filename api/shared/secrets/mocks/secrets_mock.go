@@ -1,9 +1,9 @@
-package secrets
+package mocks
 
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/auth/authenticator/secrets"
+	"github.com/JoelD7/money/api/shared/secrets"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
@@ -15,6 +15,12 @@ var (
 	errResponderAlreadyRegistered = errors.New("mocks/secrets: responder is already registered")
 	errResponderNotRegistered     = errors.New("mocks/secrets: responder not registered")
 	errMockNotInitialized         = errors.New("mocks/secrets: mock not initialized")
+
+	ErrForceFailure = errors.New("mocks/secrets: force failure")
+)
+
+var (
+	ForceFailure bool
 )
 
 func InitSecretMock() *MockSecret {
@@ -28,6 +34,10 @@ func InitSecretMock() *MockSecret {
 }
 
 func (m *MockSecret) GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+	if ForceFailure {
+		return nil, ErrForceFailure
+	}
+
 	responder, ok := m.secretResponders[name]
 	if !ok {
 		panic(errResponderNotRegistered)
@@ -39,10 +49,6 @@ func (m *MockSecret) GetSecret(ctx context.Context, name string) (*secretsmanage
 func (m *MockSecret) RegisterResponder(secretName string, responder func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)) {
 	if m == nil {
 		panic(errMockNotInitialized)
-	}
-
-	if _, ok := m.secretResponders[secretName]; ok {
-		panic(errResponderAlreadyRegistered)
 	}
 
 	m.secretResponders[secretName] = responder
