@@ -1,7 +1,8 @@
-package person
+package mocks
 
 import (
 	"errors"
+	"github.com/JoelD7/money/api/storage/person"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
@@ -18,7 +19,7 @@ var (
 type MockDynamo struct{}
 
 func InitDynamoMock() {
-	Dynamo.Db = &MockDynamo{}
+	person.Dynamo.Db = &MockDynamo{}
 }
 
 func (d *MockDynamo) GetItem(*dynamodb.GetItemInput) (*dynamodb.GetItemOutput, error) {
@@ -44,7 +45,7 @@ func (d *MockDynamo) GetItem(*dynamodb.GetItemInput) (*dynamodb.GetItemOutput, e
 
 func (d *MockDynamo) PutItem(input *dynamodb.PutItemInput) (*dynamodb.PutItemOutput, error) {
 	if ForceUserExists {
-		return &dynamodb.PutItemOutput{}, ErrExistingUser
+		return &dynamodb.PutItemOutput{}, person.ErrExistingUser
 	}
 
 	return &dynamodb.PutItemOutput{}, nil

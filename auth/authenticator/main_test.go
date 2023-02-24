@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	storage "github.com/JoelD7/money/api/storage/person"
+	"github.com/JoelD7/money/api/storage/person/mocks"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 )
 
 func init() {
-	storage.InitDynamoMock()
+	mocks.InitDynamoMock()
 }
 
 func TestLoginHandler(t *testing.T) {
@@ -44,14 +45,14 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
-	storage.ForceNotFound = true
+	mocks.ForceNotFound = true
 
 	response, err := logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(storage.ErrForceNotFound.Error(), response.Body)
+	c.Equal(mocks.ErrForceNotFound.Error(), response.Body)
 
-	storage.ForceNotFound = false
+	mocks.ForceNotFound = false
 
 	request.Body = "a"
 	response, err = logInHandler(request)
@@ -130,7 +131,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
-	storage.ForceUserExists = true
+	mocks.ForceUserExists = true
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -140,7 +141,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	response, err := signUpHandler(request)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(storage.ErrExistingUser.Error(), response.Body)
-	storage.ForceUserExists = false
+	mocks.ForceUserExists = false
 
 	type testCase struct {
 		description string
