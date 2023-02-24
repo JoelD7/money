@@ -5,7 +5,6 @@ import (
 	"context"
 	secretsMock "github.com/JoelD7/money/api/shared/mocks/secrets"
 	"github.com/JoelD7/money/api/shared/restclient"
-	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/aws"
@@ -22,7 +21,6 @@ var (
 
 func init() {
 	restclient.Client = &restclient.MockClient{}
-	secrets.SecretClient = &secretsMock.MockSecret{}
 }
 
 func TestHandleRequest(t *testing.T) {
@@ -42,7 +40,9 @@ func TestHandleRequest(t *testing.T) {
 		}, nil
 	}
 
-	secretsMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+	secretMock := secretsMock.InitSecretMock()
+
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
 		return &secretsmanager.GetSecretValueOutput{
 			SecretString: aws.String("123"),
 		}, nil
@@ -60,12 +60,6 @@ func TestHandlerError(t *testing.T) {
 
 	_, err := handleRequest(context.Background(), event)
 	c.ErrorIs(err, errUnauthorized)
-
-	secretsMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("123"),
-		}, nil
-	})
 }
 
 func dummyHandlerEvent() events.APIGatewayCustomAuthorizerRequest {

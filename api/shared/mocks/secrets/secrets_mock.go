@@ -3,21 +3,32 @@ package secrets
 import (
 	"context"
 	"errors"
+	"github.com/JoelD7/money/auth/authenticator/secrets"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
-type MockSecret struct{}
+type MockSecret struct {
+	secretResponders map[string]func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)
+}
 
 var (
-	//GetSecretFunc    func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)
-	secretResponders = make(map[string]func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error))
-
-	errResponderAlreadyRegistered = errors.New("secrets: responder is already registered")
-	errResponderNotRegistered     = errors.New("secrets: responder not registered")
+	errResponderAlreadyRegistered = errors.New("mocks/secrets: responder is already registered")
+	errResponderNotRegistered     = errors.New("mocks/secrets: responder not registered")
+	errMockNotInitialized         = errors.New("mocks/secrets: mock not initialized")
 )
 
+func InitSecretMock() *MockSecret {
+	mock := &MockSecret{
+		secretResponders: make(map[string]func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)),
+	}
+
+	secrets.SecretClient = mock
+
+	return mock
+}
+
 func (m *MockSecret) GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-	responder, ok := secretResponders[name]
+	responder, ok := m.secretResponders[name]
 	if !ok {
 		panic(errResponderNotRegistered)
 	}
@@ -25,10 +36,14 @@ func (m *MockSecret) GetSecret(ctx context.Context, name string) (*secretsmanage
 	return responder(ctx, name)
 }
 
-func RegisterResponder(secretName string, responder func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)) {
-	if _, ok := secretResponders[secretName]; ok {
+func (m *MockSecret) RegisterResponder(secretName string, responder func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)) {
+	if m == nil {
+		panic(errMockNotInitialized)
+	}
+
+	if _, ok := m.secretResponders[secretName]; ok {
 		panic(errResponderAlreadyRegistered)
 	}
 
-	secretResponders[secretName] = responder
+	m.secretResponders[secretName] = responder
 }
