@@ -13,10 +13,10 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/api/shared/env"
 	"github.com/JoelD7/money/api/shared/secrets"
+	"github.com/JoelD7/money/api/storage"
 	"math/big"
 
 	"github.com/JoelD7/money/api/shared/router"
-	storage "github.com/JoelD7/money/api/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
@@ -81,6 +81,8 @@ type jwtPayload struct {
 }
 
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	ctx := context.Background()
+
 	reqBody := &signUpBody{}
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
@@ -98,7 +100,7 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 		return serverError(err)
 	}
 
-	err = storage.CreatePerson(reqBody.FullName, reqBody.Email, string(hashedPassword))
+	err = storage.CreatePerson(ctx, reqBody.FullName, reqBody.Email, string(hashedPassword))
 	if err != nil && errors.Is(err, storage.ErrExistingUser) {
 		return clientError(err)
 	}
@@ -113,6 +115,8 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 }
 
 func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	ctx := context.Background()
+
 	reqBody := &Credentials{}
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
@@ -125,7 +129,7 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		return clientError(err)
 	}
 
-	person, err := storage.GetPersonByEmail(reqBody.Email)
+	person, err := storage.GetPersonByEmail(ctx, reqBody.Email)
 	if err != nil {
 		return clientError(err)
 	}
@@ -170,6 +174,9 @@ func jwksHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProx
 	}
 
 	jsonResponse, err := json.Marshal(response)
+	if err != nil {
+		return serverError(err)
+	}
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
@@ -224,7 +231,6 @@ func getPrivateKey() (*rsa.PrivateKey, error) {
 	}
 
 	privatePemBlock, _ := pem.Decode([]byte(*privateSecret.SecretString))
-	fmt.Println(privatePemBlock)
 	if privatePemBlock == nil || !strings.Contains(privatePemBlock.Type, "PRIVATE KEY") {
 		return nil, fmt.Errorf("failed to decode PEM private block containing private key")
 	}

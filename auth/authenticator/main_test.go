@@ -1,12 +1,20 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
-	storage "github.com/JoelD7/money/api/storage/person"
-	"github.com/JoelD7/money/api/storage/person/mocks"
+	restMock "github.com/JoelD7/money/api/shared/restclient/mocks"
+	secretsMock "github.com/JoelD7/money/api/shared/secrets/mocks"
+	"github.com/JoelD7/money/api/storage"
+	"github.com/JoelD7/money/api/storage/mocks"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/stretchr/testify/require"
+	"io"
 	"net/http"
+	"os"
 	"testing"
 )
 
@@ -184,6 +192,33 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	}
 }
 
+func TestJWTHandler(t *testing.T) {
+	c := require.New(t)
+
+	expectedJWKS := `{"keys":[{"kty":"RSA","kid":"123","use":"sig","n":"qGtV1QpRQ6he8z3l64alazzW4dBnfOUF_J1EDTP7i8DJPhlFFE1Mn-zTZN_-jGgMjhHUHG3AUfv2khUR0Bi4T0DnQlSrlW_TcT2747AEu8qTAgXagUDy3YhwGiqsBy-S_fv0zGgVbRLeqNKnYqEAgQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM_yqi0xKHOxIoTbTedmg-cBqqmMZYyanLnAuzjYrrieW-23O_YkV0tbTJjhL_XJXeBze0C8Iltcvfaxhlxd_jpm28gO01n91PKwg-YhwPhYIpxlzrKps0mo6iAhNvsDNGFha_8UiZ-bJa5F7xk3LArTrbvbQ","e":"AQAB"}]}`
+
+	err := mockRestClientGetFromFile("samples/jwks_response.json")
+	c.Nil(err)
+
+	secretMock := secretsMock.InitSecretMock()
+
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("123"),
+		}, nil
+	})
+
+	secretMock.RegisterResponder(publicSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGtV1QpRQ6he8z3l64al\nazzW4dBnfOUF/J1EDTP7i8DJPhlFFE1Mn+zTZN/+jGgMjhHUHG3AUfv2khUR0Bi4\nT0DnQlSrlW/TcT2747AEu8qTAgXagUDy3YhwGiqsBy+S/fv0zGgVbRLeqNKnYqEA\ngQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM/yqi0xKHOxIoTbTedmg+cBqqm\nMZYyanLnAuzjYrrieW+23O/YkV0tbTJjhL/XJXeBze0C8Iltcvfaxhlxd/jpm28g\nO01n91PKwg+YhwPhYIpxlzrKps0mo6iAhNvsDNGFha/8UiZ+bJa5F7xk3LArTrbv\nbQIDAQAB\n-----END PUBLIC KEY-----"),
+		}, nil
+	})
+
+	response, err := jwksHandler(&events.APIGatewayProxyRequest{})
+	c.Equal(http.StatusOK, response.StatusCode)
+	c.Equal(expectedJWKS, response.Body)
+}
+
 func bodyToJSONString(body interface{}) (string, error) {
 	b, err := json.Marshal(body)
 	if err != nil {
@@ -191,4 +226,22 @@ func bodyToJSONString(body interface{}) (string, error) {
 	}
 
 	return string(b), nil
+}
+
+func mockRestClientGetFromFile(filename string) error {
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+
+	r := io.NopCloser(bytes.NewReader(data))
+
+	restMock.GetFunction = func(url string) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       r,
+		}, nil
+	}
+
+	return nil
 }

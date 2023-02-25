@@ -1,21 +1,21 @@
-package person
+package storage
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/api/entities"
 	"github.com/JoelD7/money/api/shared/env"
 	"github.com/JoelD7/money/api/shared/utils"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
-	"strings"
 )
 
 var (
 	tableName = env.GetString("USERS_TABLE_NAME", "person")
-	awsRegion = env.GetString("REGION", "us-east-1")
 
 	errNotFound     = errors.New("person not found")
 	ErrExistingUser = errors.New("this account already exists")
@@ -27,22 +27,10 @@ const (
 )
 
 var (
-	Dynamo     *DynamoDB
 	emailIndex = "email-index"
 )
 
-func init() {
-	Dynamo = new(DynamoDB)
-	dynamodbSession, err := session.NewSession(aws.NewConfig().WithRegion(awsRegion))
-	if err != nil {
-		panic(err)
-	}
-
-	svc := dynamodb.New(dynamodbSession)
-	Dynamo.Db = dynamodbiface.DynamoDBAPI(svc)
-}
-
-func CreatePerson(fullName, email, password string) error {
+func CreatePerson(ctx context.Context, fullName, email, password string) error {
 	person := &entities.Person{
 		PersonID:   utils.GenerateDynamoID(personPrefix),
 		FullName:   fullName,
@@ -51,7 +39,7 @@ func CreatePerson(fullName, email, password string) error {
 		Categories: getDefaultCategories(),
 	}
 
-	item, err := dynamodbattribute.MarshalMap(person)
+	item, err := attributevalue.MarshalMap(person)
 	if err != nil {
 		return err
 	}
@@ -62,8 +50,9 @@ func CreatePerson(fullName, email, password string) error {
 		ConditionExpression: aws.String("attribute_not_exists(email)"),
 	}
 
-	_, err = Dynamo.Db.PutItem(input)
-	if err != nil && strings.Contains(err.Error(), dynamodb.ErrCodeConditionalCheckFailedException) {
+	_, err = DefaultClient.PutItem(ctx, input)
+	if err != nil {
+		fmt.Println("storage: ", err)
 		return ErrExistingUser
 	}
 
@@ -74,17 +63,20 @@ func CreatePerson(fullName, email, password string) error {
 	return nil
 }
 
-func GetPerson(personId string) (*entities.Person, error) {
+func GetPerson(ctx context.Context, personId string) (*entities.Person, error) {
+	personKey, err := attributevalue.Marshal(personId)
+	if err != nil {
+		return nil, err
+	}
+
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
-		Key: map[string]*dynamodb.AttributeValue{
-			"person_id": {
-				S: aws.String(personId),
-			},
+		Key: map[string]types.AttributeValue{
+			"person_id": personKey,
 		},
 	}
 
-	result, err := Dynamo.Db.GetItem(input)
+	result, err := DefaultClient.GetItem(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +86,7 @@ func GetPerson(personId string) (*entities.Person, error) {
 	}
 
 	person := new(entities.Person)
-	err = dynamodbattribute.UnmarshalMap(result.Item, person)
+	err = attributevalue.UnmarshalMap(result.Item, person)
 	if err != nil {
 		return nil, err
 	}
@@ -102,19 +94,23 @@ func GetPerson(personId string) (*entities.Person, error) {
 	return person, nil
 }
 
-func GetPersonByEmail(email string) (*entities.Person, error) {
-	input := &dynamodb.QueryInput{
-		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
-			":email": {
-				S: aws.String(email),
-			},
-		},
-		KeyConditionExpression: aws.String("email = :email"),
-		IndexName:              aws.String(emailIndex),
-		TableName:              aws.String(tableName),
+func GetPersonByEmail(ctx context.Context, email string) (*entities.Person, error) {
+	nameEx := expression.Name("email").Equal(expression.Value(email))
+
+	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	if err != nil {
+		return nil, err
 	}
 
-	result, err := Dynamo.Db.Query(input)
+	input := &dynamodb.QueryInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.Condition(),
+		IndexName:                 aws.String(emailIndex),
+		TableName:                 aws.String(tableName),
+	}
+
+	result, err := DefaultClient.Query(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +120,7 @@ func GetPersonByEmail(email string) (*entities.Person, error) {
 	}
 
 	person := new(entities.Person)
-	err = dynamodbattribute.UnmarshalMap(result.Items[0], person)
+	err = attributevalue.UnmarshalMap(result.Items[0], person)
 	if err != nil {
 		return nil, err
 	}
