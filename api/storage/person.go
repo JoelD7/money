@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"time"
 )
 
 var (
@@ -32,11 +33,13 @@ var (
 
 func CreatePerson(ctx context.Context, fullName, email, password string) error {
 	person := &entities.Person{
-		PersonID:   utils.GenerateDynamoID(personPrefix),
-		FullName:   fullName,
-		Email:      email,
-		Password:   password,
-		Categories: getDefaultCategories(),
+		PersonID:    utils.GenerateDynamoID(personPrefix),
+		FullName:    fullName,
+		Email:       email,
+		Password:    password,
+		Categories:  getDefaultCategories(),
+		CreatedDate: time.Now(),
+		UpdatedDate: time.Now(),
 	}
 
 	item, err := attributevalue.MarshalMap(person)
