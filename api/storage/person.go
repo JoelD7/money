@@ -32,6 +32,15 @@ var (
 )
 
 func CreatePerson(ctx context.Context, fullName, email, password string) error {
+	ok, err := personExists(ctx, email)
+	if err != nil && !errors.Is(err, errNotFound) {
+		return err
+	}
+
+	if ok {
+		return ErrExistingUser
+	}
+
 	person := &entities.Person{
 		PersonID:    utils.GenerateDynamoID(personPrefix),
 		FullName:    fullName,
@@ -48,9 +57,8 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 	}
 
 	input := &dynamodb.PutItemInput{
-		Item:                item,
-		TableName:           aws.String(tableName),
-		ConditionExpression: aws.String("attribute_not_exists(email)"),
+		Item:      item,
+		TableName: aws.String(tableName),
 	}
 
 	_, err = DefaultClient.PutItem(ctx, input)
@@ -64,6 +72,15 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 	}
 
 	return nil
+}
+
+func personExists(ctx context.Context, email string) (bool, error) {
+	person, err := GetPersonByEmail(ctx, email)
+	if person != nil {
+		return true, nil
+	}
+
+	return false, err
 }
 
 func GetPerson(ctx context.Context, personId string) (*entities.Person, error) {

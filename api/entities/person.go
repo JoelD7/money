@@ -6,7 +6,7 @@ type Person struct {
 	PersonID    string        `json:"person_id,omitempty" dynamodbav:"person_id"`
 	FullName    string        `json:"full_name,omitempty" dynamodbav:"full_name"`
 	Email       string        `json:"email,omitempty" dynamodbav:"email"`
-	Password    string        `json:"password,omitempty" dynamodbav:"password"`
+	Password    string        `json:"-" dynamodbav:"password"`
 	Categories  []*Category   `json:"categories,omitempty" dynamodbav:"categories"`
 	SavingGoals []*SavingGoal `json:"saving_goals,omitempty" dynamodbav:"saving_goals"`
 	CreatedDate time.Time     `json:"created_date,omitempty" dynamodbav:"created_date"`
@@ -33,8 +33,4 @@ type SavingGoal struct {
 	Name         string    `json:"name,omitempty" dynamodbav:"name"`
 	Goal         float64   `json:"goal,omitempty" dynamodbav:"goal"`
 	Deadline     time.Time `json:"deadline,omitempty" dynamodbav:"deadline"`
-}
-
-func NewPersonFromConfig() {
-
 }

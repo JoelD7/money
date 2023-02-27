@@ -18,10 +18,6 @@ import (
 	"testing"
 )
 
-func init() {
-	mocks.InitDynamoMock()
-}
-
 func TestLoginHandler(t *testing.T) {
 	c := require.New(t)
 
@@ -122,6 +118,10 @@ func TestSignUpHandler(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
+	dynamoMock := mocks.InitDynamoMock()
+
+	dynamoMock.QueryOutput.Items = nil
+
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
@@ -139,7 +139,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
-	mocks.ForceUserExists = true
+	_ = mocks.InitDynamoMock()
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -149,7 +149,6 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	response, err := signUpHandler(request)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(storage.ErrExistingUser.Error(), response.Body)
-	mocks.ForceUserExists = false
 
 	type testCase struct {
 		description string
