@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/JoelD7/money/api/shared/router"
-	"github.com/JoelD7/money/api/storage"
+	"github.com/JoelD7/money/backend/shared/router"
+	"github.com/JoelD7/money/backend/storage"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"log"

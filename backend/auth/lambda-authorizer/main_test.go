@@ -3,9 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
-	"github.com/JoelD7/money/api/shared/restclient"
-	restMock "github.com/JoelD7/money/api/shared/restclient/mocks"
-	secretsMock "github.com/JoelD7/money/api/shared/secrets/mocks"
+	"github.com/JoelD7/money/backend/shared/restclient"
+	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
+	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/aws/aws-sdk-go/aws"

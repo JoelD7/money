@@ -2,7 +2,7 @@ package storage
 
 import (
 	"context"
-	"github.com/JoelD7/money/api/shared/env"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )

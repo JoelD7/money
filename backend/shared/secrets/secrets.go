@@ -3,7 +3,7 @@ package secrets
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/api/shared/env"
+	"github.com/JoelD7/money/backend/shared/env"
 	"log"
 	"strings"
 

@@ -3,7 +3,7 @@ package mocks
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/api/shared/secrets"
+	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 

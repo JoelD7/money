@@ -2,4 +2,4 @@
 *.bkp
 .DS_Store
 vendor
-api/draft
+backend/api/draft
