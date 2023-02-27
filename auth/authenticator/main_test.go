@@ -26,6 +26,8 @@ func TestLoginHandler(t *testing.T) {
 		Password: "1234",
 	}
 
+	_ = mocks.InitDynamoMock()
+
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
@@ -41,13 +43,15 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	body := Credentials{
 		Email:    "test@gmail.com",
-		Password: "random",
+		Password: "1234",
 	}
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+
+	_ = mocks.InitDynamoMock()
 
 	mocks.ForceNotFound = true
 
@@ -150,6 +154,12 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(storage.ErrExistingUser.Error(), response.Body)
 
+	request = &events.APIGatewayProxyRequest{Body: "}"}
+
+	response, err = signUpHandler(request)
+	c.Equal(http.StatusInternalServerError, response.StatusCode)
+	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
+
 	type testCase struct {
 		description string
 		expectedErr string
@@ -183,7 +193,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 
 			request.Body = jsonBody
 
-			response, err = logInHandler(request)
+			response, err = signUpHandler(request)
 			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
 			c.Equal(tc.expectedErr, response.Body)
