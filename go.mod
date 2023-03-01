@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.18.5
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.18.3
 	github.com/gbrlsnchs/jwt/v3 v3.0.1
+	github.com/rs/zerolog v1.29.0
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.6.0
 )
@@ -33,7 +34,10 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/magefile/mage v1.9.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

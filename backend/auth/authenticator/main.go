@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
+	"github.com/rs/zerolog"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
@@ -143,6 +144,15 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 	if err != nil {
 		return serverError(err)
 	}
+
+	logFile, err := os.OpenFile("../../backend/elk/logs/go.log", os.O_RDONLY|os.O_CREATE, 0666)
+	if err != nil {
+		return serverError(err)
+	}
+
+	logger := zerolog.New(logFile).With().Timestamp().Logger()
+	logger.Info().Msg("hello world")
+	logger.Info().Str("token", token)
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
