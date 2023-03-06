@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"math/rand"
 	"time"
 )
@@ -16,4 +17,13 @@ func GenerateDynamoID(prefix string) string {
 	}
 
 	return prefix + string(b)
+}
+
+func GetJsonString(object interface{}) (string, error) {
+	data, err := json.Marshal(object)
+	if err != nil {
+		return "", err
+	}
+
+	return string(data), nil
 }

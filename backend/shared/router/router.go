@@ -3,6 +3,7 @@ package router
 import (
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/utils"
 	"log"
 	"net/http"
 	"os"
@@ -40,6 +41,13 @@ func NewRouter() *Router {
 }
 
 func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	jsonStr, err := utils.GetJsonString(request)
+	if err != nil {
+		fmt.Println("err unmarshalling request event")
+		return nil, err
+	}
+
+	fmt.Println("event: ", jsonStr)
 	if !router.isRoot() {
 		errorLogger.Println(errRouterIsNotRoot.Error())
 

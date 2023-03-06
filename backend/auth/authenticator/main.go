@@ -20,7 +20,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
-	"github.com/rs/zerolog"
 	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
@@ -145,14 +144,18 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		return serverError(err)
 	}
 
-	logFile, err := os.OpenFile("../../backend/elk/logs/go.log", os.O_RDONLY|os.O_CREATE, 0666)
-	if err != nil {
-		return serverError(err)
+	logData := struct {
+		token string
+	}{
+		token,
 	}
 
-	logger := zerolog.New(logFile).With().Timestamp().Logger()
-	logger.Info().Msg("hello world")
-	logger.Info().Str("token", token)
+	tokenJson, err := json.Marshal(&logData)
+	if err != nil {
+		//fmt.Println("Error: ", tokenJson)
+		return serverError(err)
+	}
+	fmt.Println("Logger in Kibana: ", tokenJson)
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
