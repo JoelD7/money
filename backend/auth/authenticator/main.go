@@ -155,7 +155,7 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		//fmt.Println("Error: ", tokenJson)
 		return serverError(err)
 	}
-	fmt.Println("Logger in Kibana: ", tokenJson)
+	fmt.Println("money_app_log: ", string(tokenJson))
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
