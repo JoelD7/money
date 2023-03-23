@@ -145,7 +145,7 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 	}
 
 	logData := struct {
-		token string
+		Token string
 	}{
 		token,
 	}
@@ -155,7 +155,7 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		//fmt.Println("Error: ", tokenJson)
 		return serverError(err)
 	}
-	fmt.Println("money_app_log: ", string(tokenJson))
+	fmt.Println("money_app_log:", string(tokenJson))
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
@@ -227,7 +227,7 @@ func generateJWT(email string) (string, error) {
 	//decryptingHash := jwt.NewRS256(jwt.RSAPublicKey(pub))
 	//receivedPayload := &jwt.Payload{}
 	//
-	//hd, err := jwt.Verify(token, decryptingHash, receivedPayload)
+	//hd, err := jwt.Verify(Token, decryptingHash, receivedPayload)
 	//if err != nil {
 	//	return "", err
 	//}
