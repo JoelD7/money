@@ -1,10 +1,10 @@
 package logger
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/utils"
 	"net"
 )
 
@@ -18,47 +18,79 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-209-181-211.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-34-207-115-48.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 )
+
+type Object interface {
+	LogName() string
+	LogProperties() map[string]interface{}
+}
 
 type Logger struct {
 	Service string `json:"service,omitempty"`
 }
 
-type eventLog struct {
-	Source string `json:"source,omitempty"`
+type LogData struct {
+	Service   string                            `json:"service,omitempty"`
+	Level     string                            `json:"level,omitempty"`
+	Error     string                            `json:"error,omitempty"`
+	Event     string                            `json:"event,omitempty"`
+	LogObject map[string]map[string]interface{} `json:"properties,omitempty"`
 }
 
-func (l *Logger) Info() {
-	l.logData(infoLevel)
+func NewLogger(serviceName string) *Logger {
+	return &Logger{serviceName}
 }
 
-func (l *Logger) logData(level logLevel) {
+func (l *Logger) Info(eventName string, objects []Object) {
+	l.sendLog(infoLevel, eventName, nil, objects)
+}
+
+func (l *Logger) Warning(eventName string, objects []Object) {
+	l.sendLog(warningLevel, eventName, nil, objects)
+}
+
+func (l *Logger) Error(eventName string, err error, objects []Object) {
+	l.sendLog(errLevel, eventName, err, objects)
+}
+
+func (l *Logger) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
 	connection, err := net.Dial(logstashServerType, logstashHost+":"+logstashPort)
 	if err != nil {
 		panic(fmt.Errorf("error connecting to Logstash server: %w", err))
 	}
 
-	tk := &tokenEvent{}
-	err = json.Unmarshal([]byte(cleanedMessage), tk)
-	if err != nil {
-		fmt.Println(err)
+	logData := &LogData{
+		Service:   l.Service,
+		Event:     eventName,
+		Level:     string(level),
+		LogObject: getLogObjects(objects),
 	}
 
-	lEvent := &logstashEvent{
-		Message: *tk,
+	if errToLog != nil {
+		logData.Error = errToLog.Error()
 	}
 
-	str, err := utils.GetJsonString(lEvent)
+	dataAsBytes := new(bytes.Buffer)
+
+	err = json.NewEncoder(dataAsBytes).Encode(logData)
 	if err != nil {
-		fmt.Println(err)
-		return err
+		panic(fmt.Errorf("logger: error encoding log data: %w", err))
 	}
 
-	///send some data
-	_, err = connection.Write([]byte(str + "\n"))
+	_, err = connection.Write(dataAsBytes.Bytes())
 	if err != nil {
-		fmt.Println("error writing logs")
+		panic(fmt.Errorf("logger: error writing data to logstash: %w", err))
 	}
+}
+
+func getLogObjects(objects []Object) map[string]map[string]interface{} {
+	lObjects := make(map[string]map[string]interface{})
+
+	for _, object := range objects {
+		lObjects[object.LogName()] = object.LogProperties()
+	}
+
+	return lObjects
 }

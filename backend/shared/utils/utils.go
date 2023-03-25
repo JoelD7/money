@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// GenerateDynamoID generates a hex-based random unique ID with the given prefix
 func GenerateDynamoID(prefix string) string {
 	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
@@ -19,6 +20,7 @@ func GenerateDynamoID(prefix string) string {
 	return prefix + string(b)
 }
 
+// GetJsonString returns the json string representation of a given object
 func GetJsonString(object interface{}) (string, error) {
 	data, err := json.Marshal(object)
 	if err != nil {
