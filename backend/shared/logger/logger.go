@@ -39,8 +39,8 @@ type LogData struct {
 	LogObject map[string]map[string]interface{} `json:"properties,omitempty"`
 }
 
-func NewLogger(serviceName string) *Logger {
-	return &Logger{serviceName}
+func NewLogger() *Logger {
+	return &Logger{env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown")}
 }
 
 func (l *Logger) Info(eventName string, objects []Object) {

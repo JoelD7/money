@@ -39,7 +39,7 @@ func TestInfo(t *testing.T) {
 		DayOfBirth: &dayOfBirth,
 	}
 
-	logger := NewLogger("test-lambda")
+	logger := NewLogger()
 
 	logger.Info("test_event_emitted", []Object{person})
 

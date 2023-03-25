@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/aws/aws-lambda-go/events"
@@ -86,15 +87,27 @@ type jwk struct {
 	E   string `json:"e"`
 }
 
+type request struct {
+	log *logger.Logger
+}
+
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+	req := &request{
+		log: logger.NewLogger(),
+	}
+
+	return req.process(ctx, event)
+}
+
+func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
-	payload, err := getTokenPayload(token)
+	payload, err := req.getTokenPayload(token)
 	if err != nil {
 		return events.APIGatewayCustomAuthorizerResponse{}, errUnauthorized
 	}
 
-	err = verifyToken(payload, token)
+	err = req.verifyToken(payload, token)
 	if err != nil {
 		return defaultDenyAllPolicy(event.MethodArn), err
 	}
@@ -114,24 +127,27 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }
 
-func getTokenPayload(token string) (*jwtPayload, error) {
+func (req *request) getTokenPayload(token string) (*jwtPayload, error) {
 	var payload *jwtPayload
 
 	tokenParts := strings.Split(token, ".")
 	if len(tokenParts) < 3 {
-		errorLogger.Println(errInvalidToken)
+		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
+
 		return nil, errInvalidToken
 	}
 
 	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
 	if err != nil {
-		errorLogger.Println(err)
+		req.log.Error("payload_decoding_failed", err, []logger.Object{})
+
 		return nil, err
 	}
 
 	err = json.Unmarshal(payloadPart, &payload)
 	if err != nil {
-		errorLogger.Println(err)
+		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
+
 		return nil, err
 	}
 
@@ -152,7 +168,7 @@ func defaultDenyAllPolicy(methodArn string) events.APIGatewayCustomAuthorizerRes
 	return resp.APIGatewayCustomAuthorizerResponse
 }
 
-func verifyToken(payload *jwtPayload, token string) error {
+func (req *request) verifyToken(payload *jwtPayload, token string) error {
 	response, err := restclient.Get(payload.Issuer + "/auth/jwks")
 	if err != nil {
 		return err
@@ -161,7 +177,8 @@ func verifyToken(payload *jwtPayload, token string) error {
 	defer func() {
 		closeErr := response.Body.Close()
 		if closeErr != nil {
-			errorLogger.Println(closeErr)
+			req.log.Error("closing_response_body_failed", closeErr, []logger.Object{})
+
 			err = closeErr
 		}
 	}()
@@ -169,25 +186,27 @@ func verifyToken(payload *jwtPayload, token string) error {
 	jwksVal := new(jwks)
 	err = json.NewDecoder(response.Body).Decode(jwksVal)
 	if err != nil {
-		errorLogger.Println(err)
+		req.log.Error("decoding_response_body_failed", err, []logger.Object{})
+
 		return err
 	}
 
-	publicKey, err := getPublicKey(jwksVal)
+	publicKey, err := req.getPublicKey(jwksVal)
 	if err != nil {
-		errorLogger.Println(err)
+		req.log.Error("getting_public_key_failed", err, []logger.Object{})
+
 		return err
 	}
 
 	decryptingHash := jwt.NewRS256(jwt.RSAPublicKey(publicKey))
 	receivedPayload := &jwt.Payload{}
 
-	err = validateJWTPayload(token, receivedPayload, decryptingHash)
+	err = req.validateJWTPayload(token, receivedPayload, decryptingHash)
 
 	return err
 }
 
-func validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.RSASHA) error {
+func (req *request) validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.RSASHA) error {
 	//now := time.Now()
 
 	//nbfValidator := jwt.NotBeforeValidator(now)
@@ -199,15 +218,16 @@ func validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.
 
 	_, err := jwt.Verify([]byte(token), decryptingHash, payload, validatePayload)
 	if err != nil {
-		errorLogger.Println(err)
+		req.log.Error("jwt_verification_failed", err, []logger.Object{})
+
 		return err
 	}
 
 	return nil
 }
 
-func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
-	kid, err := getKidFromSecret()
+func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
+	kid, err := req.getKidFromSecret()
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +241,8 @@ func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 	}
 
 	if signingKey == nil {
-		errorLogger.Println(errSigningKeyNotFound)
+		req.log.Error("signing_key_not_found", errSigningKeyNotFound, []logger.Object{})
+
 		return nil, errSigningKeyNotFound
 	}
 
@@ -249,7 +270,7 @@ func getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 	}, nil
 }
 
-func getKidFromSecret() (string, error) {
+func (req *request) getKidFromSecret() (string, error) {
 	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
 	if err != nil {
 		errorLogger.Println(err)
