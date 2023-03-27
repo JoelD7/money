@@ -42,5 +42,4 @@ func TestInfo(t *testing.T) {
 	logger := NewLogger()
 
 	logger.Info("test_event_emitted", []Object{person})
-
 }

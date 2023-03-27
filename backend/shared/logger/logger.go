@@ -18,7 +18,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-34-207-115-48.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-167-109-195.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 )
 
@@ -47,8 +47,8 @@ func (l *Logger) Info(eventName string, objects []Object) {
 	l.sendLog(infoLevel, eventName, nil, objects)
 }
 
-func (l *Logger) Warning(eventName string, objects []Object) {
-	l.sendLog(warningLevel, eventName, nil, objects)
+func (l *Logger) Warning(eventName string, err error, objects []Object) {
+	l.sendLog(warningLevel, eventName, err, objects)
 }
 
 func (l *Logger) Error(eventName string, err error, objects []Object) {

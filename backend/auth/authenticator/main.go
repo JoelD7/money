@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/storage"
@@ -21,22 +22,17 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"time"
 )
 
 var (
-	errMissingEmail      = errors.New("missing email")
-	errMissingPassword   = errors.New("missing password")
-	errWrongCredentials  = errors.New("the email or password are incorrect")
-	errInvalidEmail      = errors.New("email is invalid")
-	errGettingKeysForJWT = errors.New("error getting keys for JWT")
-
-	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
+	errMissingEmail     = errors.New("missing email")
+	errMissingPassword  = errors.New("missing password")
+	errWrongCredentials = errors.New("the email or password are incorrect")
+	errInvalidEmail     = errors.New("email is invalid")
 )
 
 var (
@@ -80,33 +76,55 @@ type jwtPayload struct {
 	*jwt.Payload
 }
 
+type requestHandler struct {
+	log *logger.Logger
+}
+
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	req := &requestHandler{
+		log: logger.NewLogger(),
+	}
+
+	return req.processSignUp(request)
+}
+
+func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	ctx := context.Background()
 
 	reqBody := &signUpBody{}
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
-		return serverError(err)
+		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
+
+		return req.serverError()
 	}
 
-	err = validateCredentials(reqBody.Credentials)
+	err = req.validateCredentials(reqBody.Credentials)
 	if err != nil {
-		return clientError(err)
+		req.log.Error("credentials_validation_failed", err, []logger.Object{})
+
+		return req.clientError(err)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), passwordCost)
 	if err != nil {
-		return serverError(err)
+		req.log.Error("password_hashing_failed", err, []logger.Object{})
+
+		return req.serverError()
 	}
 
 	err = storage.CreatePerson(ctx, reqBody.FullName, reqBody.Email, string(hashedPassword))
 	if err != nil && errors.Is(err, storage.ErrExistingUser) {
-		return clientError(err)
+		req.log.Warning("user_creation_failed", err, []logger.Object{})
+
+		return req.clientError(err)
 	}
 
 	if err != nil {
-		return serverError(err)
+		req.log.Error("sign_up_process_failed", err, []logger.Object{})
+
+		return req.serverError()
 	}
 
 	return &events.APIGatewayProxyResponse{
@@ -115,47 +133,50 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 }
 
 func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	req := &requestHandler{
+		log: logger.NewLogger(),
+	}
+
+	return req.processLogin(request)
+}
+
+func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	ctx := context.Background()
 
 	reqBody := &Credentials{}
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
-		return serverError(err)
+		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
+
+		return req.serverError()
 	}
 
-	err = validateCredentials(reqBody)
+	err = req.validateCredentials(reqBody)
 	if err != nil {
-		return clientError(err)
+		req.log.Error("credentials_validation_failed", err, []logger.Object{})
+
+		return req.clientError(err)
 	}
 
 	person, err := storage.GetPersonByEmail(ctx, reqBody.Email)
 	if err != nil {
-		return clientError(err)
+		req.log.Error("user_fetching_failed", err, []logger.Object{})
+
+		return req.clientError(err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(person.Password), []byte(reqBody.Password))
 	if err != nil {
-		return clientError(errWrongCredentials)
+		req.log.Error("password_mismatch", err, []logger.Object{})
+
+		return req.clientError(errWrongCredentials)
 	}
 
-	token, err := generateJWT(person.Email)
+	token, err := req.generateJWT(person.Email)
 	if err != nil {
-		return serverError(err)
+		return req.serverError()
 	}
-
-	logData := struct {
-		Token string
-	}{
-		token,
-	}
-
-	tokenJson, err := json.Marshal(&logData)
-	if err != nil {
-		//fmt.Println("Error: ", tokenJson)
-		return serverError(err)
-	}
-	fmt.Println("money_app_log:", string(tokenJson))
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
@@ -163,15 +184,27 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 	}, nil
 }
 
-func jwksHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	publicKey, err := getPublicKey()
-	if err != nil {
-		return serverError(err)
+func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	req := &requestHandler{
+		log: logger.NewLogger(),
 	}
 
-	kid, err := getKidFromSecret()
+	return req.processJWKS()
+}
+
+func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error) {
+	publicKey, err := req.getPublicKey()
 	if err != nil {
-		return serverError(err)
+		req.log.Error("public_key_fetching_failed", err, []logger.Object{})
+
+		return req.serverError()
+	}
+
+	kid, err := req.getKidFromSecret()
+	if err != nil {
+		req.log.Error("kid_fetching_failed", err, []logger.Object{})
+
+		return req.serverError()
 	}
 
 	response := jwks{
@@ -188,7 +221,9 @@ func jwksHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProx
 
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
-		return serverError(err)
+		req.log.Error("jwks_response_marshall_failed", err, []logger.Object{})
+
+		return req.serverError()
 	}
 
 	return &events.APIGatewayProxyResponse{
@@ -197,11 +232,13 @@ func jwksHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProx
 	}, nil
 }
 
-func generateJWT(email string) (string, error) {
+func (req *requestHandler) generateJWT(email string) (string, error) {
 	now := time.Now()
 
-	priv, err := getPrivateKey()
+	priv, err := req.getPrivateKey()
 	if err != nil {
+		req.log.Error("private_key_fetching_failed", err, []logger.Object{})
+
 		return "", err
 	}
 
@@ -221,6 +258,8 @@ func generateJWT(email string) (string, error) {
 
 	token, err := jwt.Sign(payload, signingHash)
 	if err != nil {
+		req.log.Error("jwt_signing_failed", err, []logger.Object{})
+
 		return "", err
 	}
 
@@ -237,7 +276,7 @@ func generateJWT(email string) (string, error) {
 	return string(token), nil
 }
 
-func getPrivateKey() (*rsa.PrivateKey, error) {
+func (req *requestHandler) getPrivateKey() (*rsa.PrivateKey, error) {
 	privateSecret, err := secrets.GetSecret(context.Background(), privateSecretName)
 	if err != nil {
 		return nil, err
@@ -256,7 +295,7 @@ func getPrivateKey() (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func getPublicKey() (*rsa.PublicKey, error) {
+func (req *requestHandler) getPublicKey() (*rsa.PublicKey, error) {
 	publicSecret, err := secrets.GetSecret(context.Background(), publicSecretName)
 	if err != nil {
 		return nil, err
@@ -278,7 +317,7 @@ func getPublicKey() (*rsa.PublicKey, error) {
 // The kid of the JWK that contains the public key.
 // Is stored in a secret so that the lambda-authorizer can have access to it to verify that the key received is the
 // right one.
-func getKidFromSecret() (string, error) {
+func (req *requestHandler) getKidFromSecret() (string, error) {
 	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
 	if err != nil {
 		return "", err
@@ -288,25 +327,21 @@ func getKidFromSecret() (string, error) {
 
 }
 
-func serverError(err error) (*events.APIGatewayProxyResponse, error) {
-	errorLogger.Println(err.Error())
-
+func (req *requestHandler) serverError() (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusInternalServerError,
 		Body:       http.StatusText(http.StatusInternalServerError),
 	}, nil
 }
 
-func clientError(err error) (*events.APIGatewayProxyResponse, error) {
-	errorLogger.Println(err.Error())
-
+func (req *requestHandler) clientError(err error) (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusBadRequest,
 		Body:       err.Error(),
 	}, nil
 }
 
-func validateCredentials(login *Credentials) error {
+func (req *requestHandler) validateCredentials(login *Credentials) error {
 	regex := regexp.MustCompile(emailRegex)
 
 	if login.Email == "" {
