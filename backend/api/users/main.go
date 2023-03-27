@@ -3,41 +3,49 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/storage"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"log"
 	"net/http"
-	"os"
 )
 
 type userRequest struct {
-	*events.APIGatewayProxyRequest
-	err error
+	log *logger.Logger
 }
 
-var (
-	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
-)
-
 func handler(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	request := &userRequest{
+		log: logger.NewLogger(),
+	}
+
+	return request.process(req)
+}
+
+func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	ctx := context.Background()
 
 	userID := req.QueryStringParameters["user_id"]
 
 	user, err := storage.GetPersonByEmail(ctx, userID)
 	if err != nil {
-		return serverError(err)
+		request.log.Error("user_fetching_failed", err, []logger.Object{})
+
+		return serverError()
 	}
 
 	if user == nil {
+		request.log.Error("user_not_found", err, []logger.Object{})
+
 		return clientError(http.StatusNotFound)
 	}
 
 	personJson, err := json.Marshal(user)
 	if err != nil {
-		return serverError(err)
+		request.log.Error("user_response_marshal_failed", err, []logger.Object{})
+
+		return serverError()
 	}
 
 	return &events.APIGatewayProxyResponse{
@@ -46,9 +54,7 @@ func handler(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyRespons
 	}, nil
 }
 
-func serverError(err error) (*events.APIGatewayProxyResponse, error) {
-	errorLogger.Println(err.Error())
-
+func serverError() (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusInternalServerError,
 		Body:       http.StatusText(http.StatusInternalServerError),
