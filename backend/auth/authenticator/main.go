@@ -15,6 +15,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/JoelD7/money/backend/storage"
 	"math/big"
 
@@ -36,12 +37,14 @@ var (
 )
 
 var (
-	jwtAudience       = env.GetString("AUDIENCE", "https://localhost:3000")
-	jwtIssuer         = env.GetString("ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
-	jwtScope          = env.GetString("SCOPE", "read write")
-	privateSecretName = env.GetString("PRIVATE_SECRET", "staging/money/rsa/private")
-	publicSecretName  = env.GetString("PUBLIC_SECRET", "staging/money/rsa/public")
-	kidSecretName     = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+	jwtAudience          = env.GetString("TOKEN_AUDIENCE", "https://localhost:3000")
+	jwtIssuer            = env.GetString("TOKEN_ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
+	jwtScope             = env.GetString("TOKEN_SCOPE", "read write")
+	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "staging/money/rsa/private")
+	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "staging/money/rsa/public")
+	kidSecretName        = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
+	refreshTokenduration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
 )
 
 const (
@@ -57,6 +60,10 @@ type signUpBody struct {
 type Credentials struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type loginResponse struct {
+	AccessToken string `json:"access_token"`
 }
 
 type jwks struct {
@@ -78,6 +85,16 @@ type jwtPayload struct {
 
 type requestHandler struct {
 	log *logger.Logger
+}
+
+func (c *Credentials) LogName() string {
+	return "user_data"
+}
+
+func (c *Credentials) LogProperties() map[string]interface{} {
+	return map[string]interface{}{
+		"email": c.Email,
+	}
 }
 
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -168,20 +185,63 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	err = bcrypt.CompareHashAndPassword([]byte(person.Password), []byte(reqBody.Password))
 	if err != nil {
-		req.log.Error("password_mismatch", err, []logger.Object{})
+		req.log.Error("password_mismatch", err, []logger.Object{reqBody})
 
 		return req.clientError(errWrongCredentials)
 	}
 
-	token, err := req.generateJWT(person.Email)
+	accessToken, refreshToken, err := req.getTokens(person.Email)
 	if err != nil {
+		req.log.Error("get_tokens_failed", err, []logger.Object{reqBody})
+
 		return req.serverError()
+	}
+
+	responseBody, err := utils.GetJsonString(&loginResponse{accessToken})
+	if err != nil {
+		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
+
+		return req.serverError()
+	}
+
+	headers := map[string]string{
+		"Set-Cookie": fmt.Sprintf("refresh_token=%s; Secure; HttpOnly", refreshToken),
 	}
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       token,
+		Body:       responseBody,
+		Headers:    headers,
 	}, nil
+}
+
+func (req *requestHandler) getTokens(subject string) (string, string, error) {
+	now := time.Now()
+
+	accessTokenPayload := &jwt.Payload{
+		Issuer:         jwtIssuer,
+		Subject:        subject,
+		Audience:       jwt.Audience{jwtAudience},
+		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second)),
+		IssuedAt:       jwt.NumericDate(now),
+	}
+
+	accessToken, err := req.generateJWT(accessTokenPayload)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshTokenPayload := &jwt.Payload{
+		Subject:        subject,
+		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(refreshTokenduration) * time.Second)),
+	}
+
+	refreshToken, err := req.generateJWT(refreshTokenPayload)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -232,9 +292,7 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 	}, nil
 }
 
-func (req *requestHandler) generateJWT(email string) (string, error) {
-	now := time.Now()
-
+func (req *requestHandler) generateJWT(payload *jwt.Payload) (string, error) {
 	priv, err := req.getPrivateKey()
 	if err != nil {
 		req.log.Error("private_key_fetching_failed", err, []logger.Object{})
@@ -244,19 +302,12 @@ func (req *requestHandler) generateJWT(email string) (string, error) {
 
 	var signingHash = jwt.NewRS256(jwt.RSAPrivateKey(priv))
 
-	payload := jwtPayload{
-		Scope: jwtScope,
-		Payload: &jwt.Payload{
-			Issuer:   jwtIssuer,
-			Subject:  email,
-			Audience: jwt.Audience{jwtAudience},
-			//ExpirationTime: jwt.NumericDate(now.Add(24 * 30 * 12 * time.Hour)),
-			//NotBefore:      jwt.NumericDate(now.Add(30 * time.Minute)),
-			IssuedAt: jwt.NumericDate(now),
-		},
+	p := jwtPayload{
+		Scope:   jwtScope,
+		Payload: payload,
 	}
 
-	token, err := jwt.Sign(payload, signingHash)
+	token, err := jwt.Sign(p, signingHash)
 	if err != nil {
 		req.log.Error("jwt_signing_failed", err, []logger.Object{})
 
