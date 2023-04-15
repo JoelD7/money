@@ -3,14 +3,16 @@ package entities
 import "time"
 
 type Person struct {
-	PersonID    string        `json:"person_id,omitempty" dynamodbav:"person_id"`
-	FullName    string        `json:"full_name,omitempty" dynamodbav:"full_name"`
-	Email       string        `json:"email,omitempty" dynamodbav:"email"`
-	Password    string        `json:"-" dynamodbav:"password"`
-	Categories  []*Category   `json:"categories,omitempty" dynamodbav:"categories"`
-	SavingGoals []*SavingGoal `json:"saving_goals,omitempty" dynamodbav:"saving_goals"`
-	CreatedDate time.Time     `json:"created_date,omitempty" dynamodbav:"created_date"`
-	UpdatedDate time.Time     `json:"updated_date,omitempty" dynamodbav:"update_date"`
+	PersonID             string        `json:"person_id,omitempty" dynamodbav:"person_id"`
+	FullName             string        `json:"full_name,omitempty" dynamodbav:"full_name"`
+	Email                string        `json:"email,omitempty" dynamodbav:"email"`
+	Password             string        `json:"-" dynamodbav:"password"`
+	Categories           []*Category   `json:"categories,omitempty" dynamodbav:"categories"`
+	SavingGoals          []*SavingGoal `json:"saving_goals,omitempty" dynamodbav:"saving_goals"`
+	CreatedDate          time.Time     `json:"created_date,omitempty" dynamodbav:"created_date"`
+	UpdatedDate          time.Time     `json:"updated_date,omitempty" dynamodbav:"update_date"`
+	PreviousRefreshToken string        `json:"previous_refresh_token,omitempty"`
+	RefreshToken         string        `json:"refresh_token,omitempty"`
 }
 
 type Category struct {

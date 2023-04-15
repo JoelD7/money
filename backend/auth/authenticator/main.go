@@ -11,6 +11,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/entities"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
@@ -37,9 +38,9 @@ var (
 )
 
 var (
-	jwtAudience          = env.GetString("TOKEN_AUDIENCE", "https://localhost:3000")
-	jwtIssuer            = env.GetString("TOKEN_ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
-	jwtScope             = env.GetString("TOKEN_SCOPE", "read write")
+	accessTokenAudience  = env.GetString("TOKEN_AUDIENCE", "https://localhost:3000")
+	accessTokenIssuer    = env.GetString("TOKEN_ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
+	accessTokenScope     = env.GetString("TOKEN_SCOPE", "read write")
 	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "staging/money/rsa/private")
 	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "staging/money/rsa/public")
 	kidSecretName        = env.GetString("KID_SECRET", "staging/money/rsa/kid")
@@ -79,12 +80,14 @@ type jwk struct {
 }
 
 type jwtPayload struct {
-	Scope string `json:"scope"`
+	Scope string `json:"scope,omitempty"`
 	*jwt.Payload
 }
 
 type requestHandler struct {
-	log *logger.Logger
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	log          *logger.Logger
 }
 
 func (c *Credentials) LogName() string {
@@ -190,14 +193,14 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 		return req.clientError(errWrongCredentials)
 	}
 
-	accessToken, refreshToken, err := req.getTokens(person.Email)
+	err = req.setTokens(ctx, person)
 	if err != nil {
-		req.log.Error("get_tokens_failed", err, []logger.Object{reqBody})
+		req.log.Error("token_setting_failed", err, []logger.Object{reqBody})
 
 		return req.serverError()
 	}
 
-	responseBody, err := utils.GetJsonString(&loginResponse{accessToken})
+	responseBody, err := utils.GetJsonString(&loginResponse{req.AccessToken})
 	if err != nil {
 		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
 
@@ -205,7 +208,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	}
 
 	headers := map[string]string{
-		"Set-Cookie": fmt.Sprintf("refresh_token=%s; Secure; HttpOnly", refreshToken),
+		"Set-Cookie": fmt.Sprintf("refresh_token=%s; Secure; HttpOnly", req.RefreshToken),
 	}
 
 	return &events.APIGatewayProxyResponse{
@@ -215,33 +218,41 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	}, nil
 }
 
-func (req *requestHandler) getTokens(subject string) (string, string, error) {
+func (req *requestHandler) setTokens(ctx context.Context, person *entities.Person) error {
 	now := time.Now()
 
 	accessTokenPayload := &jwt.Payload{
-		Issuer:         jwtIssuer,
-		Subject:        subject,
-		Audience:       jwt.Audience{jwtAudience},
+		Issuer:         accessTokenIssuer,
+		Subject:        person.Email,
+		Audience:       jwt.Audience{accessTokenAudience},
 		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second)),
 		IssuedAt:       jwt.NumericDate(now),
 	}
 
-	accessToken, err := req.generateJWT(accessTokenPayload)
+	accessToken, err := req.generateJWT(accessTokenPayload, accessTokenScope)
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	refreshTokenPayload := &jwt.Payload{
-		Subject:        subject,
+		Subject:        person.Email,
 		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(refreshTokenduration) * time.Second)),
 	}
 
-	refreshToken, err := req.generateJWT(refreshTokenPayload)
+	refreshToken, err := req.generateJWT(refreshTokenPayload, "")
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
-	return accessToken, refreshToken, nil
+	req.AccessToken = accessToken
+	req.RefreshToken = refreshToken
+
+	person.PreviousRefreshToken = person.RefreshToken
+	person.RefreshToken = req.RefreshToken
+
+	err = storage.UpdatePerson(ctx, person)
+
+	return err
 }
 
 func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -292,7 +303,7 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 	}, nil
 }
 
-func (req *requestHandler) generateJWT(payload *jwt.Payload) (string, error) {
+func (req *requestHandler) generateJWT(payload *jwt.Payload, scope string) (string, error) {
 	priv, err := req.getPrivateKey()
 	if err != nil {
 		req.log.Error("private_key_fetching_failed", err, []logger.Object{})
@@ -303,7 +314,7 @@ func (req *requestHandler) generateJWT(payload *jwt.Payload) (string, error) {
 	var signingHash = jwt.NewRS256(jwt.RSAPrivateKey(priv))
 
 	p := jwtPayload{
-		Scope:   jwtScope,
+		Scope:   scope,
 		Payload: payload,
 	}
 

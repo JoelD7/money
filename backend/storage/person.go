@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/backend/entities"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
@@ -63,7 +62,6 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 
 	_, err = DefaultClient.PutItem(ctx, input)
 	if err != nil {
-		fmt.Println("storage: ", err)
 		return ErrExistingUser
 	}
 
@@ -146,6 +144,28 @@ func GetPersonByEmail(ctx context.Context, email string) (*entities.Person, erro
 	}
 
 	return person, nil
+}
+
+func UpdatePerson(ctx context.Context, person *entities.Person) error {
+	updatedItem, err := attributevalue.MarshalMap(person)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]types.AttributeValue{
+			"person_id": &types.AttributeValueMemberS{Value: person.PersonID},
+		},
+		TableName: aws.String(tableName),
+		ExpressionAttributeNames: map[string]string{
+			"#checks_settings": "checks_settings",
+		},
+		ExpressionAttributeValues: updatedItem,
+		UpdateExpression:          aws.String("SET #person = :person"),
+	}
+
+	_, err = DefaultClient.UpdateItem(ctx, input)
+	return err
 }
 
 func getDefaultCategories() []*entities.Category {
