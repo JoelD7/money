@@ -152,19 +152,12 @@ func UpdatePerson(ctx context.Context, person *entities.Person) error {
 		return err
 	}
 
-	input := &dynamodb.UpdateItemInput{
-		Key: map[string]types.AttributeValue{
-			"person_id": &types.AttributeValueMemberS{Value: person.PersonID},
-		},
+	input := &dynamodb.PutItemInput{
+		Item:      updatedItem,
 		TableName: aws.String(tableName),
-		ExpressionAttributeNames: map[string]string{
-			"#checks_settings": "checks_settings",
-		},
-		ExpressionAttributeValues: updatedItem,
-		UpdateExpression:          aws.String("SET #person = :person"),
 	}
 
-	_, err = DefaultClient.UpdateItem(ctx, input)
+	_, err = DefaultClient.PutItem(ctx, input)
 	return err
 }
 
