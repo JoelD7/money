@@ -250,9 +250,7 @@ func (req *requestHandler) setTokens(ctx context.Context, person *entities.Perso
 	person.PreviousRefreshToken = person.RefreshToken
 	person.RefreshToken = req.RefreshToken
 
-	err = storage.UpdatePerson(ctx, person)
-
-	return err
+	return storage.UpdatePerson(ctx, person)
 }
 
 func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {

@@ -35,7 +35,9 @@ func TestLoginHandler(t *testing.T) {
 
 	response, err := logInHandler(request)
 	c.Equal(http.StatusOK, response.StatusCode)
-
+	c.NotNil(response.Headers["Set-Cookie"])
+	c.Contains(response.Headers["Set-Cookie"], "refresh_token")
+	c.Contains(response.Body, "access_token")
 }
 
 func TestLoginHandlerFailed(t *testing.T) {
@@ -53,9 +55,33 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	_ = mocks.InitDynamoMock()
 
-	mocks.ForceNotFound = true
+	secretMock := secretsMock.InitSecretMock()
+
+	secretMock.RegisterResponder(publicSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGtV1QpRQ6he8z3l64al\nazzW4dBnfOUF/J1EDTP7i8DJPhlFFE1Mn+zTZN/+jGgMjhHUHG3AUfv2khUR0Bi4\nT0DnQlSrlW/TcT2747AEu8qTAgXagUDy3YhwGiqsBy+S/fv0zGgVbRLeqNKnYqEA\ngQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM/yqi0xKHOxIoTbTedmg+cBqqm\nMZYyanLnAuzjYrrieW+23O/YkV0tbTJjhL/XJXeBze0C8Iltcvfaxhlxd/jpm28g\nO01n91PKwg+YhwPhYIpxlzrKps0mo6iAhNvsDNGFha/8UiZ+bJa5F7xk3LArTrbv\nbQIDAQAB\n-----END PUBLIC KEY-----"),
+		}, nil
+	})
+
+	secretMock.RegisterResponder(privateSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("-----BEGIN PRIVATE KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGtV1QpRQ6he8z3l64al\nazzW4dBnfOUF/J1EDTP7i8DJPhlFFE1Mn+zTZN/+jGgMjhHUHG3AUfv2khUR0Bi4\nT0DnQlSrlW/TcT2747AEu8qTAgXagUDy3YhwGiqsBy+S/fv0zGgVbRLeqNKnYqEA\ngQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM/yqi0xKHOxIoTbTedmg+cBqqm\nMZYyanLnAuzjYrrieW+23O/YkV0tbTJjhL/XJXeBze0C8Iltcvfaxhlxd/jpm28g\nO01n91PKwg+YhwPhYIpxlzrKps0mo6iAhNvsDNGFha/8UiZ+bJa5F7xk3LArTrbv\nbQIDAQAB\n-----END PUBLIC KEY-----"),
+		}, nil
+	})
+
+	secretsMock.ForceFailure = true
+	defer func() {
+		secretsMock.ForceFailure = false
+	}()
 
 	response, err := logInHandler(request)
+	c.Nil(err)
+	c.Equal(http.StatusInternalServerError, response.StatusCode)
+	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
+
+	mocks.ForceNotFound = true
+
+	response, err = logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(mocks.ErrForceNotFound.Error(), response.Body)
