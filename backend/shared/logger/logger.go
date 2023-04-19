@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
 	"net"
+	"regexp"
+	"runtime/debug"
+	"time"
 )
 
 type logLevel string
@@ -14,12 +17,17 @@ const (
 	infoLevel    logLevel = "info"
 	errLevel     logLevel = "error"
 	warningLevel logLevel = "warning"
+	panicLevel   logLevel = "panic"
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-82-72-174.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-80-47-243.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
+
+	LogClient LogAPI
+
+	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 )
 
 type Object interface {
@@ -27,7 +35,15 @@ type Object interface {
 	LogProperties() map[string]interface{}
 }
 
-type Logger struct {
+type LogAPI interface {
+	Info(eventName string, objects []Object)
+	Warning(eventName string, err error, objects []Object)
+	Error(eventName string, err error, objects []Object)
+	Critical(eventName string, objects []Object)
+	LogLambdaTime(startingTime time.Time, panic interface{})
+}
+
+type Log struct {
 	Service string `json:"service,omitempty"`
 }
 
@@ -39,27 +55,58 @@ type LogData struct {
 	LogObject map[string]map[string]interface{} `json:"properties,omitempty"`
 }
 
-func NewLogger() *Logger {
-	return &Logger{env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown")}
+func init() {
+	LogClient = &Log{env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown")}
 }
 
-func (l *Logger) Info(eventName string, objects []Object) {
+func NewLogger() LogAPI {
+	return LogClient
+}
+
+func (l *Log) Info(eventName string, objects []Object) {
 	l.sendLog(infoLevel, eventName, nil, objects)
 }
 
-func (l *Logger) Warning(eventName string, err error, objects []Object) {
+func (l *Log) Warning(eventName string, err error, objects []Object) {
 	l.sendLog(warningLevel, eventName, err, objects)
 }
 
-func (l *Logger) Error(eventName string, err error, objects []Object) {
+func (l *Log) Error(eventName string, err error, objects []Object) {
 	l.sendLog(errLevel, eventName, err, objects)
 }
 
-func (l *Logger) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
-	connection, err := net.Dial(logstashServerType, logstashHost+":"+logstashPort)
+func (l *Log) LogLambdaTime(startingTime time.Time, panic interface{}) {
+	duration := time.Since(startingTime).Seconds()
+	durationData := MapToLoggerObject("duration_data", map[string]interface{}{
+		"f_duration": duration,
+	})
+
+	if panic != nil {
+		panicObject := getPanicObject(panic)
+
+		l.Critical("lambda_panicked", []Object{durationData, panicObject})
+		return
+	}
+
+	l.Info("lambda_execution_finished", []Object{durationData})
+}
+
+func (l *Log) Critical(eventName string, objects []Object) {
+	l.sendLog(panicLevel, eventName, nil, objects)
+}
+
+func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
+	connection, err := net.Dial("tcp", logstashHost+":"+logstashPort)
 	if err != nil {
 		panic(fmt.Errorf("error connecting to Logstash server: %w", err))
 	}
+
+	defer func() {
+		err = connection.Close()
+		if err != nil {
+			panic(fmt.Errorf("error closing connection to Logstash server: %w", err))
+		}
+	}()
 
 	logData := &LogData{
 		Service:   l.Service,
@@ -85,6 +132,13 @@ func (l *Logger) sendLog(level logLevel, eventName string, errToLog error, objec
 	}
 }
 
+func MapToLoggerObject(name string, m map[string]interface{}) Object {
+	return &ObjectWrapper{
+		name:       name,
+		properties: m,
+	}
+}
+
 func getLogObjects(objects []Object) map[string]map[string]interface{} {
 	lObjects := make(map[string]map[string]interface{})
 
@@ -93,4 +147,16 @@ func getLogObjects(objects []Object) map[string]map[string]interface{} {
 	}
 
 	return lObjects
+}
+
+func getPanicObject(panic interface{}) Object {
+	clean := stackCleaner.FindAll(debug.Stack(), -1)
+
+	return &ObjectWrapper{
+		name: "panic",
+		properties: map[string]interface{}{
+			"s_message": fmt.Sprintf("%v", panic),
+			"s_trace":   string(bytes.Join(clean, []byte("\n"))),
+		},
+	}
 }

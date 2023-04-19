@@ -12,7 +12,7 @@ import (
 )
 
 type userRequest struct {
-	log *logger.Logger
+	log logger.LogAPI
 }
 
 func handler(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {

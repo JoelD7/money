@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
 	"github.com/JoelD7/money/backend/storage"
@@ -17,6 +18,10 @@ import (
 	"os"
 	"testing"
 )
+
+func init() {
+	logger.InitLoggerMock()
+}
 
 func TestLoginHandler(t *testing.T) {
 	c := require.New(t)

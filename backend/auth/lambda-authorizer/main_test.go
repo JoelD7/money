@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
@@ -22,6 +23,7 @@ var (
 
 func init() {
 	restclient.Client = &restMock.MockClient{}
+	logger.InitLoggerMock()
 }
 
 func TestHandleRequest(t *testing.T) {

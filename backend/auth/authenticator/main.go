@@ -87,7 +87,9 @@ type jwtPayload struct {
 type requestHandler struct {
 	AccessToken  string `json:"access_token,omitempty"`
 	RefreshToken string `json:"refresh_token,omitempty"`
-	log          *logger.Logger
+
+	log          logger.LogAPI
+	startingTime time.Time
 }
 
 func (c *Credentials) LogName() string {
@@ -100,10 +102,21 @@ func (c *Credentials) LogProperties() map[string]interface{} {
 	}
 }
 
+func (req *requestHandler) init() {
+	req.startingTime = time.Now()
+}
+
+func (req *requestHandler) finish() {
+	req.log.LogLambdaTime(req.startingTime, recover())
+}
+
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	req := &requestHandler{
 		log: logger.NewLogger(),
 	}
+
+	req.init()
+	defer req.finish()
 
 	return req.processSignUp(request)
 }
@@ -156,6 +169,9 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 	req := &requestHandler{
 		log: logger.NewLogger(),
 	}
+
+	req.init()
+	defer req.finish()
 
 	return req.processLogin(request)
 }
@@ -211,6 +227,8 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 		"Set-Cookie": fmt.Sprintf("refresh_token=%s; Secure; HttpOnly", req.RefreshToken),
 	}
 
+	req.log.Info("login_succeeded", []logger.Object{})
+
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
 		Body:       responseBody,
@@ -257,6 +275,9 @@ func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyRespo
 	req := &requestHandler{
 		log: logger.NewLogger(),
 	}
+
+	req.init()
+	defer req.finish()
 
 	return req.processJWKS()
 }

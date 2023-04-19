@@ -88,7 +88,7 @@ type jwk struct {
 }
 
 type request struct {
-	log *logger.Logger
+	log logger.LogAPI
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
