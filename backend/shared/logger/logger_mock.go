@@ -4,6 +4,7 @@ import "time"
 
 type LogMock struct{}
 
+//InitLoggerMock mocks the logger client. This is important to prevent unit tests from sending logs.
 func InitLoggerMock() {
 	LogClient = &LogMock{}
 }
