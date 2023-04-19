@@ -9,16 +9,29 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"net/http"
+	"time"
 )
 
 type userRequest struct {
-	log logger.LogAPI
+	log          logger.LogAPI
+	startingTime time.Time
+}
+
+func (request *userRequest) init() {
+	request.startingTime = time.Now()
+}
+
+func (request *userRequest) finish() {
+	request.log.LogLambdaTime(request.startingTime, recover())
 }
 
 func handler(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	request := &userRequest{
 		log: logger.NewLogger(),
 	}
+
+	request.init()
+	defer request.finish()
 
 	return request.process(req)
 }

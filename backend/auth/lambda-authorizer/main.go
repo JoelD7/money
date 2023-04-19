@@ -17,6 +17,7 @@ import (
 	"math/big"
 	"os"
 	"strings"
+	"time"
 )
 
 type Effect int
@@ -88,13 +89,25 @@ type jwk struct {
 }
 
 type request struct {
-	log logger.LogAPI
+	log          logger.LogAPI
+	startingTime time.Time
+}
+
+func (req *request) init() {
+	req.startingTime = time.Now()
+}
+
+func (req *request) finish() {
+	req.log.LogLambdaTime(req.startingTime, recover())
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	req := &request{
 		log: logger.NewLogger(),
 	}
+
+	req.init()
+	defer req.finish()
 
 	return req.process(ctx, event)
 }
