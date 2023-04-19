@@ -19,8 +19,30 @@ import (
 	"testing"
 )
 
+var secretMock *secretsMock.MockSecret
+
 func init() {
 	logger.InitLoggerMock()
+
+	secretMock = secretsMock.InitSecretMock()
+
+	secretMock.RegisterResponder(publicSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5l+M6MGnS6K8SNXUIqOG\naaH/IO7NcBxwQJVd4X6uUcLHfdhyNFNGEVFXodk9xhn0zJUxNtDzXlsw8aoC8/k4\nPoIUikiFnuCmkVDxcnl65/jv4DQtDL6GGqoLcYo2ENldfj8uDo09CmYS/DKuJxFy\nntaOREIMTaLQ3F72aDMk0ytVFu0cZ5Hyb24ixPBXhWHTMzsNG6yRO3uOVZqtK/D8\n/ZKklkKTDnOmGlbVOKTvujH6fTJuQ8T3p6jLI9J24K77fDlr6b38tZcDcKrhlAqO\nWTuEpsvMNRubWoLt22c9f4PXaGDwqRHo3SeBhb8YA0nSBEzNVgyt8iYfGq01tW98\nHQIDAQAB\n-----END PUBLIC KEY-----"),
+		}, nil
+	})
+
+	secretMock.RegisterResponder(privateSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA5l+M6MGnS6K8SNXUIqOGaaH/IO7NcBxwQJVd4X6uUcLHfdhy\nNFNGEVFXodk9xhn0zJUxNtDzXlsw8aoC8/k4PoIUikiFnuCmkVDxcnl65/jv4DQt\nDL6GGqoLcYo2ENldfj8uDo09CmYS/DKuJxFyntaOREIMTaLQ3F72aDMk0ytVFu0c\nZ5Hyb24ixPBXhWHTMzsNG6yRO3uOVZqtK/D8/ZKklkKTDnOmGlbVOKTvujH6fTJu\nQ8T3p6jLI9J24K77fDlr6b38tZcDcKrhlAqOWTuEpsvMNRubWoLt22c9f4PXaGDw\nqRHo3SeBhb8YA0nSBEzNVgyt8iYfGq01tW98HQIDAQABAoIBAQC8OffcuVVihC2I\n6UUxpCCPsG/PTa6HWoURD7msI6B0Z0wt86qkPCH0xlxufhxt/wk4GvIiEqm2P5YG\n7l0JUGh3EjuMHOMoQ+90rgkI+l7EqG3950OjtQvHP4aoF0BDlgZAv4h3FUl5dJsw\neow2mZfoVe/Zr4lz6YLze5ei3Z7J9YGjj62j7QGbKgbwPLqnqnNrUQqM4T0V9SaJ\nCE6sDxYo8M8kE2yqgiIvsA1D92u4AMchcdnjREBy/ogCRXzvuZQADC4st8UE4aFD\nmDNKwIbprymSa7atjSMz+lfWWBnuuzFmsf+72gXJVRRpmbm7onBxDHcJlqk0fMjv\nm+zuow4hAoGBAPyGYveulOLbwA+88DHBJ5GVKZNJHRGFsMWpysCC45OC5eKs9yrP\nnI6/0mvL1JFXvSbkkDql6qvlbKVcoH80h3ipFwuB4j8KbLXs/LiFMF0yg4IpAoq5\nGIp1RK6VBsv4OvP8vmkJxzakgRn5C7WyswNqJHGW108l7pmYEbOpfohZAoGBAOmL\nIE3ZbttXLOLEcHICcySpNdDTIWaiNqMtyjLLK29Ic8KDpXI1hfYzAw+7Q6y2QyEG\nl9l5IpkY6Wt29LMuWUMH6fnS1H/JeQOSnkT2y8PXSN95QKb2HtbP+ujqSdG12EPs\nILag0918ezcttGLszqWfipSZuSo2ZQ6b0A+uaxllAoGAECkBeFxBxurNNbSfom97\n+sMS8AwDwjVOBLhC82Ls8Wm1EHaFMsYqfLAl5SQcLFjzD+QcnsQzamC6PTLaSomw\nCba4dNIRCnu+TT4nRh+v4qby54d8VChYO7QZexqqXq86BpcsEEjB6OtKH8FiUHRp\nJFTMlEBU8wm4ZTfoGhlEsbECgYAkNJ1ddEfrWShsP2fvRNH07QaaySB0eNFfmsmt\n9jFVnzXTAfW0LvgFowLmfXGQZPEjPZJs9IqYkXQeZOKqpJTR/3gWcsjexq0sEJ7Y\nsioEwmtZucJ8H8vIIZYUZb3r9PUCEqk/ps8xlwrDEyLT80JWCtXBE9PQ533jNeSb\nib6wwQKBgQDkCKsHfxv/z+YgdMe3mUCSZi2gNttPQczjeUSYAxYITj/OJ1TfMuk4\n8gVdOcusHynFH3jEpnA8fqdpZpmhH/sAKPuQl/vwBCefVyBO5LkM14gxEIf9eq69\n7QVBd9ep1cN/5yYcJUJAcpjBxcbR8rXYowLtsYaGsC7G5tMlW8rJTg==\n-----END RSA PRIVATE KEY-----"),
+		}, nil
+	})
+
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+		return &secretsmanager.GetSecretValueOutput{
+			SecretString: aws.String("123"),
+		}, nil
+	})
 }
 
 func TestLoginHandler(t *testing.T) {
@@ -59,20 +81,6 @@ func TestLoginHandlerFailed(t *testing.T) {
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
 	_ = mocks.InitDynamoMock()
-
-	secretMock := secretsMock.InitSecretMock()
-
-	secretMock.RegisterResponder(publicSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGtV1QpRQ6he8z3l64al\nazzW4dBnfOUF/J1EDTP7i8DJPhlFFE1Mn+zTZN/+jGgMjhHUHG3AUfv2khUR0Bi4\nT0DnQlSrlW/TcT2747AEu8qTAgXagUDy3YhwGiqsBy+S/fv0zGgVbRLeqNKnYqEA\ngQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM/yqi0xKHOxIoTbTedmg+cBqqm\nMZYyanLnAuzjYrrieW+23O/YkV0tbTJjhL/XJXeBze0C8Iltcvfaxhlxd/jpm28g\nO01n91PKwg+YhwPhYIpxlzrKps0mo6iAhNvsDNGFha/8UiZ+bJa5F7xk3LArTrbv\nbQIDAQAB\n-----END PUBLIC KEY-----"),
-		}, nil
-	})
-
-	secretMock.RegisterResponder(privateSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("-----BEGIN PRIVATE KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGtV1QpRQ6he8z3l64al\nazzW4dBnfOUF/J1EDTP7i8DJPhlFFE1Mn+zTZN/+jGgMjhHUHG3AUfv2khUR0Bi4\nT0DnQlSrlW/TcT2747AEu8qTAgXagUDy3YhwGiqsBy+S/fv0zGgVbRLeqNKnYqEA\ngQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM/yqi0xKHOxIoTbTedmg+cBqqm\nMZYyanLnAuzjYrrieW+23O/YkV0tbTJjhL/XJXeBze0C8Iltcvfaxhlxd/jpm28g\nO01n91PKwg+YhwPhYIpxlzrKps0mo6iAhNvsDNGFha/8UiZ+bJa5F7xk3LArTrbv\nbQIDAQAB\n-----END PUBLIC KEY-----"),
-		}, nil
-	})
 
 	secretsMock.ForceFailure = true
 	defer func() {
@@ -235,24 +243,10 @@ func TestSignUpHandlerFailed(t *testing.T) {
 func TestJWTHandler(t *testing.T) {
 	c := require.New(t)
 
-	expectedJWKS := `{"keys":[{"kty":"RSA","kid":"123","use":"sig","n":"qGtV1QpRQ6he8z3l64alazzW4dBnfOUF_J1EDTP7i8DJPhlFFE1Mn-zTZN_-jGgMjhHUHG3AUfv2khUR0Bi4T0DnQlSrlW_TcT2747AEu8qTAgXagUDy3YhwGiqsBy-S_fv0zGgVbRLeqNKnYqEAgQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM_yqi0xKHOxIoTbTedmg-cBqqmMZYyanLnAuzjYrrieW-23O_YkV0tbTJjhL_XJXeBze0C8Iltcvfaxhlxd_jpm28gO01n91PKwg-YhwPhYIpxlzrKps0mo6iAhNvsDNGFha_8UiZ-bJa5F7xk3LArTrbvbQ","e":"AQAB"}]}`
+	expectedJWKS := `{"keys":[{"kty":"RSA","kid":"123","use":"sig","n":"5l-M6MGnS6K8SNXUIqOGaaH_IO7NcBxwQJVd4X6uUcLHfdhyNFNGEVFXodk9xhn0zJUxNtDzXlsw8aoC8_k4PoIUikiFnuCmkVDxcnl65_jv4DQtDL6GGqoLcYo2ENldfj8uDo09CmYS_DKuJxFyntaOREIMTaLQ3F72aDMk0ytVFu0cZ5Hyb24ixPBXhWHTMzsNG6yRO3uOVZqtK_D8_ZKklkKTDnOmGlbVOKTvujH6fTJuQ8T3p6jLI9J24K77fDlr6b38tZcDcKrhlAqOWTuEpsvMNRubWoLt22c9f4PXaGDwqRHo3SeBhb8YA0nSBEzNVgyt8iYfGq01tW98HQ","e":"AQAB"}]}`
 
 	err := mockRestClientGetFromFile("samples/jwks_response.json")
 	c.Nil(err)
-
-	secretMock := secretsMock.InitSecretMock()
-
-	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("123"),
-		}, nil
-	})
-
-	secretMock.RegisterResponder(publicSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqGtV1QpRQ6he8z3l64al\nazzW4dBnfOUF/J1EDTP7i8DJPhlFFE1Mn+zTZN/+jGgMjhHUHG3AUfv2khUR0Bi4\nT0DnQlSrlW/TcT2747AEu8qTAgXagUDy3YhwGiqsBy+S/fv0zGgVbRLeqNKnYqEA\ngQDhX7EbIyx9ke00jM6tbEeguOtCp6VoslRN3rM/yqi0xKHOxIoTbTedmg+cBqqm\nMZYyanLnAuzjYrrieW+23O/YkV0tbTJjhL/XJXeBze0C8Iltcvfaxhlxd/jpm28g\nO01n91PKwg+YhwPhYIpxlzrKps0mo6iAhNvsDNGFha/8UiZ+bJa5F7xk3LArTrbv\nbQIDAQAB\n-----END PUBLIC KEY-----"),
-		}, nil
-	})
 
 	response, err := jwksHandler(&events.APIGatewayProxyRequest{})
 	c.Equal(http.StatusOK, response.StatusCode)
