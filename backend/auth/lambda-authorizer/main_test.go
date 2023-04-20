@@ -8,8 +8,6 @@ import (
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
-	"github.com/aws/aws-sdk-go/aws"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -29,10 +27,8 @@ func init() {
 
 	secretMock = secretsMock.InitSecretMock()
 
-	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("123"),
-		}, nil
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
+		return "123", nil
 	})
 }
 
@@ -63,10 +59,8 @@ func TestHandlerError(t *testing.T) {
 	_, err = handleRequest(context.Background(), event)
 	c.ErrorIs(err, errUnauthorized)
 
-	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("456"),
-		}, nil
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
+		return "456", nil
 	})
 
 	err = mockRestClientGetFromFile("samples/jwks_response.json")
@@ -81,10 +75,8 @@ func TestHandlerError(t *testing.T) {
 		secretsMock.ForceFailure = false
 	}()
 
-	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-		return &secretsmanager.GetSecretValueOutput{
-			SecretString: aws.String("123"),
-		}, nil
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
+		return "123", nil
 	})
 
 	err = mockRestClientGetFromFile("samples/jwks_response.json")
