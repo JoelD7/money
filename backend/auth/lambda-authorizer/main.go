@@ -6,10 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
@@ -204,6 +206,15 @@ func (req *request) verifyToken(payload *jwtPayload, token string) error {
 		return err
 	}
 
+	val, err := utils.GetJsonString(jwksVal)
+	if err != nil {
+		req.log.Error("get_jwks_json_failed", err, []logger.Object{})
+
+		return err
+	}
+
+	fmt.Println(val)
+
 	publicKey, err := req.getPublicKey(jwksVal)
 	if err != nil {
 		req.log.Error("getting_public_key_failed", err, []logger.Object{})
@@ -254,7 +265,11 @@ func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 	}
 
 	if signingKey == nil {
-		req.log.Error("signing_key_not_found", errSigningKeyNotFound, []logger.Object{})
+		req.log.Error("signing_key_not_found", errSigningKeyNotFound, []logger.Object{
+			logger.MapToLoggerObject("kid", map[string]interface{}{
+				"s_secret": kid,
+			}),
+		})
 
 		return nil, errSigningKeyNotFound
 	}
@@ -290,7 +305,7 @@ func (req *request) getKidFromSecret() (string, error) {
 		return "", err
 	}
 
-	return *kidSecret.SecretString, nil
+	return kidSecret, nil
 
 }
 
