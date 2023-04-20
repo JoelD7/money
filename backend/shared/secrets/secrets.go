@@ -3,6 +3,7 @@ package secrets
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
 	"log"
 	"strings"
@@ -10,10 +11,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
+	"github.com/aws/aws-secretsmanager-caching-go/secretcache"
 )
 
 type SecretAPI interface {
-	GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)
+	GetSecret(ctx context.Context, name string) (string, error)
 }
 
 type Secret struct{}
@@ -24,35 +26,33 @@ var (
 	ErrSecretNotFound = errors.New("secret not found")
 
 	SecretClient SecretAPI
+
+	secretCache *secretcache.Cache
 )
 
 func init() {
 	SecretClient = &Secret{}
+
+	sc, err := secretcache.New()
+	if err != nil {
+		panic(fmt.Errorf("secrets: %w", err))
+	}
+
+	secretCache = sc
 }
 
-func GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+func GetSecret(ctx context.Context, name string) (string, error) {
 	return SecretClient.GetSecret(ctx, name)
 }
 
-func (s *Secret) GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	svc := secretsmanager.NewFromConfig(cfg)
-
-	input := &secretsmanager.GetSecretValueInput{
-		SecretId: aws.String(name),
-	}
-
-	result, err := svc.GetSecretValue(ctx, input)
+func (s *Secret) GetSecret(ctx context.Context, name string) (string, error) {
+	result, err := secretCache.GetSecretString(name)
 	if err != nil && strings.Contains(err.Error(), "ResourceNotFoundException") {
-		return nil, ErrSecretNotFound
+		return "", ErrSecretNotFound
 	}
 
 	if err != nil {
-		log.Fatal(err.Error())
+		return "", err
 	}
 
 	return result, nil

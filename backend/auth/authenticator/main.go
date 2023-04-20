@@ -363,7 +363,7 @@ func (req *requestHandler) getPrivateKey() (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 
-	privatePemBlock, _ := pem.Decode([]byte(*privateSecret.SecretString))
+	privatePemBlock, _ := pem.Decode([]byte(privateSecret))
 	if privatePemBlock == nil || !strings.Contains(privatePemBlock.Type, "PRIVATE KEY") {
 		return nil, fmt.Errorf("failed to decode PEM private block containing private key")
 	}
@@ -382,7 +382,7 @@ func (req *requestHandler) getPublicKey() (*rsa.PublicKey, error) {
 		return nil, err
 	}
 
-	publicPemBlock, _ := pem.Decode([]byte(*publicSecret.SecretString))
+	publicPemBlock, _ := pem.Decode([]byte(publicSecret))
 	if publicPemBlock == nil || !strings.Contains(publicPemBlock.Type, "PUBLIC KEY") {
 		return nil, fmt.Errorf("failed to decode PEM public block containing public key")
 	}
@@ -404,7 +404,7 @@ func (req *requestHandler) getKidFromSecret() (string, error) {
 		return "", err
 	}
 
-	return *kidSecret.SecretString, nil
+	return kidSecret, nil
 
 }
 

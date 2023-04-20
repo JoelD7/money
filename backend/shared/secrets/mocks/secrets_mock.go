@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"github.com/JoelD7/money/backend/shared/secrets"
-	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 )
 
 type MockSecret struct {
-	secretResponders map[string]func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)
+	secretResponders map[string]func(ctx context.Context, name string) (string, error)
 }
 
 var (
@@ -25,7 +24,7 @@ var (
 
 func InitSecretMock() *MockSecret {
 	mock := &MockSecret{
-		secretResponders: make(map[string]func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)),
+		secretResponders: make(map[string]func(ctx context.Context, name string) (string, error)),
 	}
 
 	secrets.SecretClient = mock
@@ -33,9 +32,9 @@ func InitSecretMock() *MockSecret {
 	return mock
 }
 
-func (m *MockSecret) GetSecret(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error) {
+func (m *MockSecret) GetSecret(ctx context.Context, name string) (string, error) {
 	if ForceFailure {
-		return nil, ErrForceFailure
+		return "", ErrForceFailure
 	}
 
 	responder, ok := m.secretResponders[name]
@@ -46,7 +45,7 @@ func (m *MockSecret) GetSecret(ctx context.Context, name string) (*secretsmanage
 	return responder(ctx, name)
 }
 
-func (m *MockSecret) RegisterResponder(secretName string, responder func(ctx context.Context, name string) (*secretsmanager.GetSecretValueOutput, error)) {
+func (m *MockSecret) RegisterResponder(secretName string, responder func(ctx context.Context, name string) (string, error)) {
 	if m == nil {
 		panic(errMockNotInitialized)
 	}
