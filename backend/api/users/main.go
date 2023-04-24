@@ -39,7 +39,7 @@ func handler(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyRespons
 func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	ctx := context.Background()
 
-	userID := req.QueryStringParameters["user_id"]
+	userID := req.PathParameters["user-id"]
 
 	user, err := storage.GetPersonByEmail(ctx, userID)
 	if err != nil {
@@ -86,7 +86,7 @@ func main() {
 	rootRouter := router.NewRouter()
 
 	rootRouter.Route("/users", func(r *router.Router) {
-		r.Get("/", handler)
+		r.Get("/{user-id}", handler)
 	})
 
 	lambda.Start(rootRouter.Handle)

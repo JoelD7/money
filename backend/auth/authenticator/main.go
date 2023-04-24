@@ -18,14 +18,11 @@ import (
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/JoelD7/money/backend/storage"
-	"log"
-	"math/big"
-	"os"
-
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
 	"golang.org/x/crypto/bcrypt"
+	"math/big"
 	"net/http"
 	"regexp"
 	"strings"
@@ -48,8 +45,6 @@ var (
 	kidSecretName        = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
 	refreshTokenduration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
-
-	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 const (
@@ -134,7 +129,6 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 	if err != nil {
 		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -149,7 +143,6 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 	if err != nil {
 		req.log.Error("password_hashing_failed", err, []logger.Object{})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -163,7 +156,6 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 	if err != nil {
 		req.log.Error("sign_up_process_failed", err, []logger.Object{})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -192,7 +184,6 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	if err != nil {
 		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -221,7 +212,6 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	if err != nil {
 		req.log.Error("token_setting_failed", err, []logger.Object{reqBody})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -229,7 +219,6 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	if err != nil {
 		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -297,7 +286,6 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 	if err != nil {
 		req.log.Error("public_key_fetching_failed", err, []logger.Object{})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -305,7 +293,6 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 	if err != nil {
 		req.log.Error("kid_fetching_failed", err, []logger.Object{})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 
@@ -325,7 +312,6 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 	if err != nil {
 		req.log.Error("jwks_response_marshall_failed", err, []logger.Object{})
 
-		errorLogger.Println(err.Error())
 		return req.serverError()
 	}
 

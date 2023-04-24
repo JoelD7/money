@@ -6,12 +6,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	"github.com/JoelD7/money/backend/shared/secrets"
-	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
@@ -59,9 +57,9 @@ const (
 )
 
 var (
-	errInvalidToken       = errors.New("invalid token")
+	errInvalidToken       = errors.New("invalid_token")
 	errSigningKeyNotFound = errors.New("signing key not found")
-	errUnauthorized       = errors.New("Unauthorized")
+	errUnauthorized       = errors.New("Unauthorized klk")
 
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
@@ -71,6 +69,9 @@ var (
 	awsRegion     = env.GetString("REGION", "us-east-1")
 	jwtAudience   = env.GetString("AUDIENCE", "https://localhost:3000")
 	jwtIssuer     = env.GetString("ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
+
+	invalidJWTErrs = []error{jwt.ErrAudValidation, jwt.ErrExpValidation, jwt.ErrIatValidation, jwt.ErrIssValidation,
+		jwt.ErrJtiValidation, jwt.ErrNbfValidation, jwt.ErrSubValidation}
 )
 
 type jwtPayload struct {
@@ -124,7 +125,7 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 
 	err = req.verifyToken(payload, token)
 	if err != nil {
-		return defaultDenyAllPolicy(event.MethodArn), err
+		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
 
 	principalID := payload.Subject
@@ -169,7 +170,7 @@ func (req *request) getTokenPayload(token string) (*jwtPayload, error) {
 	return payload, nil
 }
 
-func defaultDenyAllPolicy(methodArn string) events.APIGatewayCustomAuthorizerResponse {
+func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAuthorizerResponse {
 	tmp := strings.Split(methodArn, ":")
 	apiGatewayArnTmp := strings.Split(tmp[5], "/")
 	awsAccountID := tmp[4]
@@ -180,12 +181,17 @@ func defaultDenyAllPolicy(methodArn string) events.APIGatewayCustomAuthorizerRes
 	resp.Stage = apiGatewayArnTmp[1]
 	resp.DenyAllMethods()
 
+	resp.APIGatewayCustomAuthorizerResponse.Context = map[string]interface{}{
+		"stringKey": err.Error(),
+	}
+
 	return resp.APIGatewayCustomAuthorizerResponse
 }
 
 func (req *request) verifyToken(payload *jwtPayload, token string) error {
 	response, err := restclient.Get(payload.Issuer + "/auth/jwks")
 	if err != nil {
+		req.log.Error("getting_jwks_failed", err, []logger.Object{})
 		return err
 	}
 
@@ -206,15 +212,6 @@ func (req *request) verifyToken(payload *jwtPayload, token string) error {
 		return err
 	}
 
-	val, err := utils.GetJsonString(jwksVal)
-	if err != nil {
-		req.log.Error("get_jwks_json_failed", err, []logger.Object{})
-
-		return err
-	}
-
-	fmt.Println(val)
-
 	publicKey, err := req.getPublicKey(jwksVal)
 	if err != nil {
 		req.log.Error("getting_public_key_failed", err, []logger.Object{})
@@ -231,23 +228,38 @@ func (req *request) verifyToken(payload *jwtPayload, token string) error {
 }
 
 func (req *request) validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.RSASHA) error {
-	//now := time.Now()
+	now := time.Now()
 
-	//nbfValidator := jwt.NotBeforeValidator(now)
-	//expValidator := jwt.ExpirationTimeValidator(now)
+	expValidator := jwt.ExpirationTimeValidator(now)
 	issValidator := jwt.IssuerValidator(jwtIssuer)
 	audValidator := jwt.AudienceValidator(jwt.Audience{jwtAudience})
 
-	validatePayload := jwt.ValidatePayload(payload, issValidator, audValidator)
+	validatePayload := jwt.ValidatePayload(payload, issValidator, audValidator, expValidator)
 
 	_, err := jwt.Verify([]byte(token), decryptingHash, payload, validatePayload)
+	if isErrorInvalidJWT(err) {
+		req.log.Error("invalid_jwt", err, []logger.Object{})
+
+		return errInvalidToken
+	}
+
 	if err != nil {
-		req.log.Error("jwt_verification_failed", err, []logger.Object{})
+		req.log.Error("jwt_validation_failed", err, []logger.Object{})
 
 		return err
 	}
 
 	return nil
+}
+
+func isErrorInvalidJWT(err error) bool {
+	for _, e := range invalidJWTErrs {
+		if errors.Is(err, e) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {

@@ -3,25 +3,22 @@ package router
 import (
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/utils"
-	"log"
-	"net/http"
-	"os"
-
 	"github.com/aws/aws-lambda-go/events"
+	"net/http"
 )
 
 var (
 	errRouterIsNotRoot = errors.New("router is not root")
 	errPathNotDefined  = errors.New("this path does not have a handler")
-
-	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 type Handler func(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error)
 
 type Router struct {
 	path           string
+	log            logger.LogAPI
 	parent         *Router
 	root           *Router
 	methodHandlers map[string]map[string]Handler
@@ -29,6 +26,7 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
+		log: logger.NewLogger(),
 		methodHandlers: map[string]map[string]Handler{
 			http.MethodGet:    make(map[string]Handler),
 			http.MethodHead:   make(map[string]Handler),
@@ -49,7 +47,7 @@ func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.AP
 
 	fmt.Println("event: ", jsonStr)
 	if !router.isRoot() {
-		errorLogger.Println(errRouterIsNotRoot.Error())
+		router.log.Error("router_handle_failed", errRouterIsNotRoot, []logger.Object{})
 
 		return &events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -58,7 +56,15 @@ func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.AP
 	}
 
 	if _, ok := router.methodHandlers[request.HTTPMethod][request.Resource]; !ok {
-		errorLogger.Println(errPathNotDefined.Error())
+		router.log.Error("router_handle_failed", errPathNotDefined, []logger.Object{
+			logger.MapToLoggerObject("router_data", map[string]interface{}{
+				"s_path": router.path,
+			}),
+			logger.MapToLoggerObject("request", map[string]interface{}{
+				"s_method":   request.HTTPMethod,
+				"s_resource": request.Resource,
+			}),
+		})
 
 		return &events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
