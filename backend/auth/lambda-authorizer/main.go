@@ -57,7 +57,7 @@ const (
 )
 
 var (
-	errInvalidToken       = errors.New("invalid_token")
+	errInvalidToken       = errors.New("invalid_access_token")
 	errSigningKeyNotFound = errors.New("signing key not found")
 	errUnauthorized       = errors.New("Unauthorized klk")
 
