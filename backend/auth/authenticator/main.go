@@ -34,6 +34,7 @@ var (
 	errMissingPassword  = errors.New("missing password")
 	errWrongCredentials = errors.New("the email or password are incorrect")
 	errInvalidEmail     = errors.New("email is invalid")
+	errCookiesNotFound  = errors.New("cookies not found in request object")
 )
 
 var (
@@ -59,7 +60,7 @@ type signUpBody struct {
 
 type Credentials struct {
 	Email    string `json:"email"`
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"`
 }
 
 type loginResponse struct {
@@ -109,9 +110,63 @@ func (req *requestHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, recover())
 }
 
+func refreshTokenHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	req := &requestHandler{
+		log: logger.NewLoggerWithHandler("refresh-token"),
+	}
+
+	req.init()
+	defer req.finish()
+
+	return req.processRefreshToken(request)
+}
+
+func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	var credentials Credentials
+	ctx := context.Background()
+
+	err := json.Unmarshal([]byte(request.Body), &credentials)
+	if err != nil {
+		req.log.Error("request_body_unmarshal_failed", err, []logger.Object{})
+
+		return req.serverError()
+	}
+
+	cookies, ok := request.Headers["Cookie"]
+	if !ok {
+		req.log.Error("cookies_not_found_in_request", errCookiesNotFound, []logger.Object{})
+
+		return req.serverError()
+	}
+
+	var refreshToken string
+
+	for _, cookie := range strings.Split(cookies, ";") {
+		if strings.HasPrefix("refresh_token", cookie) {
+			refreshToken = strings.Split(cookie, "=")[1]
+			break
+		}
+	}
+
+	person, err := storage.GetPersonByEmail(ctx, credentials.Email)
+	if err != nil {
+		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
+
+		return req.serverError()
+	}
+
+	if refreshToken == person.RefreshToken {
+		// TODO: issue new access token and refresh token
+	}
+
+	if person.PreviousRefreshToken != "" && refreshToken == person.PreviousRefreshToken {
+
+	}
+}
+
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	req := &requestHandler{
-		log: logger.NewLogger(),
+		log: logger.NewLoggerWithHandler("sign-up"),
 	}
 
 	req.init()
@@ -166,7 +221,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 
 func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	req := &requestHandler{
-		log: logger.NewLogger(),
+		log: logger.NewLoggerWithHandler("log-in"),
 	}
 
 	req.init()
@@ -445,6 +500,7 @@ func main() {
 	route.Route("/auth", func(r *router.Router) {
 		r.Post("/login", logInHandler)
 		r.Post("/signup", signUpHandler)
+		r.Post("/refresh-token", refreshTokenHandler)
 		r.Get("/jwks", jwksHandler)
 	})
 

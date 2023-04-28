@@ -45,10 +45,12 @@ type LogAPI interface {
 
 type Log struct {
 	Service string `json:"service,omitempty"`
+	Handler string `json:"handler,omitempty"`
 }
 
 type LogData struct {
 	Service   string                            `json:"service,omitempty"`
+	Handler   string                            `json:"handler,omitempty"`
 	Level     string                            `json:"level,omitempty"`
 	Error     string                            `json:"error,omitempty"`
 	Event     string                            `json:"event,omitempty"`
@@ -56,10 +58,19 @@ type LogData struct {
 }
 
 func init() {
-	LogClient = &Log{env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown")}
+	LogClient = &Log{Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown")}
 }
 
 func NewLogger() LogAPI {
+	return LogClient
+}
+
+func NewLoggerWithHandler(handler string) LogAPI {
+	LogClient = &Log{
+		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		Handler: handler,
+	}
+
 	return LogClient
 }
 
@@ -110,6 +121,7 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 
 	logData := &LogData{
 		Service:   l.Service,
+		Handler:   l.Handler,
 		Event:     eventName,
 		Level:     string(level),
 		LogObject: getLogObjects(objects),
