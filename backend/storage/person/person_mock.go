@@ -1,4 +1,4 @@
-package mocks
+package person
 
 import (
 	"context"
@@ -65,7 +65,7 @@ func (d *MockDynamo) Query(ctx context.Context, params *dynamodb.QueryInput, opt
 
 func (d *MockDynamo) PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
 	if ForceUserExists {
-		return &dynamodb.PutItemOutput{}, storage.ErrExistingUser
+		return &dynamodb.PutItemOutput{}, ErrExistingUser
 	}
 
 	return &dynamodb.PutItemOutput{}, nil

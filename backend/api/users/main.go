@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
-	"github.com/JoelD7/money/backend/storage"
+	"github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"net/http"
@@ -41,7 +41,7 @@ func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events
 
 	userID := req.PathParameters["user-id"]
 
-	user, err := storage.GetPersonByEmail(ctx, userID)
+	user, err := person.GetPersonByEmail(ctx, userID)
 	if err != nil {
 		request.log.Error("user_fetching_failed", err, []logger.Object{})
 

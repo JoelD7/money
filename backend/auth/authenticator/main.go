@@ -11,22 +11,24 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"math/big"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/JoelD7/money/backend/entities"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/shared/utils"
-	"github.com/JoelD7/money/backend/storage"
+	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
-	"golang.org/x/crypto/bcrypt"
-	"math/big"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
 )
 
 var (
@@ -46,6 +48,8 @@ var (
 	kidSecretName        = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
 	refreshTokenduration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
+
+	redisEndpoint = env.GetString("REDIS_ENDPOINT", "money-redis-cluster-ro.sfenn7.ng.0001.use1.cache.amazonaws.com:6379")
 )
 
 const (
@@ -148,20 +152,30 @@ func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRe
 		}
 	}
 
-	person, err := storage.GetPersonByEmail(ctx, credentials.Email)
+	person, err := storagePerson.GetPersonByEmail(ctx, credentials.Email)
 	if err != nil {
 		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
 
 		return req.serverError()
 	}
 
+	if person.PreviousRefreshToken != "" && refreshToken == person.PreviousRefreshToken {
+		//	TODO: invalidate all tokens of the user, forcing him to reauthenticate
+
+		return &events.APIGatewayProxyResponse{
+			StatusCode: http.StatusUnauthorized,
+			Body:       "Invalid credentials",
+		}, nil
+	}
+
 	if refreshToken == person.RefreshToken {
 		// TODO: issue new access token and refresh token
 	}
 
-	if person.PreviousRefreshToken != "" && refreshToken == person.PreviousRefreshToken {
-
-	}
+	return &events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+		Body:       "",
+	}, nil
 }
 
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -201,8 +215,8 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 		return req.serverError()
 	}
 
-	err = storage.CreatePerson(ctx, reqBody.FullName, reqBody.Email, string(hashedPassword))
-	if err != nil && errors.Is(err, storage.ErrExistingUser) {
+	err = storagePerson.CreatePerson(ctx, reqBody.FullName, reqBody.Email, string(hashedPassword))
+	if err != nil && errors.Is(err, storagePerson.ErrExistingUser) {
 		req.log.Warning("user_creation_failed", err, []logger.Object{})
 
 		return req.clientError(err)
@@ -249,7 +263,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 		return req.clientError(err)
 	}
 
-	person, err := storage.GetPersonByEmail(ctx, reqBody.Email)
+	person, err := storagePerson.GetPersonByEmail(ctx, reqBody.Email)
 	if err != nil {
 		req.log.Error("user_fetching_failed", err, []logger.Object{})
 
@@ -263,7 +277,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 		return req.clientError(errWrongCredentials)
 	}
 
-	err = req.setTokens(ctx, person)
+	headers, err := req.setTokens(ctx, person)
 	if err != nil {
 		req.log.Error("token_setting_failed", err, []logger.Object{reqBody})
 
@@ -277,43 +291,43 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 		return req.serverError()
 	}
 
-	headers := map[string]string{
-		"Set-Cookie": fmt.Sprintf("refresh_token=%s; Secure; HttpOnly", req.RefreshToken),
-	}
-
 	req.log.Info("login_succeeded", []logger.Object{})
 
 	return &events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Body:       responseBody,
-		Headers:    headers,
+		StatusCode:        http.StatusOK,
+		Body:              responseBody,
+		MultiValueHeaders: headers,
 	}, nil
 }
 
-func (req *requestHandler) setTokens(ctx context.Context, person *entities.Person) error {
+func (req *requestHandler) setTokens(ctx context.Context, person *entities.Person) (map[string][]string, error) {
 	now := time.Now()
+
+	accessTokenExpiry := jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second))
 
 	accessTokenPayload := &jwt.Payload{
 		Issuer:         accessTokenIssuer,
 		Subject:        person.Email,
 		Audience:       jwt.Audience{accessTokenAudience},
-		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second)),
+		ExpirationTime: accessTokenExpiry,
 		IssuedAt:       jwt.NumericDate(now),
 	}
 
 	accessToken, err := req.generateJWT(accessTokenPayload, accessTokenScope)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	refreshTokenExpiry := jwt.NumericDate(now.Add(time.Duration(refreshTokenduration) * time.Second))
 
 	refreshTokenPayload := &jwt.Payload{
 		Subject:        person.Email,
-		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(refreshTokenduration) * time.Second)),
+		ExpirationTime: refreshTokenExpiry,
 	}
 
 	refreshToken, err := req.generateJWT(refreshTokenPayload, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req.AccessToken = accessToken
@@ -322,7 +336,16 @@ func (req *requestHandler) setTokens(ctx context.Context, person *entities.Perso
 	person.PreviousRefreshToken = person.RefreshToken
 	person.RefreshToken = req.RefreshToken
 
-	return storage.UpdatePerson(ctx, person)
+	setCookieHeaders := map[string][]string{
+		"Set-Cookie": {
+			fmt.Sprintf("access_token=%s; Path=/; Expires=%s; Secure; HttpOnly", req.AccessToken,
+				accessTokenExpiry.Format(time.RFC1123)),
+			fmt.Sprintf("refresh_token=%s; Path=/; Expires=%s; Secure; HttpOnly", req.RefreshToken,
+				refreshTokenExpiry.Format(time.RFC1123)),
+		},
+	}
+
+	return setCookieHeaders, storagePerson.UpdatePerson(ctx, person)
 }
 
 func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {

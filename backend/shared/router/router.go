@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/logger"
-	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"net/http"
 )
@@ -39,13 +38,6 @@ func NewRouter() *Router {
 }
 
 func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	jsonStr, err := utils.GetJsonString(request)
-	if err != nil {
-		fmt.Println("err unmarshalling request event")
-		return nil, err
-	}
-
-	fmt.Println("event: ", jsonStr)
 	if !router.isRoot() {
 		router.log.Error("router_handle_failed", errRouterIsNotRoot, []logger.Object{})
 

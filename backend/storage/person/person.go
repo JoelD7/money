@@ -1,4 +1,4 @@
-package storage
+package person
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/entities"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
+	"github.com/JoelD7/money/backend/storage"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -60,7 +61,7 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 		TableName: aws.String(tableName),
 	}
 
-	_, err = DefaultClient.PutItem(ctx, input)
+	_, err = storage.DefaultClient.PutItem(ctx, input)
 	if err != nil {
 		return ErrExistingUser
 	}
@@ -94,7 +95,7 @@ func GetPerson(ctx context.Context, personId string) (*entities.Person, error) {
 		},
 	}
 
-	result, err := DefaultClient.GetItem(ctx, input)
+	result, err := storage.DefaultClient.GetItem(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func GetPersonByEmail(ctx context.Context, email string) (*entities.Person, erro
 		TableName:                 aws.String(tableName),
 	}
 
-	result, err := DefaultClient.Query(ctx, input)
+	result, err := storage.DefaultClient.Query(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +158,7 @@ func UpdatePerson(ctx context.Context, person *entities.Person) error {
 		TableName: aws.String(tableName),
 	}
 
-	_, err = DefaultClient.PutItem(ctx, input)
+	_, err = storage.DefaultClient.PutItem(ctx, input)
 	return err
 }
 
