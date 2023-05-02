@@ -4,23 +4,24 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
 	"github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 )
 
 var secretMock *secretsMock.MockSecret
 
 func init() {
-	//logger.InitLoggerMock()
+	logger.InitLoggerMock()
 
 	secretMock = secretsMock.InitSecretMock()
 
@@ -37,31 +38,23 @@ func init() {
 	})
 }
 
-func TestRedis(t *testing.T) {
+func TestJoel(t *testing.T) {
 	c := require.New(t)
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     redisEndpoint,
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
+	cookies := "refresh_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGdtYWlsLmNvbSIsImV4cCI6MTY4NTU2NzQ1OX0.W52_tn8bi_RBBSIYpxVhQrHnGViav-BI0o1w-setOwMDgcoUyPtnmJfrW1tbmwGZwDU77Fq0Db8fbYTJEa2DX13n62QM_xM2VaDEyri_RT_zAfiV-8OMPPGdbAMy1B0pXRzV_IGKOwSSPCLqEeNzhH9r9_94H7WiIOjp0tbh-5LQfg618HQP2HuF2YA6SpvVvpjNrmOXTx1ysFtX-oJiQwYfNpI-YvrA8r5PADFrpGSFpe__xSseRfNtRTde3vHYX135qBy2WXYSJS2Gsf9pCwT_K8rzhHPZL6lWDGft6niRkEAIIBmna0YVBbf3MgdA0253qJjmIOTlMFI2uJWczg"
+	cookiesArr := strings.Split(cookies, ";")
+	c.Len(cookiesArr, 1)
+	for _, cookie := range cookiesArr {
+		fmt.Println(cookie)
+		if strings.HasPrefix("access_token", cookie) {
 
-	ctx := context.Background()
-	log := logger.NewLogger()
+		}
 
-	err := rdb.Set(ctx, "key", "value", 0).Err()
-	if err != nil {
-		log.Error("set_value_in_redis_failed", err, []logger.Object{})
-		panic(err)
+		if strings.HasPrefix(cookie, "refresh_token") {
+			fmt.Println("hit!")
+			fmt.Println("req.RefreshToken: ", strings.Split(cookie, "=")[1])
+		}
 	}
-
-	val, err := rdb.Get(ctx, "key").Result()
-	if err != nil {
-		log.Error("get_value_in_redis_failed", err, []logger.Object{})
-		panic(err)
-	}
-
-	c.Equal("value", val)
 }
 
 func TestLoginHandler(t *testing.T) {

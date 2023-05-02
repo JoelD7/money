@@ -59,7 +59,7 @@ const (
 var (
 	errInvalidToken       = errors.New("invalid_access_token")
 	errSigningKeyNotFound = errors.New("signing key not found")
-	errUnauthorized       = errors.New("Unauthorized klk")
+	errUnauthorized       = errors.New("Unauthorized")
 
 	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
@@ -238,7 +238,13 @@ func (req *request) validateJWTPayload(token string, payload *jwt.Payload, decry
 
 	_, err := jwt.Verify([]byte(token), decryptingHash, payload, validatePayload)
 	if isErrorInvalidJWT(err) {
-		req.log.Error("invalid_jwt", err, []logger.Object{})
+		req.log.Error("invalid_jwt", err, []logger.Object{
+			logger.MapToLoggerObject("jwt_payload", map[string]interface{}{
+				"s_subject":    payload.Subject,
+				"s_audience":   payload.Audience,
+				"f_expiration": payload.ExpirationTime,
+			}),
+		})
 
 		return errInvalidToken
 	}

@@ -11,6 +11,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	storateInvalidToken "github.com/JoelD7/money/backend/storage/invalid_token"
 	"math/big"
 	"net/http"
 	"regexp"
@@ -37,6 +38,7 @@ var (
 	errWrongCredentials = errors.New("the email or password are incorrect")
 	errInvalidEmail     = errors.New("email is invalid")
 	errCookiesNotFound  = errors.New("cookies not found in request object")
+	errInvalidToken     = errors.New("invalid_access_token")
 )
 
 var (
@@ -67,7 +69,7 @@ type Credentials struct {
 	Password string `json:"password,omitempty"`
 }
 
-type loginResponse struct {
+type accessTokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
@@ -133,48 +135,134 @@ func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRe
 	if err != nil {
 		req.log.Error("request_body_unmarshal_failed", err, []logger.Object{})
 
-		return req.serverError()
-	}
-
-	cookies, ok := request.Headers["Cookie"]
-	if !ok {
-		req.log.Error("cookies_not_found_in_request", errCookiesNotFound, []logger.Object{})
-
-		return req.serverError()
-	}
-
-	var refreshToken string
-
-	for _, cookie := range strings.Split(cookies, ";") {
-		if strings.HasPrefix("refresh_token", cookie) {
-			refreshToken = strings.Split(cookie, "=")[1]
-			break
-		}
+		return req.serverError(nil)
 	}
 
 	person, err := storagePerson.GetPersonByEmail(ctx, credentials.Email)
 	if err != nil {
 		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
-	if person.PreviousRefreshToken != "" && refreshToken == person.PreviousRefreshToken {
-		//	TODO: invalidate all tokens of the user, forcing him to reauthenticate
+	err = req.getTokensFromCookies(request)
+	if err != nil {
+		req.log.Error("get_tokens_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	if person.PreviousRefreshToken != "" && req.RefreshToken == person.PreviousRefreshToken {
+		return req.invalidatePersonToken(ctx, person)
+	}
+
+	if req.RefreshToken != person.RefreshToken {
+		req.log.Warning("refresh_token_mismatch", nil, []logger.Object{
+			person,
+			logger.MapToLoggerObject("refresh_token_comparison", map[string]interface{}{
+				"s_cookie_token":   req.RefreshToken,
+				"s_database_token": person.RefreshToken,
+			}),
+		})
 
 		return &events.APIGatewayProxyResponse{
 			StatusCode: http.StatusUnauthorized,
-			Body:       "Invalid credentials",
+			Body:       "Invalid refresh token",
 		}, nil
 	}
 
-	if refreshToken == person.RefreshToken {
-		// TODO: issue new access token and refresh token
+	tokenCookieHeaders, err := req.setTokens(ctx, person)
+	if err != nil {
+		req.log.Error("token_setting_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
+	if err != nil {
+		req.log.Error("response_building_failed", err, []logger.Object{person})
+
+		return req.serverError(nil)
+	}
+
+	req.log.Info("new_tokens_issued_successfully", []logger.Object{person})
+
+	return &events.APIGatewayProxyResponse{
+		StatusCode:        http.StatusOK,
+		MultiValueHeaders: tokenCookieHeaders,
+		Body:              responseBody,
+	}, nil
+}
+
+func (req *requestHandler) getTokensFromCookies(request *events.APIGatewayProxyRequest) error {
+	cookies, ok := request.Headers["Cookie"]
+
+	if !ok {
+		req.log.Error("cookies_not_found_in_request", errCookiesNotFound, []logger.Object{})
+
+		return errCookiesNotFound
+	}
+
+	for _, cookie := range strings.Split(cookies, ";") {
+		if strings.HasPrefix(cookie, "access_token") {
+			req.AccessToken = strings.Split(cookie, "=")[1]
+		}
+
+		if strings.HasPrefix(cookie, "refresh_token") {
+			req.RefreshToken = strings.Split(cookie, "=")[1]
+		}
+	}
+
+	return nil
+}
+
+func (req *requestHandler) getTokenExpiration(token string) (int64, error) {
+	var payload *jwtPayload
+
+	tokenParts := strings.Split(token, ".")
+	if len(tokenParts) < 3 {
+		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
+
+		return 0, errInvalidToken
+	}
+
+	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
+	if err != nil {
+		req.log.Error("payload_decoding_failed", err, []logger.Object{})
+
+		return 0, err
+	}
+
+	err = json.Unmarshal(payloadPart, &payload)
+	if err != nil {
+		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
+
+		return 0, err
+	}
+
+	return payload.ExpirationTime.Unix(), nil
+}
+
+func (req *requestHandler) invalidatePersonToken(ctx context.Context, person *entities.Person) (*events.APIGatewayProxyResponse, error) {
+	accessTokenTTL, err := req.getTokenExpiration(req.AccessToken)
+	if err != nil {
+		req.log.Error("get_token_expiration_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	err = storateInvalidToken.AddInvalidToken(ctx, person.Email, req.AccessToken, accessTokenTTL)
+	if err != nil {
+		req.log.Error("token_invalidation_failed", err, []logger.Object{
+			person,
+		})
+
+		return req.serverError(err)
 	}
 
 	return &events.APIGatewayProxyResponse{
-		StatusCode: http.StatusOK,
-		Body:       "",
+		StatusCode: http.StatusUnauthorized,
+		Body:       "Invalid credentials",
 	}, nil
 }
 
@@ -198,7 +286,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 	if err != nil {
 		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	err = req.validateCredentials(reqBody.Credentials)
@@ -212,7 +300,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 	if err != nil {
 		req.log.Error("password_hashing_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	err = storagePerson.CreatePerson(ctx, reqBody.FullName, reqBody.Email, string(hashedPassword))
@@ -225,7 +313,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 	if err != nil {
 		req.log.Error("sign_up_process_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	return &events.APIGatewayProxyResponse{
@@ -253,7 +341,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	if err != nil {
 		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	err = req.validateCredentials(reqBody)
@@ -281,14 +369,14 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	if err != nil {
 		req.log.Error("token_setting_failed", err, []logger.Object{reqBody})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
-	responseBody, err := utils.GetJsonString(&loginResponse{req.AccessToken})
+	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
 	if err != nil {
 		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	req.log.Info("login_succeeded", []logger.Object{})
@@ -364,14 +452,14 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 	if err != nil {
 		req.log.Error("public_key_fetching_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	kid, err := req.getKidFromSecret()
 	if err != nil {
 		req.log.Error("kid_fetching_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	response := jwks{
@@ -390,7 +478,7 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 	if err != nil {
 		req.log.Error("jwks_response_marshall_failed", err, []logger.Object{})
 
-		return req.serverError()
+		return req.serverError(nil)
 	}
 
 	return &events.APIGatewayProxyResponse{
@@ -485,11 +573,11 @@ func (req *requestHandler) getKidFromSecret() (string, error) {
 
 }
 
-func (req *requestHandler) serverError() (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) serverError(err error) (*events.APIGatewayProxyResponse, error) {
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusInternalServerError,
 		Body:       http.StatusText(http.StatusInternalServerError),
-	}, nil
+	}, err
 }
 
 func (req *requestHandler) clientError(err error) (*events.APIGatewayProxyResponse, error) {

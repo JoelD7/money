@@ -26,6 +26,10 @@ func (p *testPerson) LogProperties() map[string]interface{} {
 	}
 }
 
+func init() {
+	InitLoggerMock()
+}
+
 func TestInfo(t *testing.T) {
 	c := require.New(t)
 
@@ -42,4 +46,5 @@ func TestInfo(t *testing.T) {
 	logger := NewLogger()
 
 	logger.Info("test_event_emitted", []Object{person})
+	logger.Info("test_event_emitted", nil)
 }

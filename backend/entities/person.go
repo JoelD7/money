@@ -36,3 +36,14 @@ type SavingGoal struct {
 	Goal         float64   `json:"goal,omitempty" dynamodbav:"goal,omitempty"`
 	Deadline     time.Time `json:"deadline,omitempty" dynamodbav:"deadline,omitempty"`
 }
+
+func (p Person) LogName() string {
+	return "person"
+}
+
+func (p Person) LogProperties() map[string]interface{} {
+	return map[string]interface{}{
+		"s_person_id": p.PersonID,
+		"s_email":     p.Email,
+	}
+}
