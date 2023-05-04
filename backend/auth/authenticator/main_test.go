@@ -4,17 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
-	"github.com/JoelD7/money/backend/storage/person"
+	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 )
 
@@ -22,6 +20,8 @@ var secretMock *secretsMock.MockSecret
 
 func init() {
 	logger.InitLoggerMock()
+
+	_ = storagePerson.InitDynamoMock()
 
 	secretMock = secretsMock.InitSecretMock()
 
@@ -38,25 +38,6 @@ func init() {
 	})
 }
 
-func TestJoel(t *testing.T) {
-	c := require.New(t)
-
-	cookies := "refresh_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGdtYWlsLmNvbSIsImV4cCI6MTY4NTU2NzQ1OX0.W52_tn8bi_RBBSIYpxVhQrHnGViav-BI0o1w-setOwMDgcoUyPtnmJfrW1tbmwGZwDU77Fq0Db8fbYTJEa2DX13n62QM_xM2VaDEyri_RT_zAfiV-8OMPPGdbAMy1B0pXRzV_IGKOwSSPCLqEeNzhH9r9_94H7WiIOjp0tbh-5LQfg618HQP2HuF2YA6SpvVvpjNrmOXTx1ysFtX-oJiQwYfNpI-YvrA8r5PADFrpGSFpe__xSseRfNtRTde3vHYX135qBy2WXYSJS2Gsf9pCwT_K8rzhHPZL6lWDGft6niRkEAIIBmna0YVBbf3MgdA0253qJjmIOTlMFI2uJWczg"
-	cookiesArr := strings.Split(cookies, ";")
-	c.Len(cookiesArr, 1)
-	for _, cookie := range cookiesArr {
-		fmt.Println(cookie)
-		if strings.HasPrefix("access_token", cookie) {
-
-		}
-
-		if strings.HasPrefix(cookie, "refresh_token") {
-			fmt.Println("hit!")
-			fmt.Println("req.RefreshToken: ", strings.Split(cookie, "=")[1])
-		}
-	}
-}
-
 func TestLoginHandler(t *testing.T) {
 	c := require.New(t)
 
@@ -64,8 +45,6 @@ func TestLoginHandler(t *testing.T) {
 		Email:    "test@gmail.com",
 		Password: "1234",
 	}
-
-	_ = person.InitDynamoMock()
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -92,8 +71,6 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
-	_ = person.InitDynamoMock()
-
 	secretsMock.ForceFailure = true
 	defer func() {
 		secretsMock.ForceFailure = false
@@ -104,14 +81,14 @@ func TestLoginHandlerFailed(t *testing.T) {
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 
-	person.ForceNotFound = true
+	storagePerson.ForceNotFound = true
 
 	response, err = logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(person.ErrForceNotFound.Error(), response.Body)
+	c.Equal(storagePerson.ErrForceNotFound.Error(), response.Body)
 
-	person.ForceNotFound = false
+	storagePerson.ForceNotFound = false
 
 	request.Body = "a"
 	response, err = logInHandler(request)
@@ -173,7 +150,7 @@ func TestSignUpHandler(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
-	dynamoMock := person.InitDynamoMock()
+	dynamoMock := storagePerson.InitDynamoMock()
 
 	dynamoMock.QueryOutput.Items = nil
 
@@ -194,16 +171,17 @@ func TestSignUpHandlerFailed(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
-	_ = person.InitDynamoMock()
-
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
+
+	storagePerson.ForceUserExists = true
+	defer func() { storagePerson.ForceUserExists = false }()
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
 	response, err := signUpHandler(request)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(person.ErrExistingUser.Error(), response.Body)
+	c.Equal(storagePerson.ErrExistingUser.Error(), response.Body)
 
 	request = &events.APIGatewayProxyRequest{Body: "}"}
 
@@ -263,6 +241,37 @@ func TestJWTHandler(t *testing.T) {
 	response, err := jwksHandler(&events.APIGatewayProxyRequest{})
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.Equal(expectedJWKS, response.Body)
+}
+
+func TestRefreshTokenHandler(t *testing.T) {
+	c := require.New(t)
+
+	body := Credentials{
+		Email: "test@gmail.com",
+	}
+
+	jsonBody, err := bodyToJSONString(body)
+	c.Nil(err)
+
+	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+
+	response, err := refreshTokenHandler(request)
+	c.Nil(err)
+	c.Equal(http.StatusOK, response.StatusCode)
+	c.NotEmpty(response.Body)
+}
+
+func TestRefreshTokenHandlerFailed(t *testing.T) {
+	c := require.New(t)
+
+	request := &events.APIGatewayProxyRequest{Body: "}"}
+
+	response, err := refreshTokenHandler(request)
+	c.Nil(err)
+	c.Equal(http.StatusInternalServerError, response.StatusCode)
+
+	//storagePerson.ForceNotFound = true
+	//defer func() { storagePerson.ForceNotFound = true }()
 }
 
 func bodyToJSONString(body interface{}) (string, error) {
