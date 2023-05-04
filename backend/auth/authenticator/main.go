@@ -145,33 +145,18 @@ func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRe
 		return req.serverError(nil)
 	}
 
-	err = req.getTokensFromCookies(request)
-	if err != nil {
-		req.log.Error("get_tokens_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	if person.PreviousRefreshToken != "" && req.RefreshToken == person.PreviousRefreshToken {
-		return req.invalidatePersonToken(ctx, person)
-	}
-
-	if req.RefreshToken != person.RefreshToken {
-		req.log.Warning("refresh_token_mismatch", nil, []logger.Object{
+	if req.isRefreshTokenInvalid(person) {
+		req.log.Warning("invalid_refresh_token", nil, []logger.Object{
 			person,
-			logger.MapToLoggerObject("refresh_token_comparison", map[string]interface{}{
-				"s_cookie_token":   req.RefreshToken,
-				"s_database_token": person.RefreshToken,
+			logger.MapToLoggerObject("request", map[string]interface{}{
+				"s_request_token": req.RefreshToken,
 			}),
 		})
 
-		return &events.APIGatewayProxyResponse{
-			StatusCode: http.StatusUnauthorized,
-			Body:       "Invalid refresh token",
-		}, nil
+		return req.invalidatePersonTokens(ctx, person)
 	}
 
-	tokenCookieHeaders, err := req.setTokens(ctx, person)
+	tokenCookieHeader, err := req.setTokens(ctx, person)
 	if err != nil {
 		req.log.Error("token_setting_failed", err, []logger.Object{})
 
@@ -188,32 +173,15 @@ func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRe
 	req.log.Info("new_tokens_issued_successfully", []logger.Object{person})
 
 	return &events.APIGatewayProxyResponse{
-		StatusCode:        http.StatusOK,
-		MultiValueHeaders: tokenCookieHeaders,
-		Body:              responseBody,
+		StatusCode: http.StatusOK,
+		Headers:    tokenCookieHeader,
+		Body:       responseBody,
 	}, nil
 }
 
-func (req *requestHandler) getTokensFromCookies(request *events.APIGatewayProxyRequest) error {
-	cookies, ok := request.Headers["Cookie"]
-
-	if !ok {
-		req.log.Error("cookies_not_found_in_request", errCookiesNotFound, []logger.Object{})
-
-		return errCookiesNotFound
-	}
-
-	for _, cookie := range strings.Split(cookies, ";") {
-		if strings.HasPrefix(cookie, "access_token") {
-			req.AccessToken = strings.Split(cookie, "=")[1]
-		}
-
-		if strings.HasPrefix(cookie, "refresh_token") {
-			req.RefreshToken = strings.Split(cookie, "=")[1]
-		}
-	}
-
-	return nil
+func (req *requestHandler) isRefreshTokenInvalid(person *entities.Person) bool {
+	return (person.PreviousRefreshToken != "" && req.RefreshToken == person.PreviousRefreshToken) ||
+		(req.RefreshToken != person.RefreshToken)
 }
 
 func (req *requestHandler) getTokenExpiration(token string) (int64, error) {
@@ -243,17 +211,33 @@ func (req *requestHandler) getTokenExpiration(token string) (int64, error) {
 	return payload.ExpirationTime.Unix(), nil
 }
 
-func (req *requestHandler) invalidatePersonToken(ctx context.Context, person *entities.Person) (*events.APIGatewayProxyResponse, error) {
-	accessTokenTTL, err := req.getTokenExpiration(req.AccessToken)
+func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *entities.Person) (*events.APIGatewayProxyResponse, error) {
+	accessTokenTTL, err := req.getTokenExpiration(person.AccessToken)
 	if err != nil {
-		req.log.Error("get_token_expiration_failed", err, []logger.Object{})
+		req.log.Error("get_access_token_expiration_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
 	}
 
-	err = storateInvalidToken.AddInvalidToken(ctx, person.Email, req.AccessToken, accessTokenTTL)
+	refreshTokenTTL, err := req.getTokenExpiration(person.RefreshToken)
 	if err != nil {
-		req.log.Error("token_invalidation_failed", err, []logger.Object{
+		req.log.Error("get_refresh_token_expiration_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	err = storateInvalidToken.AddInvalidToken(ctx, person.Email, person.AccessToken, accessTokenTTL)
+	if err != nil {
+		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
+			person,
+		})
+
+		return req.serverError(err)
+	}
+
+	err = storateInvalidToken.AddInvalidToken(ctx, person.Email, person.RefreshToken, refreshTokenTTL)
+	if err != nil {
+		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
 			person,
 		})
 
@@ -382,22 +366,20 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	req.log.Info("login_succeeded", []logger.Object{})
 
 	return &events.APIGatewayProxyResponse{
-		StatusCode:        http.StatusOK,
-		Body:              responseBody,
-		MultiValueHeaders: headers,
+		StatusCode: http.StatusOK,
+		Body:       responseBody,
+		Headers:    headers,
 	}, nil
 }
 
-func (req *requestHandler) setTokens(ctx context.Context, person *entities.Person) (map[string][]string, error) {
+func (req *requestHandler) setTokens(ctx context.Context, person *entities.Person) (map[string]string, error) {
 	now := time.Now()
-
-	accessTokenExpiry := jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second))
 
 	accessTokenPayload := &jwt.Payload{
 		Issuer:         accessTokenIssuer,
 		Subject:        person.Email,
 		Audience:       jwt.Audience{accessTokenAudience},
-		ExpirationTime: accessTokenExpiry,
+		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second)),
 		IssuedAt:       jwt.NumericDate(now),
 	}
 
@@ -425,16 +407,12 @@ func (req *requestHandler) setTokens(ctx context.Context, person *entities.Perso
 	person.RefreshToken = req.RefreshToken
 	person.AccessToken = req.AccessToken
 
-	setCookieHeaders := map[string][]string{
-		"Set-Cookie": {
-			fmt.Sprintf("access_token=%s; Path=/; Expires=%s; Secure; HttpOnly", req.AccessToken,
-				accessTokenExpiry.Format(time.RFC1123)),
-			fmt.Sprintf("refresh_token=%s; Path=/; Expires=%s; Secure; HttpOnly", req.RefreshToken,
-				refreshTokenExpiry.Format(time.RFC1123)),
-		},
+	setCookieHeader := map[string]string{
+		"Set-Cookie": fmt.Sprintf("refresh_token=%s; Path=/; Expires=%s; Secure; HttpOnly", req.RefreshToken,
+			refreshTokenExpiry.Format(time.RFC1123)),
 	}
 
-	return setCookieHeaders, storagePerson.UpdatePerson(ctx, person)
+	return setCookieHeader, storagePerson.UpdatePerson(ctx, person)
 }
 
 func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
