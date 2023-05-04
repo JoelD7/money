@@ -2,6 +2,6 @@ package entities
 
 type InvalidToken struct {
 	Email  string `json:"email,omitempty" dynamodbav:"email"`
-	Token  string `json:"token_id,omitempty" dynamodbav:"token_id"`
+	Token  string `json:"token,omitempty" dynamodbav:"token"`
 	Expire int64  `json:"expire,omitempty" dynamodbav:"expire"`
 }

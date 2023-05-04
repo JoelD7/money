@@ -423,6 +423,7 @@ func (req *requestHandler) setTokens(ctx context.Context, person *entities.Perso
 
 	person.PreviousRefreshToken = person.RefreshToken
 	person.RefreshToken = req.RefreshToken
+	person.AccessToken = req.AccessToken
 
 	setCookieHeaders := map[string][]string{
 		"Set-Cookie": {
