@@ -10,10 +10,15 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-var (
-	ForceNotFound   = false
-	ForceUserExists = false
+type FailureCondition string
 
+const (
+	NotFound   FailureCondition = "not found"
+	UserExists FailureCondition = "user exists"
+	None       FailureCondition = "none"
+)
+
+var (
 	ErrForceNotFound      = errors.New("force not found")
 	ErrMockNotInitialized = errors.New("mock is not initialized")
 )
@@ -21,6 +26,9 @@ var (
 type MockDynamo struct {
 	GetItemOutput *dynamodb.GetItemOutput
 	QueryOutput   *dynamodb.QueryOutput
+
+	emulatingErrors map[FailureCondition]error
+	mockedErr       error
 }
 
 func InitDynamoMock() *MockDynamo {
@@ -32,6 +40,11 @@ func InitDynamoMock() *MockDynamo {
 	mock := &MockDynamo{
 		GetItemOutput: getItemOutput,
 		QueryOutput:   queryOutput,
+		emulatingErrors: map[FailureCondition]error{
+			NotFound:   ErrForceNotFound,
+			UserExists: ErrExistingUser,
+			None:       nil,
+		},
 	}
 
 	storage.DefaultClient = mock
@@ -39,9 +52,17 @@ func InitDynamoMock() *MockDynamo {
 	return mock
 }
 
+func (d *MockDynamo) ActivateForceFailure(condition FailureCondition) {
+	d.mockedErr = d.emulatingErrors[condition]
+}
+
+func (d *MockDynamo) DeactivateForceFailure() {
+	d.mockedErr = nil
+}
+
 func (d *MockDynamo) GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
-	if ForceNotFound {
-		return &dynamodb.GetItemOutput{}, ErrForceNotFound
+	if d.mockedErr != nil {
+		return &dynamodb.GetItemOutput{}, d.mockedErr
 	}
 
 	if d.GetItemOutput == nil {
@@ -52,8 +73,8 @@ func (d *MockDynamo) GetItem(ctx context.Context, params *dynamodb.GetItemInput,
 }
 
 func (d *MockDynamo) Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
-	if ForceNotFound {
-		return &dynamodb.QueryOutput{}, ErrForceNotFound
+	if d.mockedErr != nil {
+		return &dynamodb.QueryOutput{}, d.mockedErr
 	}
 
 	if d.QueryOutput == nil {
@@ -64,8 +85,8 @@ func (d *MockDynamo) Query(ctx context.Context, params *dynamodb.QueryInput, opt
 }
 
 func (d *MockDynamo) PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-	if ForceUserExists {
-		return &dynamodb.PutItemOutput{}, ErrExistingUser
+	if d.mockedErr != nil {
+		return &dynamodb.PutItemOutput{}, d.mockedErr
 	}
 
 	return &dynamodb.PutItemOutput{}, nil

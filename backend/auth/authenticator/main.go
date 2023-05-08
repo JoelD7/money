@@ -310,6 +310,8 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		log: logger.NewLoggerWithHandler("log-in"),
 	}
 
+	fmt.Println(time.Now().Format(time.RFC3339Nano), "req logger initialized")
+
 	req.init()
 	defer req.finish()
 
@@ -364,6 +366,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 	}
 
 	req.log.Info("login_succeeded", []logger.Object{})
+	fmt.Println(time.Now().String(), "logged")
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,

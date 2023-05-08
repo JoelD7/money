@@ -17,11 +17,12 @@ import (
 )
 
 var secretMock *secretsMock.MockSecret
+var personMock *storagePerson.MockDynamo
 
 func init() {
 	logger.InitLoggerMock()
 
-	_ = storagePerson.InitDynamoMock()
+	personMock = storagePerson.InitDynamoMock()
 
 	secretMock = secretsMock.InitSecretMock()
 
@@ -81,14 +82,14 @@ func TestLoginHandlerFailed(t *testing.T) {
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 
-	storagePerson.ForceNotFound = true
+	personMock.ActivateForceFailure(storagePerson.NotFound)
 
 	response, err = logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(storagePerson.ErrForceNotFound.Error(), response.Body)
 
-	storagePerson.ForceNotFound = false
+	personMock.DeactivateForceFailure()
 
 	request.Body = "a"
 	response, err = logInHandler(request)
@@ -174,8 +175,10 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	storagePerson.ForceUserExists = true
-	defer func() { storagePerson.ForceUserExists = false }()
+	//storagePerson.ForceUserExists = true
+	personMock.ActivateForceFailure(storagePerson.UserExists)
+	defer personMock.DeactivateForceFailure()
+	//defer func() { storagePerson.ForceUserExists = false }()
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
