@@ -67,13 +67,13 @@ func TestHandlerError(t *testing.T) {
 	c.Nil(err)
 
 	event.AuthorizationToken = authToken
-	_, err = handleRequest(context.Background(), event)
-	c.ErrorIs(err, errSigningKeyNotFound)
+	response, err := handleRequest(context.Background(), event)
+	c.Nil(err)
+	c.NotNil(response.Context["stringKey"])
+	c.Equal(errSigningKeyNotFound.Error(), response.Context["stringKey"])
 
-	secretsMock.ForceFailure = true
-	defer func() {
-		secretsMock.ForceFailure = false
-	}()
+	secretMock.ActivateForceFailure(secretsMock.SecretsError)
+	defer secretMock.DeactivateForceFailure()
 
 	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
 		return "123", nil
@@ -82,8 +82,8 @@ func TestHandlerError(t *testing.T) {
 	err = mockRestClientGetFromFile("samples/jwks_response.json")
 	c.Nil(err)
 
-	_, err = handleRequest(context.Background(), event)
-	c.ErrorIs(err, secretsMock.ErrForceFailure)
+	response, err = handleRequest(context.Background(), event)
+	c.Equal(secretsMock.ErrForceFailure.Error(), response.Context["stringKey"])
 }
 
 func dummyHandlerEvent() events.APIGatewayCustomAuthorizerRequest {

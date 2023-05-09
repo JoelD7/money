@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
@@ -17,12 +18,9 @@ import (
 )
 
 var secretMock *secretsMock.MockSecret
-var personMock *storagePerson.MockDynamo
 
 func init() {
 	logger.InitLoggerMock()
-
-	personMock = storagePerson.InitDynamoMock()
 
 	secretMock = secretsMock.InitSecretMock()
 
@@ -72,16 +70,15 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
-	secretsMock.ForceFailure = true
-	defer func() {
-		secretsMock.ForceFailure = false
-	}()
+	secretMock.ActivateForceFailure(secretsMock.SecretsError)
+	defer secretMock.DeactivateForceFailure()
 
 	response, err := logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 
+	personMock := storagePerson.InitDynamoMock()
 	personMock.ActivateForceFailure(storagePerson.NotFound)
 
 	response, err = logInHandler(request)
@@ -175,14 +172,16 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	//storagePerson.ForceUserExists = true
+	personMock := storagePerson.InitDynamoMock()
+
 	personMock.ActivateForceFailure(storagePerson.UserExists)
 	defer personMock.DeactivateForceFailure()
-	//defer func() { storagePerson.ForceUserExists = false }()
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
+	fmt.Println("running signUpHandler")
 	response, err := signUpHandler(request)
+	fmt.Println("signUpHandler finished")
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(storagePerson.ErrExistingUser.Error(), response.Body)
 
@@ -258,8 +257,10 @@ func TestRefreshTokenHandler(t *testing.T) {
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
+	fmt.Println("running refreshTokenHandler")
 	response, err := refreshTokenHandler(request)
 	c.Nil(err)
+	fmt.Println("refreshTokenHandler finished")
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.NotEmpty(response.Body)
 }
@@ -272,9 +273,6 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	response, err := refreshTokenHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
-
-	//storagePerson.ForceNotFound = true
-	//defer func() { storagePerson.ForceNotFound = true }()
 }
 
 func bodyToJSONString(body interface{}) (string, error) {
