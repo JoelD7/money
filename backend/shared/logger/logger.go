@@ -22,7 +22,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-52-91-158-73.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-172-194-186.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
@@ -66,6 +66,10 @@ func NewLogger() LogAPI {
 }
 
 func NewLoggerWithHandler(handler string) LogAPI {
+	if LogClient != nil {
+		return LogClient
+	}
+
 	LogClient = &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
 		Handler: handler,

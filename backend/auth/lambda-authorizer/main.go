@@ -319,7 +319,6 @@ func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 func (req *request) getKidFromSecret() (string, error) {
 	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
 	if err != nil {
-		errorLogger.Println(err)
 		return "", err
 	}
 
