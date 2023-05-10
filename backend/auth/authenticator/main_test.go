@@ -248,19 +248,11 @@ func TestJWTHandler(t *testing.T) {
 func TestRefreshTokenHandler(t *testing.T) {
 	c := require.New(t)
 
-	body := Credentials{
-		Email: "test@gmail.com",
-	}
-
-	jsonBody, err := bodyToJSONString(body)
+	request, err := dummyAPIGatewayProxyRequest()
 	c.Nil(err)
 
-	request := &events.APIGatewayProxyRequest{Body: jsonBody}
-
-	fmt.Println("running refreshTokenHandler")
 	response, err := refreshTokenHandler(request)
 	c.Nil(err)
-	fmt.Println("refreshTokenHandler finished")
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.NotEmpty(response.Body)
 }
@@ -271,6 +263,25 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	request := &events.APIGatewayProxyRequest{Body: "}"}
 
 	response, err := refreshTokenHandler(request)
+	c.Nil(err)
+	c.Equal(http.StatusInternalServerError, response.StatusCode)
+
+	request, err = dummyAPIGatewayProxyRequest()
+	c.Nil(err)
+
+	personMock := storagePerson.InitDynamoMock()
+
+	request.Headers = map[string]string{}
+	request.Headers["Cookie"] = refreshTokenCookieName + "=previous token"
+
+	response, err = refreshTokenHandler(request)
+	c.Nil(err)
+	c.Equal(http.StatusUnauthorized, response.StatusCode)
+
+	personMock.ActivateForceFailure(storagePerson.NotFound)
+	defer personMock.DeactivateForceFailure()
+
+	response, err = refreshTokenHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 }
@@ -300,4 +311,22 @@ func mockRestClientGetFromFile(filename string) error {
 	}
 
 	return nil
+}
+
+func dummyAPIGatewayProxyRequest() (*events.APIGatewayProxyRequest, error) {
+	body := Credentials{
+		Email: "test@gmail.com",
+	}
+
+	jsonBody, err := bodyToJSONString(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return &events.APIGatewayProxyRequest{
+		Body: jsonBody,
+		Headers: map[string]string{
+			"Cookie": refreshTokenCookieName + "=dummy token",
+		},
+	}, nil
 }

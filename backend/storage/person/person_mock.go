@@ -2,12 +2,17 @@ package person
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/storage"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/gbrlsnchs/jwt/v3"
+	"time"
 )
 
 type FailureCondition string
@@ -136,21 +141,63 @@ func defaultOutput() (*dynamodb.GetItemOutput, *dynamodb.QueryOutput, error) {
 		return nil, nil, err
 	}
 
+	previousRefreshToken, err := attributevalue.Marshal("previous token")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	dummyToken, err := getDummyToken()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	return &dynamodb.GetItemOutput{
 			Item: map[string]types.AttributeValue{
-				"email":     email,
-				"password":  password,
-				"full_name": fullName,
+				"email":                  email,
+				"password":               password,
+				"full_name":              fullName,
+				"previous_refresh_token": previousRefreshToken,
+				"refresh_token":          dummyToken,
+				"access_token":           dummyToken,
 			},
 		},
 		&dynamodb.QueryOutput{
 			Items: []map[string]types.AttributeValue{
 				{
-					"email":     email,
-					"password":  password,
-					"full_name": fullName,
+					"email":                  email,
+					"password":               password,
+					"full_name":              fullName,
+					"previous_refresh_token": previousRefreshToken,
+					"refresh_token":          dummyToken,
+					"access_token":           dummyToken,
 				},
 			},
 		},
 		nil
+}
+
+func getDummyToken() (types.AttributeValue, error) {
+	pld := &models.JWTPayload{
+		Payload: &jwt.Payload{
+			Subject:        "John Doe",
+			ExpirationTime: jwt.NumericDate(time.Now().Add(time.Hour * 1)),
+		},
+	}
+
+	payload, err := json.Marshal(pld)
+	if err != nil {
+		return nil, err
+	}
+
+	encodedPayload := make([]byte, base64.RawURLEncoding.EncodedLen(len(payload)))
+	base64.RawURLEncoding.Encode(encodedPayload, payload)
+
+	value := "random." + string(encodedPayload) + ".random"
+
+	token, err := attributevalue.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }

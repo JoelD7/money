@@ -3,7 +3,7 @@ package person
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/backend/entities"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/JoelD7/money/backend/storage"
@@ -41,7 +41,7 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 		return ErrExistingUser
 	}
 
-	person := &entities.Person{
+	person := &models.Person{
 		PersonID:    utils.GenerateDynamoID(personPrefix),
 		FullName:    fullName,
 		Email:       email,
@@ -82,7 +82,7 @@ func personExists(ctx context.Context, email string) (bool, error) {
 	return false, err
 }
 
-func GetPerson(ctx context.Context, personId string) (*entities.Person, error) {
+func GetPerson(ctx context.Context, personId string) (*models.Person, error) {
 	personKey, err := attributevalue.Marshal(personId)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func GetPerson(ctx context.Context, personId string) (*entities.Person, error) {
 		return nil, errNotFound
 	}
 
-	person := new(entities.Person)
+	person := new(models.Person)
 	err = attributevalue.UnmarshalMap(result.Item, person)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func GetPerson(ctx context.Context, personId string) (*entities.Person, error) {
 	return person, nil
 }
 
-func GetPersonByEmail(ctx context.Context, email string) (*entities.Person, error) {
+func GetPersonByEmail(ctx context.Context, email string) (*models.Person, error) {
 	nameEx := expression.Name("email").Equal(expression.Value(email))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
@@ -138,7 +138,7 @@ func GetPersonByEmail(ctx context.Context, email string) (*entities.Person, erro
 		return nil, errNotFound
 	}
 
-	person := new(entities.Person)
+	person := new(models.Person)
 	err = attributevalue.UnmarshalMap(result.Items[0], person)
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ func GetPersonByEmail(ctx context.Context, email string) (*entities.Person, erro
 	return person, nil
 }
 
-func UpdatePerson(ctx context.Context, person *entities.Person) error {
+func UpdatePerson(ctx context.Context, person *models.Person) error {
 	updatedItem, err := attributevalue.MarshalMap(person)
 	if err != nil {
 		return err
@@ -162,8 +162,8 @@ func UpdatePerson(ctx context.Context, person *entities.Person) error {
 	return err
 }
 
-func getDefaultCategories() []*entities.Category {
-	return []*entities.Category{
+func getDefaultCategories() []*models.Category {
+	return []*models.Category{
 		{
 			CategoryID:   utils.GenerateDynamoID(categoryPrefix),
 			CategoryName: "Entertainment",

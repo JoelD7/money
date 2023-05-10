@@ -3,7 +3,7 @@ package invalid_token
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/backend/entities"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -19,7 +19,7 @@ var (
 )
 
 func AddInvalidToken(ctx context.Context, email, token string, expires int64) error {
-	invalidToken := entities.InvalidToken{
+	invalidToken := models.InvalidToken{
 		Email:  email,
 		Token:  token,
 		Expire: expires,
@@ -40,7 +40,7 @@ func AddInvalidToken(ctx context.Context, email, token string, expires int64) er
 	return err
 }
 
-func GetInvalidTokens(ctx context.Context, email string) ([]*entities.InvalidToken, error) {
+func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
 	nameEx := expression.Name("email").Equal(expression.Value(email))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
@@ -64,7 +64,7 @@ func GetInvalidTokens(ctx context.Context, email string) ([]*entities.InvalidTok
 		return nil, errNotFound
 	}
 
-	invalidTokens := make([]*entities.InvalidToken, 0)
+	invalidTokens := make([]*models.InvalidToken, 0)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, invalidTokens)
 	if err != nil {
