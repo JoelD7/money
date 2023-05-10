@@ -1,4 +1,4 @@
-package entities
+package models
 
 type Budget struct {
 	PersonID string  `json:"person_id,omitempty"`

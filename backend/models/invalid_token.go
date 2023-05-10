@@ -1,4 +1,4 @@
-package entities
+package models
 
 type InvalidToken struct {
 	Email  string `json:"email,omitempty" dynamodbav:"email"`
