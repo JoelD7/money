@@ -92,8 +92,8 @@ func (d *MockDynamo) PutItem(ctx context.Context, params *dynamodb.PutItemInput,
 	return &dynamodb.PutItemOutput{}, nil
 }
 
-// MockGetItem mocks the response of the Dynamo DB's GetItem operation using source as the returned item.
-func (d *MockDynamo) MockGetItem(source interface{}) error {
+// MockGetItemFromSource mocks the response of the Dynamo DB's GetItem operation using source as the returned item.
+func (d *MockDynamo) MockGetItemFromSource(source interface{}) error {
 	item, err := attributevalue.MarshalMap(source)
 	if err != nil {
 		return err
@@ -106,8 +106,8 @@ func (d *MockDynamo) MockGetItem(source interface{}) error {
 	return nil
 }
 
-// MockQuery mocks the response of the Dynamo DB's Query operation using source as the returned item.
-func (d *MockDynamo) MockQuery(source interface{}) error {
+// MockQueryFromSource mocks the response of the Dynamo DB's Query operation using source as the returned item.
+func (d *MockDynamo) MockQueryFromSource(source interface{}) error {
 	item, err := attributevalue.MarshalMap(source)
 	if err != nil {
 		return err
