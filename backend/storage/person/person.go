@@ -16,9 +16,9 @@ import (
 )
 
 var (
-	tableName = env.GetString("USERS_TABLE_NAME", "person")
+	UsersTableName = env.GetString("USERS_TABLE_NAME", "person")
 
-	errNotFound     = errors.New("person not found")
+	ErrNotFound     = errors.New("person not found")
 	ErrExistingUser = errors.New("this account already exists")
 )
 
@@ -33,7 +33,7 @@ var (
 
 func CreatePerson(ctx context.Context, fullName, email, password string) error {
 	ok, err := personExists(ctx, email)
-	if err != nil && !errors.Is(err, errNotFound) {
+	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
 	}
 
@@ -58,7 +58,7 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 
 	input := &dynamodb.PutItemInput{
 		Item:      item,
-		TableName: aws.String(tableName),
+		TableName: aws.String(UsersTableName),
 	}
 
 	_, err = storage.DefaultClient.PutItem(ctx, input)
@@ -89,7 +89,7 @@ func GetPerson(ctx context.Context, personId string) (*models.Person, error) {
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(UsersTableName),
 		Key: map[string]types.AttributeValue{
 			"person_id": personKey,
 		},
@@ -101,7 +101,7 @@ func GetPerson(ctx context.Context, personId string) (*models.Person, error) {
 	}
 
 	if result.Item == nil {
-		return nil, errNotFound
+		return nil, ErrNotFound
 	}
 
 	person := new(models.Person)
@@ -126,7 +126,7 @@ func GetPersonByEmail(ctx context.Context, email string) (*models.Person, error)
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
 		IndexName:                 aws.String(emailIndex),
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(UsersTableName),
 	}
 
 	result, err := storage.DefaultClient.Query(ctx, input)
@@ -135,7 +135,7 @@ func GetPersonByEmail(ctx context.Context, email string) (*models.Person, error)
 	}
 
 	if result.Items == nil || len(result.Items) == 0 {
-		return nil, errNotFound
+		return nil, ErrNotFound
 	}
 
 	person := new(models.Person)
@@ -155,7 +155,7 @@ func UpdatePerson(ctx context.Context, person *models.Person) error {
 
 	input := &dynamodb.PutItemInput{
 		Item:      updatedItem,
-		TableName: aws.String(tableName),
+		TableName: aws.String(UsersTableName),
 	}
 
 	_, err = storage.DefaultClient.PutItem(ctx, input)

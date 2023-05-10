@@ -3,18 +3,22 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
+	"github.com/JoelD7/money/backend/storage"
 	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
 var secretMock *secretsMock.MockSecret
@@ -78,15 +82,24 @@ func TestLoginHandlerFailed(t *testing.T) {
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 
-	personMock := storagePerson.InitDynamoMock()
-	personMock.ActivateForceFailure(storagePerson.NotFound)
+	dynMock := storage.InitDynamoMock()
+	dynMock.ActivateForceFailure(storage.ErrForceNotFound)
+
+	person, err := getDummyPerson()
+	c.Nil(err)
+
+	err = dynMock.MockGetItemFromSource(storagePerson.UsersTableName, person)
+	c.Nil(err)
+
+	err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+	c.Nil(err)
 
 	response, err = logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(storagePerson.ErrForceNotFound.Error(), response.Body)
+	c.Equal(storage.ErrForceNotFound.Error(), response.Body)
 
-	personMock.DeactivateForceFailure()
+	dynMock.DeactivateForceFailure()
 
 	request.Body = "a"
 	response, err = logInHandler(request)
@@ -148,9 +161,7 @@ func TestSignUpHandler(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
-	dynamoMock := storagePerson.InitDynamoMock()
-
-	dynamoMock.QueryOutput.Items = nil
+	_ = storage.InitDynamoMock()
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -172,16 +183,14 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	personMock := storagePerson.InitDynamoMock()
+	dynMock := storage.InitDynamoMock()
 
-	personMock.ActivateForceFailure(storagePerson.UserExists)
-	defer personMock.DeactivateForceFailure()
+	dynMock.ActivateForceFailure(storagePerson.ErrExistingUser)
+	defer dynMock.DeactivateForceFailure()
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
-	fmt.Println("running signUpHandler")
 	response, err := signUpHandler(request)
-	fmt.Println("signUpHandler finished")
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(storagePerson.ErrExistingUser.Error(), response.Body)
 
@@ -248,8 +257,18 @@ func TestJWTHandler(t *testing.T) {
 func TestRefreshTokenHandler(t *testing.T) {
 	c := require.New(t)
 
+	person, err := getDummyPerson()
+	c.Nil(err)
+
+	dynMock := storage.InitDynamoMock()
+
+	err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+	c.Nil(err)
+
 	request, err := dummyAPIGatewayProxyRequest()
 	c.Nil(err)
+
+	request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.RefreshToken
 
 	response, err := refreshTokenHandler(request)
 	c.Nil(err)
@@ -269,7 +288,13 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	request, err = dummyAPIGatewayProxyRequest()
 	c.Nil(err)
 
-	personMock := storagePerson.InitDynamoMock()
+	person, err := getDummyPerson()
+	c.Nil(err)
+
+	dynMock := storage.InitDynamoMock()
+
+	err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+	c.Nil(err)
 
 	request.Headers = map[string]string{}
 	request.Headers["Cookie"] = refreshTokenCookieName + "=previous token"
@@ -278,8 +303,8 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	c.Nil(err)
 	c.Equal(http.StatusUnauthorized, response.StatusCode)
 
-	personMock.ActivateForceFailure(storagePerson.NotFound)
-	defer personMock.DeactivateForceFailure()
+	dynMock.ActivateForceFailure(storagePerson.ErrNotFound)
+	defer dynMock.DeactivateForceFailure()
 
 	response, err = refreshTokenHandler(request)
 	c.Nil(err)
@@ -324,9 +349,42 @@ func dummyAPIGatewayProxyRequest() (*events.APIGatewayProxyRequest, error) {
 	}
 
 	return &events.APIGatewayProxyRequest{
-		Body: jsonBody,
-		Headers: map[string]string{
-			"Cookie": refreshTokenCookieName + "=dummy token",
-		},
+		Body:    jsonBody,
+		Headers: map[string]string{},
 	}, nil
+}
+
+func getDummyPerson() (*models.Person, error) {
+	dummyToken, err := getDummyToken()
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.Person{
+		FullName:             "Joel",
+		Email:                "test@gmail.com",
+		Password:             "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
+		PreviousRefreshToken: "previous token",
+		AccessToken:          dummyToken,
+		RefreshToken:         dummyToken,
+	}, nil
+}
+
+func getDummyToken() (string, error) {
+	pld := &models.JWTPayload{
+		Payload: &jwt.Payload{
+			Subject:        "John Doe",
+			ExpirationTime: jwt.NumericDate(time.Now().Add(time.Hour * 1)),
+		},
+	}
+
+	payload, err := json.Marshal(pld)
+	if err != nil {
+		return "", err
+	}
+
+	encodedPayload := make([]byte, base64.RawURLEncoding.EncodedLen(len(payload)))
+	base64.RawURLEncoding.Encode(encodedPayload, payload)
+
+	return "random." + string(encodedPayload) + ".random", nil
 }
