@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	tableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
+	InvalidTokenTableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
 
 	errNotFound = errors.New("no tokens found for this user")
 )
@@ -32,7 +32,7 @@ func AddInvalidToken(ctx context.Context, email, token string, expires int64) er
 
 	input := &dynamodb.PutItemInput{
 		Item:      item,
-		TableName: aws.String(tableName),
+		TableName: aws.String(InvalidTokenTableName),
 	}
 
 	_, err = storage.DefaultClient.PutItem(ctx, input)
@@ -52,7 +52,7 @@ func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(InvalidTokenTableName),
 	}
 
 	result, err := storage.DefaultClient.Query(ctx, input)

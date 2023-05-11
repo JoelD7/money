@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
@@ -270,7 +271,7 @@ func TestRefreshTokenHandler(t *testing.T) {
 
 	request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.RefreshToken
 
-	response, err := refreshTokenHandler(request)
+	response, err := refreshTokenHandler(&request)
 	c.Nil(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.NotEmpty(response.Body)
@@ -279,36 +280,88 @@ func TestRefreshTokenHandler(t *testing.T) {
 func TestRefreshTokenHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	request := &events.APIGatewayProxyRequest{Body: "}"}
-
-	response, err := refreshTokenHandler(request)
-	c.Nil(err)
-	c.Equal(http.StatusInternalServerError, response.StatusCode)
-
-	request, err = dummyAPIGatewayProxyRequest()
-	c.Nil(err)
-
 	person, err := getDummyPerson()
 	c.Nil(err)
 
 	dynMock := storage.InitDynamoMock()
 
-	err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+	dummyRequest, err := dummyAPIGatewayProxyRequest()
 	c.Nil(err)
 
-	request.Headers = map[string]string{}
-	request.Headers["Cookie"] = refreshTokenCookieName + "=previous token"
+	t.Run("Invalid request body", func(t *testing.T) {
+		request := &events.APIGatewayProxyRequest{Body: "}"}
 
-	response, err = refreshTokenHandler(request)
-	c.Nil(err)
-	c.Equal(http.StatusUnauthorized, response.StatusCode)
+		response, err := refreshTokenHandler(request)
+		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
 
-	dynMock.ActivateForceFailure(storagePerson.ErrNotFound)
-	defer dynMock.DeactivateForceFailure()
+	t.Run("Refresh token leaked", func(t *testing.T) {
+		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+		c.Nil(err)
 
-	response, err = refreshTokenHandler(request)
-	c.Nil(err)
-	c.Equal(http.StatusInternalServerError, response.StatusCode)
+		request := dummyRequest
+
+		request.Headers = map[string]string{}
+		request.Headers["Cookie"] = refreshTokenCookieName + "=previous token"
+
+		fmt.Println(dummyRequest.Headers)
+
+		response, err := refreshTokenHandler(&request)
+		c.Nil(err)
+		c.Equal(http.StatusUnauthorized, response.StatusCode)
+	})
+
+	t.Run("Person not found", func(t *testing.T) {
+		dynMock.ActivateForceFailure(storagePerson.ErrNotFound)
+		defer dynMock.DeactivateForceFailure()
+
+		request := dummyRequest
+
+		response, err := refreshTokenHandler(&request)
+		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
+
+	t.Run("Invalid person access token", func(t *testing.T) {
+		person, err := getDummyPerson()
+		c.Nil(err)
+
+		person.AccessToken = "invalid token"
+		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+		c.Nil(err)
+
+		request := dummyRequest
+
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.PreviousRefreshToken
+
+		response, err := refreshTokenHandler(&request)
+		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
+
+	t.Run("Invalid person refresh token", func(t *testing.T) {
+		person, err := getDummyPerson()
+		c.Nil(err)
+
+		person.RefreshToken = "invalid token"
+
+		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+		c.Nil(err)
+
+		request := dummyRequest
+
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + "random"
+
+		response, err := refreshTokenHandler(&request)
+		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
+
+	t.Run("Token invalidation failed", func(t *testing.T) {
+		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+		c.Nil(err)
+	})
 }
 
 func bodyToJSONString(body interface{}) (string, error) {
@@ -338,17 +391,17 @@ func mockRestClientGetFromFile(filename string) error {
 	return nil
 }
 
-func dummyAPIGatewayProxyRequest() (*events.APIGatewayProxyRequest, error) {
+func dummyAPIGatewayProxyRequest() (events.APIGatewayProxyRequest, error) {
 	body := Credentials{
 		Email: "test@gmail.com",
 	}
 
 	jsonBody, err := bodyToJSONString(body)
 	if err != nil {
-		return nil, err
+		return events.APIGatewayProxyRequest{}, err
 	}
 
-	return &events.APIGatewayProxyRequest{
+	return events.APIGatewayProxyRequest{
 		Body:    jsonBody,
 		Headers: map[string]string{},
 	}, nil
