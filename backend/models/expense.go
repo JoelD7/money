@@ -11,6 +11,6 @@ type Expense struct {
 	Currency      string    `json:"currency,omitempty"`
 	Name          string    `json:"name,omitempty"`
 	Notes         string    `json:"notes,omitempty"`
-	CreationDate  time.Time `json:"creation_date,omitempty"`
+	Date          time.Time `json:"date,omitempty"`
 	UpdateDate    time.Time `json:"update_date,omitempty"`
 }
