@@ -11,9 +11,9 @@ type Person struct {
 	SavingGoals          []*SavingGoal `json:"saving_goals,omitempty" dynamodbav:"saving_goals,omitempty"`
 	CreatedDate          time.Time     `json:"created_date,omitempty" dynamodbav:"created_date,omitempty"`
 	UpdatedDate          time.Time     `json:"updated_date,omitempty" dynamodbav:"update_date,omitempty"`
-	AccessToken          string        `json:"access_token,omitempty" dynamodbav:"access_token,omitempty"`
-	PreviousRefreshToken string        `json:"previous_refresh_token,omitempty" dynamodbav:"previous_refresh_token"`
-	RefreshToken         string        `json:"refresh_token,omitempty" dynamodbav:"refresh_token"`
+	AccessToken          string        `json:"-" dynamodbav:"access_token,omitempty"`
+	PreviousRefreshToken string        `json:"-" dynamodbav:"previous_refresh_token"`
+	RefreshToken         string        `json:"-" dynamodbav:"refresh_token"`
 }
 
 type Category struct {
