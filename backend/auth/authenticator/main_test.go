@@ -18,10 +18,15 @@ import (
 	"testing"
 )
 
-var secretMock *secretsMock.MockSecret
+var (
+	secretMock *secretsMock.MockSecret
+	logMock    *logger.LogMock
+
+	logBuffer bytes.Buffer
+)
 
 func init() {
-	logger.InitLoggerMock()
+	logMock = logger.InitLoggerMock(logBuffer)
 
 	secretMock = secretsMock.InitSecretMock()
 
@@ -273,6 +278,9 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(request)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Contains(logMock.Output.String(), "request_body_unmarshal_failed")
+
+		logMock.Output.Reset()
 	})
 
 	t.Run("Refresh token leaked", func(t *testing.T) {
@@ -284,6 +292,8 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(&request)
 		c.Nil(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
+		c.Contains(logMock.Output.String(), "invalid_refresh_token")
+		logMock.Output.Reset()
 	})
 
 	t.Run("Person not found", func(t *testing.T) {
@@ -297,6 +307,8 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(&request)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Contains(logMock.Output.String(), "fetching_user_from_storage_failed")
+		logMock.Output.Reset()
 	})
 
 	t.Run("Refresh token in cookie not found", func(t *testing.T) {
@@ -305,6 +317,9 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(&dummyRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
+		logMock.Output.Reset()
+
 	})
 
 	t.Run("Invalid person access token", func(t *testing.T) {
@@ -324,6 +339,8 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(&request)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Contains(logMock.Output.String(), "get_access_token_expiration_failed")
+		logMock.Output.Reset()
 	})
 
 	t.Run("Invalid person refresh token", func(t *testing.T) {
@@ -343,6 +360,8 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(&request)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Contains(logMock.Output.String(), "get_refresh_token_expiration_failed")
+		logMock.Output.Reset()
 	})
 
 	t.Run("Token invalidation failed", func(t *testing.T) {
@@ -363,6 +382,8 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(&request)
 		c.EqualError(errCustomError, err.Error())
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Contains(logMock.Output.String(), "access_token_invalidation_failed")
+		logMock.Output.Reset()
 	})
 
 	t.Run("Set tokens failed", func(t *testing.T) {
@@ -382,6 +403,8 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		response, err := refreshTokenHandler(&dummyRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Contains(logMock.Output.String(), "token_setting_failed")
+		logMock.Output.Reset()
 	})
 }
 
