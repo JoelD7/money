@@ -9,7 +9,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-const dummyJWT = "header.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjo5OTk5OTk5OTk5fQ.signature"
+const (
+	DummyToken         = "header.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjo5OTk5OTk5OTk5fQ.signature"
+	DummyPreviousToken = "previous token"
+)
+
+var (
+	// This is the hashed version of the DummyToken variable with the same hash function we use to store the tokens on
+	// the DB. We need this variable for the mock because all tokens are stored hashed on the DB.
+	hashedDummyToken = "4f7c5d5d43a3c7e28ea09bc73679378151a3e086ad4360e5469423197a62b665"
+)
 
 var mockedPerson *models.Person
 
@@ -124,8 +133,8 @@ func GetMockedPerson() *models.Person {
 		FullName:             "Joel",
 		Email:                "test@gmail.com",
 		Password:             "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
-		PreviousRefreshToken: "previous token",
-		AccessToken:          dummyJWT,
-		RefreshToken:         dummyJWT,
+		PreviousRefreshToken: DummyPreviousToken,
+		AccessToken:          hashedDummyToken,
+		RefreshToken:         hashedDummyToken,
 	}
 }

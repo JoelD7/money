@@ -253,12 +253,10 @@ func TestRefreshTokenHandler(t *testing.T) {
 
 	_ = storagePerson.InitDynamoMock()
 
-	person := storagePerson.GetMockedPerson()
-
 	request, err := dummyAPIGatewayProxyRequest()
 	c.Nil(err)
 
-	request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.RefreshToken
+	request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
 
 	response, err := refreshTokenHandler(&request)
 	c.Nil(err)
@@ -287,7 +285,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		request := dummyRequest
 
 		request.Headers = map[string]string{}
-		request.Headers["Cookie"] = refreshTokenCookieName + "=previous token"
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyPreviousToken
 
 		response, err := refreshTokenHandler(&request)
 		c.Nil(err)
@@ -322,48 +320,6 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 
 	})
 
-	t.Run("Invalid person access token", func(t *testing.T) {
-		personMock := storagePerson.InitDynamoMock()
-
-		person := storagePerson.GetMockedPerson()
-
-		person.AccessToken = "invalid token"
-
-		err = personMock.MockQueryFromSource(person)
-		c.Nil(err)
-
-		request := dummyRequest
-
-		request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.PreviousRefreshToken
-
-		response, err := refreshTokenHandler(&request)
-		c.Nil(err)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "get_access_token_expiration_failed")
-		logMock.Output.Reset()
-	})
-
-	t.Run("Invalid person refresh token", func(t *testing.T) {
-		personMock := storagePerson.InitDynamoMock()
-
-		person := storagePerson.GetMockedPerson()
-
-		person.RefreshToken = "invalid token"
-
-		err = personMock.MockQueryFromSource(person)
-		c.Nil(err)
-
-		request := dummyRequest
-
-		request.Headers["Cookie"] = refreshTokenCookieName + "=" + "random"
-
-		response, err := refreshTokenHandler(&request)
-		c.Nil(err)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "get_refresh_token_expiration_failed")
-		logMock.Output.Reset()
-	})
-
 	t.Run("Token invalidation failed", func(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
 		person := storagePerson.GetMockedPerson()
@@ -390,15 +346,13 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
 		_ = storageInvalidToken.InitDynamoMock()
 
-		person := storagePerson.GetMockedPerson()
-
 		sMock := secretsMock.InitSecretMock()
 
 		sMock.ActivateForceFailure(secretsMock.SecretsError)
 		defer sMock.DeactivateForceFailure()
 
 		request := dummyRequest
-		request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.RefreshToken
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
 
 		response, err := refreshTokenHandler(&dummyRequest)
 		c.Nil(err)
