@@ -5,18 +5,41 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/storage"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go/aws"
 )
 
+type DynamoAPI interface {
+	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
+	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+}
+
 var (
 	InvalidTokenTableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
 
 	errNotFound = errors.New("no tokens found for this user")
 )
+
+var (
+	dynamoClient  *dynamodb.Client
+	DefaultClient DynamoAPI
+
+	awsRegion = env.GetString("REGION", "us-east-1")
+)
+
+func init() {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
+	if err != nil {
+		panic(err)
+	}
+
+	dynamoClient = dynamodb.NewFromConfig(cfg)
+	DefaultClient = dynamoClient
+}
 
 func AddInvalidToken(ctx context.Context, email, token string, expires int64) error {
 	invalidToken := models.InvalidToken{
@@ -35,7 +58,7 @@ func AddInvalidToken(ctx context.Context, email, token string, expires int64) er
 		TableName: aws.String(InvalidTokenTableName),
 	}
 
-	_, err = storage.DefaultClient.PutItem(ctx, input)
+	_, err = DefaultClient.PutItem(ctx, input)
 
 	return err
 }
@@ -55,7 +78,7 @@ func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken
 		TableName:                 aws.String(InvalidTokenTableName),
 	}
 
-	result, err := storage.DefaultClient.Query(ctx, input)
+	result, err := DefaultClient.Query(ctx, input)
 	if err != nil {
 		return nil, err
 	}

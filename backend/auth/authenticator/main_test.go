@@ -3,23 +3,19 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"github.com/JoelD7/money/backend/models"
+	"errors"
 	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
-	"github.com/JoelD7/money/backend/storage"
+	storageInvalidToken "github.com/JoelD7/money/backend/storage/invalid_token"
 	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"os"
 	"testing"
-	"time"
 )
 
 var secretMock *secretsMock.MockSecret
@@ -83,24 +79,14 @@ func TestLoginHandlerFailed(t *testing.T) {
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 
-	dynMock := storage.InitDynamoMock()
-	dynMock.ActivateForceFailure(storage.ErrForceNotFound)
-
-	person, err := getDummyPerson()
-	c.Nil(err)
-
-	err = dynMock.MockGetItemFromSource(storagePerson.UsersTableName, person)
-	c.Nil(err)
-
-	err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
-	c.Nil(err)
+	personMock := storagePerson.InitDynamoMock()
+	personMock.ActivateForceFailure(storagePerson.ErrNotFound)
 
 	response, err = logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(storage.ErrForceNotFound.Error(), response.Body)
-
-	dynMock.DeactivateForceFailure()
+	c.Equal(storagePerson.ErrNotFound.Error(), response.Body)
+	personMock.DeactivateForceFailure()
 
 	request.Body = "a"
 	response, err = logInHandler(request)
@@ -162,7 +148,9 @@ func TestSignUpHandler(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
-	_ = storage.InitDynamoMock()
+	personMock := storagePerson.InitDynamoMock()
+
+	personMock.EmptyTable()
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -184,10 +172,10 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	dynMock := storage.InitDynamoMock()
+	personMock := storagePerson.InitDynamoMock()
 
-	dynMock.ActivateForceFailure(storagePerson.ErrExistingUser)
-	defer dynMock.DeactivateForceFailure()
+	personMock.ActivateForceFailure(storagePerson.ErrExistingUser)
+	defer personMock.DeactivateForceFailure()
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
@@ -258,13 +246,9 @@ func TestJWTHandler(t *testing.T) {
 func TestRefreshTokenHandler(t *testing.T) {
 	c := require.New(t)
 
-	person, err := getDummyPerson()
-	c.Nil(err)
+	_ = storagePerson.InitDynamoMock()
 
-	dynMock := storage.InitDynamoMock()
-
-	err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
-	c.Nil(err)
+	person := storagePerson.GetMockedPerson()
 
 	request, err := dummyAPIGatewayProxyRequest()
 	c.Nil(err)
@@ -280,11 +264,6 @@ func TestRefreshTokenHandler(t *testing.T) {
 func TestRefreshTokenHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	person, err := getDummyPerson()
-	c.Nil(err)
-
-	dynMock := storage.InitDynamoMock()
-
 	dummyRequest, err := dummyAPIGatewayProxyRequest()
 	c.Nil(err)
 
@@ -297,15 +276,10 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Refresh token leaked", func(t *testing.T) {
-		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
-		c.Nil(err)
-
 		request := dummyRequest
 
 		request.Headers = map[string]string{}
 		request.Headers["Cookie"] = refreshTokenCookieName + "=previous token"
-
-		fmt.Println(dummyRequest.Headers)
 
 		response, err := refreshTokenHandler(&request)
 		c.Nil(err)
@@ -313,8 +287,10 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Person not found", func(t *testing.T) {
-		dynMock.ActivateForceFailure(storagePerson.ErrNotFound)
-		defer dynMock.DeactivateForceFailure()
+		personMock := storagePerson.InitDynamoMock()
+
+		personMock.ActivateForceFailure(storagePerson.ErrNotFound)
+		defer personMock.DeactivateForceFailure()
 
 		request := dummyRequest
 
@@ -323,12 +299,22 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 
-	t.Run("Invalid person access token", func(t *testing.T) {
-		person, err := getDummyPerson()
+	t.Run("Refresh token in cookie not found", func(t *testing.T) {
+		_ = storagePerson.InitDynamoMock()
+
+		response, err := refreshTokenHandler(&dummyRequest)
 		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
+
+	t.Run("Invalid person access token", func(t *testing.T) {
+		personMock := storagePerson.InitDynamoMock()
+
+		person := storagePerson.GetMockedPerson()
 
 		person.AccessToken = "invalid token"
-		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+
+		err = personMock.MockQueryFromSource(person)
 		c.Nil(err)
 
 		request := dummyRequest
@@ -341,12 +327,13 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Invalid person refresh token", func(t *testing.T) {
-		person, err := getDummyPerson()
-		c.Nil(err)
+		personMock := storagePerson.InitDynamoMock()
+
+		person := storagePerson.GetMockedPerson()
 
 		person.RefreshToken = "invalid token"
 
-		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+		err = personMock.MockQueryFromSource(person)
 		c.Nil(err)
 
 		request := dummyRequest
@@ -359,8 +346,42 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Token invalidation failed", func(t *testing.T) {
-		err = dynMock.MockQueryFromSource(storagePerson.UsersTableName, person)
+		_ = storagePerson.InitDynamoMock()
+		person := storagePerson.GetMockedPerson()
+
+		itMock := storageInvalidToken.InitDynamoMock()
+
+		request := dummyRequest
+
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.PreviousRefreshToken
+
+		errCustomError := errors.New("custom error")
+
+		itMock.ActivateForceFailure(errCustomError)
+		defer itMock.DeactivateForceFailure()
+
+		response, err := refreshTokenHandler(&request)
+		c.EqualError(errCustomError, err.Error())
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
+
+	t.Run("Set tokens failed", func(t *testing.T) {
+		_ = storagePerson.InitDynamoMock()
+		_ = storageInvalidToken.InitDynamoMock()
+
+		person := storagePerson.GetMockedPerson()
+
+		sMock := secretsMock.InitSecretMock()
+
+		sMock.ActivateForceFailure(secretsMock.SecretsError)
+		defer sMock.DeactivateForceFailure()
+
+		request := dummyRequest
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.RefreshToken
+
+		response, err := refreshTokenHandler(&dummyRequest)
 		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 }
 
@@ -405,39 +426,4 @@ func dummyAPIGatewayProxyRequest() (events.APIGatewayProxyRequest, error) {
 		Body:    jsonBody,
 		Headers: map[string]string{},
 	}, nil
-}
-
-func getDummyPerson() (*models.Person, error) {
-	dummyToken, err := getDummyToken()
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.Person{
-		FullName:             "Joel",
-		Email:                "test@gmail.com",
-		Password:             "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
-		PreviousRefreshToken: "previous token",
-		AccessToken:          dummyToken,
-		RefreshToken:         dummyToken,
-	}, nil
-}
-
-func getDummyToken() (string, error) {
-	pld := &models.JWTPayload{
-		Payload: &jwt.Payload{
-			Subject:        "John Doe",
-			ExpirationTime: jwt.NumericDate(time.Now().Add(time.Hour * 1)),
-		},
-	}
-
-	payload, err := json.Marshal(pld)
-	if err != nil {
-		return "", err
-	}
-
-	encodedPayload := make([]byte, base64.RawURLEncoding.EncodedLen(len(payload)))
-	base64.RawURLEncoding.Encode(encodedPayload, payload)
-
-	return "random." + string(encodedPayload) + ".random", nil
 }
