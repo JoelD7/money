@@ -50,9 +50,7 @@ var (
 	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "staging/money/rsa/public")
 	kidSecretName        = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
-	refreshTokenduration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
-
-	redisEndpoint = env.GetString("REDIS_ENDPOINT", "money-redis-cluster-ro.sfenn7.ng.0001.use1.cache.amazonaws.com:6379")
+	refreshTokenDuration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
 )
 
 const (
@@ -413,7 +411,7 @@ func (req *requestHandler) setTokens(ctx context.Context, person *models.Person)
 		return nil, err
 	}
 
-	refreshTokenExpiry := jwt.NumericDate(now.Add(time.Duration(refreshTokenduration) * time.Second))
+	refreshTokenExpiry := jwt.NumericDate(now.Add(time.Duration(refreshTokenDuration) * time.Second))
 
 	refreshTokenPayload := &jwt.Payload{
 		Subject:        person.Email,

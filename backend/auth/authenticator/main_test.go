@@ -299,6 +299,14 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 
+	t.Run("Refresh token in cookie not found", func(t *testing.T) {
+		_ = storagePerson.InitDynamoMock()
+
+		response, err := refreshTokenHandler(&dummyRequest)
+		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
+
 	t.Run("Invalid person access token", func(t *testing.T) {
 		personMock := storagePerson.InitDynamoMock()
 
@@ -356,6 +364,25 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		c.EqualError(errCustomError, err.Error())
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
+
+	t.Run("Set tokens failed", func(t *testing.T) {
+		_ = storagePerson.InitDynamoMock()
+		_ = storageInvalidToken.InitDynamoMock()
+
+		person := storagePerson.GetMockedPerson()
+
+		sMock := secretsMock.InitSecretMock()
+
+		sMock.ActivateForceFailure(secretsMock.SecretsError)
+		defer sMock.DeactivateForceFailure()
+
+		request := dummyRequest
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.RefreshToken
+
+		response, err := refreshTokenHandler(&dummyRequest)
+		c.Nil(err)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
+	})
 }
 
 func bodyToJSONString(body interface{}) (string, error) {
@@ -400,38 +427,3 @@ func dummyAPIGatewayProxyRequest() (events.APIGatewayProxyRequest, error) {
 		Headers: map[string]string{},
 	}, nil
 }
-
-//func getDummyPerson() (*models.Person, error) {
-//	dummyToken, err := getDummyToken()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &models.Person{
-//		FullName:             "Joel",
-//		Email:                "test@gmail.com",
-//		Password:             "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
-//		PreviousRefreshToken: "previous token",
-//		AccessToken:          dummyToken,
-//		RefreshToken:         dummyToken,
-//	}, nil
-//}
-//
-//func getDummyToken() (string, error) {
-//	pld := &models.JWTPayload{
-//		Payload: &jwt.Payload{
-//			Subject:        "John Doe",
-//			ExpirationTime: jwt.NumericDate(time.Now().Add(time.Hour * 1)),
-//		},
-//	}
-//
-//	payload, err := json.Marshal(pld)
-//	if err != nil {
-//		return "", err
-//	}
-//
-//	encodedPayload := make([]byte, base64.RawURLEncoding.EncodedLen(len(payload)))
-//	base64.RawURLEncoding.Encode(encodedPayload, payload)
-//
-//	return "random." + string(encodedPayload) + ".random", nil
-//}
