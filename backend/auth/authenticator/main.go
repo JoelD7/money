@@ -165,7 +165,7 @@ func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRe
 		return req.serverError(nil)
 	}
 
-	responseBody, err := utils.GetJsonString(&accessTokenResponse{person.AccessToken})
+	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
 	if err != nil {
 		req.log.Error("response_building_failed", err, []logger.Object{person})
 
@@ -201,53 +201,31 @@ func getRefreshTokenCookie(request *events.APIGatewayProxyRequest) (string, erro
 }
 
 func (req *requestHandler) isRefreshTokenInvalid(person *models.Person) bool {
-	return (person.PreviousRefreshToken != "" && req.RefreshToken == person.PreviousRefreshToken) ||
-		(req.RefreshToken != person.RefreshToken)
-}
+	var isRefreshTokenUsed, refreshTokenMismatch bool
 
-func (req *requestHandler) getTokenExpiration(token string) (int64, error) {
-	var payload *models.JWTPayload
-
-	tokenParts := strings.Split(token, ".")
-	if len(tokenParts) < 3 {
-		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
-
-		return 0, errInvalidToken
-	}
-
-	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
+	err := compareHashAndToken(person.RefreshToken, req.RefreshToken)
 	if err != nil {
-		req.log.Error("payload_decoding_failed", err, []logger.Object{})
-
-		return 0, err
+		refreshTokenMismatch = true
 	}
 
-	err = json.Unmarshal(payloadPart, &payload)
-	if err != nil {
-		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
-
-		return 0, err
+	if person.PreviousRefreshToken == "" {
+		return refreshTokenMismatch
 	}
 
-	return payload.ExpirationTime.Unix(), nil
+	err = compareHashAndToken(person.PreviousRefreshToken, req.RefreshToken)
+	if err == nil {
+		isRefreshTokenUsed = true
+	}
+
+	return isRefreshTokenUsed || refreshTokenMismatch
 }
 
 func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *models.Person) (*events.APIGatewayProxyResponse, error) {
-	accessTokenTTL, err := req.getTokenExpiration(person.AccessToken)
-	if err != nil {
-		req.log.Error("get_access_token_expiration_failed", err, []logger.Object{})
+	accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
+	refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
 
-		return req.serverError(nil)
-	}
-
-	refreshTokenTTL, err := req.getTokenExpiration(person.RefreshToken)
-	if err != nil {
-		req.log.Error("get_refresh_token_expiration_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	err = storageInvalidToken.AddInvalidToken(ctx, person.Email, person.AccessToken, accessTokenTTL)
+	err := storageInvalidToken.AddInvalidToken(ctx, person.Email, person.AccessToken, storageInvalidToken.TokenTypeAccess,
+		accessTokenTTL)
 	if err != nil {
 		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
 			person,
@@ -256,7 +234,8 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 		return req.serverError(err)
 	}
 
-	err = storageInvalidToken.AddInvalidToken(ctx, person.Email, person.RefreshToken, refreshTokenTTL)
+	err = storageInvalidToken.AddInvalidToken(ctx, person.Email, person.RefreshToken, storageInvalidToken.TokenTypeRefresh,
+		refreshTokenTTL)
 	if err != nil {
 		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
 			person,
@@ -331,8 +310,6 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		log: logger.NewLoggerWithHandler("log-in"),
 	}
 
-	fmt.Println(time.Now().Format(time.RFC3339Nano), "req logger initialized")
-
 	req.init()
 	defer req.finish()
 
@@ -379,7 +356,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 		return req.serverError(nil)
 	}
 
-	responseBody, err := utils.GetJsonString(&accessTokenResponse{person.AccessToken})
+	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
 	if err != nil {
 		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
 
@@ -423,9 +400,16 @@ func (req *requestHandler) setTokens(ctx context.Context, person *models.Person)
 		return nil, err
 	}
 
+	hashedAccess, hashedRefresh, err := hashTokens(accessToken, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	req.AccessToken = accessToken
+
 	person.PreviousRefreshToken = person.RefreshToken
-	person.RefreshToken = refreshToken
-	person.AccessToken = accessToken
+	person.RefreshToken = hashedRefresh
+	person.AccessToken = hashedAccess
 
 	setCookieHeader := map[string]string{
 		"Set-Cookie": fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken,
@@ -507,16 +491,6 @@ func (req *requestHandler) generateJWT(payload *jwt.Payload, scope string) (stri
 
 		return "", err
 	}
-
-	//decryptingHash := jwt.NewRS256(jwt.RSAPublicKey(pub))
-	//receivedPayload := &jwt.Payload{}
-	//
-	//hd, err := jwt.Verify(Token, decryptingHash, receivedPayload)
-	//if err != nil {
-	//	return "", err
-	//}
-	//
-	//fmt.Println("Successfully verified. Header: ", hd)
 
 	return string(token), nil
 }

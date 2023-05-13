@@ -10,13 +10,21 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go/aws"
+	"time"
 )
+
+type TokenType string
 
 type DynamoAPI interface {
 	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
 	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
 	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
 }
+
+const (
+	TokenTypeAccess  TokenType = "access"
+	TokenTypeRefresh TokenType = "refresh"
+)
 
 var (
 	InvalidTokenTableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
@@ -41,11 +49,13 @@ func init() {
 	DefaultClient = dynamoClient
 }
 
-func AddInvalidToken(ctx context.Context, email, token string, expires int64) error {
+func AddInvalidToken(ctx context.Context, email, token string, tokenType TokenType, expires int64) error {
 	invalidToken := models.InvalidToken{
-		Email:  email,
-		Token:  token,
-		Expire: expires,
+		Email:       email,
+		Token:       token,
+		Expire:      expires,
+		Type:        string(tokenType),
+		CreatedDate: time.Now(),
 	}
 
 	item, err := attributevalue.MarshalMap(invalidToken)
