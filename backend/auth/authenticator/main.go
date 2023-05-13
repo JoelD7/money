@@ -165,7 +165,7 @@ func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRe
 		return req.serverError(nil)
 	}
 
-	responseBody, err := utils.GetJsonString(&accessTokenResponse{person.AccessToken})
+	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
 	if err != nil {
 		req.log.Error("response_building_failed", err, []logger.Object{person})
 
@@ -220,38 +220,12 @@ func (req *requestHandler) isRefreshTokenInvalid(person *models.Person) bool {
 	return isRefreshTokenUsed || refreshTokenMismatch
 }
 
-func (req *requestHandler) getTokenExpiration(token string) (int64, error) {
-	var payload *models.JWTPayload
-
-	tokenParts := strings.Split(token, ".")
-	if len(tokenParts) < 3 {
-		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
-
-		return 0, errInvalidToken
-	}
-
-	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
-	if err != nil {
-		req.log.Error("payload_decoding_failed", err, []logger.Object{})
-
-		return 0, err
-	}
-
-	err = json.Unmarshal(payloadPart, &payload)
-	if err != nil {
-		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
-
-		return 0, err
-	}
-
-	return payload.ExpirationTime.Unix(), nil
-}
-
 func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *models.Person) (*events.APIGatewayProxyResponse, error) {
 	accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
 	refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
 
-	err := storageInvalidToken.AddInvalidToken(ctx, person.Email, person.AccessToken, accessTokenTTL)
+	err := storageInvalidToken.AddInvalidToken(ctx, person.Email, person.AccessToken, storageInvalidToken.TokenTypeAccess,
+		accessTokenTTL)
 	if err != nil {
 		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
 			person,
@@ -260,7 +234,8 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 		return req.serverError(err)
 	}
 
-	err = storageInvalidToken.AddInvalidToken(ctx, person.Email, person.RefreshToken, refreshTokenTTL)
+	err = storageInvalidToken.AddInvalidToken(ctx, person.Email, person.RefreshToken, storageInvalidToken.TokenTypeRefresh,
+		refreshTokenTTL)
 	if err != nil {
 		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
 			person,
@@ -335,8 +310,6 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 		log: logger.NewLoggerWithHandler("log-in"),
 	}
 
-	fmt.Println(time.Now().Format(time.RFC3339Nano), "req logger initialized")
-
 	req.init()
 	defer req.finish()
 
@@ -383,7 +356,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 		return req.serverError(nil)
 	}
 
-	responseBody, err := utils.GetJsonString(&accessTokenResponse{person.AccessToken})
+	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
 	if err != nil {
 		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
 
@@ -431,6 +404,8 @@ func (req *requestHandler) setTokens(ctx context.Context, person *models.Person)
 	if err != nil {
 		return nil, err
 	}
+
+	req.AccessToken = accessToken
 
 	person.PreviousRefreshToken = person.RefreshToken
 	person.RefreshToken = hashedRefresh
