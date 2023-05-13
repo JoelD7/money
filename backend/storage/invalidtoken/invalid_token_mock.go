@@ -1,4 +1,4 @@
-package invalid_token
+package invalidtoken
 
 import (
 	"context"

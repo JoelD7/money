@@ -1,4 +1,4 @@
-package invalid_token
+package invalidtoken
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-type TokenType string
+type Type string
 
 type DynamoAPI interface {
 	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
@@ -22,12 +22,12 @@ type DynamoAPI interface {
 }
 
 const (
-	TokenTypeAccess  TokenType = "access"
-	TokenTypeRefresh TokenType = "refresh"
+	TypeAccess  Type = "access"
+	TypeRefresh Type = "refresh"
 )
 
 var (
-	InvalidTokenTableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
+	tableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
 
 	errNotFound = errors.New("no tokens found for this user")
 )
@@ -49,7 +49,7 @@ func init() {
 	DefaultClient = dynamoClient
 }
 
-func AddInvalidToken(ctx context.Context, email, token string, tokenType TokenType, expires int64) error {
+func Add(ctx context.Context, email, token string, tokenType Type, expires int64) error {
 	invalidToken := models.InvalidToken{
 		Email:       email,
 		Token:       token,
@@ -65,7 +65,7 @@ func AddInvalidToken(ctx context.Context, email, token string, tokenType TokenTy
 
 	input := &dynamodb.PutItemInput{
 		Item:      item,
-		TableName: aws.String(InvalidTokenTableName),
+		TableName: aws.String(tableName),
 	}
 
 	_, err = DefaultClient.PutItem(ctx, input)
@@ -73,7 +73,7 @@ func AddInvalidToken(ctx context.Context, email, token string, tokenType TokenTy
 	return err
 }
 
-func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
+func GetAllForPerson(ctx context.Context, email string) ([]*models.InvalidToken, error) {
 	nameEx := expression.Name("email").Equal(expression.Value(email))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
@@ -85,7 +85,7 @@ func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(InvalidTokenTableName),
+		TableName:                 aws.String(tableName),
 	}
 
 	result, err := DefaultClient.Query(ctx, input)

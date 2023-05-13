@@ -8,7 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
-	storageInvalidToken "github.com/JoelD7/money/backend/storage/invalid_token"
+	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -324,7 +324,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
 		person := storagePerson.GetMockedPerson()
 
-		itMock := storageInvalidToken.InitDynamoMock()
+		itMock := invalidtoken.InitDynamoMock()
 
 		request := dummyRequest
 
@@ -344,7 +344,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 
 	t.Run("Set tokens failed", func(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
-		_ = storageInvalidToken.InitDynamoMock()
+		_ = invalidtoken.InitDynamoMock()
 
 		sMock := secretsMock.InitSecretMock()
 
