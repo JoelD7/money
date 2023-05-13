@@ -11,7 +11,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	storageInvalidToken "github.com/JoelD7/money/backend/storage/invalid_token"
 	"math/big"
 	"net/http"
 	"regexp"
@@ -22,10 +21,12 @@ import (
 
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/hash"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/shared/utils"
+	storageInvalidToken "github.com/JoelD7/money/backend/storage/invalid_token"
 	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -203,7 +204,7 @@ func getRefreshTokenCookie(request *events.APIGatewayProxyRequest) (string, erro
 func (req *requestHandler) isRefreshTokenInvalid(person *models.Person) bool {
 	var isRefreshTokenUsed, refreshTokenMismatch bool
 
-	err := compareHashAndToken(person.RefreshToken, req.RefreshToken)
+	err := hash.CompareWithToken(person.RefreshToken, req.RefreshToken)
 	if err != nil {
 		refreshTokenMismatch = true
 	}
@@ -212,7 +213,7 @@ func (req *requestHandler) isRefreshTokenInvalid(person *models.Person) bool {
 		return refreshTokenMismatch
 	}
 
-	err = compareHashAndToken(person.PreviousRefreshToken, req.RefreshToken)
+	err = hash.CompareWithToken(person.PreviousRefreshToken, req.RefreshToken)
 	if err == nil {
 		isRefreshTokenUsed = true
 	}
@@ -400,7 +401,12 @@ func (req *requestHandler) setTokens(ctx context.Context, person *models.Person)
 		return nil, err
 	}
 
-	hashedAccess, hashedRefresh, err := hashTokens(accessToken, refreshToken)
+	hashedAccess, err := hash.Apply(accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	hashedRefresh, err := hash.Apply(refreshToken)
 	if err != nil {
 		return nil, err
 	}
