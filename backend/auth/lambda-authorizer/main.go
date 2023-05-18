@@ -7,9 +7,11 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/hash"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
@@ -123,7 +125,7 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 		return events.APIGatewayCustomAuthorizerResponse{}, errUnauthorized
 	}
 
-	err = req.verifyToken(payload, token)
+	err = req.verifyToken(ctx, payload, token)
 	if err != nil {
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
@@ -188,7 +190,7 @@ func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAu
 	return resp.APIGatewayCustomAuthorizerResponse
 }
 
-func (req *request) verifyToken(payload *jwtPayload, token string) error {
+func (req *request) verifyToken(ctx context.Context, payload *jwtPayload, token string) error {
 	response, err := restclient.Get(payload.Issuer + "/auth/jwks")
 	if err != nil {
 		req.log.Error("getting_jwks_failed", err, []logger.Object{})
@@ -223,6 +225,18 @@ func (req *request) verifyToken(payload *jwtPayload, token string) error {
 	receivedPayload := &jwt.Payload{}
 
 	err = req.validateJWTPayload(token, receivedPayload, decryptingHash)
+	if err != nil {
+		return err
+	}
+
+	err = req.compareAccessTokenAgainstBlacklist(ctx, payload.Subject, token)
+	if errors.Is(err, errInvalidToken) {
+		req.log.Warning("blacklisted_token_use_detected", err, []logger.Object{
+			logger.MapToLoggerObject("token", map[string]interface{}{
+				"s_value": token,
+			}),
+		})
+	}
 
 	return err
 }
@@ -266,6 +280,52 @@ func isErrorInvalidJWT(err error) bool {
 	}
 
 	return false
+}
+
+func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, email, token string) error {
+	invalidTokens, err := invalidtoken.GetAllForPerson(ctx, email)
+	if errors.Is(err, invalidtoken.ErrNotFound) {
+		req.log.Info("no_tokens_found_for_user", []logger.Object{
+			logger.MapToLoggerObject("person_data", map[string]interface{}{
+				"s_email": email,
+			}),
+		})
+
+		return nil
+	}
+
+	if err != nil {
+		return err
+	}
+
+	for _, it := range invalidTokens {
+		if it.Type == string(invalidtoken.TypeRefresh) {
+			continue
+		}
+
+		err = hash.CompareWithToken(it.Token, token)
+		if err == nil {
+			req.log.Warning("invalid_token_use_detected", errInvalidToken, []logger.Object{
+				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
+					"s_bearer_token":             token,
+					"s_saved_invalid_token_hash": it.Token,
+				}),
+			})
+
+			return errInvalidToken
+		}
+
+		if !errors.Is(err, hash.ErrHashMismatch) {
+			req.log.Error("token_comparison_against_blacklist_failed", err, []logger.Object{
+				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
+					"s_bearer_token":             token,
+					"s_saved_invalid_token_hash": it.Token,
+				}),
+			})
+		}
+	}
+
+	return nil
 }
 
 func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
