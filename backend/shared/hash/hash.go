@@ -33,7 +33,7 @@ func Apply(token string) (string, error) {
 }
 
 // CompareWithToken determines if the passed hash value is the hashed value of the token
-func CompareWithToken(hash, token string) error {
+func CompareWithToken(hashValue, token string) error {
 	defer h.Reset()
 
 	_, err := h.Write([]byte(token))
@@ -43,7 +43,7 @@ func CompareWithToken(hash, token string) error {
 
 	hashedToken := h.Sum(nil)
 
-	if strings.Compare(hash, fmt.Sprintf("%x", hashedToken)) != 0 {
+	if strings.Compare(hashValue, fmt.Sprintf("%x", hashedToken)) != 0 {
 		return ErrHashMismatch
 	}
 

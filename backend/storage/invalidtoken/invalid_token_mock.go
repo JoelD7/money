@@ -109,3 +109,12 @@ func (d *MockDynamo) MockQueryFromSource(source interface{}) error {
 
 	return nil
 }
+
+// EmptyTable makes the mocked table to be empty
+func (d *MockDynamo) EmptyTable() {
+	d.QueryOutput = &dynamodb.QueryOutput{
+		Items: []map[string]types.AttributeValue{},
+	}
+
+	d.GetItemOutput = &dynamodb.GetItemOutput{}
+}

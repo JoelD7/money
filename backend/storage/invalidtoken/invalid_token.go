@@ -29,7 +29,7 @@ const (
 var (
 	tableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
 
-	errNotFound = errors.New("no tokens found for this user")
+	ErrNotFound = errors.New("no tokens found for this user")
 )
 
 var (
@@ -73,10 +73,14 @@ func Add(ctx context.Context, email, token string, tokenType Type, expires int64
 	return err
 }
 
-func GetAllForPerson(ctx context.Context, email string) ([]*models.InvalidToken, error) {
-	nameEx := expression.Name("email").Equal(expression.Value(email))
+func GetAllForPerson(ctx context.Context, email string) ([]models.InvalidToken, error) {
+	nameCondition := expression.Name("email").Equal(expression.Value(email))
+	filterCondition := expression.Name("expire").GreaterThanEqual(expression.Value(time.Now().Unix()))
 
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	expr, err := expression.NewBuilder().
+		WithCondition(nameCondition).
+		WithFilter(filterCondition).
+		Build()
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +88,7 @@ func GetAllForPerson(ctx context.Context, email string) ([]*models.InvalidToken,
 	input := &dynamodb.QueryInput{
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
 		KeyConditionExpression:    expr.Condition(),
 		TableName:                 aws.String(tableName),
 	}
@@ -94,12 +99,12 @@ func GetAllForPerson(ctx context.Context, email string) ([]*models.InvalidToken,
 	}
 
 	if result.Items == nil || len(result.Items) == 0 {
-		return nil, errNotFound
+		return nil, ErrNotFound
 	}
 
-	invalidTokens := make([]*models.InvalidToken, 0)
+	invalidTokens := make([]models.InvalidToken, 0)
 
-	err = attributevalue.UnmarshalListOfMaps(result.Items, invalidTokens)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &invalidTokens)
 	if err != nil {
 		return nil, err
 	}
