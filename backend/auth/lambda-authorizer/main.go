@@ -6,6 +6,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"math/big"
+	"strings"
+	"time"
+
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/hash"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -15,11 +19,6 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
-	"log"
-	"math/big"
-	"os"
-	"strings"
-	"time"
 )
 
 type Effect int
@@ -62,8 +61,6 @@ var (
 	errInvalidToken       = errors.New("invalid_access_token")
 	errSigningKeyNotFound = errors.New("signing key not found")
 	errUnauthorized       = errors.New("Unauthorized")
-
-	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 var (
@@ -354,7 +351,6 @@ func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 
 	nBytes, err := base64.RawURLEncoding.DecodeString(signingKey.N)
 	if err != nil {
-		errorLogger.Println(err)
 		return nil, err
 	}
 
@@ -363,7 +359,6 @@ func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 
 	eBytes, err := base64.RawURLEncoding.DecodeString(signingKey.E)
 	if err != nil {
-		errorLogger.Println(err)
 		return nil, err
 	}
 
