@@ -6,15 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/JoelD7/money/backend/shared/logger"
-	restMock "github.com/JoelD7/money/backend/shared/restclient/mocks"
+	"github.com/JoelD7/money/backend/shared/restclient"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
-	storageInvalidToken "github.com/JoelD7/money/backend/storage/invalid_token"
+	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
-	"io"
 	"net/http"
-	"os"
 	"testing"
 )
 
@@ -240,7 +238,7 @@ func TestJWTHandler(t *testing.T) {
 
 	expectedJWKS := `{"keys":[{"kty":"RSA","kid":"123","use":"sig","n":"5l-M6MGnS6K8SNXUIqOGaaH_IO7NcBxwQJVd4X6uUcLHfdhyNFNGEVFXodk9xhn0zJUxNtDzXlsw8aoC8_k4PoIUikiFnuCmkVDxcnl65_jv4DQtDL6GGqoLcYo2ENldfj8uDo09CmYS_DKuJxFyntaOREIMTaLQ3F72aDMk0ytVFu0cZ5Hyb24ixPBXhWHTMzsNG6yRO3uOVZqtK_D8_ZKklkKTDnOmGlbVOKTvujH6fTJuQ8T3p6jLI9J24K77fDlr6b38tZcDcKrhlAqOWTuEpsvMNRubWoLt22c9f4PXaGDwqRHo3SeBhb8YA0nSBEzNVgyt8iYfGq01tW98HQ","e":"AQAB"}]}`
 
-	err := mockRestClientGetFromFile("samples/jwks_response.json")
+	err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", accessTokenIssuer+"/auth/jwks", restclient.MethodGET)
 	c.Nil(err)
 
 	response, err := jwksHandler(&events.APIGatewayProxyRequest{})
@@ -324,7 +322,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
 		person := storagePerson.GetMockedPerson()
 
-		itMock := storageInvalidToken.InitDynamoMock()
+		itMock := invalidtoken.InitDynamoMock()
 
 		request := dummyRequest
 
@@ -344,7 +342,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 
 	t.Run("Set tokens failed", func(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
-		_ = storageInvalidToken.InitDynamoMock()
+		_ = invalidtoken.InitDynamoMock()
 
 		sMock := secretsMock.InitSecretMock()
 
@@ -369,24 +367,6 @@ func bodyToJSONString(body interface{}) (string, error) {
 	}
 
 	return string(b), nil
-}
-
-func mockRestClientGetFromFile(filename string) error {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-
-	r := io.NopCloser(bytes.NewReader(data))
-
-	restMock.GetFunction = func(url string) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       r,
-		}, nil
-	}
-
-	return nil
 }
 
 func dummyAPIGatewayProxyRequest() (events.APIGatewayProxyRequest, error) {
