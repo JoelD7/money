@@ -112,18 +112,18 @@ func (req *requestHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, recover())
 }
 
-func refreshTokenHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func tokenHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	req := &requestHandler{
-		log: logger.NewLoggerWithHandler("refresh-token"),
+		log: logger.NewLoggerWithHandler("token"),
 	}
 
 	req.init()
 	defer req.finish()
 
-	return req.processRefreshToken(request)
+	return req.processToken(request)
 }
 
-func (req *requestHandler) processRefreshToken(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	var credentials Credentials
 	ctx := context.Background()
 
@@ -590,7 +590,7 @@ func main() {
 	route.Route("/auth", func(r *router.Router) {
 		r.Post("/login", logInHandler)
 		r.Post("/signup", signUpHandler)
-		r.Post("/refresh-token", refreshTokenHandler)
+		r.Post("/token", tokenHandler)
 		r.Get("/jwks", jwksHandler)
 	})
 

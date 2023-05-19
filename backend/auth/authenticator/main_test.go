@@ -246,7 +246,7 @@ func TestJWTHandler(t *testing.T) {
 	c.Equal(expectedJWKS, response.Body)
 }
 
-func TestRefreshTokenHandler(t *testing.T) {
+func TestTokenHandler(t *testing.T) {
 	c := require.New(t)
 
 	_ = storagePerson.InitDynamoMock()
@@ -256,13 +256,13 @@ func TestRefreshTokenHandler(t *testing.T) {
 
 	request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
 
-	response, err := refreshTokenHandler(&request)
+	response, err := tokenHandler(&request)
 	c.Nil(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.NotEmpty(response.Body)
 }
 
-func TestRefreshTokenHandlerFailed(t *testing.T) {
+func TestTokenHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	dummyRequest, err := dummyAPIGatewayProxyRequest()
@@ -271,7 +271,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	t.Run("Invalid request body", func(t *testing.T) {
 		request := &events.APIGatewayProxyRequest{Body: "}"}
 
-		response, err := refreshTokenHandler(request)
+		response, err := tokenHandler(request)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "request_body_unmarshal_failed")
@@ -285,7 +285,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		request.Headers = map[string]string{}
 		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyPreviousToken
 
-		response, err := refreshTokenHandler(&request)
+		response, err := tokenHandler(&request)
 		c.Nil(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
 		c.Contains(logMock.Output.String(), "invalid_refresh_token")
@@ -300,7 +300,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 
 		request := dummyRequest
 
-		response, err := refreshTokenHandler(&request)
+		response, err := tokenHandler(&request)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "fetching_user_from_storage_failed")
@@ -310,7 +310,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 	t.Run("Refresh token in cookie not found", func(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
 
-		response, err := refreshTokenHandler(&dummyRequest)
+		response, err := tokenHandler(&dummyRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
@@ -333,7 +333,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		itMock.ActivateForceFailure(errCustomError)
 		defer itMock.DeactivateForceFailure()
 
-		response, err := refreshTokenHandler(&request)
+		response, err := tokenHandler(&request)
 		c.EqualError(errCustomError, err.Error())
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "access_token_invalidation_failed")
@@ -352,7 +352,7 @@ func TestRefreshTokenHandlerFailed(t *testing.T) {
 		request := dummyRequest
 		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
 
-		response, err := refreshTokenHandler(&dummyRequest)
+		response, err := tokenHandler(&dummyRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "token_setting_failed")
