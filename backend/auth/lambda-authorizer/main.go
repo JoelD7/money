@@ -93,6 +93,7 @@ type jwk struct {
 type request struct {
 	log          logger.LogAPI
 	startingTime time.Time
+	err          error
 }
 
 func (req *request) init() {
@@ -100,7 +101,7 @@ func (req *request) init() {
 }
 
 func (req *request) finish() {
-	req.log.LogLambdaTime(req.startingTime, recover())
+	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
@@ -147,6 +148,7 @@ func (req *request) getTokenPayload(token string) (*jwtPayload, error) {
 
 	tokenParts := strings.Split(token, ".")
 	if len(tokenParts) < 3 {
+		req.err = errInvalidToken
 		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
 
 		return nil, errInvalidToken
@@ -154,6 +156,7 @@ func (req *request) getTokenPayload(token string) (*jwtPayload, error) {
 
 	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
 	if err != nil {
+		req.err = err
 		req.log.Error("payload_decoding_failed", err, []logger.Object{})
 
 		return nil, err
@@ -161,6 +164,7 @@ func (req *request) getTokenPayload(token string) (*jwtPayload, error) {
 
 	err = json.Unmarshal(payloadPart, &payload)
 	if err != nil {
+		req.err = err
 		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
 
 		return nil, err
@@ -190,6 +194,7 @@ func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAu
 func (req *request) verifyToken(ctx context.Context, payload *jwtPayload, token string) error {
 	response, err := restclient.Get(payload.Issuer + "/auth/jwks")
 	if err != nil {
+		req.err = err
 		req.log.Error("getting_jwks_failed", err, []logger.Object{})
 		return err
 	}
@@ -197,6 +202,7 @@ func (req *request) verifyToken(ctx context.Context, payload *jwtPayload, token 
 	defer func() {
 		closeErr := response.Body.Close()
 		if closeErr != nil {
+			req.err = err
 			req.log.Error("closing_response_body_failed", closeErr, []logger.Object{})
 
 			err = closeErr
@@ -206,6 +212,7 @@ func (req *request) verifyToken(ctx context.Context, payload *jwtPayload, token 
 	jwksVal := new(jwks)
 	err = json.NewDecoder(response.Body).Decode(jwksVal)
 	if err != nil {
+		req.err = err
 		req.log.Error("decoding_response_body_failed", err, []logger.Object{})
 
 		return err
@@ -213,6 +220,7 @@ func (req *request) verifyToken(ctx context.Context, payload *jwtPayload, token 
 
 	publicKey, err := req.getPublicKey(jwksVal)
 	if err != nil {
+		req.err = err
 		req.log.Error("getting_public_key_failed", err, []logger.Object{})
 
 		return err
@@ -249,6 +257,7 @@ func (req *request) validateJWTPayload(token string, payload *jwt.Payload, decry
 
 	_, err := jwt.Verify([]byte(token), decryptingHash, payload, validatePayload)
 	if isErrorInvalidJWT(err) {
+		req.err = err
 		req.log.Error("invalid_jwt", err, []logger.Object{
 			logger.MapToLoggerObject("jwt_payload", map[string]interface{}{
 				"s_subject":    payload.Subject,
@@ -261,6 +270,7 @@ func (req *request) validateJWTPayload(token string, payload *jwt.Payload, decry
 	}
 
 	if err != nil {
+		req.err = err
 		req.log.Error("jwt_validation_failed", err, []logger.Object{})
 
 		return err
@@ -313,6 +323,7 @@ func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, emai
 		}
 
 		if !errors.Is(err, hash.ErrHashMismatch) {
+			req.err = err
 			req.log.Error("token_comparison_against_blacklist_failed", err, []logger.Object{
 				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
 					"s_bearer_token":             token,
@@ -340,6 +351,7 @@ func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
 	}
 
 	if signingKey == nil {
+		req.err = err
 		req.log.Error("signing_key_not_found", errSigningKeyNotFound, []logger.Object{
 			logger.MapToLoggerObject("kid", map[string]interface{}{
 				"s_secret": kid,

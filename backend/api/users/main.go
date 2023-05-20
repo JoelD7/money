@@ -15,6 +15,7 @@ import (
 type userRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
+	err          error
 }
 
 func (request *userRequest) init() {
@@ -22,7 +23,7 @@ func (request *userRequest) init() {
 }
 
 func (request *userRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, recover())
+	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
 func handler(req *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -43,12 +44,14 @@ func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events
 
 	user, err := person.GetPersonByEmail(ctx, userID)
 	if err != nil {
+		request.err = err
 		request.log.Error("user_fetching_failed", err, []logger.Object{})
 
 		return serverError()
 	}
 
 	if user == nil {
+		request.err = err
 		request.log.Error("user_not_found", err, []logger.Object{})
 
 		return clientError(http.StatusNotFound)
@@ -56,6 +59,7 @@ func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events
 
 	personJson, err := json.Marshal(user)
 	if err != nil {
+		request.err = err
 		request.log.Error("user_response_marshal_failed", err, []logger.Object{})
 
 		return serverError()

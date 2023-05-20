@@ -92,6 +92,7 @@ type requestHandler struct {
 
 	log          logger.LogAPI
 	startingTime time.Time
+	err          error
 }
 
 func (c *Credentials) LogName() string {
@@ -109,7 +110,7 @@ func (req *requestHandler) init() {
 }
 
 func (req *requestHandler) finish() {
-	req.log.LogLambdaTime(req.startingTime, recover())
+	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func tokenHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -129,6 +130,7 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 
 	err := json.Unmarshal([]byte(request.Body), &credentials)
 	if err != nil {
+		req.err = err
 		req.log.Error("request_body_unmarshal_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -136,6 +138,7 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 
 	person, err := storagePerson.GetPersonByEmail(ctx, credentials.Email)
 	if err != nil {
+		req.err = err
 		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -143,6 +146,7 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 
 	req.RefreshToken, err = getRefreshTokenCookie(request)
 	if err != nil {
+		req.err = err
 		req.log.Error("getting_refresh_token_cookie_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -161,6 +165,7 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 
 	tokenCookieHeader, err := req.setTokens(ctx, person)
 	if err != nil {
+		req.err = err
 		req.log.Error("token_setting_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -168,6 +173,7 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 
 	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
 	if err != nil {
+		req.err = err
 		req.log.Error("response_building_failed", err, []logger.Object{person})
 
 		return req.serverError(nil)
@@ -228,6 +234,7 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 	err := invalidtoken.Add(ctx, person.Email, person.AccessToken, invalidtoken.TypeAccess,
 		accessTokenTTL)
 	if err != nil {
+		req.err = err
 		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
 			person,
 		})
@@ -238,6 +245,7 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 	err = invalidtoken.Add(ctx, person.Email, person.RefreshToken, invalidtoken.TypeRefresh,
 		refreshTokenTTL)
 	if err != nil {
+		req.err = err
 		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
 			person,
 		})
@@ -269,6 +277,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
+		req.err = err
 		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -276,6 +285,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 
 	err = req.validateCredentials(reqBody.Credentials)
 	if err != nil {
+		req.err = err
 		req.log.Error("credentials_validation_failed", err, []logger.Object{})
 
 		return req.clientError(err)
@@ -283,6 +293,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), passwordCost)
 	if err != nil {
+		req.err = err
 		req.log.Error("password_hashing_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -296,6 +307,7 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 	}
 
 	if err != nil {
+		req.err = err
 		req.log.Error("sign_up_process_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -324,6 +336,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
+		req.err = err
 		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -331,6 +344,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	err = req.validateCredentials(reqBody)
 	if err != nil {
+		req.err = err
 		req.log.Error("credentials_validation_failed", err, []logger.Object{})
 
 		return req.clientError(err)
@@ -338,6 +352,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	person, err := storagePerson.GetPersonByEmail(ctx, reqBody.Email)
 	if err != nil {
+		req.err = err
 		req.log.Error("user_fetching_failed", err, []logger.Object{})
 
 		return req.clientError(err)
@@ -345,6 +360,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	err = bcrypt.CompareHashAndPassword([]byte(person.Password), []byte(reqBody.Password))
 	if err != nil {
+		req.err = err
 		req.log.Error("password_mismatch", err, []logger.Object{reqBody})
 
 		return req.clientError(errWrongCredentials)
@@ -352,6 +368,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	headers, err := req.setTokens(ctx, person)
 	if err != nil {
+		req.err = err
 		req.log.Error("token_setting_failed", err, []logger.Object{reqBody})
 
 		return req.serverError(nil)
@@ -359,6 +376,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
 	if err != nil {
+		req.err = err
 		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
 
 		return req.serverError(nil)
@@ -439,6 +457,7 @@ func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyRespo
 func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error) {
 	publicKey, err := req.getPublicKey()
 	if err != nil {
+		req.err = err
 		req.log.Error("public_key_fetching_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -446,6 +465,7 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 
 	kid, err := req.getKidFromSecret()
 	if err != nil {
+		req.err = err
 		req.log.Error("kid_fetching_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -465,6 +485,7 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
+		req.err = err
 		req.log.Error("jwks_response_marshall_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
@@ -479,6 +500,7 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 func (req *requestHandler) generateJWT(payload *jwt.Payload, scope string) (string, error) {
 	priv, err := req.getPrivateKey()
 	if err != nil {
+		req.err = err
 		req.log.Error("private_key_fetching_failed", err, []logger.Object{})
 
 		return "", err
@@ -493,6 +515,7 @@ func (req *requestHandler) generateJWT(payload *jwt.Payload, scope string) (stri
 
 	token, err := jwt.Sign(p, signingHash)
 	if err != nil {
+		req.err = err
 		req.log.Error("jwt_signing_failed", err, []logger.Object{})
 
 		return "", err

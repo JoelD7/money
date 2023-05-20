@@ -32,6 +32,6 @@ func (l *LogMock) Error(eventName string, err error, objects []Object) {
 func (l *LogMock) Critical(eventName string, objects []Object) {
 	_, _ = l.Output.Write([]byte(eventName))
 }
-func (*LogMock) LogLambdaTime(startingTime time.Time, panic interface{}) {
+func (*LogMock) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
 
 }
