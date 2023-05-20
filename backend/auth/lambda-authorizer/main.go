@@ -58,9 +58,10 @@ const (
 )
 
 var (
-	errInvalidToken       = errors.New("invalid_access_token")
-	errSigningKeyNotFound = errors.New("signing key not found")
-	errUnauthorized       = errors.New("Unauthorized")
+	errInvalidToken         = errors.New("invalid_access_token")
+	errSigningKeyNotFound   = errors.New("signing key not found")
+	errUnauthorized         = errors.New("Unauthorized")
+	errTokenValidationError = errors.New("couldn't validate token")
 )
 
 var (
@@ -302,7 +303,13 @@ func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, emai
 	}
 
 	if err != nil {
-		return err
+		req.log.Error("fetch_of_invalid_tokens_failed", err, []logger.Object{
+			logger.MapToLoggerObject("person_data", map[string]interface{}{
+				"s_email": email,
+			}),
+		})
+
+		return errTokenValidationError
 	}
 
 	for _, it := range invalidTokens {
