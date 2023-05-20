@@ -41,6 +41,9 @@ var (
 	errCookiesNotFound              = errors.New("cookies not found in request object")
 	errInvalidToken                 = errors.New("invalid token")
 	errMissingRefreshTokenInCookies = errors.New("missing refresh token in cookies")
+	errRefreshTokenMismatch         = errors.New("received refresh token doesn't match with the user's")
+	// errUsedRefreshToken received refresh token matches user's previous refresh token, which means it is leaked.
+	errUsedRefreshToken = errors.New("received refresh token matches user's previous refresh token")
 )
 
 var (
@@ -84,6 +87,10 @@ type jwk struct {
 	Use string `json:"use"`
 	N   string `json:"n"`
 	E   string `json:"e"`
+}
+
+type response struct {
+	Message string `json:"message,omitempty"`
 }
 
 type requestHandler struct {
@@ -152,8 +159,9 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 		return req.serverError(nil)
 	}
 
-	if req.isRefreshTokenInvalid(person) {
-		req.log.Warning("invalid_refresh_token", nil, []logger.Object{
+	err = req.validateRefreshToken(person)
+	if errors.Is(err, errRefreshTokenMismatch) || errors.Is(err, errUsedRefreshToken) {
+		req.log.Warning("invalid_refresh_token", err, []logger.Object{
 			person,
 			logger.MapToLoggerObject("request", map[string]interface{}{
 				"s_request_token": req.RefreshToken,
@@ -207,24 +215,22 @@ func getRefreshTokenCookie(request *events.APIGatewayProxyRequest) (string, erro
 	return "", errMissingRefreshTokenInCookies
 }
 
-func (req *requestHandler) isRefreshTokenInvalid(person *models.Person) bool {
-	var isRefreshTokenUsed, refreshTokenMismatch bool
-
+func (req *requestHandler) validateRefreshToken(person *models.Person) error {
 	err := hash.CompareWithToken(person.RefreshToken, req.RefreshToken)
-	if err != nil {
-		refreshTokenMismatch = true
+	if errors.Is(err, hash.ErrHashMismatch) && person.RefreshToken != "" {
+		return errRefreshTokenMismatch
 	}
 
-	if person.PreviousRefreshToken == "" {
-		return refreshTokenMismatch
+	if err != nil {
+		return err
 	}
 
 	err = hash.CompareWithToken(person.PreviousRefreshToken, req.RefreshToken)
-	if err == nil {
-		isRefreshTokenUsed = true
+	if err == nil && person.PreviousRefreshToken != "" {
+		return errUsedRefreshToken
 	}
 
-	return isRefreshTokenUsed || refreshTokenMismatch
+	return err
 }
 
 func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *models.Person) (*events.APIGatewayProxyResponse, error) {
@@ -253,9 +259,20 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 		return req.serverError(err)
 	}
 
+	res := new(response)
+	res.Message = "invalid credentials"
+
+	body, err := utils.GetJsonString(res)
+	if err != nil {
+		req.err = err
+		req.log.Error("response_building_failed", err, []logger.Object{person})
+
+		return req.serverError(nil)
+	}
+
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusUnauthorized,
-		Body:       "Invalid credentials",
+		Body:       body,
 	}, nil
 }
 
