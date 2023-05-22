@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/hash"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -73,11 +74,6 @@ var (
 	invalidJWTErrs = []error{jwt.ErrAudValidation, jwt.ErrExpValidation, jwt.ErrIatValidation, jwt.ErrIssValidation,
 		jwt.ErrJtiValidation, jwt.ErrNbfValidation, jwt.ErrSubValidation}
 )
-
-type jwtPayload struct {
-	Scope string `json:"scope"`
-	*jwt.Payload
-}
 
 type jwks struct {
 	Keys []jwk `json:"keys"`
@@ -144,8 +140,8 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }
 
-func (req *request) getTokenPayload(token string) (*jwtPayload, error) {
-	var payload *jwtPayload
+func (req *request) getTokenPayload(token string) (*models.JWTPayload, error) {
+	var payload *models.JWTPayload
 
 	tokenParts := strings.Split(token, ".")
 	if len(tokenParts) < 3 {
@@ -192,7 +188,7 @@ func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAu
 	return resp.APIGatewayCustomAuthorizerResponse
 }
 
-func (req *request) verifyToken(ctx context.Context, payload *jwtPayload, token string) error {
+func (req *request) verifyToken(ctx context.Context, payload *models.JWTPayload, token string) error {
 	response, err := restclient.Get(payload.Issuer + "/auth/jwks")
 	if err != nil {
 		req.err = err

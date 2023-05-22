@@ -22,7 +22,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-226-39-174.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-197-205-157.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
@@ -40,7 +40,7 @@ type LogAPI interface {
 	Warning(eventName string, err error, objects []Object)
 	Error(eventName string, err error, objects []Object)
 	Critical(eventName string, objects []Object)
-	LogLambdaTime(startingTime time.Time, panic interface{})
+	LogLambdaTime(startingTime time.Time, err error, panic interface{})
 }
 
 type Log struct {
@@ -94,7 +94,7 @@ func (l *Log) Error(eventName string, err error, objects []Object) {
 	l.sendLog(errLevel, eventName, err, objects)
 }
 
-func (l *Log) LogLambdaTime(startingTime time.Time, panic interface{}) {
+func (l *Log) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
 	duration := time.Since(startingTime).Seconds()
 	durationData := MapToLoggerObject("duration_data", map[string]interface{}{
 		"f_duration": duration,
@@ -105,6 +105,10 @@ func (l *Log) LogLambdaTime(startingTime time.Time, panic interface{}) {
 
 		l.Critical("lambda_panicked", []Object{durationData, panicObject})
 		return
+	}
+
+	if err != nil {
+		l.Error("lambda_execution_finished", err, []Object{durationData})
 	}
 
 	l.Info("lambda_execution_finished", []Object{durationData})
