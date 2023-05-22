@@ -132,29 +132,36 @@ func tokenHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 }
 
 func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	var credentials Credentials
 	ctx := context.Background()
 
-	err := json.Unmarshal([]byte(request.Body), &credentials)
-	if err != nil {
-		req.err = err
-		req.log.Error("request_body_unmarshal_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	person, err := storagePerson.GetPersonByEmail(ctx, credentials.Email)
-	if err != nil {
-		req.err = err
-		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
+	var err error
 	req.RefreshToken, err = getRefreshTokenCookie(request)
 	if err != nil {
 		req.err = err
 		req.log.Error("getting_refresh_token_cookie_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	payload, err := req.getTokenPayload(req.RefreshToken)
+	if errors.Is(err, errInvalidToken) {
+		req.err = err
+		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
+
+		return req.clientError(err)
+	}
+
+	if err != nil {
+		req.err = err
+		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	person, err := storagePerson.GetPersonByEmail(ctx, payload.Subject)
+	if err != nil {
+		req.err = err
+		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
 
 		return req.serverError(nil)
 	}
@@ -194,6 +201,36 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 		Headers:    tokenCookieHeader,
 		Body:       responseBody,
 	}, nil
+}
+
+func (req *requestHandler) getTokenPayload(token string) (*models.JWTPayload, error) {
+	var payload *models.JWTPayload
+
+	tokenParts := strings.Split(token, ".")
+	if len(tokenParts) < 3 {
+		req.err = errInvalidToken
+		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
+
+		return nil, errInvalidToken
+	}
+
+	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
+	if err != nil {
+		req.err = err
+		req.log.Error("payload_decoding_failed", err, []logger.Object{})
+
+		return nil, err
+	}
+
+	err = json.Unmarshal(payloadPart, &payload)
+	if err != nil {
+		req.err = err
+		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
+
+		return nil, err
+	}
+
+	return payload, nil
 }
 
 func getRefreshTokenCookie(request *events.APIGatewayProxyRequest) (string, error) {

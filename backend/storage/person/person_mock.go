@@ -11,7 +11,7 @@ import (
 
 const (
 	DummyToken         = "header.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjo5OTk5OTk5OTk5fQ.signature"
-	DummyPreviousToken = "previous token"
+	DummyPreviousToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGdtYWlsLmNvbSIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMn0.nL-Ir6ZnsMHZa7YYwjfpy1QJ1OTmBCFHCDXVSToXUqf3DHA5oWnBtlBuUZ1xTHa5ArQf5vQQIOIrW6p6OjtMdHO3h3-TWOWJIJhbkEmUjS5EMRtZfLWnf9gDnF7CxmUn0yA1qK0B4Nqx57lsI8eMeZKDvN8bqfwlEe53Qy8tYXP5jNxP2zA6Mt7ROCGrfvulTyM0ZwV7klArEKs485NPao8BlyV90s-whjk6h1_mtderbMA2iRxkoARzPRnSftULDYmzCJ3i4IOX9p6xyOcgwecpn93-ya1x1nZtoITZ2It5SYUcrsQ2KhiP2c95bFpJTr6A2UcuAz1Y0GguSR2wlw"
 )
 
 var (

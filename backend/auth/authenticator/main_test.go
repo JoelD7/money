@@ -256,7 +256,7 @@ func TestTokenHandler(t *testing.T) {
 
 	request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
 
-	response, err := tokenHandler(&request)
+	response, err := tokenHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.NotEmpty(response.Body)
@@ -266,17 +266,22 @@ func TestTokenHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	dummyRequest, err := dummyAPIGatewayProxyRequest()
+	dummyRequest.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
 	c.Nil(err)
 
-	t.Run("Invalid request body", func(t *testing.T) {
-		request := &events.APIGatewayProxyRequest{Body: "}"}
+	t.Run("Invalid token", func(t *testing.T) {
+		dummyRequest.Headers["Cookie"] = refreshTokenCookieName + "="
 
-		response, err := tokenHandler(request)
+		response, err := tokenHandler(dummyRequest)
+		c.Nil(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "token_payload_parse_failed")
+
+		dummyRequest.Headers["Cookie"] = refreshTokenCookieName + "=header.payload.signature"
+		response, err = tokenHandler(dummyRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_unmarshal_failed")
-
-		logMock.Output.Reset()
+		c.Contains(logMock.Output.String(), "token_payload_parse_failed")
 	})
 
 	t.Run("Refresh token leaked", func(t *testing.T) {
@@ -285,11 +290,10 @@ func TestTokenHandlerFailed(t *testing.T) {
 		request.Headers = map[string]string{}
 		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyPreviousToken
 
-		response, err := tokenHandler(&request)
+		response, err := tokenHandler(request)
 		c.Nil(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
 		c.Contains(logMock.Output.String(), "invalid_refresh_token")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Person not found", func(t *testing.T) {
@@ -300,21 +304,21 @@ func TestTokenHandlerFailed(t *testing.T) {
 
 		request := dummyRequest
 
-		response, err := tokenHandler(&request)
+		response, err := tokenHandler(request)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "fetching_user_from_storage_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Refresh token in cookie not found", func(t *testing.T) {
 		_ = storagePerson.InitDynamoMock()
 
-		response, err := tokenHandler(&dummyRequest)
+		dummyRequest.Headers["Cookie"] = ""
+
+		response, err := tokenHandler(dummyRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
-		logMock.Output.Reset()
 
 	})
 
@@ -333,11 +337,10 @@ func TestTokenHandlerFailed(t *testing.T) {
 		itMock.ActivateForceFailure(errCustomError)
 		defer itMock.DeactivateForceFailure()
 
-		response, err := tokenHandler(&request)
+		response, err := tokenHandler(request)
 		c.EqualError(errCustomError, err.Error())
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "access_token_invalidation_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Set tokens failed", func(t *testing.T) {
@@ -352,11 +355,10 @@ func TestTokenHandlerFailed(t *testing.T) {
 		request := dummyRequest
 		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
 
-		response, err := tokenHandler(&dummyRequest)
+		response, err := tokenHandler(dummyRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "token_setting_failed")
-		logMock.Output.Reset()
 	})
 }
 
@@ -369,17 +371,17 @@ func bodyToJSONString(body interface{}) (string, error) {
 	return string(b), nil
 }
 
-func dummyAPIGatewayProxyRequest() (events.APIGatewayProxyRequest, error) {
+func dummyAPIGatewayProxyRequest() (*events.APIGatewayProxyRequest, error) {
 	body := Credentials{
 		Email: "test@gmail.com",
 	}
 
 	jsonBody, err := bodyToJSONString(body)
 	if err != nil {
-		return events.APIGatewayProxyRequest{}, err
+		return &events.APIGatewayProxyRequest{}, err
 	}
 
-	return events.APIGatewayProxyRequest{
+	return &events.APIGatewayProxyRequest{
 		Body:    jsonBody,
 		Headers: map[string]string{},
 	}, nil
