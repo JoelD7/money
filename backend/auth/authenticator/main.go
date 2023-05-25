@@ -258,15 +258,6 @@ func (req *requestHandler) validateRefreshToken(person *models.Person) error {
 		return errRefreshTokenMismatch
 	}
 
-	if err != nil {
-		return err
-	}
-
-	err = hash.CompareWithToken(person.PreviousRefreshToken, req.RefreshToken)
-	if err == nil && person.PreviousRefreshToken != "" {
-		return errUsedRefreshToken
-	}
-
 	return err
 }
 
@@ -485,7 +476,6 @@ func (req *requestHandler) setTokens(ctx context.Context, person *models.Person)
 
 	req.AccessToken = accessToken
 
-	person.PreviousRefreshToken = person.RefreshToken
 	person.RefreshToken = hashedRefresh
 	person.AccessToken = hashedAccess
 

@@ -130,11 +130,10 @@ func (d *MockDynamo) EmptyTable() {
 // GetMockedPerson returns the mock item for the person table
 func GetMockedPerson() *models.Person {
 	return &models.Person{
-		FullName:             "Joel",
-		Email:                "test@gmail.com",
-		Password:             "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
-		PreviousRefreshToken: DummyPreviousToken,
-		AccessToken:          hashedDummyToken,
-		RefreshToken:         hashedDummyToken,
+		FullName:     "Joel",
+		Email:        "test@gmail.com",
+		Password:     "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
+		AccessToken:  hashedDummyToken,
+		RefreshToken: hashedDummyToken,
 	}
 }

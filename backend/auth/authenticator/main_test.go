@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
@@ -320,27 +319,6 @@ func TestTokenHandlerFailed(t *testing.T) {
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
 
-	})
-
-	t.Run("Token invalidation failed", func(t *testing.T) {
-		_ = storagePerson.InitDynamoMock()
-		person := storagePerson.GetMockedPerson()
-
-		itMock := invalidtoken.InitDynamoMock()
-
-		request := dummyRequest
-
-		request.Headers["Cookie"] = refreshTokenCookieName + "=" + person.PreviousRefreshToken
-
-		errCustomError := errors.New("custom error")
-
-		itMock.ActivateForceFailure(errCustomError)
-		defer itMock.DeactivateForceFailure()
-
-		response, err := tokenHandler(request)
-		c.EqualError(errCustomError, err.Error())
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "access_token_invalidation_failed")
 	})
 
 	t.Run("Set tokens failed", func(t *testing.T) {

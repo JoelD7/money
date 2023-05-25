@@ -3,17 +3,16 @@ package models
 import "time"
 
 type Person struct {
-	PersonID             string        `json:"person_id,omitempty" dynamodbav:"person_id"`
-	FullName             string        `json:"full_name,omitempty" dynamodbav:"full_name,omitempty"`
-	Email                string        `json:"email,omitempty" dynamodbav:"email"`
-	Password             string        `json:"-" dynamodbav:"password"`
-	Categories           []*Category   `json:"categories,omitempty" dynamodbav:"categories,omitempty"`
-	SavingGoals          []*SavingGoal `json:"saving_goals,omitempty" dynamodbav:"saving_goals,omitempty"`
-	CreatedDate          time.Time     `json:"created_date,omitempty" dynamodbav:"created_date,omitempty"`
-	UpdatedDate          time.Time     `json:"updated_date,omitempty" dynamodbav:"update_date,omitempty"`
-	AccessToken          string        `json:"-" dynamodbav:"access_token,omitempty"`
-	PreviousRefreshToken string        `json:"-" dynamodbav:"previous_refresh_token"`
-	RefreshToken         string        `json:"-" dynamodbav:"refresh_token"`
+	PersonID     string        `json:"person_id,omitempty" dynamodbav:"person_id"`
+	FullName     string        `json:"full_name,omitempty" dynamodbav:"full_name,omitempty"`
+	Email        string        `json:"email,omitempty" dynamodbav:"email"`
+	Password     string        `json:"-" dynamodbav:"password"`
+	Categories   []*Category   `json:"categories,omitempty" dynamodbav:"categories,omitempty"`
+	SavingGoals  []*SavingGoal `json:"saving_goals,omitempty" dynamodbav:"saving_goals,omitempty"`
+	CreatedDate  time.Time     `json:"created_date,omitempty" dynamodbav:"created_date,omitempty"`
+	UpdatedDate  time.Time     `json:"updated_date,omitempty" dynamodbav:"update_date,omitempty"`
+	AccessToken  string        `json:"-" dynamodbav:"access_token,omitempty"`
+	RefreshToken string        `json:"-" dynamodbav:"refresh_token"`
 }
 
 type Category struct {
