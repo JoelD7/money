@@ -167,8 +167,8 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 	}
 
 	err = req.validateRefreshToken(person)
-	if errors.Is(err, errRefreshTokenMismatch) || errors.Is(err, errUsedRefreshToken) {
-		req.log.Warning("invalid_refresh_token", err, []logger.Object{
+	if err != nil {
+		req.log.Warning("refresh_token_validation_failed", err, []logger.Object{
 			person,
 			logger.MapToLoggerObject("request", map[string]interface{}{
 				"s_request_token": req.RefreshToken,

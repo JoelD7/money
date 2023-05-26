@@ -292,7 +292,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		response, err := tokenHandler(request)
 		c.Nil(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
-		c.Contains(logMock.Output.String(), "invalid_refresh_token")
+		c.Contains(logMock.Output.String(), "refresh_token_validation_failed")
 	})
 
 	t.Run("Person not found", func(t *testing.T) {
