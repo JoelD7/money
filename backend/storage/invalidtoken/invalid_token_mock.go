@@ -20,7 +20,6 @@ type MockDynamo struct {
 
 func InitDynamoMock() *MockDynamo {
 	itSample := &models.InvalidToken{
-		Email:  "test@gmail.com",
 		Token:  "invalidated token",
 		Expire: time.Now().Add(time.Hour * 1).Unix(),
 	}

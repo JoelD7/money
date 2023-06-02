@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/cache"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/hash"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -231,7 +232,7 @@ func (req *request) verifyToken(ctx context.Context, payload *models.JWTPayload,
 		return err
 	}
 
-	err = req.compareAccessTokenAgainstBlacklist(ctx, payload.Subject, token)
+	err = req.compareAccessTokenAgainstBlacklistRedis(ctx, payload.Subject, token)
 	if errors.Is(err, errInvalidToken) {
 		req.log.Warning("blacklisted_token_use_detected", err, []logger.Object{
 			logger.MapToLoggerObject("token", map[string]interface{}{
@@ -286,6 +287,39 @@ func isErrorInvalidJWT(err error) bool {
 	return false
 }
 
+func (req *request) compareAccessTokenAgainstBlacklistRedis(ctx context.Context, email, token string) error {
+	invalidTokens, err := cache.GetInvalidTokens(ctx, email)
+	if err != nil {
+		return err
+	}
+
+	for _, it := range invalidTokens {
+		err = hash.CompareWithToken(it.Token, token)
+		if err == nil {
+			req.log.Warning("invalid_token_use_detected", errInvalidToken, []logger.Object{
+				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
+					"s_bearer_token":             token,
+					"s_saved_invalid_token_hash": it.Token,
+				}),
+			})
+
+			return errInvalidToken
+		}
+
+		if !errors.Is(err, hash.ErrHashMismatch) {
+			req.err = err
+			req.log.Error("token_comparison_against_blacklist_failed", err, []logger.Object{
+				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
+					"s_bearer_token":             token,
+					"s_saved_invalid_token_hash": it.Token,
+				}),
+			})
+		}
+	}
+
+	return nil
+}
+
 func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, email, token string) error {
 	invalidTokens, err := invalidtoken.GetAllForPerson(ctx, email)
 	if errors.Is(err, invalidtoken.ErrNotFound) {
@@ -309,10 +343,6 @@ func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, emai
 	}
 
 	for _, it := range invalidTokens {
-		if it.Type == string(invalidtoken.TypeRefresh) {
-			continue
-		}
-
 		err = hash.CompareWithToken(it.Token, token)
 		if err == nil {
 			req.log.Warning("invalid_token_use_detected", errInvalidToken, []logger.Object{

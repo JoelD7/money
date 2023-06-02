@@ -11,6 +11,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/cache"
 	"math/big"
 	"net/http"
 	"regexp"
@@ -26,7 +27,6 @@ import (
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/shared/utils"
-	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	storagePerson "github.com/JoelD7/money/backend/storage/person"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -265,8 +265,7 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 	accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
 	refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
 
-	err := invalidtoken.Add(ctx, person.Email, person.AccessToken, invalidtoken.TypeAccess,
-		accessTokenTTL)
+	err := cache.AddInvalidToken(ctx, person.Email, person.AccessToken, accessTokenTTL)
 	if err != nil {
 		req.err = err
 		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
@@ -276,8 +275,7 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 		return req.serverError(err)
 	}
 
-	err = invalidtoken.Add(ctx, person.Email, person.RefreshToken, invalidtoken.TypeRefresh,
-		refreshTokenTTL)
+	err = cache.AddInvalidToken(ctx, person.Email, person.RefreshToken, refreshTokenTTL)
 	if err != nil {
 		req.err = err
 		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
