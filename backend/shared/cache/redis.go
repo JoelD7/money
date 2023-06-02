@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	"github.com/redis/go-redis/v9"
@@ -17,16 +18,16 @@ var (
 	ErrTokensNotFound = errors.New("no invalid tokens found")
 	ErrInvalidTTL     = errors.New("TTL is from a past datetime")
 	ErrNoSuchKey      = errors.New("key does not exist")
+
+	redisURL = env.GetString("REDIS_URL", "")
 )
 
 const (
 	email     = "test@gmail.com"
-	redisURL  = "redis://default:810cc997ccd745debfbbdb567631a5c2@us1-polished-shrew-39844.upstash.io:39844"
 	keyPrefix = "invalid_tokens:"
 )
 
 func init() {
-
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
 		panic(err)
