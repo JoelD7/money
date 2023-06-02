@@ -130,10 +130,8 @@ func TestHandlerError(t *testing.T) {
 		c.Nil(err)
 
 		invalidToken := &models.InvalidToken{
-			Email:       "test@gmail.com",
 			Token:       authTokenHash,
 			Expire:      time.Now().Add(time.Hour * 1).Unix(),
-			Type:        string(invalidtoken.TypeAccess),
 			CreatedDate: time.Now(),
 		}
 
@@ -159,21 +157,6 @@ func TestHandlerError(t *testing.T) {
 		c.Contains(logMock.Output.String(), "jwt_validation_failed")
 		logMock.Output.Reset()
 	})
-}
-
-func BenchmarkCompareTokenAgainstBlacklist(b *testing.B) {
-	c := require.New(b)
-
-	req := &request{
-		log: logger.InitLoggerMock(nil),
-	}
-
-	ctx := context.Background()
-
-	for i := 0; i < 150; i++ {
-		err := req.compareAccessTokenAgainstBlacklist(ctx, "test@gmail.com", "token")
-		c.Nil(err)
-	}
 }
 
 func dummyHandlerEvent() events.APIGatewayCustomAuthorizerRequest {

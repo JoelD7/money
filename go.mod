@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.18.3
 	github.com/aws/aws-secretsmanager-caching-go v1.1.0
 	github.com/gbrlsnchs/jwt/v3 v3.0.1
-	github.com/redis/go-redis/v9 v9.0.3
+	github.com/redis/go-redis/v9 v9.0.4
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.6.0
 )

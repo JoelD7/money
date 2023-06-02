@@ -51,10 +51,8 @@ func init() {
 
 func Add(ctx context.Context, email, token string, tokenType Type, expires int64) error {
 	invalidToken := models.InvalidToken{
-		Email:       email,
 		Token:       token,
 		Expire:      expires,
-		Type:        string(tokenType),
 		CreatedDate: time.Now(),
 	}
 
