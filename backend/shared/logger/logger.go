@@ -18,11 +18,15 @@ const (
 	errLevel     logLevel = "error"
 	warningLevel logLevel = "warning"
 	panicLevel   logLevel = "panic"
+
+	retries           = 3
+	backoffFactor     = 2
+	connectionTimeout = time.Second * 5
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "random")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-147-45-202.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
@@ -119,7 +123,7 @@ func (l *Log) Critical(eventName string, objects []Object) {
 }
 
 func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
-	connection, err := net.Dial("tcp", logstashHost+":"+logstashPort)
+	connection, err := connectToLogstash()
 	if err != nil {
 		panic(fmt.Errorf("error connecting to Logstash server: %w", err))
 	}
@@ -154,6 +158,21 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 	if err != nil {
 		panic(fmt.Errorf("logger: error writing data to logstash: %w", err))
 	}
+}
+
+func connectToLogstash() (net.Conn, error) {
+	connection, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
+
+	backoff := time.Second * 2
+
+	for i := 0; i < retries && err != nil; i++ {
+		time.Sleep(backoff)
+
+		connection, err = net.Dial("tcp", logstashHost+":"+logstashPort)
+		backoff *= backoffFactor
+	}
+
+	return connection, err
 }
 
 func MapToLoggerObject(name string, m map[string]interface{}) Object {

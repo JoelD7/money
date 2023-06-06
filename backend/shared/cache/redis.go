@@ -2,12 +2,9 @@ package cache
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"github.com/JoelD7/money/backend/models"
+	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/utils"
-	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	"github.com/redis/go-redis/v9"
 	"time"
 )
@@ -15,17 +12,19 @@ import (
 var (
 	client *redis.Client
 
-	ErrTokensNotFound = errors.New("no invalid tokens found")
-	ErrInvalidTTL     = errors.New("TTL is from a past datetime")
-	ErrNoSuchKey      = errors.New("key does not exist")
+	redisURL = env.GetString("REDIS_URL", "redis://default:810cc997ccd745debfbbdb567631a5c2@us1-polished-shrew-39844.upstash.io:4000")
 
-	redisURL = env.GetString("REDIS_URL", "")
+	ErrNotFound = errors.New("cache: key not found")
 )
 
 const (
-	email     = "test@gmail.com"
-	keyPrefix = "invalid_tokens:"
+	retries       = 3
+	backoffFactor = 2
 )
+
+type RedisClient struct {
+	client *redis.Client
+}
 
 func init() {
 	opt, err := redis.ParseURL(redisURL)
@@ -36,92 +35,40 @@ func init() {
 	client = redis.NewClient(opt)
 }
 
-func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
-	key := keyPrefix + email
+func NewClient() *RedisClient {
+	return &RedisClient{client}
+}
 
-	dataStr, err := client.Get(ctx, key).Result()
+func (rc *RedisClient) Get(ctx context.Context, key string) (string, error) {
+	value, err := rc.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
-		return nil, ErrTokensNotFound
+		return "", ErrNotFound
 	}
 
-	invalidTokens := make([]*models.InvalidToken, 0)
+	backoff := time.Second * 2
 
-	err = json.Unmarshal([]byte(dataStr), &invalidTokens)
-	if err != nil {
-		return nil, err
+	for i := 0; i < retries && err != nil; i++ {
+		time.Sleep(backoff)
+
+		fmt.Println(fmt.Sprintf("Retry %d, backoff %s", i+1, backoff.String()))
+		value, err = rc.client.Get(ctx, key).Result()
+		backoff *= backoffFactor
 	}
 
-	if len(invalidTokens) == 0 {
-		return nil, ErrTokensNotFound
-	}
-
-	return invalidTokens, nil
+	return value, err
 }
 
-func AddInvalidToken(ctx context.Context, email, token string, ttl int64) error {
-	if time.Now().Unix() > ttl {
-		return ErrInvalidTTL
+func (rc *RedisClient) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	_, err := rc.client.Set(ctx, key, value, expiration).Result()
+
+	backoff := time.Second * 2
+
+	for i := 0; i < retries && err != nil; i++ {
+		time.Sleep(backoff)
+
+		_, err = rc.client.Set(ctx, key, value, expiration).Result()
+		backoff *= backoffFactor
 	}
 
-	key := keyPrefix + email
-
-	invalidTokens, err := GetInvalidTokens(ctx, email)
-	if err != nil {
-		return err
-	}
-
-	newInvalidTokens := make([]*models.InvalidToken, 0)
-	newInvalidTokens = append(newInvalidTokens, &models.InvalidToken{Token: token, Expire: ttl, CreatedDate: time.Now()})
-
-	now := time.Now().Unix()
-
-	for _, it := range invalidTokens {
-		if now <= it.Expire {
-			newInvalidTokens = append(newInvalidTokens, it)
-		}
-	}
-
-	result, err := utils.GetJsonString(newInvalidTokens)
-	if err != nil {
-		return err
-	}
-
-	_, err = client.Set(ctx, key, result, 0).Result()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func Delete(ctx context.Context, key string) error {
-	result, err := client.Del(ctx, key).Result()
-	if err != nil {
-		return err
-	}
-
-	if result == 0 {
-		return ErrNoSuchKey
-	}
-
-	return nil
-}
-
-func migrateTokens() {
-	ctx := context.Background()
-
-	invalidTokens, err := invalidtoken.GetAllForPerson(ctx, email)
-	if err != nil {
-		panic(err)
-	}
-
-	result, err := utils.GetJsonString(invalidTokens)
-	if err != nil {
-		panic(err)
-	}
-
-	_, err = client.SetNX(ctx, "invalid_tokens:test@gmail.com", result, 0).Result()
-	if err != nil {
-		panic(err)
-	}
+	return err
 }
