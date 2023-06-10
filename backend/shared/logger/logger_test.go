@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bytes"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -27,7 +28,7 @@ func (p *testPerson) LogProperties() map[string]interface{} {
 }
 
 func init() {
-	InitLoggerMock()
+	InitLoggerMock(bytes.NewBuffer(nil))
 }
 
 func TestInfo(t *testing.T) {

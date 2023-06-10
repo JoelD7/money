@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
+	"log"
 	"net"
+	"os"
 	"regexp"
 	"runtime/debug"
 	"time"
@@ -32,6 +34,7 @@ var (
 	LogClient LogAPI
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
+	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 type Object interface {
@@ -125,7 +128,9 @@ func (l *Log) Critical(eventName string, objects []Object) {
 func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
 	connection, err := connectToLogstash()
 	if err != nil {
-		panic(fmt.Errorf("error connecting to Logstash server: %w", err))
+		errorLogger.Println(fmt.Errorf("error connecting to Logstash server: %w", err))
+
+		return
 	}
 
 	defer func() {
@@ -168,7 +173,7 @@ func connectToLogstash() (net.Conn, error) {
 	for i := 0; i < retries && err != nil; i++ {
 		time.Sleep(backoff)
 
-		connection, err = net.Dial("tcp", logstashHost+":"+logstashPort)
+		connection, err = net.DialTimeout("tcp", logstashHost+":"+logstashPort, time.Second*1)
 		backoff *= backoffFactor
 	}
 
