@@ -99,6 +99,13 @@ func (req *request) init() {
 }
 
 func (req *request) finish() {
+	defer func() {
+		err := req.log.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 

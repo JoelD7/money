@@ -28,7 +28,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-147-45-202.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-166-201-231.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
@@ -48,11 +48,13 @@ type LogAPI interface {
 	Error(eventName string, err error, objects []Object)
 	Critical(eventName string, objects []Object)
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
+	Close() error
 }
 
 type Log struct {
-	Service string `json:"service,omitempty"`
-	Handler string `json:"handler,omitempty"`
+	Service    string `json:"service,omitempty"`
+	Handler    string `json:"handler,omitempty"`
+	connection net.Conn
 }
 
 type LogData struct {
@@ -126,19 +128,12 @@ func (l *Log) Critical(eventName string, objects []Object) {
 }
 
 func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
-	connection, err := connectToLogstash()
+	err := l.connect()
 	if err != nil {
 		errorLogger.Println(fmt.Errorf("error connecting to Logstash server: %w", err))
 
 		return
 	}
-
-	defer func() {
-		err = connection.Close()
-		if err != nil {
-			panic(fmt.Errorf("error closing connection to Logstash server: %w", err))
-		}
-	}()
 
 	logData := &LogData{
 		Service:   l.Service,
@@ -159,13 +154,17 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 		panic(fmt.Errorf("logger: error encoding log data: %w", err))
 	}
 
-	_, err = connection.Write(dataAsBytes.Bytes())
+	err = l.write(dataAsBytes.Bytes())
 	if err != nil {
 		panic(fmt.Errorf("logger: error writing data to logstash: %w", err))
 	}
 }
 
-func connectToLogstash() (net.Conn, error) {
+func (l *Log) connect() error {
+	if l.connection != nil {
+		return nil
+	}
+
 	connection, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
 
 	backoff := time.Second * 2
@@ -177,7 +176,33 @@ func connectToLogstash() (net.Conn, error) {
 		backoff *= backoffFactor
 	}
 
-	return connection, err
+	l.connection = connection
+
+	return err
+}
+
+func (l *Log) write(data []byte) error {
+	_, err := l.connection.Write(data)
+	backoff := time.Second * 2
+
+	for i := 0; i < retries && err != nil; i++ {
+		time.Sleep(backoff)
+
+		_, err = l.connection.Write(data)
+		backoff *= backoffFactor
+	}
+
+	return err
+}
+
+// Close closes the connection to the Logstash server
+func (l *Log) Close() error {
+	err := l.connection.Close()
+	if err != nil {
+		return fmt.Errorf("error closing connection to Logstash server: %w", err)
+	}
+
+	return nil
 }
 
 func MapToLoggerObject(name string, m map[string]interface{}) Object {
@@ -204,7 +229,7 @@ func getPanicObject(panic interface{}) Object {
 		name: "panic",
 		properties: map[string]interface{}{
 			"s_message": fmt.Sprintf("%v", panic),
-			"s_trace":   string(bytes.Join(clean, []byte("\n"))),
+			"s_trace":   string(bytes.Join(clean, []byte("\n\n"))),
 		},
 	}
 }
