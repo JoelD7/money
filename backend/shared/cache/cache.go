@@ -23,10 +23,6 @@ const (
 	keyPrefix = "invalid_tokens:"
 )
 
-func init() {
-	redisClient = NewClient()
-}
-
 func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
 	key := keyPrefix + email
 

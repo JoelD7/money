@@ -9,11 +9,10 @@ import (
 func TestGet(t *testing.T) {
 	c := require.New(t)
 
-	rc := NewClient()
 	ctx := context.Background()
 	key := "invalid_tokens:test@gmail.com"
 
-	value, err := rc.Get(ctx, key)
+	value, err := redisClient.Get(ctx, key)
 	c.Empty(value)
 	c.Nil(err)
 

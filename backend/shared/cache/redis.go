@@ -3,7 +3,6 @@ package cache
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/redis/go-redis/v9"
 	"time"
@@ -12,7 +11,7 @@ import (
 var (
 	client *redis.Client
 
-	redisURL = env.GetString("REDIS_URL", "redis://default:810cc997ccd745debfbbdb567631a5c2@us1-polished-shrew-39844.upstash.io:4000")
+	redisURL = env.GetString("REDIS_URL", "redis://default:810cc997ccd745debfbbdb567631a5c2@us1-polished-shrew-39844.upstash.io:39844")
 
 	ErrNotFound = errors.New("cache: key not found")
 )
@@ -32,11 +31,7 @@ func init() {
 		panic(err)
 	}
 
-	client = redis.NewClient(opt)
-}
-
-func NewClient() *RedisClient {
-	return &RedisClient{client}
+	redisClient = &RedisClient{redis.NewClient(opt)}
 }
 
 func (rc *RedisClient) Get(ctx context.Context, key string) (string, error) {
@@ -50,7 +45,6 @@ func (rc *RedisClient) Get(ctx context.Context, key string) (string, error) {
 	for i := 0; i < retries && err != nil; i++ {
 		time.Sleep(backoff)
 
-		fmt.Println(fmt.Sprintf("Retry %d, backoff %s", i+1, backoff.String()))
 		value, err = rc.client.Get(ctx, key).Result()
 		backoff *= backoffFactor
 	}
