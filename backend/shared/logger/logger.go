@@ -28,7 +28,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-166-201-231.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-18-215-157-194.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
@@ -55,6 +55,12 @@ type Log struct {
 	Service    string `json:"service,omitempty"`
 	Handler    string `json:"handler,omitempty"`
 	connection net.Conn
+	worker     *asyncWorker
+}
+
+type asyncWorker struct {
+	doneCh chan bool
+	buffer chan [][]byte
 }
 
 type LogData struct {
@@ -66,13 +72,17 @@ type LogData struct {
 	LogObject map[string]map[string]interface{} `json:"properties,omitempty"`
 }
 
-func init() {
-	LogClient = &Log{Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown")}
-}
-
 func NewLogger() LogAPI {
 	if LogClient != nil {
 		return LogClient
+	}
+
+	LogClient = &Log{
+		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		worker: &asyncWorker{
+			doneCh: make(chan bool),
+			buffer: make(chan [][]byte),
+		},
 	}
 
 	return LogClient
@@ -86,6 +96,10 @@ func NewLoggerWithHandler(handler string) LogAPI {
 	LogClient = &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
 		Handler: handler,
+		worker: &asyncWorker{
+			doneCh: make(chan bool),
+			buffer: make(chan [][]byte),
+		},
 	}
 
 	return LogClient
