@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	client *redis.Client
+	client      *redis.Client
+	redisClient RedisAPI
 
 	redisURL = env.GetString("REDIS_URL", "redis://default:810cc997ccd745debfbbdb567631a5c2@us1-polished-shrew-39844.upstash.io:39844")
 
@@ -20,6 +21,11 @@ const (
 	retries       = 3
 	backoffFactor = 2
 )
+
+type RedisAPI interface {
+	Get(ctx context.Context, key string) (string, error)
+	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+}
 
 type RedisClient struct {
 	client *redis.Client

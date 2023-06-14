@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"github.com/JoelD7/money/backend/shared/cache"
 	"testing"
 	"time"
 
@@ -18,7 +19,6 @@ import (
 var (
 	secretMock *secretsMock.MockSecret
 	logMock    *logger.LogMock
-	logBuffer  *bytes.Buffer
 )
 
 const (
@@ -27,8 +27,9 @@ const (
 )
 
 func init() {
+	cache.InitRedisMock()
 	restclient.InitMockClient()
-	logMock = logger.InitLoggerMock(logBuffer)
+	logMock = logger.InitLoggerMock(bytes.NewBuffer(nil))
 
 	secretMock = secretsMock.InitSecretMock()
 
@@ -53,6 +54,8 @@ func TestHandleRequest(t *testing.T) {
 
 func TestHandlerError(t *testing.T) {
 	c := require.New(t)
+
+	cache.InitRedisMock()
 
 	event := dummyHandlerEvent()
 	ogToken := event.AuthorizationToken
@@ -109,20 +112,6 @@ func TestHandlerError(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
-	t.Run("No tokens found for user", func(t *testing.T) {
-		itMock := invalidtoken.InitDynamoMock()
-
-		itMock.EmptyTable()
-
-		err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", jwtIssuer+"/auth/jwks", restclient.MethodGET)
-		c.Nil(err)
-
-		_, err = handleRequest(context.Background(), event)
-		c.Nil(err)
-		c.Contains(logMock.Output.String(), "no_tokens_found_for_user")
-		logMock.Output.Reset()
-	})
-
 	t.Run("Invalid token detected", func(t *testing.T) {
 		itMock := invalidtoken.InitDynamoMock()
 
@@ -136,6 +125,9 @@ func TestHandlerError(t *testing.T) {
 		}
 
 		err = itMock.MockQueryFromSource(invalidToken)
+		c.Nil(err)
+
+		err = cache.AddInvalidToken(context.Background(), "test@gmail.com", authTokenHash, 0)
 		c.Nil(err)
 
 		_, err = handleRequest(context.Background(), event)
