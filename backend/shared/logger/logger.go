@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"runtime/debug"
+	"sync"
 	"time"
 )
 
@@ -24,17 +25,21 @@ const (
 	retries           = 3
 	backoffFactor     = 2
 	connectionTimeout = time.Second * 5
+	//leave this here just in case you decide to add custom log timestamps
+	timestampLayout = "2006-01-02T15:04:05.999999999Z"
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-18-215-157-194.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-88-51-237.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
+
+	buffer = 12
 )
 
 type Object interface {
@@ -56,11 +61,12 @@ type Log struct {
 	Handler    string `json:"handler,omitempty"`
 	connection net.Conn
 	worker     *asyncWorker
+	wg         sync.WaitGroup
 }
 
 type asyncWorker struct {
 	doneCh chan bool
-	buffer chan [][]byte
+	buffer chan []byte
 }
 
 type LogData struct {
@@ -77,13 +83,17 @@ func NewLogger() LogAPI {
 		return LogClient
 	}
 
-	LogClient = &Log{
+	logClient := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
 		worker: &asyncWorker{
 			doneCh: make(chan bool),
-			buffer: make(chan [][]byte),
+			buffer: make(chan []byte, buffer),
 		},
 	}
+
+	LogClient = logClient
+
+	go logClient.writeToLogstash()
 
 	return LogClient
 }
@@ -93,14 +103,18 @@ func NewLoggerWithHandler(handler string) LogAPI {
 		return LogClient
 	}
 
-	LogClient = &Log{
+	logClient := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
 		Handler: handler,
 		worker: &asyncWorker{
 			doneCh: make(chan bool),
-			buffer: make(chan [][]byte),
+			buffer: make(chan []byte, buffer),
 		},
 	}
+
+	LogClient = logClient
+
+	go logClient.writeToLogstash()
 
 	return LogClient
 }
@@ -141,6 +155,21 @@ func (l *Log) Critical(eventName string, objects []Object) {
 	l.sendLog(panicLevel, eventName, nil, objects)
 }
 
+func (l *Log) writeToLogstash() {
+	for data := range l.worker.buffer {
+		l.wg.Add(1)
+
+		err := l.write(data)
+		if err != nil {
+			//The lambda function shouldn't terminate because logs weren't sent. A future way of handling this
+			//could be setting Cloudwatch alarms to monitor this kind of failures.
+			errorLogger.Println(fmt.Errorf("logger: error writing data to logstash: %w", err))
+		}
+
+		l.wg.Done()
+	}
+}
+
 func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
 	err := l.connect()
 	if err != nil {
@@ -168,10 +197,7 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 		panic(fmt.Errorf("logger: error encoding log data: %w", err))
 	}
 
-	err = l.write(dataAsBytes.Bytes())
-	if err != nil {
-		panic(fmt.Errorf("logger: error writing data to logstash: %w", err))
-	}
+	l.worker.buffer <- dataAsBytes.Bytes()
 }
 
 func (l *Log) connect() error {
@@ -211,6 +237,9 @@ func (l *Log) write(data []byte) error {
 
 // Close closes the connection to the Logstash server
 func (l *Log) Close() error {
+	l.wg.Wait()
+	close(l.worker.buffer)
+
 	err := l.connection.Close()
 	if err != nil {
 		return fmt.Errorf("error closing connection to Logstash server: %w", err)
