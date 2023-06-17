@@ -175,7 +175,7 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 			}),
 		})
 
-		return req.invalidatePersonTokens(ctx, person)
+		return req.getUnauthorizedResponse(ctx, person)
 	}
 
 	tokenCookieHeader, err := req.setTokens(ctx, person)
@@ -261,27 +261,9 @@ func (req *requestHandler) validateRefreshToken(person *models.Person) error {
 	return err
 }
 
-func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *models.Person) (*events.APIGatewayProxyResponse, error) {
-	accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
-	refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
-
-	err := cache.AddInvalidToken(ctx, person.Email, person.AccessToken, accessTokenTTL)
+func (req *requestHandler) getUnauthorizedResponse(ctx context.Context, person *models.Person) (*events.APIGatewayProxyResponse, error) {
+	err := req.invalidatePersonTokens(ctx, person)
 	if err != nil {
-		req.err = err
-		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
-			person,
-		})
-
-		return req.serverError(err)
-	}
-
-	err = cache.AddInvalidToken(ctx, person.Email, person.RefreshToken, refreshTokenTTL)
-	if err != nil {
-		req.err = err
-		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
-			person,
-		})
-
 		return req.serverError(err)
 	}
 
@@ -300,6 +282,33 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *m
 		StatusCode: http.StatusUnauthorized,
 		Body:       body,
 	}, nil
+}
+
+func (req *requestHandler) invalidatePersonTokens(ctx context.Context, person *models.Person) error {
+	accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
+	refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
+
+	err := cache.AddInvalidToken(ctx, person.Email, person.AccessToken, accessTokenTTL)
+	if err != nil {
+		req.err = err
+		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
+			person,
+		})
+
+		return err
+	}
+
+	err = cache.AddInvalidToken(ctx, person.Email, person.RefreshToken, refreshTokenTTL)
+	if err != nil {
+		req.err = err
+		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
+			person,
+		})
+
+		return err
+	}
+
+	return nil
 }
 
 func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
@@ -649,6 +658,63 @@ func (req *requestHandler) validateCredentials(login *Credentials) error {
 	return nil
 }
 
+func logoutHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	req := &requestHandler{
+		log: logger.NewLoggerWithHandler("logout"),
+	}
+
+	return req.processLogout(request)
+}
+
+func (req *requestHandler) processLogout(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	ctx := context.Background()
+
+	var err error
+
+	req.RefreshToken, err = getRefreshTokenCookie(request)
+	if err != nil {
+		req.err = err
+		req.log.Error("getting_refresh_token_cookie_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	payload, err := req.getTokenPayload(req.RefreshToken)
+	if errors.Is(err, errInvalidToken) {
+		req.err = err
+		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
+
+		return req.clientError(err)
+	}
+
+	if err != nil {
+		req.err = err
+		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	person, err := storagePerson.GetPersonByEmail(ctx, payload.Subject)
+	if err != nil {
+		req.err = err
+		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
+
+		return req.serverError(nil)
+	}
+
+	err = req.invalidatePersonTokens(ctx, person)
+	if err != nil {
+		req.err = err
+		req.log.Error("token_invalidation_failed", err, []logger.Object{person})
+
+		return req.serverError(err)
+	}
+
+	return &events.APIGatewayProxyResponse{
+		StatusCode: http.StatusOK,
+	}, nil
+}
+
 func main() {
 	route := router.NewRouter()
 
@@ -657,6 +723,7 @@ func main() {
 		r.Post("/signup", signUpHandler)
 		r.Post("/token", tokenHandler)
 		r.Get("/jwks", jwksHandler)
+		r.Post("/logout", logoutHandler)
 	})
 
 	lambda.Start(route.Handle)
