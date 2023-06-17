@@ -45,7 +45,12 @@ func TestInfo(t *testing.T) {
 	}
 
 	logger := NewLogger()
+	defer func() {
+		err = logger.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	logger.Info("test_event_emitted", []Object{person})
-	logger.Info("test_event_emitted", nil)
 }

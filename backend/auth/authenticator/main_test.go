@@ -23,7 +23,7 @@ var (
 )
 
 func init() {
-	logMock = logger.InitLoggerMock(logBuffer)
+	logMock = logger.InitLoggerMock(&logBuffer)
 
 	secretMock = secretsMock.InitSecretMock()
 

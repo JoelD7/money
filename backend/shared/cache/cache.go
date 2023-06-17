@@ -11,8 +11,6 @@ import (
 )
 
 var (
-	redisClient *RedisClient
-
 	ErrTokensNotFound = errors.New("no invalid tokens found")
 	ErrInvalidTTL     = errors.New("TTL is from a past datetime")
 	ErrNoSuchKey      = errors.New("key does not exist")
@@ -50,14 +48,14 @@ func GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken
 }
 
 func AddInvalidToken(ctx context.Context, email, token string, ttl int64) error {
-	if time.Now().Unix() > ttl {
+	if time.Now().Unix() > ttl && ttl > 0 {
 		return ErrInvalidTTL
 	}
 
 	key := keyPrefix + email
 
 	invalidTokens, err := GetInvalidTokens(ctx, email)
-	if err != nil {
+	if err != nil && !errors.Is(err, ErrTokensNotFound) {
 		return err
 	}
 
