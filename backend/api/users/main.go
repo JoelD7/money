@@ -23,6 +23,13 @@ func (request *userRequest) init() {
 }
 
 func (request *userRequest) finish() {
+	defer func() {
+		err := request.log.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
