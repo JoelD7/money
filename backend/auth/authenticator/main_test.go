@@ -8,7 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/restclient"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
 	"github.com/JoelD7/money/backend/storage/invalidtoken"
-	storagePerson "github.com/JoelD7/money/backend/storage/person"
+	storageUser "github.com/JoelD7/money/backend/storage/user"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -81,14 +81,14 @@ func TestLoginHandlerFailed(t *testing.T) {
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 
-	personMock := storagePerson.InitDynamoMock()
-	personMock.ActivateForceFailure(storagePerson.ErrNotFound)
+	userMock := storageUser.InitDynamoMock()
+	userMock.ActivateForceFailure(storageUser.ErrNotFound)
 
 	response, err = logInHandler(request)
 	c.Nil(err)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(storagePerson.ErrNotFound.Error(), response.Body)
-	personMock.DeactivateForceFailure()
+	c.Equal(storageUser.ErrNotFound.Error(), response.Body)
+	userMock.DeactivateForceFailure()
 
 	request.Body = "a"
 	response, err = logInHandler(request)
@@ -150,9 +150,9 @@ func TestSignUpHandler(t *testing.T) {
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
 
-	personMock := storagePerson.InitDynamoMock()
+	userMock := storageUser.InitDynamoMock()
 
-	personMock.EmptyTable()
+	userMock.EmptyTable()
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -174,16 +174,16 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	personMock := storagePerson.InitDynamoMock()
+	userMock := storageUser.InitDynamoMock()
 
-	personMock.ActivateForceFailure(storagePerson.ErrExistingUser)
-	defer personMock.DeactivateForceFailure()
+	userMock.ActivateForceFailure(storageUser.ErrExistingUser)
+	defer userMock.DeactivateForceFailure()
 
 	request := &events.APIGatewayProxyRequest{Body: jsonBody}
 
 	response, err := signUpHandler(request)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
-	c.Equal(storagePerson.ErrExistingUser.Error(), response.Body)
+	c.Equal(storageUser.ErrExistingUser.Error(), response.Body)
 
 	request = &events.APIGatewayProxyRequest{Body: "}"}
 
@@ -248,12 +248,12 @@ func TestJWTHandler(t *testing.T) {
 func TestTokenHandler(t *testing.T) {
 	c := require.New(t)
 
-	_ = storagePerson.InitDynamoMock()
+	_ = storageUser.InitDynamoMock()
 
 	request, err := dummyAPIGatewayProxyRequest()
 	c.Nil(err)
 
-	request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
+	request.Headers["Cookie"] = refreshTokenCookieName + "=" + storageUser.DummyToken
 
 	response, err := tokenHandler(request)
 	c.Nil(err)
@@ -265,7 +265,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	dummyRequest, err := dummyAPIGatewayProxyRequest()
-	dummyRequest.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
+	dummyRequest.Headers["Cookie"] = refreshTokenCookieName + "=" + storageUser.DummyToken
 	c.Nil(err)
 
 	t.Run("Invalid token", func(t *testing.T) {
@@ -287,7 +287,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		request := dummyRequest
 
 		request.Headers = map[string]string{}
-		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyPreviousToken
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storageUser.DummyPreviousToken
 
 		response, err := tokenHandler(request)
 		c.Nil(err)
@@ -296,10 +296,10 @@ func TestTokenHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Person not found", func(t *testing.T) {
-		personMock := storagePerson.InitDynamoMock()
+		userMock := storageUser.InitDynamoMock()
 
-		personMock.ActivateForceFailure(storagePerson.ErrNotFound)
-		defer personMock.DeactivateForceFailure()
+		userMock.ActivateForceFailure(storageUser.ErrNotFound)
+		defer userMock.DeactivateForceFailure()
 
 		request := dummyRequest
 
@@ -310,7 +310,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Refresh token in cookie not found", func(t *testing.T) {
-		_ = storagePerson.InitDynamoMock()
+		_ = storageUser.InitDynamoMock()
 
 		dummyRequest.Headers["Cookie"] = ""
 
@@ -322,7 +322,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Set tokens failed", func(t *testing.T) {
-		_ = storagePerson.InitDynamoMock()
+		_ = storageUser.InitDynamoMock()
 		_ = invalidtoken.InitDynamoMock()
 
 		sMock := secretsMock.InitSecretMock()
@@ -331,7 +331,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		defer sMock.DeactivateForceFailure()
 
 		request := dummyRequest
-		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storagePerson.DummyToken
+		request.Headers["Cookie"] = refreshTokenCookieName + "=" + storageUser.DummyToken
 
 		response, err := tokenHandler(dummyRequest)
 		c.Nil(err)

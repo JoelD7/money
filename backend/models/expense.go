@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Expense struct {
-	PersonID      string    `json:"person_id,omitempty"`
+	UserID        string    `json:"user_id,omitempty"`
 	CategoryID    string    `json:"category_id,omitempty"`
 	SubcategoryID string    `json:"subcategory_id,omitempty"`
 	SavingGoalID  string    `json:"saving_goal_id,omitempty"`

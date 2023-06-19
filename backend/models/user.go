@@ -2,8 +2,8 @@ package models
 
 import "time"
 
-type Person struct {
-	PersonID     string        `json:"person_id,omitempty" dynamodbav:"person_id"`
+type User struct {
+	UserID       string        `json:"user_id,omitempty" dynamodbav:"user_id"`
 	FullName     string        `json:"full_name,omitempty" dynamodbav:"full_name,omitempty"`
 	Email        string        `json:"email,omitempty" dynamodbav:"email"`
 	Password     string        `json:"-" dynamodbav:"password"`
@@ -37,13 +37,13 @@ type SavingGoal struct {
 	Deadline     time.Time `json:"deadline,omitempty" dynamodbav:"deadline,omitempty"`
 }
 
-func (p Person) LogName() string {
-	return "person"
+func (u User) LogName() string {
+	return "user"
 }
 
-func (p Person) LogProperties() map[string]interface{} {
+func (u User) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
-		"s_person_id": p.PersonID,
-		"s_email":     p.Email,
+		"s_user_id": u.UserID,
+		"s_email":   u.Email,
 	}
 }

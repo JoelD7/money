@@ -1,4 +1,4 @@
-package person
+package user
 
 import (
 	"context"
@@ -27,9 +27,9 @@ var (
 
 	awsRegion = env.GetString("REGION", "us-east-1")
 
-	UsersTableName = env.GetString("USERS_TABLE_NAME", "person")
+	UsersTableName = env.GetString("USERS_TABLE_NAME", "users")
 
-	ErrNotFound     = errors.New("person not found")
+	ErrNotFound     = errors.New("user not found")
 	ErrExistingUser = errors.New("this account already exists")
 
 	emailIndex = "email-index"
@@ -37,7 +37,7 @@ var (
 
 const (
 	categoryPrefix = "CTG"
-	personPrefix   = "PS"
+	userPrefix     = "US"
 )
 
 func init() {
@@ -50,8 +50,8 @@ func init() {
 	DefaultClient = dynamoClient
 }
 
-func CreatePerson(ctx context.Context, fullName, email, password string) error {
-	ok, err := personExists(ctx, email)
+func CreateUser(ctx context.Context, fullName, email, password string) error {
+	ok, err := userExists(ctx, email)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
 	}
@@ -60,8 +60,8 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 		return ErrExistingUser
 	}
 
-	person := &models.Person{
-		PersonID:    utils.GenerateDynamoID(personPrefix),
+	user := &models.User{
+		UserID:      utils.GenerateDynamoID(userPrefix),
 		FullName:    fullName,
 		Email:       email,
 		Password:    password,
@@ -70,7 +70,7 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 		UpdatedDate: time.Now(),
 	}
 
-	item, err := attributevalue.MarshalMap(person)
+	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err
 	}
@@ -92,17 +92,17 @@ func CreatePerson(ctx context.Context, fullName, email, password string) error {
 	return nil
 }
 
-func personExists(ctx context.Context, email string) (bool, error) {
-	person, err := GetPersonByEmail(ctx, email)
-	if person != nil {
+func userExists(ctx context.Context, email string) (bool, error) {
+	user, err := GetUserByEmail(ctx, email)
+	if user != nil {
 		return true, nil
 	}
 
 	return false, err
 }
 
-func GetPerson(ctx context.Context, personId string) (*models.Person, error) {
-	personKey, err := attributevalue.Marshal(personId)
+func GetUser(ctx context.Context, userID string) (*models.User, error) {
+	userKey, err := attributevalue.Marshal(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func GetPerson(ctx context.Context, personId string) (*models.Person, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(UsersTableName),
 		Key: map[string]types.AttributeValue{
-			"person_id": personKey,
+			"user_id": userKey,
 		},
 	}
 
@@ -123,16 +123,16 @@ func GetPerson(ctx context.Context, personId string) (*models.Person, error) {
 		return nil, ErrNotFound
 	}
 
-	person := new(models.Person)
-	err = attributevalue.UnmarshalMap(result.Item, person)
+	user := new(models.User)
+	err = attributevalue.UnmarshalMap(result.Item, user)
 	if err != nil {
 		return nil, err
 	}
 
-	return person, nil
+	return user, nil
 }
 
-func GetPersonByEmail(ctx context.Context, email string) (*models.Person, error) {
+func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	nameEx := expression.Name("email").Equal(expression.Value(email))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
@@ -157,17 +157,17 @@ func GetPersonByEmail(ctx context.Context, email string) (*models.Person, error)
 		return nil, ErrNotFound
 	}
 
-	person := new(models.Person)
-	err = attributevalue.UnmarshalMap(result.Items[0], person)
+	user := new(models.User)
+	err = attributevalue.UnmarshalMap(result.Items[0], user)
 	if err != nil {
 		return nil, err
 	}
 
-	return person, nil
+	return user, nil
 }
 
-func UpdatePerson(ctx context.Context, person *models.Person) error {
-	updatedItem, err := attributevalue.MarshalMap(person)
+func UpdateUser(ctx context.Context, user *models.User) error {
+	updatedItem, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err
 	}

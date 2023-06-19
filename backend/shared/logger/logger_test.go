@@ -7,23 +7,23 @@ import (
 	"time"
 )
 
-type testPerson struct {
+type testUser struct {
 	Name       string
 	Age        int
 	Income     float64
 	DayOfBirth *time.Time
 }
 
-func (p *testPerson) LogName() string {
-	return "person"
+func (u *testUser) LogName() string {
+	return "user"
 }
 
-func (p *testPerson) LogProperties() map[string]interface{} {
+func (u *testUser) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
-		"s_name":         p.Name,
-		"i_age":          p.Age,
-		"f_income":       p.Income,
-		"t_day_of_birth": p.DayOfBirth,
+		"s_name":         u.Name,
+		"i_age":          u.Age,
+		"f_income":       u.Income,
+		"t_day_of_birth": u.DayOfBirth,
 	}
 }
 
@@ -37,7 +37,7 @@ func TestInfo(t *testing.T) {
 	dayOfBirth, err := time.Parse("January 2, 2006 at 15:04:05", "April 13, 2000 at 18:23:00")
 	c.Nil(err)
 
-	person := &testPerson{
+	user := &testUser{
 		Name:       "Joel",
 		Age:        22,
 		Income:     123456,
@@ -52,5 +52,5 @@ func TestInfo(t *testing.T) {
 		}
 	}()
 
-	logger.Info("test_event_emitted", []Object{person})
+	logger.Info("test_event_emitted", []Object{user})
 }

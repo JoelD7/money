@@ -331,7 +331,7 @@ func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, emai
 	invalidTokens, err := invalidtoken.GetAllForPerson(ctx, email)
 	if errors.Is(err, invalidtoken.ErrNotFound) {
 		req.log.Info("no_tokens_found_for_user", []logger.Object{
-			logger.MapToLoggerObject("person_data", map[string]interface{}{
+			logger.MapToLoggerObject("user_data", map[string]interface{}{
 				"s_email": email,
 			}),
 		})
@@ -341,7 +341,7 @@ func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, emai
 
 	if err != nil {
 		req.log.Error("fetch_of_invalid_tokens_failed", err, []logger.Object{
-			logger.MapToLoggerObject("person_data", map[string]interface{}{
+			logger.MapToLoggerObject("user_data", map[string]interface{}{
 				"s_email": email,
 			}),
 		})

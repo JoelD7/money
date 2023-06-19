@@ -1,4 +1,4 @@
-package person
+package user
 
 import (
 	"context"
@@ -20,7 +20,7 @@ var (
 	hashedDummyToken = "4f7c5d5d43a3c7e28ea09bc73679378151a3e086ad4360e5469423197a62b665"
 )
 
-var mockedPerson *models.Person
+var mockedPerson *models.User
 
 type MockDynamo struct {
 	GetItemOutput *dynamodb.GetItemOutput
@@ -31,7 +31,7 @@ type MockDynamo struct {
 }
 
 func InitDynamoMock() *MockDynamo {
-	mockedPerson = GetMockedPerson()
+	mockedPerson = GetMockedUser()
 
 	item, err := attributevalue.MarshalMap(mockedPerson)
 	if err != nil {
@@ -127,9 +127,9 @@ func (d *MockDynamo) EmptyTable() {
 	d.GetItemOutput = &dynamodb.GetItemOutput{}
 }
 
-// GetMockedPerson returns the mock item for the person table
-func GetMockedPerson() *models.Person {
-	return &models.Person{
+// GetMockedUser returns the mock item for the user table
+func GetMockedUser() *models.User {
+	return &models.User{
 		FullName:     "Joel",
 		Email:        "test@gmail.com",
 		Password:     "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",

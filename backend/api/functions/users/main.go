@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
-	"github.com/JoelD7/money/backend/storage/person"
+	"github.com/JoelD7/money/backend/storage/user"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"net/http"
@@ -49,7 +49,7 @@ func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events
 
 	userID := req.PathParameters["user-id"]
 
-	user, err := person.GetPersonByEmail(ctx, userID)
+	user, err := user.GetUserByEmail(ctx, userID)
 	if err != nil {
 		request.err = err
 		request.log.Error("user_fetching_failed", err, []logger.Object{})
@@ -64,7 +64,7 @@ func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events
 		return clientError(http.StatusNotFound)
 	}
 
-	personJson, err := json.Marshal(user)
+	userJson, err := json.Marshal(user)
 	if err != nil {
 		request.err = err
 		request.log.Error("user_response_marshal_failed", err, []logger.Object{})
@@ -74,7 +74,7 @@ func (request *userRequest) process(req *events.APIGatewayProxyRequest) (*events
 
 	return &events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-		Body:       string(personJson),
+		Body:       string(userJson),
 	}, nil
 }
 
