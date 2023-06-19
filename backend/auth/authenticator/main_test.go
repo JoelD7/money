@@ -8,7 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/restclient"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
 	"github.com/JoelD7/money/backend/storage/invalidtoken"
-	storageUser "github.com/JoelD7/money/backend/storage/user"
+	storageUser "github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
