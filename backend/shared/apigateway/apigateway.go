@@ -11,8 +11,11 @@ var (
 	origin = env.GetString("CORS_ORIGIN", "*")
 )
 
+type Response events.APIGatewayProxyResponse
+type Request events.APIGatewayProxyRequest
+
 // NewErrorResponse returns an error response
-func NewErrorResponse(err error) *events.APIGatewayProxyResponse {
+func NewErrorResponse(err error) *Response {
 	var knownError *Error
 	if errors.As(err, &knownError) {
 		return NewJSONResponse(knownError.HTTPCode, knownError)
@@ -22,7 +25,7 @@ func NewErrorResponse(err error) *events.APIGatewayProxyResponse {
 }
 
 // NewJSONResponse creates a new JSON response given a serializable `v`
-func NewJSONResponse(statusCode int, v interface{}) *events.APIGatewayProxyResponse {
+func NewJSONResponse(statusCode int, v interface{}) *Response {
 	data, err := json.Marshal(v)
 	if err != nil {
 		return NewErrorResponse(errors.New("failed to marshal response"))
@@ -40,7 +43,7 @@ func NewJSONResponse(statusCode int, v interface{}) *events.APIGatewayProxyRespo
 		headers["Access-Control-Allow-Credentials"] = "true"
 	}
 
-	return &events.APIGatewayProxyResponse{
+	return &Response{
 		StatusCode: statusCode,
 		Body:       string(data),
 		Headers:    headers,
