@@ -12,5 +12,6 @@ type Expense struct {
 	Name          string    `json:"name,omitempty"`
 	Notes         string    `json:"notes,omitempty"`
 	Date          time.Time `json:"date,omitempty"`
+	Period        string    `json:"period,omitempty"`
 	UpdateDate    time.Time `json:"update_date,omitempty"`
 }

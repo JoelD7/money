@@ -8,4 +8,5 @@ type Income struct {
 	Amount   float64   `json:"amount"`
 	Name     string    `json:"name,omitempty"`
 	Date     time.Time `json:"date,omitempty"`
+	Period   string    `json:"period,omitempty"`
 }
