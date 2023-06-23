@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
 	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	storageUser "github.com/JoelD7/money/backend/storage/users"
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -51,7 +51,7 @@ func TestLoginHandler(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+	request := &apigateway.Request{Body: jsonBody}
 
 	response, err := logInHandler(request)
 	c.Equal(http.StatusOK, response.StatusCode)
@@ -71,7 +71,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+	request := &apigateway.Request{Body: jsonBody}
 
 	secretMock.ActivateForceFailure(secretsMock.SecretsError)
 	defer secretMock.DeactivateForceFailure()
@@ -157,7 +157,7 @@ func TestSignUpHandler(t *testing.T) {
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
-	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+	request := &apigateway.Request{Body: jsonBody}
 
 	response, err := signUpHandler(request)
 	c.Equal(http.StatusOK, response.StatusCode)
@@ -179,13 +179,13 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	userMock.ActivateForceFailure(storageUser.ErrExistingUser)
 	defer userMock.DeactivateForceFailure()
 
-	request := &events.APIGatewayProxyRequest{Body: jsonBody}
+	request := &apigateway.Request{Body: jsonBody}
 
 	response, err := signUpHandler(request)
 	c.Equal(http.StatusBadRequest, response.StatusCode)
 	c.Equal(storageUser.ErrExistingUser.Error(), response.Body)
 
-	request = &events.APIGatewayProxyRequest{Body: "}"}
+	request = &apigateway.Request{Body: "}"}
 
 	response, err = signUpHandler(request)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
@@ -240,7 +240,7 @@ func TestJWTHandler(t *testing.T) {
 	err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", accessTokenIssuer+"/auth/jwks", restclient.MethodGET)
 	c.Nil(err)
 
-	response, err := jwksHandler(&events.APIGatewayProxyRequest{})
+	response, err := jwksHandler(&apigateway.Request{})
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.Equal(expectedJWKS, response.Body)
 }
@@ -349,17 +349,17 @@ func bodyToJSONString(body interface{}) (string, error) {
 	return string(b), nil
 }
 
-func dummyAPIGatewayProxyRequest() (*events.APIGatewayProxyRequest, error) {
+func dummyAPIGatewayProxyRequest() (*apigateway.Request, error) {
 	body := Credentials{
 		Email: "test@gmail.com",
 	}
 
 	jsonBody, err := bodyToJSONString(body)
 	if err != nil {
-		return &events.APIGatewayProxyRequest{}, err
+		return &apigateway.Request{}, err
 	}
 
-	return &events.APIGatewayProxyRequest{
+	return &apigateway.Request{
 		Body:    jsonBody,
 		Headers: map[string]string{},
 	}, nil

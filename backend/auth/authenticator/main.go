@@ -11,6 +11,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/cache"
 	"math/big"
 	"net/http"
@@ -28,7 +29,6 @@ import (
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/shared/utils"
 	storageUser "github.com/JoelD7/money/backend/storage/users"
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/gbrlsnchs/jwt/v3"
 )
@@ -120,7 +120,7 @@ func (req *requestHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func tokenHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestHandler{
 		log: logger.NewLoggerWithHandler("token"),
 	}
@@ -131,7 +131,7 @@ func tokenHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 	return req.processToken(request)
 }
 
-func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) processToken(request *apigateway.Request) (*apigateway.Response, error) {
 	ctx := context.Background()
 
 	var err error
@@ -196,7 +196,7 @@ func (req *requestHandler) processToken(request *events.APIGatewayProxyRequest) 
 
 	req.log.Info("new_tokens_issued_successfully", []logger.Object{user})
 
-	return &events.APIGatewayProxyResponse{
+	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 		Headers:    tokenCookieHeader,
 		Body:       responseBody,
@@ -233,7 +233,7 @@ func (req *requestHandler) getTokenPayload(token string) (*models.JWTPayload, er
 	return payload, nil
 }
 
-func getRefreshTokenCookie(request *events.APIGatewayProxyRequest) (string, error) {
+func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
 	cookies, ok := request.Headers["Cookie"]
 	if !ok {
 		return "", errCookiesNotFound
@@ -261,7 +261,7 @@ func (req *requestHandler) validateRefreshToken(user *models.User) error {
 	return err
 }
 
-func (req *requestHandler) getUnauthorizedResponse(ctx context.Context, user *models.User) (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) getUnauthorizedResponse(ctx context.Context, user *models.User) (*apigateway.Response, error) {
 	err := req.invalidatePersonTokens(ctx, user)
 	if err != nil {
 		return req.serverError(err)
@@ -278,7 +278,7 @@ func (req *requestHandler) getUnauthorizedResponse(ctx context.Context, user *mo
 		return req.serverError(nil)
 	}
 
-	return &events.APIGatewayProxyResponse{
+	return &apigateway.Response{
 		StatusCode: http.StatusUnauthorized,
 		Body:       body,
 	}, nil
@@ -311,7 +311,7 @@ func (req *requestHandler) invalidatePersonTokens(ctx context.Context, user *mod
 	return nil
 }
 
-func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func signUpHandler(request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestHandler{
 		log: logger.NewLoggerWithHandler("sign-up"),
 	}
@@ -322,7 +322,7 @@ func signUpHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 	return req.processSignUp(request)
 }
 
-func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) processSignUp(request *apigateway.Request) (*apigateway.Response, error) {
 	ctx := context.Background()
 
 	reqBody := &signUpBody{}
@@ -365,12 +365,12 @@ func (req *requestHandler) processSignUp(request *events.APIGatewayProxyRequest)
 		return req.serverError(nil)
 	}
 
-	return &events.APIGatewayProxyResponse{
+	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 	}, nil
 }
 
-func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func logInHandler(request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestHandler{
 		log: logger.NewLoggerWithHandler("log-in"),
 	}
@@ -381,7 +381,7 @@ func logInHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPro
 	return req.processLogin(request)
 }
 
-func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) processLogin(request *apigateway.Request) (*apigateway.Response, error) {
 	ctx := context.Background()
 
 	reqBody := &Credentials{}
@@ -436,7 +436,7 @@ func (req *requestHandler) processLogin(request *events.APIGatewayProxyRequest) 
 
 	req.log.Info("login_succeeded", []logger.Object{})
 
-	return &events.APIGatewayProxyResponse{
+	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 		Body:       responseBody,
 		Headers:    headers,
@@ -494,7 +494,7 @@ func (req *requestHandler) setTokens(ctx context.Context, user *models.User) (ma
 	return setCookieHeader, storageUser.UpdateUser(ctx, user)
 }
 
-func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func jwksHandler(_ *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestHandler{
 		log: logger.NewLogger(),
 	}
@@ -505,7 +505,7 @@ func jwksHandler(_ *events.APIGatewayProxyRequest) (*events.APIGatewayProxyRespo
 	return req.processJWKS()
 }
 
-func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) processJWKS() (*apigateway.Response, error) {
 	publicKey, err := req.getPublicKey()
 	if err != nil {
 		req.err = err
@@ -542,7 +542,7 @@ func (req *requestHandler) processJWKS() (*events.APIGatewayProxyResponse, error
 		return req.serverError(nil)
 	}
 
-	return &events.APIGatewayProxyResponse{
+	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 		Body:       string(jsonResponse),
 	}, nil
@@ -626,15 +626,15 @@ func (req *requestHandler) getKidFromSecret() (string, error) {
 
 }
 
-func (req *requestHandler) serverError(err error) (*events.APIGatewayProxyResponse, error) {
-	return &events.APIGatewayProxyResponse{
+func (req *requestHandler) serverError(err error) (*apigateway.Response, error) {
+	return &apigateway.Response{
 		StatusCode: http.StatusInternalServerError,
 		Body:       http.StatusText(http.StatusInternalServerError),
 	}, err
 }
 
-func (req *requestHandler) clientError(err error) (*events.APIGatewayProxyResponse, error) {
-	return &events.APIGatewayProxyResponse{
+func (req *requestHandler) clientError(err error) (*apigateway.Response, error) {
+	return &apigateway.Response{
 		StatusCode: http.StatusBadRequest,
 		Body:       err.Error(),
 	}, nil
@@ -658,7 +658,7 @@ func (req *requestHandler) validateCredentials(login *Credentials) error {
 	return nil
 }
 
-func logoutHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func logoutHandler(request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestHandler{
 		log: logger.NewLoggerWithHandler("logout"),
 	}
@@ -666,7 +666,7 @@ func logoutHandler(request *events.APIGatewayProxyRequest) (*events.APIGatewayPr
 	return req.processLogout(request)
 }
 
-func (req *requestHandler) processLogout(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (req *requestHandler) processLogout(request *apigateway.Request) (*apigateway.Response, error) {
 	ctx := context.Background()
 
 	var err error
@@ -710,7 +710,7 @@ func (req *requestHandler) processLogout(request *events.APIGatewayProxyRequest)
 		return req.serverError(err)
 	}
 
-	return &events.APIGatewayProxyResponse{
+	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 	}, nil
 }
