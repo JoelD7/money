@@ -1,4 +1,4 @@
-package users
+package expenses
 
 import (
 	"context"
@@ -7,20 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"time"
 )
-
-const (
-	DummyToken         = "header.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjo5OTk5OTk5OTk5fQ.signature"
-	DummyPreviousToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGdtYWlsLmNvbSIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMn0.nL-Ir6ZnsMHZa7YYwjfpy1QJ1OTmBCFHCDXVSToXUqf3DHA5oWnBtlBuUZ1xTHa5ArQf5vQQIOIrW6p6OjtMdHO3h3-TWOWJIJhbkEmUjS5EMRtZfLWnf9gDnF7CxmUn0yA1qK0B4Nqx57lsI8eMeZKDvN8bqfwlEe53Qy8tYXP5jNxP2zA6Mt7ROCGrfvulTyM0ZwV7klArEKs485NPao8BlyV90s-whjk6h1_mtderbMA2iRxkoARzPRnSftULDYmzCJ3i4IOX9p6xyOcgwecpn93-ya1x1nZtoITZ2It5SYUcrsQ2KhiP2c95bFpJTr6A2UcuAz1Y0GguSR2wlw"
-)
-
-var (
-	// This is the hashed version of the DummyToken variable with the same hash function we use to store the tokens on
-	// the DB. We need this variable for the mock because all tokens are stored hashed on the DB.
-	hashedDummyToken = "4f7c5d5d43a3c7e28ea09bc73679378151a3e086ad4360e5469423197a62b665"
-)
-
-var mockedPerson *models.User
 
 type DynamoMock struct {
 	GetItemOutput *dynamodb.GetItemOutput
@@ -31,19 +19,17 @@ type DynamoMock struct {
 }
 
 func InitDynamoMock() *DynamoMock {
-	mockedPerson = GetMockedUser()
-
-	item, err := attributevalue.MarshalMap(mockedPerson)
+	items, err := GetMockedExpensesAsItems()
 	if err != nil {
 		panic(fmt.Errorf("invalid_token Dynamo mock cannot be initialized: %v", err))
 	}
 
 	mock := &DynamoMock{
 		GetItemOutput: &dynamodb.GetItemOutput{
-			Item: item,
+			Item: items[0],
 		},
 		QueryOutput: &dynamodb.QueryOutput{
-			Items: []map[string]types.AttributeValue{item},
+			Items: items,
 		},
 		PutItemOutput: &dynamodb.PutItemOutput{},
 		mockedErr:     nil,
@@ -127,13 +113,62 @@ func (d *DynamoMock) EmptyTable() {
 	d.GetItemOutput = &dynamodb.GetItemOutput{}
 }
 
-// GetMockedUser returns the mock item for the user table
-func GetMockedUser() *models.User {
-	return &models.User{
-		FullName:     "Joel",
-		Email:        "test@gmail.com",
-		Password:     "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
-		AccessToken:  hashedDummyToken,
-		RefreshToken: hashedDummyToken,
+func GetMockedExpensesAsItems() ([]map[string]types.AttributeValue, error) {
+	expenseList := []*models.Expense{
+		{
+			ExpenseID:     "EXP123",
+			UserID:        "test@mail.com",
+			CategoryID:    "",
+			SubcategoryID: "",
+			SavingGoalID:  "",
+			Amount:        525,
+			Currency:      "",
+			Name:          "Jordan shopping",
+			Notes:         "",
+			Date:          time.Date(2023, 5, 12, 20, 15, 0, 0, nil),
+			Period:        "2023-5",
+			UpdateDate:    time.Time{},
+		},
+		{
+			ExpenseID:     "EXP456",
+			UserID:        "test@mail.com",
+			CategoryID:    "",
+			SubcategoryID: "",
+			SavingGoalID:  "",
+			Amount:        112,
+			Currency:      "",
+			Name:          "Uber drive",
+			Notes:         "",
+			Date:          time.Date(2023, 5, 15, 12, 15, 0, 0, nil),
+			Period:        "2023-5",
+			UpdateDate:    time.Time{},
+		},
+		{
+			ExpenseID:     "EXP789",
+			UserID:        "test@mail.com",
+			CategoryID:    "",
+			SubcategoryID: "",
+			SavingGoalID:  "",
+			Amount:        525,
+			Currency:      "",
+			Name:          "Lunch",
+			Notes:         "",
+			Date:          time.Date(2023, 5, 12, 11, 15, 0, 0, nil),
+			Period:        "2023-5",
+			UpdateDate:    time.Time{},
+		},
 	}
+
+	items := make([]map[string]types.AttributeValue, 0)
+
+	for _, e := range expenseList {
+		item, err := attributevalue.MarshalMap(e)
+		if err != nil {
+			return nil, err
+		}
+
+		items = append(items, item)
+	}
+
+	return items, nil
 }

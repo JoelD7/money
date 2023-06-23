@@ -3,6 +3,8 @@ package users
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
@@ -12,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"time"
 )
 
 type DynamoAPI interface {
@@ -27,7 +28,7 @@ var (
 
 	awsRegion = env.GetString("REGION", "us-east-1")
 
-	UsersTableName = env.GetString("USERS_TABLE_NAME", "users")
+	TableName = env.GetString("USERS_TABLE_NAME", "users")
 
 	ErrNotFound     = errors.New("user not found")
 	ErrExistingUser = errors.New("this account already exists")
@@ -77,7 +78,7 @@ func CreateUser(ctx context.Context, fullName, email, password string) error {
 
 	input := &dynamodb.PutItemInput{
 		Item:      item,
-		TableName: aws.String(UsersTableName),
+		TableName: aws.String(TableName),
 	}
 
 	_, err = DefaultClient.PutItem(ctx, input)
@@ -108,7 +109,7 @@ func GetUser(ctx context.Context, userID string) (*models.User, error) {
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(UsersTableName),
+		TableName: aws.String(TableName),
 		Key: map[string]types.AttributeValue{
 			"user_id": userKey,
 		},
@@ -145,7 +146,7 @@ func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
 		IndexName:                 aws.String(emailIndex),
-		TableName:                 aws.String(UsersTableName),
+		TableName:                 aws.String(TableName),
 	}
 
 	result, err := DefaultClient.Query(ctx, input)
@@ -174,7 +175,7 @@ func UpdateUser(ctx context.Context, user *models.User) error {
 
 	input := &dynamodb.PutItemInput{
 		Item:      updatedItem,
-		TableName: aws.String(UsersTableName),
+		TableName: aws.String(TableName),
 	}
 
 	_, err = DefaultClient.PutItem(ctx, input)

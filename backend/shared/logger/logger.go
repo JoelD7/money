@@ -31,7 +31,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-88-51-237.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-18-212-240-239.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
