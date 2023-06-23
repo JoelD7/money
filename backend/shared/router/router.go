@@ -3,8 +3,8 @@ package router
 import (
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
-	"github.com/aws/aws-lambda-go/events"
 	"net/http"
 )
 
@@ -13,7 +13,7 @@ var (
 	errPathNotDefined  = errors.New("this path does not have a handler")
 )
 
-type Handler func(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error)
+type Handler func(request *apigateway.Request) (*apigateway.Response, error)
 
 type Router struct {
 	path           string
@@ -37,11 +37,11 @@ func NewRouter() *Router {
 	}
 }
 
-func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+func (router *Router) Handle(request *apigateway.Request) (*apigateway.Response, error) {
 	if !router.isRoot() {
 		router.log.Error("router_handle_failed", errRouterIsNotRoot, []logger.Object{})
 
-		return &events.APIGatewayProxyResponse{
+		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
 			Body:       http.StatusText(http.StatusInternalServerError),
 		}, errRouterIsNotRoot
@@ -58,7 +58,7 @@ func (router *Router) Handle(request *events.APIGatewayProxyRequest) (*events.AP
 			}),
 		})
 
-		return &events.APIGatewayProxyResponse{
+		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
 			Body:       errPathNotDefined.Error(),
 		}, errPathNotDefined
