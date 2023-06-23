@@ -78,8 +78,7 @@ func GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*model
 	}
 
 	expenses := make([]*models.Expense, 0)
-
-	err = attributevalue.UnmarshalListOfMaps(result.Items, expenses)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &expenses)
 	if err != nil {
 		return nil, err
 	}

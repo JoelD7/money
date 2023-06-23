@@ -69,7 +69,7 @@ func GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.
 
 	income := make([]*models.Income, 0)
 
-	err = attributevalue.UnmarshalListOfMaps(result.Items, income)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &income)
 	if err != nil {
 		return nil, err
 	}
