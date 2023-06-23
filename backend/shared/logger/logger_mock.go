@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 )
 
@@ -13,6 +14,10 @@ type LogMock struct {
 func InitLoggerMock(buf *bytes.Buffer) *LogMock {
 	logMock := &LogMock{
 		Output: buf,
+	}
+
+	if buf == nil {
+		logMock.Output = bytes.NewBuffer(nil)
 	}
 
 	LogClient = logMock
@@ -28,6 +33,7 @@ func (l *LogMock) Warning(eventName string, err error, objects []Object) {
 }
 func (l *LogMock) Error(eventName string, err error, objects []Object) {
 	_, _ = l.Output.Write([]byte(eventName))
+	fmt.Println("a")
 }
 func (l *LogMock) Critical(eventName string, objects []Object) {
 	_, _ = l.Output.Write([]byte(eventName))
