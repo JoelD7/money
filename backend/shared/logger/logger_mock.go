@@ -2,7 +2,6 @@ package logger
 
 import (
 	"bytes"
-	"fmt"
 	"time"
 )
 
@@ -30,11 +29,13 @@ func (l *LogMock) Info(eventName string, objects []Object) {
 }
 func (l *LogMock) Warning(eventName string, err error, objects []Object) {
 	_, _ = l.Output.Write([]byte(eventName))
+	_, _ = l.Output.Write([]byte(err.Error()))
 }
 func (l *LogMock) Error(eventName string, err error, objects []Object) {
 	_, _ = l.Output.Write([]byte(eventName))
-	fmt.Println("a")
+	_, _ = l.Output.Write([]byte(err.Error()))
 }
+
 func (l *LogMock) Critical(eventName string, objects []Object) {
 	_, _ = l.Output.Write([]byte(eventName))
 }
