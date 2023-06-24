@@ -113,6 +113,22 @@ func (d *DynamoMock) EmptyTable() {
 	d.GetItemOutput = &dynamodb.GetItemOutput{}
 }
 
+// RefillTable fills the table with the default items. This method should be called in a defer statement after EmtpyTable()
+func (d *DynamoMock) RefillTable() {
+	items, err := GetMockedExpensesAsItems()
+	if err != nil {
+		panic(fmt.Errorf("expenses_mock table cannot be refilled: %v", err))
+	}
+
+	d.GetItemOutput = &dynamodb.GetItemOutput{
+		Item: items[0],
+	}
+
+	d.QueryOutput = &dynamodb.QueryOutput{
+		Items: items,
+	}
+}
+
 func GetMockedExpensesAsItems() ([]map[string]types.AttributeValue, error) {
 	expenseList := []*models.Expense{
 		{
