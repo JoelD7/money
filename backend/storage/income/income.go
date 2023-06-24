@@ -18,16 +18,22 @@ type DynamoAPI interface {
 	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
 }
 
+const (
+	splitter = ":"
+)
+
 var (
 	dynamoClient  *dynamodb.Client
 	DefaultClient DynamoAPI
 
 	awsRegion = env.GetString("REGION", "us-east-1")
 
-	TableName         = env.GetString("INCOME_TABLE_NAME", "income")
-	userIdPeriodIndex = "user_id-period_id-index"
+	TableName               = env.GetString("INCOME_TABLE_NAME", "income")
+	periodUserIncomeIDIndex = "period_user-income_id-index"
 
-	ErrNotFound = errors.New("income not found")
+	ErrNotFound    = errors.New("income not found")
+	ErrEmptyUserID = errors.New("empty userID")
+	ErrEmptyPeriod = errors.New("empty period")
 )
 
 func init() {
@@ -41,9 +47,17 @@ func init() {
 }
 
 func GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.Income, error) {
-	userIDEx := expression.Name("user_id").Equal(expression.Value(userID))
-	periodEx := expression.Name("period_id").Equal(expression.Value(periodID))
-	nameEx := userIDEx.And(periodEx)
+	if userID == "" {
+		return nil, ErrEmptyUserID
+	}
+
+	if periodID == "" {
+		return nil, ErrEmptyPeriod
+	}
+
+	periodUser := periodID + splitter + userID
+
+	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
 	if err != nil {
@@ -55,7 +69,7 @@ func GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		IndexName:                 aws.String(userIdPeriodIndex),
+		IndexName:                 aws.String(periodUserIncomeIDIndex),
 	}
 
 	result, err := DefaultClient.Query(ctx, input)
@@ -76,3 +90,5 @@ func GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.
 
 	return income, nil
 }
+
+//TODO: el create income debe requerir un period

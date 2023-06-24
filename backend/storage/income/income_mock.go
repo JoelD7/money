@@ -116,19 +116,19 @@ func (d *DynamoMock) EmptyTable() {
 func GetMockedIncomeAsItems() ([]map[string]types.AttributeValue, error) {
 	incomeList := []*models.Income{
 		{
-			UserID:   "",
+			UserID:   "test@gmail.com",
 			IncomeID: "INC123",
-			Amount:   25000,
+			Amount:   8700,
 			Name:     "Salary",
-			Date:     time.Date(2023, 5, 15, 20, 0, 0, 0, nil),
+			Date:     time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
 			Period:   "2023-5",
 		},
 		{
-			UserID:   "",
+			UserID:   "test@gmail.com",
 			IncomeID: "INC12",
 			Amount:   1500,
 			Name:     "Debt collection",
-			Date:     time.Date(2023, 5, 15, 20, 0, 0, 0, nil),
+			Date:     time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
 			Period:   "2023-5",
 		},
 	}

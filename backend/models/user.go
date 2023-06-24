@@ -13,7 +13,7 @@ type User struct {
 	UpdatedDate   time.Time     `json:"updated_date,omitempty" dynamodbav:"update_date,omitempty"`
 	AccessToken   string        `json:"-" dynamodbav:"access_token,omitempty"`
 	RefreshToken  string        `json:"-" dynamodbav:"refresh_token"`
-	CurrentPeriod string        `json:"current_period,omitempty"`
+	CurrentPeriod string        `json:"current_period,omitempty" dynamodbav:"current_period,omitempty"`
 }
 
 type Category struct {

@@ -18,14 +18,18 @@ type DynamoAPI interface {
 	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
 }
 
+const (
+	splitter = ":"
+)
+
 var (
 	dynamoClient  *dynamodb.Client
 	DefaultClient DynamoAPI
 
 	awsRegion = env.GetString("REGION", "us-east-1")
 
-	TableName         = env.GetString("EXPENSES_TABLE_NAME", "expenses")
-	userIdPeriodIndex = "user_id-period_id-index"
+	TableName                = env.GetString("EXPENSES_TABLE_NAME", "expenses")
+	periodUserExpenseIDIndex = "period_user-expense_id-index"
 
 	ErrNotFound    = errors.New("expenses not found")
 	ErrEmptyUserID = errors.New("empty userID")
@@ -51,9 +55,9 @@ func GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*model
 		return nil, ErrEmptyPeriod
 	}
 
-	userIDEx := expression.Name("user_id").Equal(expression.Value(userID))
-	periodEx := expression.Name("period_id").Equal(expression.Value(periodID))
-	nameEx := userIDEx.And(periodEx)
+	periodUser := periodID + splitter + userID
+
+	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
 	if err != nil {
@@ -65,7 +69,7 @@ func GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*model
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		IndexName:                 aws.String(userIdPeriodIndex),
+		IndexName:                 aws.String(periodUserExpenseIDIndex),
 	}
 
 	result, err := DefaultClient.Query(ctx, input)

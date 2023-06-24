@@ -130,10 +130,12 @@ func (d *DynamoMock) EmptyTable() {
 // GetMockedUser returns the mock item for the user table
 func GetMockedUser() *models.User {
 	return &models.User{
-		FullName:     "Joel",
-		Email:        "test@gmail.com",
-		Password:     "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
-		AccessToken:  hashedDummyToken,
-		RefreshToken: hashedDummyToken,
+		UserID:        "123",
+		FullName:      "Joel",
+		Email:         "test@gmail.com",
+		CurrentPeriod: "2023-5",
+		Password:      "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
+		AccessToken:   hashedDummyToken,
+		RefreshToken:  hashedDummyToken,
 	}
 }
