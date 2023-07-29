@@ -3,31 +3,18 @@ package users
 import (
 	"context"
 	"errors"
-	"time"
-
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"time"
 )
 
-type DynamoAPI interface {
-	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
-	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
-	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
-}
-
 var (
-	dynamoClient  *dynamodb.Client
-	DefaultClient DynamoAPI
-
-	awsRegion = env.GetString("REGION", "us-east-1")
-
 	TableName = env.GetString("USERS_TABLE_NAME", "users")
 
 	ErrNotFound     = errors.New("user not found")
@@ -41,18 +28,16 @@ const (
 	userPrefix     = "US"
 )
 
-func init() {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
-	if err != nil {
-		panic(err)
-	}
-
-	dynamoClient = dynamodb.NewFromConfig(cfg)
-	DefaultClient = dynamoClient
+type DynamoRepository struct {
+	dynamoClient *dynamodb.Client
 }
 
-func CreateUser(ctx context.Context, fullName, email, password string) error {
-	ok, err := userExists(ctx, email)
+func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
+	return &DynamoRepository{dynamoClient: dynamoClient}
+}
+
+func (d *DynamoRepository) createUser(ctx context.Context, fullName, email, password string) error {
+	ok, err := d.userExists(ctx, email)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return err
 	}
@@ -81,7 +66,7 @@ func CreateUser(ctx context.Context, fullName, email, password string) error {
 		TableName: aws.String(TableName),
 	}
 
-	_, err = DefaultClient.PutItem(ctx, input)
+	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
 		return ErrExistingUser
 	}
@@ -93,8 +78,8 @@ func CreateUser(ctx context.Context, fullName, email, password string) error {
 	return nil
 }
 
-func userExists(ctx context.Context, email string) (bool, error) {
-	user, err := GetUserByEmail(ctx, email)
+func (d *DynamoRepository) userExists(ctx context.Context, email string) (bool, error) {
+	user, err := d.getUserByEmail(ctx, email)
 	if user != nil {
 		return true, nil
 	}
@@ -102,7 +87,7 @@ func userExists(ctx context.Context, email string) (bool, error) {
 	return false, err
 }
 
-func GetUser(ctx context.Context, userID string) (*models.User, error) {
+func (d *DynamoRepository) getUser(ctx context.Context, userID string) (*models.User, error) {
 	userKey, err := attributevalue.Marshal(userID)
 	if err != nil {
 		return nil, err
@@ -115,7 +100,7 @@ func GetUser(ctx context.Context, userID string) (*models.User, error) {
 		},
 	}
 
-	result, err := DefaultClient.GetItem(ctx, input)
+	result, err := d.dynamoClient.GetItem(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +118,7 @@ func GetUser(ctx context.Context, userID string) (*models.User, error) {
 	return user, nil
 }
 
-func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (d *DynamoRepository) getUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	nameEx := expression.Name("email").Equal(expression.Value(email))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
@@ -149,7 +134,7 @@ func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 		TableName:                 aws.String(TableName),
 	}
 
-	result, err := DefaultClient.Query(ctx, input)
+	result, err := d.dynamoClient.Query(ctx, input)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +152,7 @@ func GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	return user, nil
 }
 
-func UpdateUser(ctx context.Context, user *models.User) error {
+func (d *DynamoRepository) updateUser(ctx context.Context, user *models.User) error {
 	updatedItem, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err
@@ -178,7 +163,7 @@ func UpdateUser(ctx context.Context, user *models.User) error {
 		TableName: aws.String(TableName),
 	}
 
-	_, err = DefaultClient.PutItem(ctx, input)
+	_, err = d.dynamoClient.PutItem(ctx, input)
 	return err
 }
 

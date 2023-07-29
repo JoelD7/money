@@ -14,6 +14,7 @@ type User struct {
 	AccessToken   string        `json:"-" dynamodbav:"access_token,omitempty"`
 	RefreshToken  string        `json:"-" dynamodbav:"refresh_token"`
 	CurrentPeriod string        `json:"current_period,omitempty" dynamodbav:"current_period,omitempty"`
+	Remainder     float64       `json:"remainder,omitempty" dynamodbav:"remainder,omitempty"`
 }
 
 type Category struct {
