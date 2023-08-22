@@ -17,9 +17,6 @@ import (
 var (
 	TableName = env.GetString("USERS_TABLE_NAME", "users")
 
-	ErrNotFound     = errors.New("user not found")
-	ErrExistingUser = errors.New("this account already exists")
-
 	emailIndex = "email-index"
 )
 
@@ -38,12 +35,12 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) createUser(ctx context.Context, fullName, email, password string) error {
 	ok, err := d.userExists(ctx, email)
-	if err != nil && !errors.Is(err, ErrNotFound) {
+	if err != nil && !errors.Is(err, models.ErrUserNotFound) {
 		return err
 	}
 
 	if ok {
-		return ErrExistingUser
+		return models.ErrExistingUser
 	}
 
 	user := &models.User{
@@ -68,7 +65,7 @@ func (d *DynamoRepository) createUser(ctx context.Context, fullName, email, pass
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
-		return ErrExistingUser
+		return models.ErrExistingUser
 	}
 
 	if err != nil {
@@ -106,7 +103,7 @@ func (d *DynamoRepository) getUser(ctx context.Context, userID string) (*models.
 	}
 
 	if result.Item == nil {
-		return nil, ErrNotFound
+		return nil, models.ErrUserNotFound
 	}
 
 	user := new(models.User)
@@ -140,7 +137,7 @@ func (d *DynamoRepository) getUserByEmail(ctx context.Context, email string) (*m
 	}
 
 	if result.Items == nil || len(result.Items) == 0 {
-		return nil, ErrNotFound
+		return nil, models.ErrUserNotFound
 	}
 
 	user := new(models.User)

@@ -1,9 +1,8 @@
-package mocks
+package secrets
 
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/backend/shared/secrets"
 )
 
 type FailureCondition string
@@ -33,7 +32,7 @@ func InitSecretMock() *MockSecret {
 		},
 	}
 
-	secrets.SecretClient = mock
+	SecretClient = mock
 
 	return mock
 }

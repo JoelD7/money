@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -18,21 +19,21 @@ type SecretAPI interface {
 	GetSecret(ctx context.Context, name string) (string, error)
 }
 
-type Secret struct{}
+type SecretManager struct {
+	secretCache *secretcache.Cache
+}
 
 var (
 	awsRegion = env.GetString("REGION", "us-east-1")
 
 	ErrSecretNotFound = errors.New("secret not found")
 
-	SecretClient SecretAPI
+	once sync.Once
 
 	secretCache *secretcache.Cache
 )
 
 func init() {
-	SecretClient = &Secret{}
-
 	sc, err := secretcache.New()
 	if err != nil {
 		panic(fmt.Errorf("secrets: %w", err))
@@ -41,11 +42,11 @@ func init() {
 	secretCache = sc
 }
 
-func GetSecret(ctx context.Context, name string) (string, error) {
-	return SecretClient.GetSecret(ctx, name)
+func NewSecretManager() *SecretManager {
+	return &SecretManager{secretCache: secretCache}
 }
 
-func (s *Secret) GetSecret(ctx context.Context, name string) (string, error) {
+func (s *SecretManager) GetSecret(ctx context.Context, name string) (string, error) {
 	result, err := secretCache.GetSecretString(name)
 	if err != nil && strings.Contains(err.Error(), "ResourceNotFoundException") {
 		return "", ErrSecretNotFound
