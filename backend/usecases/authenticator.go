@@ -137,8 +137,10 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 			IssuedAt:       jwt.NumericDate(now),
 		}
 
-		accessToken, err := generateJWT(secretManager, logger, accessTokenPayload, accessTokenScope)
+		accessToken, err := generateJWT(secretManager, accessTokenPayload, accessTokenScope)
 		if err != nil {
+			logger.Error("generate_access_token_failed", err)
+
 			return nil, nil, err
 		}
 
@@ -149,8 +151,10 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 			ExpirationTime: refreshTokenExpiry,
 		}
 
-		refreshToken, err := generateJWT(secretManager, logger, refreshTokenPayload, "")
+		refreshToken, err := generateJWT(secretManager, refreshTokenPayload, "")
 		if err != nil {
+			logger.Error("generate_refresh_token_failed", err)
+
 			return nil, nil, err
 		}
 
@@ -195,19 +199,24 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 // NewRefreshTokenValidator validates a refresh token.
 func NewRefreshTokenValidator(userGetter UserGetter, logger Logger) func(ctx context.Context, refreshToken string) (*models.User, error) {
 	return func(ctx context.Context, refreshToken string) (*models.User, error) {
-		payload, err := getTokenPayload(logger, refreshToken)
+		payload, err := getTokenPayload(refreshToken)
 		if err != nil {
+			logger.Error("get_refresh_token_payload_failed", err)
+
 			return nil, fmt.Errorf("%w: %v", models.ErrInvalidToken, err)
 		}
 
 		user, err := userGetter.GetUserByEmail(ctx, payload.Subject)
 		if err != nil {
+			logger.Error("get_user_failed", err)
+
 			return nil, err
 		}
 
 		err = validateRefreshToken(user, refreshToken)
 		if err != nil {
 			logger.Warning("refresh_token_validation_failed", err, user, refreshTokenValue{refreshToken})
+
 			return nil, fmt.Errorf("%w: %v", models.ErrInvalidToken, err)
 		}
 
@@ -233,12 +242,10 @@ func validateCredentials(email, password string) error {
 	return nil
 }
 
-func generateJWT(secrets SecretManager, logger Logger, payload *jwt.Payload, scope string) (string, error) {
+func generateJWT(secrets SecretManager, payload *jwt.Payload, scope string) (string, error) {
 	priv, err := getPrivateKey(secrets)
 	if err != nil {
-		logger.Error("private_key_fetching_failed", err, nil)
-
-		return "", err
+		return "", fmt.Errorf("private key fetching failed: %w", err)
 	}
 
 	var signingHash = jwt.NewRS256(jwt.RSAPrivateKey(priv))
@@ -250,9 +257,7 @@ func generateJWT(secrets SecretManager, logger Logger, payload *jwt.Payload, sco
 
 	token, err := jwt.Sign(p, signingHash)
 	if err != nil {
-		logger.Error("jwt_signing_failed", err, nil)
-
-		return "", err
+		return "", fmt.Errorf("jwt signing failed: %w", err)
 	}
 
 	return string(token), nil
@@ -277,28 +282,22 @@ func getPrivateKey(secrets SecretManager) (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func getTokenPayload(logger Logger, token string) (*models.JWTPayload, error) {
+func getTokenPayload(token string) (*models.JWTPayload, error) {
 	var payload *models.JWTPayload
 
 	tokenParts := strings.Split(token, ".")
 	if len(tokenParts) < 3 {
-		logger.Error("invalid_token_length_detected", errInvalidTokenLength, nil)
-
 		return nil, errInvalidTokenLength
 	}
 
 	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
 	if err != nil {
-		logger.Error("payload_decoding_failed", err, nil)
-
-		return nil, err
+		return nil, fmt.Errorf("payload decoding failed: %w", err)
 	}
 
 	err = json.Unmarshal(payloadPart, &payload)
 	if err != nil {
-		logger.Error("payload_unmarshalling_failed", err, nil)
-
-		return nil, err
+		return nil, fmt.Errorf("paylaod unmarshalling failed: %w", err)
 	}
 
 	return payload, nil
@@ -399,8 +398,10 @@ func getKidFromSecret(secrets SecretManager) (string, error) {
 
 func NewUserLogout(userGetter UserGetter, tokenCache InvalidTokenCache, logger Logger) func(ctx context.Context, token string) error {
 	return func(ctx context.Context, token string) error {
-		payload, err := getTokenPayload(logger, token)
+		payload, err := getTokenPayload(token)
 		if err != nil {
+			logger.Error("get_token_payload_failed", err)
+
 			return err
 		}
 
