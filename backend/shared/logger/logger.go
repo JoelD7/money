@@ -48,6 +48,7 @@ type LogAPI interface {
 	Critical(eventName string, objects ...models.LoggerObject)
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
 	Close() error
+	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
 }
 
 type Log struct {
@@ -109,7 +110,7 @@ func (l *Log) Error(eventName string, err error, objects ...models.LoggerObject)
 
 func (l *Log) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
 	duration := time.Since(startingTime).Seconds()
-	durationData := MapToLoggerObject("duration_data", map[string]interface{}{
+	durationData := l.MapToLoggerObject("duration_data", map[string]interface{}{
 		"f_duration": duration,
 	})
 
@@ -222,7 +223,7 @@ func (l *Log) Close() error {
 	return nil
 }
 
-func MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject {
+func (l *Log) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject {
 	return &ObjectWrapper{
 		name:       name,
 		properties: m,
