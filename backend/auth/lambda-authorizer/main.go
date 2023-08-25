@@ -2,25 +2,19 @@ package main
 
 import (
 	"context"
-	"crypto/rsa"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
-	"math/big"
+	"github.com/JoelD7/money/backend/storage/cache"
+	"github.com/JoelD7/money/backend/usecases"
 	"strings"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/cache"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/hash"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
 	"github.com/JoelD7/money/backend/shared/secrets"
-	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/gbrlsnchs/jwt/v3"
 )
 
 type Effect int
@@ -60,42 +54,23 @@ const (
 )
 
 var (
-	errInvalidToken         = errors.New("invalid_access_token")
-	errSigningKeyNotFound   = errors.New("signing key not found")
-	errUnauthorized         = errors.New("Unauthorized")
-	errTokenValidationError = errors.New("couldn't validate token")
-)
-
-var (
 	kidSecretName = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 	awsRegion     = env.GetString("REGION", "us-east-1")
-	jwtAudience   = env.GetString("AUDIENCE", "https://localhost:3000")
-	jwtIssuer     = env.GetString("ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
-
-	invalidJWTErrs = []error{jwt.ErrAudValidation, jwt.ErrExpValidation, jwt.ErrIatValidation, jwt.ErrIssValidation,
-		jwt.ErrJtiValidation, jwt.ErrNbfValidation, jwt.ErrSubValidation}
 )
 
-type jwks struct {
-	Keys []jwk `json:"keys"`
-}
-
-type jwk struct {
-	Kty string `json:"kty"`
-	Kid string `json:"kid,omitempty"`
-	Use string `json:"use"`
-	N   string `json:"n"`
-	E   string `json:"e"`
-}
-
 type request struct {
-	log          logger.LogAPI
-	startingTime time.Time
-	err          error
+	log            logger.LogAPI
+	secretsManager secrets.SecretManager
+	cacheRepo      *cache.Repository
+	startingTime   time.Time
+	err            error
 }
 
 func (req *request) init() {
 	req.startingTime = time.Now()
+	redisRepository := cache.NewRepository(cache.NewRedisCache())
+	req.cacheRepo = redisRepository
+	req.secretsManager = secrets.NewAWSSecretManager()
 }
 
 func (req *request) finish() {
@@ -123,17 +98,18 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
-	payload, err := req.getTokenPayload(token)
-	if err != nil {
-		return events.APIGatewayCustomAuthorizerResponse{}, errUnauthorized
+	verifyToken := usecases.NewTokenVerifier(restclient.New(), req.log, req.secretsManager, req.cacheRepo)
+
+	subject, err := verifyToken(ctx, token)
+	if errors.Is(err, models.ErrUnauthorized) {
+		return events.APIGatewayCustomAuthorizerResponse{}, err
 	}
 
-	err = req.verifyToken(ctx, payload, token)
 	if err != nil {
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
 
-	principalID := payload.Subject
+	principalID := subject
 
 	tmp := strings.Split(event.MethodArn, ":")
 	apiGatewayArnTmp := strings.Split(tmp[5], "/")
@@ -146,36 +122,6 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 	resp.AllowAllMethods()
 
 	return resp.APIGatewayCustomAuthorizerResponse, nil
-}
-
-func (req *request) getTokenPayload(token string) (*models.JWTPayload, error) {
-	var payload *models.JWTPayload
-
-	tokenParts := strings.Split(token, ".")
-	if len(tokenParts) < 3 {
-		req.err = errInvalidToken
-		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
-
-		return nil, errInvalidToken
-	}
-
-	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
-	if err != nil {
-		req.err = err
-		req.log.Error("payload_decoding_failed", err, []logger.Object{})
-
-		return nil, err
-	}
-
-	err = json.Unmarshal(payloadPart, &payload)
-	if err != nil {
-		req.err = err
-		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
-
-		return nil, err
-	}
-
-	return payload, nil
 }
 
 func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAuthorizerResponse {
@@ -194,243 +140,6 @@ func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAu
 	}
 
 	return resp.APIGatewayCustomAuthorizerResponse
-}
-
-func (req *request) verifyToken(ctx context.Context, payload *models.JWTPayload, token string) error {
-	response, err := restclient.Get(payload.Issuer + "/auth/jwks")
-	if err != nil {
-		req.err = err
-		req.log.Error("getting_jwks_failed", err, []logger.Object{})
-		return err
-	}
-
-	defer func() {
-		closeErr := response.Body.Close()
-		if closeErr != nil {
-			req.err = err
-			req.log.Error("closing_response_body_failed", closeErr, []logger.Object{})
-
-			err = closeErr
-		}
-	}()
-
-	jwksVal := new(jwks)
-	err = json.NewDecoder(response.Body).Decode(jwksVal)
-	if err != nil {
-		req.err = err
-		req.log.Error("decoding_response_body_failed", err, []logger.Object{})
-
-		return err
-	}
-
-	publicKey, err := req.getPublicKey(jwksVal)
-	if err != nil {
-		req.err = err
-		req.log.Error("getting_public_key_failed", err, []logger.Object{})
-
-		return err
-	}
-
-	decryptingHash := jwt.NewRS256(jwt.RSAPublicKey(publicKey))
-	receivedPayload := &jwt.Payload{}
-
-	err = req.validateJWTPayload(token, receivedPayload, decryptingHash)
-	if err != nil {
-		return err
-	}
-
-	err = req.compareAccessTokenAgainstBlacklistRedis(ctx, payload.Subject, token)
-	if errors.Is(err, errInvalidToken) {
-		req.log.Warning("blacklisted_token_use_detected", err, []logger.Object{
-			logger.MapToLoggerObject("token", map[string]interface{}{
-				"s_value": token,
-			}),
-		})
-	}
-
-	return err
-}
-
-func (req *request) validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.RSASHA) error {
-	now := time.Now()
-
-	expValidator := jwt.ExpirationTimeValidator(now)
-	issValidator := jwt.IssuerValidator(jwtIssuer)
-	audValidator := jwt.AudienceValidator(jwt.Audience{jwtAudience})
-
-	validatePayload := jwt.ValidatePayload(payload, issValidator, audValidator, expValidator)
-
-	_, err := jwt.Verify([]byte(token), decryptingHash, payload, validatePayload)
-	if isErrorInvalidJWT(err) {
-		req.err = err
-		req.log.Error("invalid_jwt", err, []logger.Object{
-			logger.MapToLoggerObject("jwt_payload", map[string]interface{}{
-				"s_subject":    payload.Subject,
-				"s_audience":   payload.Audience,
-				"f_expiration": payload.ExpirationTime,
-			}),
-		})
-
-		return errInvalidToken
-	}
-
-	if err != nil {
-		req.err = err
-		req.log.Error("jwt_validation_failed", err, []logger.Object{})
-
-		return err
-	}
-
-	return nil
-}
-
-func isErrorInvalidJWT(err error) bool {
-	for _, e := range invalidJWTErrs {
-		if errors.Is(err, e) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (req *request) compareAccessTokenAgainstBlacklistRedis(ctx context.Context, email, token string) error {
-	invalidTokens, err := cache.GetInvalidTokens(ctx, email)
-	if err != nil {
-		return err
-	}
-
-	for _, it := range invalidTokens {
-		err = hash.CompareWithToken(it.Token, token)
-		if err == nil {
-			req.log.Warning("invalid_token_use_detected", errInvalidToken, []logger.Object{
-				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
-			})
-
-			return errInvalidToken
-		}
-
-		if !errors.Is(err, hash.ErrHashMismatch) {
-			req.err = err
-			req.log.Error("token_comparison_against_blacklist_failed", err, []logger.Object{
-				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
-			})
-		}
-	}
-
-	return nil
-}
-
-func (req *request) compareAccessTokenAgainstBlacklist(ctx context.Context, email, token string) error {
-	invalidTokens, err := invalidtoken.GetAllForPerson(ctx, email)
-	if errors.Is(err, invalidtoken.ErrNotFound) {
-		req.log.Info("no_tokens_found_for_user", []logger.Object{
-			logger.MapToLoggerObject("user_data", map[string]interface{}{
-				"s_email": email,
-			}),
-		})
-
-		return nil
-	}
-
-	if err != nil {
-		req.log.Error("fetch_of_invalid_tokens_failed", err, []logger.Object{
-			logger.MapToLoggerObject("user_data", map[string]interface{}{
-				"s_email": email,
-			}),
-		})
-
-		return errTokenValidationError
-	}
-
-	for _, it := range invalidTokens {
-		err = hash.CompareWithToken(it.Token, token)
-		if err == nil {
-			req.log.Warning("invalid_token_use_detected", errInvalidToken, []logger.Object{
-				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
-			})
-
-			return errInvalidToken
-		}
-
-		if !errors.Is(err, hash.ErrHashMismatch) {
-			req.err = err
-			req.log.Error("token_comparison_against_blacklist_failed", err, []logger.Object{
-				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
-			})
-		}
-	}
-
-	return nil
-}
-
-func (req *request) getPublicKey(jwksVal *jwks) (*rsa.PublicKey, error) {
-	kid, err := req.getKidFromSecret()
-	if err != nil {
-		return nil, err
-	}
-
-	var signingKey *jwk
-
-	for _, key := range jwksVal.Keys {
-		if key.Kid == kid {
-			signingKey = &key
-		}
-	}
-
-	if signingKey == nil {
-		req.err = err
-		req.log.Error("signing_key_not_found", errSigningKeyNotFound, []logger.Object{
-			logger.MapToLoggerObject("kid", map[string]interface{}{
-				"s_secret": kid,
-			}),
-		})
-
-		return nil, errSigningKeyNotFound
-	}
-
-	nBytes, err := base64.RawURLEncoding.DecodeString(signingKey.N)
-	if err != nil {
-		return nil, err
-	}
-
-	n := new(big.Int)
-	n.SetBytes(nBytes)
-
-	eBytes, err := base64.RawURLEncoding.DecodeString(signingKey.E)
-	if err != nil {
-		return nil, err
-	}
-
-	e := new(big.Int)
-	e.SetBytes(eBytes)
-
-	return &rsa.PublicKey{
-		N: n,
-		E: int(e.Int64()),
-	}, nil
-}
-
-func (req *request) getKidFromSecret() (string, error) {
-	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
-	if err != nil {
-		return "", err
-	}
-
-	return kidSecret, nil
-
 }
 
 func (hv HttpVerb) String() string {
