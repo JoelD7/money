@@ -9,15 +9,18 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/hash"
-	"github.com/gbrlsnchs/jwt/v3"
+
 	"golang.org/x/crypto/bcrypt"
 	"math/big"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/gbrlsnchs/jwt/v3"
+
+	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/hash"
 )
 
 const (
@@ -49,6 +52,7 @@ type UserUpdater interface {
 type Logger interface {
 	Warning(eventName string, err error, objects ...models.LoggerObject)
 	Error(eventName string, err error, objects ...models.LoggerObject)
+	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
 }
 
 type InvalidTokenCache interface {
