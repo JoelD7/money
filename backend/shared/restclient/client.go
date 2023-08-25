@@ -2,20 +2,22 @@ package restclient
 
 import "net/http"
 
-type HTTPClient interface {
+type HttpClient interface {
 	Get(url string) (resp *http.Response, err error)
 }
 
-var (
-	Client HTTPClient
-)
-
-func init() {
-	Client = &http.Client{}
+type RestClient struct {
+	client *http.Client
 }
 
-func Get(url string) (resp *http.Response, err error) {
-	response, err := Client.Get(url)
+func New() *RestClient {
+	return &RestClient{
+		client: new(http.Client),
+	}
+}
+
+func (r *RestClient) Get(url string) (resp *http.Response, err error) {
+	response, err := r.client.Get(url)
 	if err != nil {
 		return nil, err
 	}

@@ -9,23 +9,25 @@ import (
 
 var (
 	MethodGET Method = http.MethodGet
-
-	// List of responses by url by method. This map reads: responses of X url for Y method.
-	mockedResponses = map[Method]map[string]*http.Response{}
 )
 
 type Method string
 
-type MockClient struct{}
+type MockClient struct {
+	// List of responses by url by method. This map reads: responses of X url for Y method.
+	mockedResponses map[Method]map[string]*http.Response
+}
 
-func InitMockClient() {
-	Client = &MockClient{}
+func NewMockRestClient() *MockClient {
+	return &MockClient{
+		mockedResponses: make(map[Method]map[string]*http.Response),
+	}
 }
 
 // AddMockedResponseFromFile uses the contents of the file at <path> to mock the response for the specified method and url.
-func AddMockedResponseFromFile(path string, url string, method Method) error {
-	if mockedResponses[method] == nil {
-		mockedResponses[method] = map[string]*http.Response{}
+func (m *MockClient) AddMockedResponseFromFile(path string, url string, method Method) error {
+	if m.mockedResponses[method] == nil {
+		m.mockedResponses[method] = map[string]*http.Response{}
 	}
 
 	data, err := os.ReadFile(path)
@@ -35,7 +37,7 @@ func AddMockedResponseFromFile(path string, url string, method Method) error {
 
 	r := io.NopCloser(bytes.NewReader(data))
 
-	mockedResponses[method][url] = &http.Response{
+	m.mockedResponses[method][url] = &http.Response{
 		StatusCode: http.StatusOK,
 		Body:       r,
 	}
@@ -44,7 +46,7 @@ func AddMockedResponseFromFile(path string, url string, method Method) error {
 }
 
 func (m *MockClient) Get(url string) (*http.Response, error) {
-	if mockedResponses[MethodGET] == nil || mockedResponses[MethodGET][url] == nil {
+	if m.mockedResponses[MethodGET] == nil || m.mockedResponses[MethodGET][url] == nil {
 		r := io.NopCloser(bytes.NewReader([]byte{}))
 
 		return &http.Response{
@@ -53,5 +55,5 @@ func (m *MockClient) Get(url string) (*http.Response, error) {
 		}, nil
 	}
 
-	return mockedResponses[MethodGET][url], nil
+	return m.mockedResponses[MethodGET][url], nil
 }
