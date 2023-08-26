@@ -2,6 +2,7 @@ package restclient
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -47,6 +48,7 @@ func (m *MockClient) Get(url string) (*http.Response, error) {
 	if mockedResponses[MethodGET] == nil || mockedResponses[MethodGET][url] == nil {
 		r := io.NopCloser(bytes.NewReader([]byte{}))
 
+		fmt.Println()
 		return &http.Response{
 			StatusCode: http.StatusOK,
 			Body:       r,
