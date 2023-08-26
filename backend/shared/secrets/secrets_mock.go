@@ -50,7 +50,7 @@ func (m *MockSecret) GetSecret(ctx context.Context, name string) (string, error)
 
 	responder, ok := m.secretResponders[name]
 	if !ok {
-		panic(errResponderNotRegistered)
+		return "", errResponderNotRegistered
 	}
 
 	return responder(ctx, name)
