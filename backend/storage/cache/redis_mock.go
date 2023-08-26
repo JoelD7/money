@@ -10,7 +10,7 @@ type RedisMock struct {
 	store map[string]string
 }
 
-func InitRedisMock() {
+func initRedisMock() {
 	redisClient = &RedisMock{
 		store: make(map[string]string),
 	}

@@ -11,8 +11,7 @@ import (
 )
 
 var (
-	ErrTokensNotFound = errors.New("no invalid tokens found")
-	ErrInvalidTTL     = errors.New("TTL is from a past datetime")
+	ErrInvalidTTL = errors.New("TTL is from a past datetime")
 )
 
 type redisCache struct{}
@@ -21,12 +20,19 @@ func NewRedisCache() *redisCache {
 	return &redisCache{}
 }
 
+// NewRedisCacheMock creates a redis mock by mocking the underlying redis client.
+func NewRedisCacheMock() *redisCache {
+	initRedisMock()
+
+	return &redisCache{}
+}
+
 func (r *redisCache) getInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
 	key := keyPrefix + email
 
 	dataStr, err := redisClient.Get(ctx, key)
 	if errors.Is(err, ErrNotFound) {
-		return nil, ErrTokensNotFound
+		return nil, models.ErrTokensNotFound
 	}
 
 	if err != nil {
@@ -41,7 +47,7 @@ func (r *redisCache) getInvalidTokens(ctx context.Context, email string) ([]*mod
 	}
 
 	if len(invalidTokens) == 0 {
-		return nil, ErrTokensNotFound
+		return nil, models.ErrTokensNotFound
 	}
 
 	return invalidTokens, nil
@@ -55,7 +61,7 @@ func (r *redisCache) addInvalidToken(ctx context.Context, email, token string, t
 	key := keyPrefix + email
 
 	invalidTokens, err := r.getInvalidTokens(ctx, email)
-	if err != nil && !errors.Is(err, ErrTokensNotFound) {
+	if err != nil && !errors.Is(err, models.ErrTokensNotFound) {
 		return err
 	}
 

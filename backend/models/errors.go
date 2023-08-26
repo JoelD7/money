@@ -13,4 +13,5 @@ var (
 	ErrRefreshTokenMismatch = errors.New("received refresh token doesn't match with the user's")
 	ErrUnauthorized         = errors.New("Unauthorized")
 	ErrSigningKeyNotFound   = errors.New("signing key not found")
+	ErrTokensNotFound       = errors.New("no invalid tokens found")
 )
