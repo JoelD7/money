@@ -11,4 +11,6 @@ var (
 	ErrWrongCredentials     = errors.New("the email or password are incorrect")
 	ErrInvalidToken         = errors.New("invalid token")
 	ErrRefreshTokenMismatch = errors.New("received refresh token doesn't match with the user's")
+	ErrUnauthorized         = errors.New("Unauthorized")
+	ErrSigningKeyNotFound   = errors.New("signing key not found")
 )
