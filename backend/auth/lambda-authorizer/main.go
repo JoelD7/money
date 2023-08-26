@@ -63,6 +63,7 @@ type request struct {
 	secretsManager secrets.SecretManager
 	cacheRepo      *cache.Repository
 	startingTime   time.Time
+	client         restclient.HttpClient
 	err            error
 }
 
@@ -71,6 +72,7 @@ func (req *request) init() {
 	redisRepository := cache.NewRepository(cache.NewRedisCache())
 	req.cacheRepo = redisRepository
 	req.secretsManager = secrets.NewAWSSecretManager()
+	req.client = restclient.New()
 }
 
 func (req *request) finish() {
@@ -98,7 +100,7 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
-	verifyToken := usecases.NewTokenVerifier(restclient.New(), req.log, req.secretsManager, req.cacheRepo)
+	verifyToken := usecases.NewTokenVerifier(req.client, req.log, req.secretsManager, req.cacheRepo)
 
 	subject, err := verifyToken(ctx, token)
 	if errors.Is(err, models.ErrUnauthorized) {

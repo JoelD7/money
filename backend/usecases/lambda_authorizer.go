@@ -76,6 +76,8 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 
 		err = validateJWTPayload(token, receivedPayload, decryptingHash)
 		if err != nil {
+			logger.Error("jwt_validation_failed", err)
+
 			return "", err
 		}
 
@@ -169,7 +171,7 @@ func isErrorInvalidJWT(err error) bool {
 
 func compareAccessTokenAgainstBlacklistRedis(ctx context.Context, tokenCache InvalidTokenCache, logger Logger, email, token string) error {
 	invalidTokens, err := tokenCache.GetInvalidTokens(ctx, email)
-	if err != nil {
+	if err != nil && !errors.Is(err, models.ErrTokensNotFound) {
 		return err
 	}
 
