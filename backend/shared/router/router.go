@@ -3,9 +3,10 @@ package router
 import (
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
-	"net/http"
 )
 
 var (
@@ -39,7 +40,7 @@ func NewRouter() *Router {
 
 func (router *Router) Handle(request *apigateway.Request) (*apigateway.Response, error) {
 	if !router.isRoot() {
-		router.log.Error("router_handle_failed", errRouterIsNotRoot, []logger.Object{})
+		router.log.Error("router_handle_failed", errRouterIsNotRoot)
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
@@ -48,15 +49,15 @@ func (router *Router) Handle(request *apigateway.Request) (*apigateway.Response,
 	}
 
 	if _, ok := router.methodHandlers[request.HTTPMethod][request.Resource]; !ok {
-		router.log.Error("router_handle_failed", errPathNotDefined, []logger.Object{
-			logger.MapToLoggerObject("router_data", map[string]interface{}{
+		router.log.Error("router_handle_failed", errPathNotDefined,
+			router.log.MapToLoggerObject("router_data", map[string]interface{}{
 				"s_path": router.path,
 			}),
-			logger.MapToLoggerObject("request", map[string]interface{}{
+			router.log.MapToLoggerObject("request", map[string]interface{}{
 				"s_method":   request.HTTPMethod,
 				"s_resource": request.Resource,
 			}),
-		})
+		)
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
