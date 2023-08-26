@@ -24,15 +24,13 @@ var (
 	ErrForceFailure = errors.New("mocks/secrets: force failure")
 )
 
-func InitSecretMock() *MockSecret {
+func NewSecretMock() *MockSecret {
 	mock := &MockSecret{
 		secretResponders: make(map[string]func(ctx context.Context, name string) (string, error)),
 		emulatingErrors: map[FailureCondition]error{
 			SecretsError: ErrForceFailure,
 		},
 	}
-
-	SecretClient = mock
 
 	return mock
 }
