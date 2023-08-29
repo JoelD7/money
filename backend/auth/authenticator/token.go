@@ -23,7 +23,7 @@ type requestTokenHandler struct {
 	err            error
 	userRepo       *users.Repository
 	cacheRepo      *cache.Repository
-	secretsManager *secrets.SecretManager
+	secretsManager secrets.SecretManager
 }
 
 func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
@@ -45,7 +45,7 @@ func (req *requestTokenHandler) initTokenHandler() {
 
 	redisRepository := cache.NewRepository(cache.NewRedisCache())
 	req.cacheRepo = redisRepository
-	req.secretsManager = secrets.NewSecretManager()
+	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = logger.NewLogger()
 }
