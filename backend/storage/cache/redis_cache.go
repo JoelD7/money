@@ -20,21 +20,10 @@ func NewRedisCache() *redisCache {
 	return &redisCache{}
 }
 
-// NewRedisCacheMock creates a redis mock by mocking the underlying redis client.
-func NewRedisCacheMock() *redisCache {
-	initRedisMock()
-
-	return &redisCache{}
-}
-
 func (r *redisCache) getInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
 	key := keyPrefix + email
 
 	dataStr, err := redisClient.Get(ctx, key)
-	if errors.Is(err, ErrNotFound) {
-		return nil, models.ErrTokensNotFound
-	}
-
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +36,7 @@ func (r *redisCache) getInvalidTokens(ctx context.Context, email string) ([]*mod
 	}
 
 	if len(invalidTokens) == 0 {
-		return nil, models.ErrTokensNotFound
+		return nil, models.ErrInvalidTokensNotFound
 	}
 
 	return invalidTokens, nil
@@ -61,7 +50,7 @@ func (r *redisCache) addInvalidToken(ctx context.Context, email, token string, t
 	key := keyPrefix + email
 
 	invalidTokens, err := r.getInvalidTokens(ctx, email)
-	if err != nil && !errors.Is(err, models.ErrTokensNotFound) {
+	if err != nil && !errors.Is(err, models.ErrInvalidTokensNotFound) {
 		return err
 	}
 

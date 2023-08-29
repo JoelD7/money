@@ -2,36 +2,53 @@ package cache
 
 import (
 	"context"
-	"errors"
-	"time"
+	"github.com/JoelD7/money/backend/models"
 )
 
-type RedisMock struct {
-	store map[string]string
+type redisMock struct {
+	store     map[string][]*models.InvalidToken
+	mockedErr error
 }
 
-func initRedisMock() {
-	redisClient = &RedisMock{
-		store: make(map[string]string),
+// NewRedisCacheMock creates a redis mock by mocking the underlying redis client.
+func NewRedisCacheMock() *redisMock {
+	return &redisMock{
+		store: make(map[string][]*models.InvalidToken),
 	}
 }
 
-func (r *RedisMock) Get(ctx context.Context, key string) (string, error) {
-	value, ok := r.store[key]
+func (r *redisMock) ActivateForceFailure(err error) {
+	r.mockedErr = err
+}
+
+func (r *redisMock) DeactivateForceFailure() {
+	r.mockedErr = nil
+}
+
+func (r *redisMock) getInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
+	if r.mockedErr != nil {
+		return nil, r.mockedErr
+	}
+
+	invalidTokens, ok := r.store[email]
 	if !ok {
-		return "", ErrNotFound
+		return nil, models.ErrInvalidTokensNotFound
 	}
 
-	return value, nil
+	return invalidTokens, nil
 }
 
-func (r *RedisMock) Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	data, ok := value.(string)
-	if !ok {
-		return errors.New("redis mock: parse error")
+func (r *redisMock) addInvalidToken(ctx context.Context, email, token string, ttl int64) error {
+	if r.mockedErr != nil {
+		return r.mockedErr
 	}
 
-	r.store[key] = data
+	invalidTokens, ok := r.store[email]
+	if !ok {
+		return models.ErrInvalidTokensNotFound
+	}
+
+	r.store[email] = append(invalidTokens, &models.InvalidToken{Token: token})
 
 	return nil
 }
