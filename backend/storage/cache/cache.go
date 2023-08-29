@@ -6,20 +6,19 @@ import (
 )
 
 const (
-	email     = "test@gmail.com"
 	keyPrefix = "invalid_tokens:"
 )
 
-type repositoryAPI interface {
+type InvalidTokenCache interface {
 	getInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error)
 	addInvalidToken(ctx context.Context, email, token string, ttl int64) error
 }
 
 type Repository struct {
-	client repositoryAPI
+	client InvalidTokenCache
 }
 
-func NewRepository(client repositoryAPI) *Repository {
+func NewRepository(client InvalidTokenCache) *Repository {
 	return &Repository{client}
 }
 
