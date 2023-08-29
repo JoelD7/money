@@ -207,7 +207,7 @@ func NewRefreshTokenValidator(userGetter UserGetter, logger Logger) func(ctx con
 		if err != nil {
 			logger.Error("get_refresh_token_payload_failed", err)
 
-			return nil, fmt.Errorf("%w: %v", models.ErrInvalidToken, err)
+			return nil, fmt.Errorf("%w: %v", models.ErrMalformedToken, err)
 		}
 
 		user, err := userGetter.GetUserByEmail(ctx, payload.Subject)
@@ -221,7 +221,7 @@ func NewRefreshTokenValidator(userGetter UserGetter, logger Logger) func(ctx con
 		if err != nil {
 			logger.Warning("refresh_token_validation_failed", err, user, refreshTokenValue{refreshToken})
 
-			return nil, fmt.Errorf("%w: %v", models.ErrInvalidToken, err)
+			return user, fmt.Errorf("%w: %v", models.ErrInvalidToken, err)
 		}
 
 		return user, nil
