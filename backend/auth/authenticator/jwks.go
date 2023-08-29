@@ -15,7 +15,7 @@ type requestJwksHandler struct {
 	log            logger.LogAPI
 	startingTime   time.Time
 	err            error
-	secretsManager *secrets.SecretManager
+	secretsManager secrets.SecretManager
 }
 
 func jwksHandler(_ *apigateway.Request) (*apigateway.Response, error) {
@@ -30,7 +30,7 @@ func jwksHandler(_ *apigateway.Request) (*apigateway.Response, error) {
 }
 
 func (req *requestJwksHandler) initJwksHandler() {
-	req.secretsManager = secrets.NewSecretManager()
+	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = logger.NewLogger()
 }

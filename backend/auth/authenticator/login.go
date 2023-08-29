@@ -18,7 +18,7 @@ type requestLoginHandler struct {
 	startingTime   time.Time
 	err            error
 	userRepo       *users.Repository
-	secretsManager *secrets.SecretManager
+	secretsManager secrets.SecretManager
 }
 
 func logInHandler(request *apigateway.Request) (*apigateway.Response, error) {
@@ -38,7 +38,7 @@ func (req *requestLoginHandler) initLoginHandler() {
 	dynamoUserRepository := users.NewDynamoRepository(dynamoClient)
 
 	req.userRepo = users.NewRepository(dynamoUserRepository)
-	req.secretsManager = secrets.NewSecretManager()
+	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = logger.NewLogger()
 }
