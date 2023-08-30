@@ -17,8 +17,8 @@ func (l *LogMock) MapToLoggerObject(name string, m map[string]interface{}) model
 	}
 }
 
-// InitLoggerMock mocks the logger client. This is important to prevent unit tests from sending logs.
-func InitLoggerMock(buf *bytes.Buffer) *LogMock {
+// NewLoggerMock mocks the logger client. This is important to prevent unit tests from sending logs.
+func NewLoggerMock(buf *bytes.Buffer) *LogMock {
 	logMock := &LogMock{
 		Output: buf,
 	}
