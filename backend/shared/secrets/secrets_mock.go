@@ -63,3 +63,7 @@ func (m *MockSecret) RegisterResponder(secretName string, responder func(ctx con
 
 	m.secretResponders[secretName] = responder
 }
+
+func (m *MockSecret) UnregisterResponder(secretName string) {
+	delete(m.secretResponders, secretName)
+}
