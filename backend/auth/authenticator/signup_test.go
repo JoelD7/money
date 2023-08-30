@@ -71,7 +71,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 		response, err := signUpHandler(apigwRequest)
 		c.NotNil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Equal("Internal server error, try again later", response.Body)
+		c.Equal(apigateway.ErrInternalError.Message, response.Body)
 	})
 
 	type testCase struct {

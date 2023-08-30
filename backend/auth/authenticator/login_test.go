@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/JoelD7/money/backend/shared/apigateway"
@@ -42,16 +43,17 @@ func TestLoginHandler(t *testing.T) {
 	request := &requestLoginHandler{
 		userRepo:       users.NewRepository(usersMock),
 		secretsManager: secretMock,
-		log:            logger.NewLogger(),
+		log:            logger.NewLoggerMock(nil),
 	}
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}
 
 	response, err := request.processLogin(apigwRequest)
 	c.Equal(http.StatusOK, response.StatusCode)
-	c.NotNil(response.Headers["Set-Cookie"])
-	c.Contains(response.Headers["Set-Cookie"], "refresh_token")
-	c.Contains(response.Body, "access_token")
+	c.NotNil(response.MultiValueHeaders["Set-Cookie"])
+	c.Len(response.MultiValueHeaders["Set-Cookie"], 2)
+	c.Contains(strings.Join(response.MultiValueHeaders["Set-Cookie"], " "), accessTokenCookieName)
+	c.Contains(strings.Join(response.MultiValueHeaders["Set-Cookie"], " "), refreshTokenCookieName)
 }
 
 func TestLoginHandlerFailed(t *testing.T) {
@@ -83,7 +85,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 	request := &requestLoginHandler{
 		userRepo:       users.NewRepository(usersMock),
 		secretsManager: secretMock,
-		log:            logger.NewLogger(),
+		log:            logger.NewLoggerMock(nil),
 	}
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}
@@ -92,9 +94,9 @@ func TestLoginHandlerFailed(t *testing.T) {
 	defer secretMock.DeactivateForceFailure()
 
 	response, err := request.processLogin(apigwRequest)
-	c.Nil(err)
+	c.ErrorIs(err, secrets.ErrForceFailure)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
-	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
+	c.Equal(apigateway.ErrInternalError.Message, response.Body)
 
 	t.Run("User not found", func(t *testing.T) {
 		usersMock.ActivateForceFailure(models.ErrUserNotFound)
@@ -109,9 +111,9 @@ func TestLoginHandlerFailed(t *testing.T) {
 	t.Run("Invalid request body", func(t *testing.T) {
 		apigwRequest.Body = "a"
 		response, err = request.processLogin(apigwRequest)
-		c.Nil(err)
+		c.NotNil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
+		c.Equal(apigateway.ErrInternalError.Message, response.Body)
 	})
 
 	type testCase struct {
@@ -152,10 +154,10 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 			apigwRequest.Body = jsonBody
 
-			response, err = logInHandler(apigwRequest)
+			response, err = request.processLogin(apigwRequest)
 			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
-			c.Equal(tc.expectedErr, response.Body)
+			c.Equal(tc.expectedErr.Error(), response.Body)
 		})
 	}
 }
