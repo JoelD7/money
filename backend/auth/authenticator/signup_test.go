@@ -21,20 +21,18 @@ func TestSignUpHandler(t *testing.T) {
 
 	usersMock := users.NewDynamoMock()
 
-	//userMock.EmptyTable()
-
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
 	request := &requestSignUpHandler{
 		userRepo: users.NewRepository(usersMock),
-		log:      logger.NewLogger(),
+		log:      logger.NewLoggerMock(nil),
 	}
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}
 
 	response, err := request.processSignUp(apigwRequest)
-	c.Equal(http.StatusOK, response.StatusCode)
+	c.Equal(http.StatusCreated, response.StatusCode)
 }
 
 func TestSignUpHandlerFailed(t *testing.T) {
@@ -52,7 +50,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 
 	request := &requestSignUpHandler{
 		userRepo: users.NewRepository(usersMock),
-		log:      logger.NewLogger(),
+		log:      logger.NewLoggerMock(nil),
 	}
 
 	t.Run("Existing user error", func(t *testing.T) {
@@ -73,7 +71,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 		response, err := signUpHandler(apigwRequest)
 		c.NotNil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
+		c.Equal("Internal server error, try again later", response.Body)
 	})
 
 	type testCase struct {
@@ -112,7 +110,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 			response, err := request.processSignUp(apigwRequest)
 			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
-			c.Equal(tc.expectedErr, response.Body)
+			c.Equal(tc.expectedErr.Error(), response.Body)
 		})
 	}
 }
