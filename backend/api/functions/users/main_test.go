@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
@@ -13,26 +14,19 @@ import (
 	"testing"
 )
 
-var (
-	logMock *logger.LogMock
-)
-
-func init() {
-	logMock = logger.InitLoggerMock(nil)
-}
-
 func TestHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
 	usersMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
 	incomeMock := income.NewDynamoMock()
+	logMock := logger.NewLoggerMock(nil)
 
 	request := &userRequest{
 		userRepo:     users.NewRepository(usersMock),
 		expensesRepo: expenses.NewRepository(expensesMock),
 		incomeRepo:   income.NewRepository(incomeMock),
-		log:          logger.NewLogger(),
+		log:          logMock,
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -70,12 +64,13 @@ func TestHandlerFailed(t *testing.T) {
 	usersMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
 	incomeMock := income.NewDynamoMock()
+	logMock := logger.NewLoggerMock(nil)
 
 	request := &userRequest{
 		userRepo:     users.NewRepository(usersMock),
 		expensesRepo: expenses.NewRepository(expensesMock),
 		incomeRepo:   income.NewRepository(incomeMock),
-		log:          logger.NewLogger(),
+		log:          logMock,
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -106,7 +101,7 @@ func TestHandlerFailed(t *testing.T) {
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "user_fetching_failed")
-		c.Contains(logMock.Output.String(), users.ErrNotFound.Error())
+		c.Contains(logMock.Output.String(), models.ErrUserNotFound.Error())
 		logMock.Output.Reset()
 	})
 

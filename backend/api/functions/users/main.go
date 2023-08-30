@@ -88,14 +88,14 @@ func (request *userRequest) process(req *apigateway.Request) (*apigateway.Respon
 	user, err := getUser(ctx, userID)
 	if err != nil {
 		request.err = err
-		request.log.Error("user_fetching_failed", err, []logger.Object{})
+		request.log.Error("user_fetching_failed", err)
 
 		return apigateway.NewErrorResponse(errUserFetchingFailed), nil
 	}
 
 	if user == nil {
 		request.err = err
-		request.log.Error("user_not_found", err, []logger.Object{})
+		request.log.Error("user_not_found", err)
 
 		return apigateway.NewErrorResponse(ErrNotFound), nil
 	}
