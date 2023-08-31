@@ -45,7 +45,8 @@ func (r *redisMock) addInvalidToken(ctx context.Context, email, token string, tt
 
 	invalidTokens, ok := r.store[email]
 	if !ok {
-		return models.ErrInvalidTokensNotFound
+		r.store[email] = append(r.store[email], &models.InvalidToken{Token: token})
+		return nil
 	}
 
 	r.store[email] = append(invalidTokens, &models.InvalidToken{Token: token})

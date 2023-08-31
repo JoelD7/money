@@ -48,7 +48,7 @@ func (d *DynamoMock) getUser(ctx context.Context, userID string) (*models.User, 
 	}
 
 	if d.mockedUser == nil {
-		return nil, ErrNotFound
+		return nil, models.ErrUserNotFound
 	}
 
 	return d.mockedUser, nil
@@ -60,7 +60,7 @@ func (d *DynamoMock) getUserByEmail(ctx context.Context, email string) (*models.
 	}
 
 	if d.mockedUser == nil {
-		return nil, ErrNotFound
+		return nil, models.ErrUserNotFound
 	}
 
 	return d.mockedUser, nil

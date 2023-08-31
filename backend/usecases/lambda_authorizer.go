@@ -171,7 +171,7 @@ func isErrorInvalidJWT(err error) bool {
 
 func compareAccessTokenAgainstBlacklistRedis(ctx context.Context, tokenCache InvalidTokenCache, logger Logger, email, token string) error {
 	invalidTokens, err := tokenCache.GetInvalidTokens(ctx, email)
-	if err != nil && !errors.Is(err, models.ErrTokensNotFound) {
+	if err != nil && !errors.Is(err, models.ErrInvalidTokensNotFound) {
 		return err
 	}
 
