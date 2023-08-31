@@ -4,63 +4,45 @@ package main
 
 import (
 	"context"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/json"
-	"encoding/pem"
 	"errors"
-	"fmt"
-	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/cache"
-	"math/big"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
-
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/hash"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
-	"github.com/JoelD7/money/backend/shared/secrets"
-	"github.com/JoelD7/money/backend/shared/utils"
-	storageUser "github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/gbrlsnchs/jwt/v3"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"net/http"
+	"strings"
 )
 
 var (
-	errMissingEmail                 = errors.New("missing email")
-	errMissingPassword              = errors.New("missing password")
-	errWrongCredentials             = errors.New("the email or password are incorrect")
-	errInvalidEmail                 = errors.New("email is invalid")
 	errCookiesNotFound              = errors.New("cookies not found in request object")
-	errInvalidToken                 = errors.New("invalid token")
 	errMissingRefreshTokenInCookies = errors.New("missing refresh token in cookies")
-	errRefreshTokenMismatch         = errors.New("received refresh token doesn't match with the user's")
-	// errUsedRefreshToken received refresh token matches user's previous refresh token, which means it is leaked.
-	errUsedRefreshToken = errors.New("received refresh token matches user's previous refresh token")
+
+	responseByErrors = map[error]apigateway.Error{
+		models.ErrMissingEmail:          {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
+		models.ErrInvalidEmail:          {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
+		models.ErrMissingPassword:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPassword.Error()},
+		models.ErrInvalidToken:          {HTTPCode: http.StatusUnauthorized, Message: models.ErrInvalidToken.Error()},
+		models.ErrMalformedToken:        {HTTPCode: http.StatusUnauthorized, Message: models.ErrMalformedToken.Error()},
+		errMissingRefreshTokenInCookies: {HTTPCode: http.StatusBadRequest, Message: errMissingRefreshTokenInCookies.Error()},
+		models.ErrExistingUser:          {HTTPCode: http.StatusBadRequest, Message: models.ErrExistingUser.Error()},
+		models.ErrUserNotFound:          {HTTPCode: http.StatusBadRequest, Message: models.ErrUserNotFound.Error()},
+		models.ErrWrongCredentials:      {HTTPCode: http.StatusBadRequest, Message: models.ErrWrongCredentials.Error()},
+	}
 )
 
 var (
-	accessTokenAudience  = env.GetString("TOKEN_AUDIENCE", "https://localhost:3000")
-	accessTokenIssuer    = env.GetString("TOKEN_ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
-	accessTokenScope     = env.GetString("TOKEN_SCOPE", "read write")
-	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "staging/money/rsa/private")
-	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "staging/money/rsa/public")
-	kidSecretName        = env.GetString("KID_SECRET", "staging/money/rsa/kid")
-	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
-	refreshTokenDuration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
+	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "staging/money/rsa/private")
+	publicSecretName  = env.GetString("TOKEN_PUBLIC_SECRET", "staging/money/rsa/public")
+	kidSecretName     = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+	awsRegion         = env.GetString("REGION", "us-east-1")
 )
 
 const (
-	passwordCost           = bcrypt.DefaultCost
-	emailRegex             = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
-	refreshTokenCookieName = "refresh_token"
+	accessTokenCookieName  = "AccessToken"
+	refreshTokenCookieName = "RefreshToken"
 )
 
 type signUpBody struct {
@@ -73,35 +55,6 @@ type Credentials struct {
 	Password string `json:"password,omitempty"`
 }
 
-type accessTokenResponse struct {
-	AccessToken string `json:"access_token"`
-}
-
-type jwks struct {
-	Keys []jwk `json:"keys"`
-}
-
-type jwk struct {
-	Kty string `json:"kty"`
-	Kid string `json:"kid,omitempty"`
-	Use string `json:"use"`
-	N   string `json:"n"`
-	E   string `json:"e"`
-}
-
-type response struct {
-	Message string `json:"message,omitempty"`
-}
-
-type requestHandler struct {
-	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-
-	log          logger.LogAPI
-	startingTime time.Time
-	err          error
-}
-
 func (c *Credentials) LogName() string {
 	return "user_data"
 }
@@ -112,125 +65,13 @@ func (c *Credentials) LogProperties() map[string]interface{} {
 	}
 }
 
-func (req *requestHandler) init() {
-	req.startingTime = time.Now()
-}
-
-func (req *requestHandler) finish() {
-	req.log.LogLambdaTime(req.startingTime, req.err, recover())
-}
-
-func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestHandler{
-		log: logger.NewLoggerWithHandler("token"),
-	}
-
-	req.init()
-	defer req.finish()
-
-	return req.processToken(request)
-}
-
-func (req *requestHandler) processToken(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
-	var err error
-	req.RefreshToken, err = getRefreshTokenCookie(request)
+func initDynamoClient() *dynamodb.Client {
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if err != nil {
-		req.err = err
-		req.log.Error("getting_refresh_token_cookie_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
+		panic(err)
 	}
 
-	payload, err := req.getTokenPayload(req.RefreshToken)
-	if errors.Is(err, errInvalidToken) {
-		req.err = err
-		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
-
-		return req.clientError(err)
-	}
-
-	if err != nil {
-		req.err = err
-		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	user, err := storageUser.GetUserByEmail(ctx, payload.Subject)
-	if err != nil {
-		req.err = err
-		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	err = req.validateRefreshToken(user)
-	if err != nil {
-		req.log.Warning("refresh_token_validation_failed", err, []logger.Object{
-			user,
-			logger.MapToLoggerObject("request", map[string]interface{}{
-				"s_request_token": req.RefreshToken,
-			}),
-		})
-
-		return req.getUnauthorizedResponse(ctx, user)
-	}
-
-	tokenCookieHeader, err := req.setTokens(ctx, user)
-	if err != nil {
-		req.err = err
-		req.log.Error("token_setting_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
-	if err != nil {
-		req.err = err
-		req.log.Error("response_building_failed", err, []logger.Object{user})
-
-		return req.serverError(nil)
-	}
-
-	req.log.Info("new_tokens_issued_successfully", []logger.Object{user})
-
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Headers:    tokenCookieHeader,
-		Body:       responseBody,
-	}, nil
-}
-
-func (req *requestHandler) getTokenPayload(token string) (*models.JWTPayload, error) {
-	var payload *models.JWTPayload
-
-	tokenParts := strings.Split(token, ".")
-	if len(tokenParts) < 3 {
-		req.err = errInvalidToken
-		req.log.Error("invalid_token_length_detected", errInvalidToken, []logger.Object{})
-
-		return nil, errInvalidToken
-	}
-
-	payloadPart, err := base64.RawURLEncoding.DecodeString(tokenParts[1])
-	if err != nil {
-		req.err = err
-		req.log.Error("payload_decoding_failed", err, []logger.Object{})
-
-		return nil, err
-	}
-
-	err = json.Unmarshal(payloadPart, &payload)
-	if err != nil {
-		req.err = err
-		req.log.Error("payload_unmarshalling_failed", err, []logger.Object{})
-
-		return nil, err
-	}
-
-	return payload, nil
+	return dynamodb.NewFromConfig(cfg)
 }
 
 func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
@@ -244,6 +85,10 @@ func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
 	for _, cookie := range strings.Split(cookies, ";") {
 		cookieParts = strings.Split(cookie, "=")
 
+		if cookieParts[0] == "" || cookieParts[1] == "" {
+			continue
+		}
+
 		if strings.HasPrefix(cookie, refreshTokenCookieName) && len(cookieParts) > 1 {
 			return cookieParts[1], nil
 		}
@@ -252,467 +97,14 @@ func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
 	return "", errMissingRefreshTokenInCookies
 }
 
-func (req *requestHandler) validateRefreshToken(user *models.User) error {
-	err := hash.CompareWithToken(user.RefreshToken, req.RefreshToken)
-	if errors.Is(err, hash.ErrHashMismatch) && user.RefreshToken != "" {
-		return errRefreshTokenMismatch
+func getErrorResponse(err error) (*apigateway.Response, error) {
+	for mappedErr, responseErr := range responseByErrors {
+		if errors.Is(err, mappedErr) {
+			return apigateway.NewJSONResponse(responseErr.HTTPCode, responseErr.Message), nil
+		}
 	}
 
-	return err
-}
-
-func (req *requestHandler) getUnauthorizedResponse(ctx context.Context, user *models.User) (*apigateway.Response, error) {
-	err := req.invalidatePersonTokens(ctx, user)
-	if err != nil {
-		return req.serverError(err)
-	}
-
-	res := new(response)
-	res.Message = "invalid credentials"
-
-	body, err := utils.GetJsonString(res)
-	if err != nil {
-		req.err = err
-		req.log.Error("response_building_failed", err, []logger.Object{user})
-
-		return req.serverError(nil)
-	}
-
-	return &apigateway.Response{
-		StatusCode: http.StatusUnauthorized,
-		Body:       body,
-	}, nil
-}
-
-func (req *requestHandler) invalidatePersonTokens(ctx context.Context, user *models.User) error {
-	accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
-	refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
-
-	err := cache.AddInvalidToken(ctx, user.Email, user.AccessToken, accessTokenTTL)
-	if err != nil {
-		req.err = err
-		req.log.Error("access_token_invalidation_failed", err, []logger.Object{
-			user,
-		})
-
-		return err
-	}
-
-	err = cache.AddInvalidToken(ctx, user.Email, user.RefreshToken, refreshTokenTTL)
-	if err != nil {
-		req.err = err
-		req.log.Error("refresh_token_invalidation_failed", err, []logger.Object{
-			user,
-		})
-
-		return err
-	}
-
-	return nil
-}
-
-func signUpHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestHandler{
-		log: logger.NewLoggerWithHandler("sign-up"),
-	}
-
-	req.init()
-	defer req.finish()
-
-	return req.processSignUp(request)
-}
-
-func (req *requestHandler) processSignUp(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
-	reqBody := &signUpBody{}
-
-	err := json.Unmarshal([]byte(request.Body), reqBody)
-	if err != nil {
-		req.err = err
-		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	err = req.validateCredentials(reqBody.Credentials)
-	if err != nil {
-		req.err = err
-		req.log.Error("credentials_validation_failed", err, []logger.Object{})
-
-		return req.clientError(err)
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(reqBody.Password), passwordCost)
-	if err != nil {
-		req.err = err
-		req.log.Error("password_hashing_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	err = storageUser.CreateUser(ctx, reqBody.FullName, reqBody.Email, string(hashedPassword))
-	if err != nil && errors.Is(err, storageUser.ErrExistingUser) {
-		req.log.Warning("user_creation_failed", err, []logger.Object{})
-
-		return req.clientError(err)
-	}
-
-	if err != nil {
-		req.err = err
-		req.log.Error("sign_up_process_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-	}, nil
-}
-
-func logInHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestHandler{
-		log: logger.NewLoggerWithHandler("log-in"),
-	}
-
-	req.init()
-	defer req.finish()
-
-	return req.processLogin(request)
-}
-
-func (req *requestHandler) processLogin(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
-	reqBody := &Credentials{}
-
-	err := json.Unmarshal([]byte(request.Body), reqBody)
-	if err != nil {
-		req.err = err
-		req.log.Error("request_body_json_unmarshal_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	err = req.validateCredentials(reqBody)
-	if err != nil {
-		req.err = err
-		req.log.Error("credentials_validation_failed", err, []logger.Object{})
-
-		return req.clientError(err)
-	}
-
-	user, err := storageUser.GetUserByEmail(ctx, reqBody.Email)
-	if err != nil {
-		req.err = err
-		req.log.Error("user_fetching_failed", err, []logger.Object{})
-
-		return req.clientError(err)
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(reqBody.Password))
-	if err != nil {
-		req.err = err
-		req.log.Error("password_mismatch", err, []logger.Object{reqBody})
-
-		return req.clientError(errWrongCredentials)
-	}
-
-	headers, err := req.setTokens(ctx, user)
-	if err != nil {
-		req.err = err
-		req.log.Error("token_setting_failed", err, []logger.Object{reqBody})
-
-		return req.serverError(nil)
-	}
-
-	responseBody, err := utils.GetJsonString(&accessTokenResponse{req.AccessToken})
-	if err != nil {
-		req.err = err
-		req.log.Error("response_building_failed", err, []logger.Object{reqBody})
-
-		return req.serverError(nil)
-	}
-
-	req.log.Info("login_succeeded", []logger.Object{})
-
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       responseBody,
-		Headers:    headers,
-	}, nil
-}
-
-func (req *requestHandler) setTokens(ctx context.Context, user *models.User) (map[string]string, error) {
-	now := time.Now()
-
-	accessTokenPayload := &jwt.Payload{
-		Issuer:         accessTokenIssuer,
-		Subject:        user.Email,
-		Audience:       jwt.Audience{accessTokenAudience},
-		ExpirationTime: jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second)),
-		IssuedAt:       jwt.NumericDate(now),
-	}
-
-	accessToken, err := req.generateJWT(accessTokenPayload, accessTokenScope)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshTokenExpiry := jwt.NumericDate(now.Add(time.Duration(refreshTokenDuration) * time.Second))
-
-	refreshTokenPayload := &jwt.Payload{
-		Subject:        user.Email,
-		ExpirationTime: refreshTokenExpiry,
-	}
-
-	refreshToken, err := req.generateJWT(refreshTokenPayload, "")
-	if err != nil {
-		return nil, err
-	}
-
-	hashedAccess, err := hash.Apply(accessToken)
-	if err != nil {
-		return nil, err
-	}
-
-	hashedRefresh, err := hash.Apply(refreshToken)
-	if err != nil {
-		return nil, err
-	}
-
-	req.AccessToken = accessToken
-
-	user.RefreshToken = hashedRefresh
-	user.AccessToken = hashedAccess
-
-	setCookieHeader := map[string]string{
-		"Set-Cookie": fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken,
-			refreshTokenExpiry.Format(time.RFC1123)),
-	}
-
-	return setCookieHeader, storageUser.UpdateUser(ctx, user)
-}
-
-func jwksHandler(_ *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestHandler{
-		log: logger.NewLogger(),
-	}
-
-	req.init()
-	defer req.finish()
-
-	return req.processJWKS()
-}
-
-func (req *requestHandler) processJWKS() (*apigateway.Response, error) {
-	publicKey, err := req.getPublicKey()
-	if err != nil {
-		req.err = err
-		req.log.Error("public_key_fetching_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	kid, err := req.getKidFromSecret()
-	if err != nil {
-		req.err = err
-		req.log.Error("kid_fetching_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	response := jwks{
-		[]jwk{
-			{
-				Kid: kid,
-				Kty: "RSA",
-				Use: "sig",
-				N:   base64.RawURLEncoding.EncodeToString(publicKey.N.Bytes()),
-				E:   base64.RawURLEncoding.EncodeToString(big.NewInt(int64(publicKey.E)).Bytes()),
-			},
-		},
-	}
-
-	jsonResponse, err := json.Marshal(response)
-	if err != nil {
-		req.err = err
-		req.log.Error("jwks_response_marshall_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       string(jsonResponse),
-	}, nil
-}
-
-func (req *requestHandler) generateJWT(payload *jwt.Payload, scope string) (string, error) {
-	priv, err := req.getPrivateKey()
-	if err != nil {
-		req.err = err
-		req.log.Error("private_key_fetching_failed", err, []logger.Object{})
-
-		return "", err
-	}
-
-	var signingHash = jwt.NewRS256(jwt.RSAPrivateKey(priv))
-
-	p := models.JWTPayload{
-		Scope:   scope,
-		Payload: payload,
-	}
-
-	token, err := jwt.Sign(p, signingHash)
-	if err != nil {
-		req.err = err
-		req.log.Error("jwt_signing_failed", err, []logger.Object{})
-
-		return "", err
-	}
-
-	return string(token), nil
-}
-
-func (req *requestHandler) getPrivateKey() (*rsa.PrivateKey, error) {
-	privateSecret, err := secrets.GetSecret(context.Background(), privateSecretName)
-	if err != nil {
-		return nil, err
-	}
-
-	privatePemBlock, _ := pem.Decode([]byte(privateSecret))
-	if privatePemBlock == nil || !strings.Contains(privatePemBlock.Type, "PRIVATE KEY") {
-		return nil, fmt.Errorf("failed to decode PEM private block containing private key")
-	}
-
-	privateKey, err := x509.ParsePKCS1PrivateKey(privatePemBlock.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return privateKey, nil
-}
-
-func (req *requestHandler) getPublicKey() (*rsa.PublicKey, error) {
-	publicSecret, err := secrets.GetSecret(context.Background(), publicSecretName)
-	if err != nil {
-		return nil, err
-	}
-
-	publicPemBlock, _ := pem.Decode([]byte(publicSecret))
-	if publicPemBlock == nil || !strings.Contains(publicPemBlock.Type, "PUBLIC KEY") {
-		return nil, fmt.Errorf("failed to decode PEM public block containing public key")
-	}
-
-	publicKey, err := x509.ParsePKIXPublicKey(publicPemBlock.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	return publicKey.(*rsa.PublicKey), nil
-}
-
-// The kid of the JWK that contains the public key.
-// Is stored in a secret so that the lambda-authorizer can have access to it to verify that the key received is the
-// right one.
-func (req *requestHandler) getKidFromSecret() (string, error) {
-	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
-	if err != nil {
-		return "", err
-	}
-
-	return kidSecret, nil
-
-}
-
-func (req *requestHandler) serverError(err error) (*apigateway.Response, error) {
-	return &apigateway.Response{
-		StatusCode: http.StatusInternalServerError,
-		Body:       http.StatusText(http.StatusInternalServerError),
-	}, err
-}
-
-func (req *requestHandler) clientError(err error) (*apigateway.Response, error) {
-	return &apigateway.Response{
-		StatusCode: http.StatusBadRequest,
-		Body:       err.Error(),
-	}, nil
-}
-
-func (req *requestHandler) validateCredentials(login *Credentials) error {
-	regex := regexp.MustCompile(emailRegex)
-
-	if login.Email == "" {
-		return errMissingEmail
-	}
-
-	if !regex.MatchString(login.Email) {
-		return errInvalidEmail
-	}
-
-	if login.Password == "" {
-		return errMissingPassword
-	}
-
-	return nil
-}
-
-func logoutHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestHandler{
-		log: logger.NewLoggerWithHandler("logout"),
-	}
-
-	return req.processLogout(request)
-}
-
-func (req *requestHandler) processLogout(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
-	var err error
-
-	req.RefreshToken, err = getRefreshTokenCookie(request)
-	if err != nil {
-		req.err = err
-		req.log.Error("getting_refresh_token_cookie_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	payload, err := req.getTokenPayload(req.RefreshToken)
-	if errors.Is(err, errInvalidToken) {
-		req.err = err
-		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
-
-		return req.clientError(err)
-	}
-
-	if err != nil {
-		req.err = err
-		req.log.Error("token_payload_parse_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	user, err := storageUser.GetUserByEmail(ctx, payload.Subject)
-	if err != nil {
-		req.err = err
-		req.log.Error("fetching_user_from_storage_failed", err, []logger.Object{})
-
-		return req.serverError(nil)
-	}
-
-	err = req.invalidatePersonTokens(ctx, user)
-	if err != nil {
-		req.err = err
-		req.log.Error("token_invalidation_failed", err, []logger.Object{user})
-
-		return req.serverError(err)
-	}
-
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-	}, nil
+	return apigateway.NewErrorResponse(err), err
 }
 
 func main() {
