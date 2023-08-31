@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"testing"
@@ -156,4 +157,13 @@ func dummyAPIGatewayProxyRequest() (*apigateway.Request, error) {
 		Body:    jsonBody,
 		Headers: map[string]string{},
 	}, nil
+}
+
+func bodyToJSONString(body interface{}) (string, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
