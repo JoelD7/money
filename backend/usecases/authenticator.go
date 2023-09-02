@@ -405,7 +405,7 @@ func NewUserLogout(userGetter UserGetter, tokenCache InvalidTokenCache, logger L
 		if err != nil {
 			logger.Error("get_token_payload_failed", err, nil)
 
-			return err
+			return fmt.Errorf("%w: %v", models.ErrMalformedToken, err)
 		}
 
 		user, err := userGetter.GetUserByEmail(ctx, payload.Subject)
