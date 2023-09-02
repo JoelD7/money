@@ -26,9 +26,7 @@ type accessTokenResponse struct {
 }
 
 func logInHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestLoginHandler{
-		log: logger.NewLoggerWithHandler("log-in"),
-	}
+	req := &requestLoginHandler{}
 
 	req.initLoginHandler()
 	defer req.finish()
@@ -44,7 +42,7 @@ func (req *requestLoginHandler) initLoginHandler() {
 	req.userRepo = users.NewRepository(dynamoUserRepository)
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLogger()
+	req.log = logger.NewLoggerWithHandler("log-in")
 }
 
 func (req *requestLoginHandler) finish() {

@@ -24,9 +24,7 @@ type requestLogoutHandler struct {
 }
 
 func logoutHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestLogoutHandler{
-		log: logger.NewLoggerWithHandler("logout"),
-	}
+	req := &requestLogoutHandler{}
 
 	req.initLogoutHandler()
 	defer req.finish()
@@ -43,7 +41,7 @@ func (req *requestLogoutHandler) initLogoutHandler() {
 	redisRepository := cache.NewRepository(cache.NewRedisCache())
 	req.cacheRepo = redisRepository
 	req.startingTime = time.Now()
-	req.log = logger.NewLogger()
+	req.log = logger.NewLoggerWithHandler("logout")
 }
 
 func (req *requestLogoutHandler) finish() {

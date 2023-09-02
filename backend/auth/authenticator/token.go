@@ -27,9 +27,7 @@ type requestTokenHandler struct {
 }
 
 func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestTokenHandler{
-		log: logger.NewLoggerWithHandler("token"),
-	}
+	req := &requestTokenHandler{}
 
 	req.initTokenHandler()
 	defer req.finish()
@@ -47,7 +45,7 @@ func (req *requestTokenHandler) initTokenHandler() {
 	req.cacheRepo = redisRepository
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLogger()
+	req.log = logger.NewLoggerWithHandler("token")
 }
 
 func (req *requestTokenHandler) finish() {

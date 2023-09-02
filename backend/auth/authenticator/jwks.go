@@ -19,9 +19,7 @@ type requestJwksHandler struct {
 }
 
 func jwksHandler(_ *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestJwksHandler{
-		log: logger.NewLogger(),
-	}
+	req := &requestJwksHandler{}
 
 	req.initJwksHandler()
 	defer req.finish()
@@ -32,7 +30,7 @@ func jwksHandler(_ *apigateway.Request) (*apigateway.Response, error) {
 func (req *requestJwksHandler) initJwksHandler() {
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLogger()
+	req.log = logger.NewLoggerWithHandler("jwks")
 }
 
 func (req *requestJwksHandler) finish() {
