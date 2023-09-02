@@ -32,10 +32,8 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-91-177-96.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-23-23-43-93.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
-
-	LogClient LogAPI
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
@@ -53,14 +51,12 @@ type LogAPI interface {
 
 type Log struct {
 	Service    string `json:"service,omitempty"`
-	Handler    string `json:"handler,omitempty"`
 	connection net.Conn
 	wg         sync.WaitGroup
 }
 
 type LogData struct {
 	Service   string                            `json:"service,omitempty"`
-	Handler   string                            `json:"handler,omitempty"`
 	Level     string                            `json:"level,omitempty"`
 	Error     string                            `json:"error,omitempty"`
 	Event     string                            `json:"event,omitempty"`
@@ -68,32 +64,21 @@ type LogData struct {
 }
 
 func NewLogger() LogAPI {
-	if LogClient != nil {
-		return LogClient
-	}
-
-	logClient := &Log{
+	return &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
 	}
-
-	LogClient = logClient
-
-	return LogClient
 }
 
 func NewLoggerWithHandler(handler string) LogAPI {
-	if LogClient != nil {
-		return LogClient
-	}
-
-	logClient := &Log{
+	l := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
-		Handler: handler,
 	}
 
-	LogClient = logClient
+	if handler != "" && l.Service != "unknown" {
+		l.Service += "-" + handler
+	}
 
-	return LogClient
+	return l
 }
 
 func (l *Log) Info(eventName string, objects []models.LoggerObject) {
@@ -142,7 +127,6 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 
 	logData := &LogData{
 		Service:   l.Service,
-		Handler:   l.Handler,
 		Event:     eventName,
 		Level:     string(level),
 		LogObject: getLogObjects(objects),
@@ -217,8 +201,6 @@ func (l *Log) Close() error {
 	if err != nil {
 		return fmt.Errorf("error closing connection to Logstash server: %w", err)
 	}
-
-	LogClient = nil
 
 	return nil
 }

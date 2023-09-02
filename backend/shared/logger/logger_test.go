@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"bytes"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -27,10 +27,6 @@ func (u *testUser) LogProperties() map[string]interface{} {
 	}
 }
 
-func init() {
-	NewLoggerMock(bytes.NewBuffer(nil))
-}
-
 func TestInfo(t *testing.T) {
 	c := require.New(t)
 
@@ -44,7 +40,7 @@ func TestInfo(t *testing.T) {
 		DayOfBirth: &dayOfBirth,
 	}
 
-	logger := NewLogger()
+	logger := NewLoggerMock(nil)
 	defer func() {
 		err = logger.Close()
 		if err != nil {
@@ -52,5 +48,5 @@ func TestInfo(t *testing.T) {
 		}
 	}()
 
-	logger.Info("test_event_emitted", user)
+	logger.Info("test_event_emitted", []models.LoggerObject{user})
 }

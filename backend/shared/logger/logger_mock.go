@@ -27,8 +27,6 @@ func NewLoggerMock(buf *bytes.Buffer) *LogMock {
 		logMock.Output = bytes.NewBuffer(nil)
 	}
 
-	LogClient = logMock
-
 	return logMock
 }
 

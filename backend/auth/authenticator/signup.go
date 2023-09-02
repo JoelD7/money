@@ -19,9 +19,7 @@ type requestSignUpHandler struct {
 }
 
 func signUpHandler(request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestSignUpHandler{
-		log: logger.NewLoggerWithHandler("sign-up"),
-	}
+	req := &requestSignUpHandler{}
 
 	req.initSignUpHandler()
 	defer req.finish()
@@ -36,7 +34,7 @@ func (req *requestSignUpHandler) initSignUpHandler() {
 
 	req.userRepo = users.NewRepository(dynamoUserRepository)
 	req.startingTime = time.Now()
-	req.log = logger.NewLogger()
+	req.log = logger.NewLoggerWithHandler("sign-up")
 }
 
 func (req *requestSignUpHandler) finish() {
