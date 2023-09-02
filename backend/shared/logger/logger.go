@@ -32,7 +32,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-146-230-244.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-91-177-96.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
@@ -42,10 +42,10 @@ var (
 )
 
 type LogAPI interface {
-	Info(eventName string, objects ...models.LoggerObject)
-	Warning(eventName string, err error, objects ...models.LoggerObject)
-	Error(eventName string, err error, objects ...models.LoggerObject)
-	Critical(eventName string, objects ...models.LoggerObject)
+	Info(eventName string, objects []models.LoggerObject)
+	Warning(eventName string, err error, objects []models.LoggerObject)
+	Error(eventName string, err error, objects []models.LoggerObject)
+	Critical(eventName string, objects []models.LoggerObject)
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
 	Close() error
 	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
@@ -96,15 +96,15 @@ func NewLoggerWithHandler(handler string) LogAPI {
 	return LogClient
 }
 
-func (l *Log) Info(eventName string, objects ...models.LoggerObject) {
+func (l *Log) Info(eventName string, objects []models.LoggerObject) {
 	l.sendLog(infoLevel, eventName, nil, objects)
 }
 
-func (l *Log) Warning(eventName string, err error, objects ...models.LoggerObject) {
+func (l *Log) Warning(eventName string, err error, objects []models.LoggerObject) {
 	l.sendLog(warningLevel, eventName, err, objects)
 }
 
-func (l *Log) Error(eventName string, err error, objects ...models.LoggerObject) {
+func (l *Log) Error(eventName string, err error, objects []models.LoggerObject) {
 	l.sendLog(errLevel, eventName, err, objects)
 }
 
@@ -117,18 +117,18 @@ func (l *Log) LogLambdaTime(startingTime time.Time, err error, panic interface{}
 	if panic != nil {
 		panicObject := getPanicObject(panic)
 
-		l.Critical("lambda_panicked", durationData, panicObject)
+		l.Critical("lambda_panicked", []models.LoggerObject{durationData, panicObject})
 		return
 	}
 
 	if err != nil {
-		l.Error("lambda_execution_finished", err, durationData)
+		l.Error("lambda_execution_finished", err, []models.LoggerObject{durationData})
 	}
 
-	l.Info("lambda_execution_finished", durationData)
+	l.Info("lambda_execution_finished", []models.LoggerObject{durationData})
 }
 
-func (l *Log) Critical(eventName string, objects ...models.LoggerObject) {
+func (l *Log) Critical(eventName string, objects []models.LoggerObject) {
 	l.sendLog(panicLevel, eventName, nil, objects)
 }
 

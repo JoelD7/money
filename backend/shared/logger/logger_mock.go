@@ -32,19 +32,19 @@ func NewLoggerMock(buf *bytes.Buffer) *LogMock {
 	return logMock
 }
 
-func (l *LogMock) Info(eventName string, objects ...models.LoggerObject) {
+func (l *LogMock) Info(eventName string, objects []models.LoggerObject) {
 	_, _ = l.Output.Write([]byte(eventName))
 }
-func (l *LogMock) Warning(eventName string, err error, objects ...models.LoggerObject) {
+func (l *LogMock) Warning(eventName string, err error, objects []models.LoggerObject) {
 	_, _ = l.Output.Write([]byte(eventName))
 	_, _ = l.Output.Write([]byte(err.Error()))
 }
-func (l *LogMock) Error(eventName string, err error, objects ...models.LoggerObject) {
+func (l *LogMock) Error(eventName string, err error, objects []models.LoggerObject) {
 	_, _ = l.Output.Write([]byte(eventName))
 	_, _ = l.Output.Write([]byte(err.Error()))
 }
 
-func (l *LogMock) Critical(eventName string, objects ...models.LoggerObject) {
+func (l *LogMock) Critical(eventName string, objects []models.LoggerObject) {
 	_, _ = l.Output.Write([]byte(eventName))
 }
 func (*LogMock) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {}

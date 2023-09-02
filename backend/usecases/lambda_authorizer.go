@@ -35,14 +35,14 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 	return func(ctx context.Context, token string) (string, error) {
 		payload, err := getTokenPayload(token)
 		if err != nil {
-			logger.Error("getting_token_payload_failed", err)
+			logger.Error("getting_token_payload_failed", err, nil)
 
 			return "", fmt.Errorf("%v: %w", err, models.ErrUnauthorized)
 		}
 
 		response, err := jwksGetter.Get(payload.Issuer + "/auth/jwks")
 		if err != nil {
-			logger.Error("getting_jwks_failed", err)
+			logger.Error("getting_jwks_failed", err, nil)
 
 			return "", err
 		}
@@ -50,7 +50,7 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 		defer func() {
 			closeErr := response.Body.Close()
 			if closeErr != nil {
-				logger.Error("closing_response_body_failed", closeErr)
+				logger.Error("closing_response_body_failed", closeErr, nil)
 
 				err = closeErr
 			}
@@ -59,14 +59,14 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 		jwksVal := new(models.Jwks)
 		err = json.NewDecoder(response.Body).Decode(jwksVal)
 		if err != nil {
-			logger.Error("decoding_response_body_failed", err)
+			logger.Error("decoding_response_body_failed", err, nil)
 
 			return "", err
 		}
 
 		publicKey, err := getPublicKeyFromJWKS(jwksVal, secretManager)
 		if err != nil {
-			logger.Error("getting_public_key_failed", err)
+			logger.Error("getting_public_key_failed", err, nil)
 
 			return "", err
 		}
@@ -76,17 +76,18 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 
 		err = validateJWTPayload(token, receivedPayload, decryptingHash)
 		if err != nil {
-			logger.Error("jwt_validation_failed", err)
+			logger.Error("jwt_validation_failed", err, nil)
 
 			return "", err
 		}
 
 		err = compareAccessTokenAgainstBlacklistRedis(ctx, tokenCache, logger, payload.Subject, token)
 		if errors.Is(err, models.ErrInvalidToken) {
-			logger.Warning("blacklisted_token_use_detected", err,
+			logger.Warning("blacklisted_token_use_detected", err, []models.LoggerObject{
 				logger.MapToLoggerObject("token", map[string]interface{}{
 					"s_value": token,
 				}),
+			},
 			)
 		}
 
@@ -179,10 +180,12 @@ func compareAccessTokenAgainstBlacklistRedis(ctx context.Context, tokenCache Inv
 		err = hash.CompareWithToken(it.Token, token)
 		if err == nil {
 			logger.Warning("invalid_token_use_detected", models.ErrInvalidToken,
-				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
+				[]models.LoggerObject{
+					logger.MapToLoggerObject("token_comparison", map[string]interface{}{
+						"s_bearer_token":             token,
+						"s_saved_invalid_token_hash": it.Token,
+					}),
+				},
 			)
 
 			return models.ErrInvalidToken
@@ -190,10 +193,12 @@ func compareAccessTokenAgainstBlacklistRedis(ctx context.Context, tokenCache Inv
 
 		if !errors.Is(err, hash.ErrHashMismatch) {
 			logger.Error("token_comparison_against_blacklist_failed", err,
-				logger.MapToLoggerObject("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
+				[]models.LoggerObject{
+					logger.MapToLoggerObject("token_comparison", map[string]interface{}{
+						"s_bearer_token":             token,
+						"s_saved_invalid_token_hash": it.Token,
+					}),
+				},
 			)
 		}
 	}

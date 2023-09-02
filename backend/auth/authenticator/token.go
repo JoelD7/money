@@ -97,7 +97,7 @@ func (req *requestTokenHandler) processToken(request *apigateway.Request) (*apig
 		},
 	}
 
-	req.log.Info("new_tokens_issued_successfully", user)
+	req.log.Info("new_tokens_issued_successfully", []models.LoggerObject{user})
 
 	return &apigateway.Response{
 		StatusCode:        http.StatusOK,
