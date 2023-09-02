@@ -6,7 +6,6 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/JoelD7/money/backend/shared/apigateway"
@@ -50,10 +49,9 @@ func TestLoginHandler(t *testing.T) {
 
 	response, err := request.processLogin(apigwRequest)
 	c.Equal(http.StatusOK, response.StatusCode)
-	c.NotNil(response.MultiValueHeaders["Set-Cookie"])
-	c.Len(response.MultiValueHeaders["Set-Cookie"], 2)
-	c.Contains(strings.Join(response.MultiValueHeaders["Set-Cookie"], " "), accessTokenCookieName)
-	c.Contains(strings.Join(response.MultiValueHeaders["Set-Cookie"], " "), refreshTokenCookieName)
+	c.NotNil(response.Headers["Set-Cookie"])
+	c.Contains(response.Headers["Set-Cookie"], refreshTokenCookieName)
+	c.Contains(response.Body, "access_token")
 }
 
 func TestLoginHandlerFailed(t *testing.T) {

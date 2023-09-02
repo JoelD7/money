@@ -21,6 +21,10 @@ type requestLoginHandler struct {
 	secretsManager secrets.SecretManager
 }
 
+type accessTokenResponse struct {
+	AccessToken string `json:"access_token"`
+}
+
 func logInHandler(request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestLoginHandler{
 		log: logger.NewLoggerWithHandler("log-in"),
@@ -73,19 +77,23 @@ func (req *requestLoginHandler) processLogin(request *apigateway.Request) (*apig
 		return getErrorResponse(err)
 	}
 
-	setCookieHeader := map[string][]string{
-		"Set-Cookie": {
-			fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", accessTokenCookieName, accessToken.Value,
-				accessToken.Expiration.Format(time.RFC1123)),
-			fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
-				refreshToken.Expiration.Format(time.RFC1123)),
-		},
+	response := &accessTokenResponse{accessToken.Value}
+
+	data, err := json.Marshal(response)
+	if err != nil {
+		return getErrorResponse(err)
+	}
+
+	setCookieHeader := map[string]string{
+		"Set-Cookie": fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
+			refreshToken.Expiration.Format(time.RFC1123)),
 	}
 
 	req.log.Info("login_succeeded", nil)
 
 	return &apigateway.Response{
-		StatusCode:        http.StatusOK,
-		MultiValueHeaders: setCookieHeader,
+		StatusCode: http.StatusOK,
+		Body:       string(data),
+		Headers:    setCookieHeader,
 	}, nil
 }
