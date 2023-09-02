@@ -28,7 +28,7 @@ func (u *testUser) LogProperties() map[string]interface{} {
 }
 
 func init() {
-	InitLoggerMock(bytes.NewBuffer(nil))
+	NewLoggerMock(bytes.NewBuffer(nil))
 }
 
 func TestInfo(t *testing.T) {
@@ -52,5 +52,5 @@ func TestInfo(t *testing.T) {
 		}
 	}()
 
-	logger.Info("test_event_emitted", []Object{user})
+	logger.Info("test_event_emitted", user)
 }

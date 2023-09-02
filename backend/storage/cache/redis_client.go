@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/redis/go-redis/v9"
 	"time"
@@ -13,8 +14,6 @@ var (
 	redisClient RedisAPI
 
 	redisURL = env.GetString("REDIS_URL", "redis://default:810cc997ccd745debfbbdb567631a5c2@us1-polished-shrew-39844.upstash.io:39844")
-
-	ErrNotFound = errors.New("cache: key not found")
 )
 
 const (
@@ -43,7 +42,7 @@ func init() {
 func (rc *RedisClient) Get(ctx context.Context, key string) (string, error) {
 	value, err := rc.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
-		return "", ErrNotFound
+		return "", models.ErrInvalidTokensNotFound
 	}
 
 	backoff := time.Second * 2

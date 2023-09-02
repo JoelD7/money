@@ -21,16 +21,11 @@ func NewErrorResponse(err error) *Response {
 		return NewJSONResponse(knownError.HTTPCode, knownError)
 	}
 
-	return NewJSONResponse(ErrInternalError.HTTPCode, ErrInternalError)
+	return NewJSONResponse(ErrInternalError.HTTPCode, ErrInternalError.Message)
 }
 
 // NewJSONResponse creates a new JSON response given a serializable `v`
 func NewJSONResponse(statusCode int, v interface{}) *Response {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return NewErrorResponse(errors.New("failed to marshal response"))
-	}
-
 	headers := map[string]string{
 		"Content-Type":                "application/json",
 		"Access-Control-Allow-Origin": origin,
@@ -41,6 +36,20 @@ func NewJSONResponse(statusCode int, v interface{}) *Response {
 
 	if origin != "*" {
 		headers["Access-Control-Allow-Credentials"] = "true"
+	}
+
+	strData, ok := v.(string)
+	if ok {
+		return &Response{
+			StatusCode: statusCode,
+			Body:       strData,
+			Headers:    headers,
+		}
+	}
+
+	data, err := json.Marshal(v)
+	if err != nil {
+		return NewErrorResponse(errors.New("failed to marshal response"))
 	}
 
 	return &Response{

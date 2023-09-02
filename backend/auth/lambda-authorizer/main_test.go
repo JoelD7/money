@@ -1,24 +1,16 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"github.com/JoelD7/money/backend/shared/cache"
-	"testing"
-	"time"
-
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/restclient"
-	secretsMock "github.com/JoelD7/money/backend/shared/secrets/mocks"
+	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
-)
-
-var (
-	secretMock *secretsMock.MockSecret
-	logMock    *logger.LogMock
+	"testing"
 )
 
 const (
@@ -27,35 +19,54 @@ const (
 )
 
 func init() {
-	cache.InitRedisMock()
-	restclient.InitMockClient()
-	logMock = logger.InitLoggerMock(bytes.NewBuffer(nil))
-
-	secretMock = secretsMock.InitSecretMock()
-
-	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
-		return "123", nil
-	})
+	restclient.NewMockRestClient()
 }
 
 func TestHandleRequest(t *testing.T) {
 	c := require.New(t)
 
-	_ = invalidtoken.InitDynamoMock()
+	mockRestClient := restclient.NewMockRestClient()
+	redisRepository := cache.NewRepository(cache.NewRedisCacheMock())
+	secretMock := secrets.NewSecretMock()
+	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
+
+	req := &request{
+		cacheRepo:      redisRepository,
+		secretsManager: secretMock,
+		client:         mockRestClient,
+		log:            logMock,
+	}
 
 	event := dummyHandlerEvent()
 
-	err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", jwtIssuer+"/auth/jwks", restclient.MethodGET)
+	err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 	c.Nil(err)
 
-	_, err = handleRequest(context.Background(), event)
+	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
+		return "123", nil
+	})
+
+	response, err := req.process(ctx, event)
 	c.Nil(err)
+	c.Equal(Allow.String(), response.PolicyDocument.Statement[0].Effect)
 }
 
 func TestHandlerError(t *testing.T) {
 	c := require.New(t)
 
-	cache.InitRedisMock()
+	mockRestClient := restclient.NewMockRestClient()
+	redisRepository := cache.NewRepository(cache.NewRedisCacheMock())
+	secretMock := secrets.NewSecretMock()
+	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
+
+	req := &request{
+		cacheRepo:      redisRepository,
+		secretsManager: secretMock,
+		client:         mockRestClient,
+		log:            logMock,
+	}
 
 	event := dummyHandlerEvent()
 	ogToken := event.AuthorizationToken
@@ -63,18 +74,18 @@ func TestHandlerError(t *testing.T) {
 	t.Run("Invalid token length", func(t *testing.T) {
 		event.AuthorizationToken = "dummy"
 
-		_, err := handleRequest(context.Background(), event)
-		c.ErrorIs(err, errUnauthorized)
-		c.Contains(logMock.Output.String(), "invalid_token_length_detected")
+		_, err := req.process(ctx, event)
+		c.ErrorIs(err, models.ErrUnauthorized)
+		c.Contains(logMock.Output.String(), "getting_token_payload_failed")
 		logMock.Output.Reset()
 	})
 
 	t.Run("Payload decoding failed", func(t *testing.T) {
 		event.AuthorizationToken = "Bearer dummy.dummy.token"
 
-		_, err := handleRequest(context.Background(), event)
-		c.ErrorIs(err, errUnauthorized)
-		c.Contains(logMock.Output.String(), "payload_decoding_failed")
+		_, err := req.process(ctx, event)
+		c.ErrorIs(err, models.ErrUnauthorized)
+		c.Contains(logMock.Output.String(), "getting_token_payload_failed")
 		logMock.Output.Reset()
 	})
 
@@ -83,55 +94,48 @@ func TestHandlerError(t *testing.T) {
 			return "456", nil
 		})
 
-		err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", jwtIssuer+"/auth/jwks", restclient.MethodGET)
+		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 		c.Nil(err)
 
 		event.AuthorizationToken = ogToken
-		response, err := handleRequest(context.Background(), event)
+		response, err := req.process(ctx, event)
 		c.Nil(err)
 		c.NotNil(response.Context["stringKey"])
-		c.Equal(errSigningKeyNotFound.Error(), response.Context["stringKey"])
-		c.Contains(logMock.Output.String(), "signing_key_not_found")
+		c.Equal(models.ErrSigningKeyNotFound.Error(), response.Context["stringKey"])
+		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
+		c.Contains(logMock.Output.String(), "getting_public_key_failed")
 		logMock.Output.Reset()
 	})
 
 	t.Run("Getting public key failed", func(t *testing.T) {
-		secretMock.ActivateForceFailure(secretsMock.SecretsError)
+		secretMock.ActivateForceFailure(secrets.SecretsError)
 		defer secretMock.DeactivateForceFailure()
 
 		secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
 			return "123", nil
 		})
 
-		err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", jwtIssuer+"/auth/jwks", restclient.MethodGET)
+		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 		c.Nil(err)
 
-		response, err := handleRequest(context.Background(), event)
-		c.Equal(secretsMock.ErrForceFailure.Error(), response.Context["stringKey"])
+		response, err := req.process(ctx, event)
+		c.Nil(err)
+		c.Equal(secrets.ErrForceFailure.Error(), response.Context["stringKey"])
+		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
 		c.Contains(logMock.Output.String(), "getting_public_key_failed")
 		logMock.Output.Reset()
 	})
 
 	t.Run("Invalid token detected", func(t *testing.T) {
-		itMock := invalidtoken.InitDynamoMock()
-
-		err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", jwtIssuer+"/auth/jwks", restclient.MethodGET)
+		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 		c.Nil(err)
 
-		invalidToken := &models.InvalidToken{
-			Token:       authTokenHash,
-			Expire:      time.Now().Add(time.Hour * 1).Unix(),
-			CreatedDate: time.Now(),
-		}
-
-		err = itMock.MockQueryFromSource(invalidToken)
+		err = redisRepository.AddInvalidToken(ctx, "test@gmail.com", authTokenHash, 0)
 		c.Nil(err)
 
-		err = cache.AddInvalidToken(context.Background(), "test@gmail.com", authTokenHash, 0)
+		response, err := req.process(ctx, event)
 		c.Nil(err)
-
-		_, err = handleRequest(context.Background(), event)
-		c.Nil(err)
+		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
 		c.Contains(logMock.Output.String(), "invalid_token_use_detected")
 		logMock.Output.Reset()
 	})
@@ -139,13 +143,14 @@ func TestHandlerError(t *testing.T) {
 	t.Run("JWT verification failed", func(t *testing.T) {
 		_ = invalidtoken.InitDynamoMock()
 
-		err := restclient.AddMockedResponseFromFile("samples/jwks_response.json", jwtIssuer+"/auth/jwks", restclient.MethodGET)
+		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 		c.Nil(err)
 
 		event.AuthorizationToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2MjM5MDIyLCJpc3MiOiJodHRwczovLzM4cXNscGU4ZDkuZXhlY3V0ZS1hcGkudXMtZWFzdC0xLmFtYXpvbmF3cy5jb20vc3RhZ2luZyJ9.uOmHNc9EwOQvu6qfeksVaDuqy4t8TmIGgoECUpPONnennzeDP-DgfH__kwwazENCRtjy75lbI7wbOdQjFL7qrcjopvF9NR4Ygf1S3nqPeCs4Db_i2XqD8KMzNEm8JxJ6iwJRZ26NrZEgrXIvJapBJ-JTaWKjKZdKYi5jjvVmrMNbvvDP-ZjUuOfFYrKWXZeyIhYT2YK3tdx48-dZn7JwWoGWZPAei99Fw-QzbGk9gaGOjv119-4JLVUfRDGOwibD4eGgoRQn3VZHgFwW-8cJod6XoQcmTuq_jHDRa28jwMIob6XGtMyMGqW5SNvhO6JigtmeaPY9jqLVdbXY_oGWbA"
 
-		_, err = handleRequest(context.Background(), event)
+		response, err := req.process(ctx, event)
 		c.Nil(err)
+		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
 		c.Contains(logMock.Output.String(), "jwt_validation_failed")
 		logMock.Output.Reset()
 	})

@@ -1,9 +1,8 @@
-package mocks
+package secrets
 
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/backend/shared/secrets"
 )
 
 type FailureCondition string
@@ -25,15 +24,13 @@ var (
 	ErrForceFailure = errors.New("mocks/secrets: force failure")
 )
 
-func InitSecretMock() *MockSecret {
+func NewSecretMock() *MockSecret {
 	mock := &MockSecret{
 		secretResponders: make(map[string]func(ctx context.Context, name string) (string, error)),
 		emulatingErrors: map[FailureCondition]error{
 			SecretsError: ErrForceFailure,
 		},
 	}
-
-	secrets.SecretClient = mock
 
 	return mock
 }
@@ -53,7 +50,7 @@ func (m *MockSecret) GetSecret(ctx context.Context, name string) (string, error)
 
 	responder, ok := m.secretResponders[name]
 	if !ok {
-		panic(errResponderNotRegistered)
+		return "", errResponderNotRegistered
 	}
 
 	return responder(ctx, name)
@@ -65,4 +62,8 @@ func (m *MockSecret) RegisterResponder(secretName string, responder func(ctx con
 	}
 
 	m.secretResponders[secretName] = responder
+}
+
+func (m *MockSecret) UnregisterResponder(secretName string) {
+	delete(m.secretResponders, secretName)
 }

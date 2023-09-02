@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"log"
 	"net"
@@ -31,7 +32,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-227-21-142.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-91-177-96.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	LogClient LogAPI
@@ -40,18 +41,14 @@ var (
 	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
-type Object interface {
-	LogName() string
-	LogProperties() map[string]interface{}
-}
-
 type LogAPI interface {
-	Info(eventName string, objects []Object)
-	Warning(eventName string, err error, objects []Object)
-	Error(eventName string, err error, objects []Object)
-	Critical(eventName string, objects []Object)
+	Info(eventName string, objects []models.LoggerObject)
+	Warning(eventName string, err error, objects []models.LoggerObject)
+	Error(eventName string, err error, objects []models.LoggerObject)
+	Critical(eventName string, objects []models.LoggerObject)
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
 	Close() error
+	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
 }
 
 type Log struct {
@@ -99,43 +96,43 @@ func NewLoggerWithHandler(handler string) LogAPI {
 	return LogClient
 }
 
-func (l *Log) Info(eventName string, objects []Object) {
+func (l *Log) Info(eventName string, objects []models.LoggerObject) {
 	l.sendLog(infoLevel, eventName, nil, objects)
 }
 
-func (l *Log) Warning(eventName string, err error, objects []Object) {
+func (l *Log) Warning(eventName string, err error, objects []models.LoggerObject) {
 	l.sendLog(warningLevel, eventName, err, objects)
 }
 
-func (l *Log) Error(eventName string, err error, objects []Object) {
+func (l *Log) Error(eventName string, err error, objects []models.LoggerObject) {
 	l.sendLog(errLevel, eventName, err, objects)
 }
 
 func (l *Log) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
 	duration := time.Since(startingTime).Seconds()
-	durationData := MapToLoggerObject("duration_data", map[string]interface{}{
+	durationData := l.MapToLoggerObject("duration_data", map[string]interface{}{
 		"f_duration": duration,
 	})
 
 	if panic != nil {
 		panicObject := getPanicObject(panic)
 
-		l.Critical("lambda_panicked", []Object{durationData, panicObject})
+		l.Critical("lambda_panicked", []models.LoggerObject{durationData, panicObject})
 		return
 	}
 
 	if err != nil {
-		l.Error("lambda_execution_finished", err, []Object{durationData})
+		l.Error("lambda_execution_finished", err, []models.LoggerObject{durationData})
 	}
 
-	l.Info("lambda_execution_finished", []Object{durationData})
+	l.Info("lambda_execution_finished", []models.LoggerObject{durationData})
 }
 
-func (l *Log) Critical(eventName string, objects []Object) {
+func (l *Log) Critical(eventName string, objects []models.LoggerObject) {
 	l.sendLog(panicLevel, eventName, nil, objects)
 }
 
-func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []Object) {
+func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) {
 	err := l.connect()
 	if err != nil {
 		errorLogger.Println(fmt.Errorf("error connecting to Logstash server: %w", err))
@@ -226,14 +223,14 @@ func (l *Log) Close() error {
 	return nil
 }
 
-func MapToLoggerObject(name string, m map[string]interface{}) Object {
+func (l *Log) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject {
 	return &ObjectWrapper{
 		name:       name,
 		properties: m,
 	}
 }
 
-func getLogObjects(objects []Object) map[string]map[string]interface{} {
+func getLogObjects(objects []models.LoggerObject) map[string]map[string]interface{} {
 	lObjects := make(map[string]map[string]interface{})
 
 	for _, object := range objects {
@@ -243,7 +240,7 @@ func getLogObjects(objects []Object) map[string]map[string]interface{} {
 	return lObjects
 }
 
-func getPanicObject(panic interface{}) Object {
+func getPanicObject(panic interface{}) models.LoggerObject {
 	clean := stackCleaner.FindAll(debug.Stack(), -1)
 
 	return &ObjectWrapper{

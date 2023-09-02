@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
@@ -13,20 +14,20 @@ import (
 	"testing"
 )
 
-var (
-	logMock *logger.LogMock
-)
-
-func init() {
-	logMock = logger.InitLoggerMock(nil)
-}
-
 func TestHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
-	usersMock := users.InitDynamoMock()
-	income.InitDynamoMock()
-	expenses.InitDynamoMock()
+	usersMock := users.NewDynamoMock()
+	expensesMock := expenses.NewDynamoMock()
+	incomeMock := income.NewDynamoMock()
+	logMock := logger.NewLoggerMock(nil)
+
+	request := &userRequest{
+		userRepo:     users.NewRepository(usersMock),
+		expensesRepo: expenses.NewRepository(expensesMock),
+		incomeRepo:   income.NewRepository(incomeMock),
+		log:          logMock,
+	}
 
 	apigwRequest := &apigateway.Request{
 		RequestContext: events.APIGatewayProxyRequestContext{},
@@ -36,34 +37,41 @@ func TestHandlerSuccess(t *testing.T) {
 	}
 
 	t.Run("Happy path", func(t *testing.T) {
-		response, err := handler(apigwRequest)
+		response, err := request.process(apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
 		c.Contains(response.Body, `"remainder":8670`)
 	})
 
-	t.Run("Remainder -1", func(t *testing.T) {
-		mockedUser := users.GetMockedUser()
+	t.Run("No remainder set", func(t *testing.T) {
+		mockedUser := users.GetDummyUser()
 		mockedUser.CurrentPeriod = ""
 
-		err := usersMock.MockQueryFromSource(mockedUser)
-		c.Nil(err)
+		usersMock.SetMockedUser(mockedUser)
 
-		response, err := handler(apigwRequest)
+		response, err := request.process(apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
-		c.Contains(response.Body, `"remainder":-1`)
+		c.NotContains(response.Body, "remainder")
 	})
 }
 
 func TestHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	usersMock := users.InitDynamoMock()
-	incomeMock := income.InitDynamoMock()
-	expensesMock := expenses.InitDynamoMock()
+	usersMock := users.NewDynamoMock()
+	expensesMock := expenses.NewDynamoMock()
+	incomeMock := income.NewDynamoMock()
+	logMock := logger.NewLoggerMock(nil)
+
+	request := &userRequest{
+		userRepo:     users.NewRepository(usersMock),
+		expensesRepo: expenses.NewRepository(expensesMock),
+		incomeRepo:   income.NewRepository(incomeMock),
+		log:          logMock,
+	}
 
 	apigwRequest := &apigateway.Request{
 		RequestContext: events.APIGatewayProxyRequestContext{},
@@ -76,7 +84,7 @@ func TestHandlerFailed(t *testing.T) {
 		usersMock.ActivateForceFailure(errors.New("get user failed"))
 		defer usersMock.DeactivateForceFailure()
 
-		response, err := handler(apigwRequest)
+		response, err := request.process(apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
@@ -85,23 +93,23 @@ func TestHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("User not found", func(t *testing.T) {
-		usersMock.EmptyTable()
-		defer usersMock.RefillTable()
+		usersMock.SetMockedUser(nil)
+		defer usersMock.SetMockedUser(users.GetDummyUser())
 
-		response, err := handler(apigwRequest)
+		response, err := request.process(apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "user_fetching_failed")
-		c.Contains(logMock.Output.String(), users.ErrNotFound.Error())
+		c.Contains(logMock.Output.String(), models.ErrUserNotFound.Error())
 		logMock.Output.Reset()
 	})
 
 	t.Run("Income not found", func(t *testing.T) {
-		incomeMock.EmptyTable()
-		defer incomeMock.RefillTable()
+		incomeMock.SetMockedIncome(nil)
+		defer incomeMock.SetMockedIncome(income.GetDummyIncome())
 
-		response, err := handler(apigwRequest)
+		response, err := request.process(apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
@@ -111,10 +119,10 @@ func TestHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Expense not found", func(t *testing.T) {
-		expensesMock.EmptyTable()
-		defer expensesMock.RefillTable()
+		expensesMock.SetMockedExpenses(nil)
+		defer expensesMock.SetMockedExpenses(expenses.GetDummyExpenses())
 
-		response, err := handler(apigwRequest)
+		response, err := request.process(apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)

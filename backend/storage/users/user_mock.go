@@ -2,11 +2,7 @@ package users
 
 import (
 	"context"
-	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 const (
@@ -23,35 +19,59 @@ var (
 var mockedPerson *models.User
 
 type DynamoMock struct {
-	GetItemOutput *dynamodb.GetItemOutput
-	QueryOutput   *dynamodb.QueryOutput
-	PutItemOutput *dynamodb.PutItemOutput
-
-	mockedErr error
+	mockedErr  error
+	mockedUser *models.User
 }
 
-func InitDynamoMock() *DynamoMock {
-	mockedPerson = GetMockedUser()
+func NewDynamoMock() *DynamoMock {
+	return &DynamoMock{
+		mockedUser: GetDummyUser(),
+		mockedErr:  nil,
+	}
+}
 
-	item, err := attributevalue.MarshalMap(mockedPerson)
-	if err != nil {
-		panic(fmt.Errorf("invalid_token Dynamo mock cannot be initialized: %v", err))
+func (d *DynamoMock) SetMockedUser(user *models.User) {
+	d.mockedUser = user
+}
+
+func (d *DynamoMock) createUser(ctx context.Context, fullName, email, password string) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
 	}
 
-	mock := &DynamoMock{
-		GetItemOutput: &dynamodb.GetItemOutput{
-			Item: item,
-		},
-		QueryOutput: &dynamodb.QueryOutput{
-			Items: []map[string]types.AttributeValue{item},
-		},
-		PutItemOutput: &dynamodb.PutItemOutput{},
-		mockedErr:     nil,
+	return nil
+}
+
+func (d *DynamoMock) getUser(ctx context.Context, userID string) (*models.User, error) {
+	if d.mockedErr != nil {
+		return nil, d.mockedErr
 	}
 
-	DefaultClient = mock
+	if d.mockedUser == nil {
+		return nil, models.ErrUserNotFound
+	}
 
-	return mock
+	return d.mockedUser, nil
+}
+
+func (d *DynamoMock) getUserByEmail(ctx context.Context, email string) (*models.User, error) {
+	if d.mockedErr != nil {
+		return nil, d.mockedErr
+	}
+
+	if d.mockedUser == nil {
+		return nil, models.ErrUserNotFound
+	}
+
+	return d.mockedUser, nil
+}
+
+func (d *DynamoMock) updateUser(ctx context.Context, user *models.User) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
+	}
+
+	return nil
 }
 
 // ActivateForceFailure makes any of the Dynamo operations fail with the specified error.
@@ -66,87 +86,8 @@ func (d *DynamoMock) DeactivateForceFailure() {
 	d.mockedErr = nil
 }
 
-func (d *DynamoMock) GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
-	if d.mockedErr != nil {
-		return &dynamodb.GetItemOutput{}, d.mockedErr
-	}
-
-	return d.GetItemOutput, nil
-}
-
-func (d *DynamoMock) Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
-	if d.mockedErr != nil {
-		return &dynamodb.QueryOutput{}, d.mockedErr
-	}
-
-	return d.QueryOutput, nil
-}
-
-func (d *DynamoMock) PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
-	if d.mockedErr != nil {
-		return &dynamodb.PutItemOutput{}, d.mockedErr
-	}
-
-	return d.PutItemOutput, nil
-}
-
-// MockGetItemFromSource mocks the response of the Dynamo DB's GetItem operation using source as the returned item.
-func (d *DynamoMock) MockGetItemFromSource(source interface{}) error {
-	item, err := attributevalue.MarshalMap(source)
-	if err != nil {
-		return err
-	}
-
-	d.GetItemOutput = &dynamodb.GetItemOutput{
-		Item: item,
-	}
-
-	return nil
-}
-
-// MockQueryFromSource mocks the response of the Dynamo DB's Query operation using source as the returned item.
-func (d *DynamoMock) MockQueryFromSource(source interface{}) error {
-	item, err := attributevalue.MarshalMap(source)
-	if err != nil {
-		return err
-	}
-
-	d.QueryOutput = &dynamodb.QueryOutput{
-		Items: []map[string]types.AttributeValue{item},
-	}
-
-	return nil
-}
-
-// EmptyTable makes the mocked table to be empty
-func (d *DynamoMock) EmptyTable() {
-	d.QueryOutput = &dynamodb.QueryOutput{
-		Items: []map[string]types.AttributeValue{},
-	}
-
-	d.GetItemOutput = &dynamodb.GetItemOutput{}
-}
-
-// RefillTable fills the table with the default items. This method should be called in a defer statement after EmtpyTable()
-func (d *DynamoMock) RefillTable() {
-	mockedPerson = GetMockedUser()
-
-	item, err := attributevalue.MarshalMap(mockedPerson)
-	if err != nil {
-		panic(fmt.Errorf("users_mock table cannot be refilled: %v", err))
-	}
-
-	d.GetItemOutput = &dynamodb.GetItemOutput{
-		Item: item,
-	}
-
-	d.QueryOutput = &dynamodb.QueryOutput{
-		Items: []map[string]types.AttributeValue{item},
-	}
-}
-
-// GetMockedUser returns the mock item for the user table
-func GetMockedUser() *models.User {
+// GetDummyUser returns the mock item for the user table
+func GetDummyUser() *models.User {
 	return &models.User{
 		UserID:        "123",
 		FullName:      "Joel",
