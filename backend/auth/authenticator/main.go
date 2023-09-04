@@ -30,6 +30,7 @@ var (
 		models.ErrExistingUser:          {HTTPCode: http.StatusBadRequest, Message: models.ErrExistingUser.Error()},
 		models.ErrUserNotFound:          {HTTPCode: http.StatusBadRequest, Message: models.ErrUserNotFound.Error()},
 		models.ErrWrongCredentials:      {HTTPCode: http.StatusBadRequest, Message: models.ErrWrongCredentials.Error()},
+		errCookiesNotFound:              {HTTPCode: http.StatusBadRequest, Message: ""},
 	}
 )
 
