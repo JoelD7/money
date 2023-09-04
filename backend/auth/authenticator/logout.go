@@ -2,8 +2,7 @@ package main
 
 import (
 	"context"
-	"errors"
-	"github.com/JoelD7/money/backend/models"
+	"fmt"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/cache"
@@ -63,21 +62,25 @@ func (req *requestLogoutHandler) processLogout(request *apigateway.Request) (*ap
 
 	logout := usecases.NewUserLogout(req.userRepo, req.cacheRepo, req.log)
 	err = logout(ctx, req.RefreshToken)
-	if errors.Is(err, models.ErrInvalidToken) {
+	if err != nil {
 		req.err = err
-		req.log.Error("token_payload_parse_failed", err, nil)
+		req.log.Error("logout_failed", err, nil)
 
 		return getErrorResponse(err)
 	}
 
-	if err != nil {
-		req.err = err
-		req.log.Error("token_payload_parse_failed", err, nil)
-
-		return getErrorResponse(err)
+	setCookieHeader := map[string]string{
+		"Set-Cookie": getExpiredRefreshTokenCookie(),
 	}
 
 	return &apigateway.Response{
 		StatusCode: http.StatusOK,
+		Headers:    setCookieHeader,
 	}, nil
+}
+
+func getExpiredRefreshTokenCookie() string {
+	t := time.Date(1970, 1, 1, 1, 0, 0, 0, time.UTC)
+
+	return fmt.Sprintf("%s=; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, t.Format(time.RFC1123))
 }
