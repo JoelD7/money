@@ -34,7 +34,8 @@ type AuthorizerResponse struct {
 	APIID string
 
 	// The name of the stage used in the policy. By default this is set to '*'
-	Stage string
+	Stage    string
+	Resource string
 }
 
 const (
@@ -56,6 +57,8 @@ const (
 var (
 	kidSecretName = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 	awsRegion     = env.GetString("REGION", "us-east-1")
+
+	errUserNotAuthorized = errors.New("access to this user's data is forbidden")
 )
 
 type request struct {
@@ -121,9 +124,29 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 	resp.Region = tmp[3]
 	resp.APIID = apiGatewayArnTmp[0]
 	resp.Stage = apiGatewayArnTmp[1]
+
+	err = req.verifyUserRequest(resp, apiGatewayArnTmp)
+	if err != nil {
+		return defaultDenyAllPolicy(event.MethodArn, err), nil
+	}
+
 	resp.AllowAllMethods()
 
 	return resp.APIGatewayCustomAuthorizerResponse, nil
+}
+
+func (req *request) verifyUserRequest(resp *AuthorizerResponse, apiGatewayArnTmp []string) error {
+	if len(apiGatewayArnTmp) < 5 {
+		return nil
+	}
+
+	userID := apiGatewayArnTmp[4]
+
+	if resp.PrincipalID != userID {
+		return errUserNotAuthorized
+	}
+
+	return nil
 }
 
 func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAuthorizerResponse {
