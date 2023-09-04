@@ -64,7 +64,7 @@ var (
 type request struct {
 	log            logger.LogAPI
 	secretsManager secrets.SecretManager
-	cacheRepo      *cache.Repository
+	cacheRepo      cache.InvalidTokenManager
 	startingTime   time.Time
 	client         restclient.HttpClient
 	err            error
@@ -72,8 +72,7 @@ type request struct {
 
 func (req *request) init() {
 	req.startingTime = time.Now()
-	redisRepository := cache.NewRepository(cache.NewRedisCache())
-	req.cacheRepo = redisRepository
+	req.cacheRepo = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.client = restclient.New()
 }

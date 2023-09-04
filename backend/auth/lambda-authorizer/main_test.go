@@ -26,13 +26,13 @@ func TestHandleRequest(t *testing.T) {
 	c := require.New(t)
 
 	mockRestClient := restclient.NewMockRestClient()
-	redisRepository := cache.NewRepository(cache.NewRedisCacheMock())
+	cacheMock := cache.NewRedisCacheMock()
 	secretMock := secrets.NewSecretMock()
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
 	req := &request{
-		cacheRepo:      redisRepository,
+		cacheRepo:      cacheMock,
 		secretsManager: secretMock,
 		client:         mockRestClient,
 		log:            logMock,
@@ -56,13 +56,13 @@ func TestHandlerError(t *testing.T) {
 	c := require.New(t)
 
 	mockRestClient := restclient.NewMockRestClient()
-	redisRepository := cache.NewRepository(cache.NewRedisCacheMock())
+	cacheMock := cache.NewRedisCacheMock()
 	secretMock := secrets.NewSecretMock()
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
 	req := &request{
-		cacheRepo:      redisRepository,
+		cacheRepo:      cacheMock,
 		secretsManager: secretMock,
 		client:         mockRestClient,
 		log:            logMock,
@@ -130,8 +130,10 @@ func TestHandlerError(t *testing.T) {
 		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 		c.Nil(err)
 
-		err = redisRepository.AddInvalidToken(ctx, "test@gmail.com", authTokenHash, 0)
+		err = cacheMock.AddInvalidToken(ctx, "test@gmail.com", authTokenHash, 0)
 		c.Nil(err)
+
+		defer cacheMock.DeleteInvalidToken("test@gmail.com")
 
 		response, err := req.process(ctx, event)
 		c.Nil(err)
@@ -158,6 +160,8 @@ func TestHandlerError(t *testing.T) {
 	t.Run("User tries to access other users data", func(t *testing.T) {
 		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 		c.Nil(err)
+
+		event = dummyHandlerEvent()
 
 		secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
 			return "123", nil
