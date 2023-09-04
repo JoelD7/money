@@ -18,12 +18,12 @@ import (
 type requestTokenHandler struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
 
-	log            logger.LogAPI
-	startingTime   time.Time
-	err            error
-	userRepo       *users.Repository
-	cacheRepo      *cache.Repository
-	secretsManager secrets.SecretManager
+	log                 logger.LogAPI
+	startingTime        time.Time
+	err                 error
+	userRepo            *users.Repository
+	invalidTokenManager cache.InvalidTokenManager
+	secretsManager      secrets.SecretManager
 }
 
 func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
@@ -41,8 +41,7 @@ func (req *requestTokenHandler) initTokenHandler() {
 	dynamoUserRepository := users.NewDynamoRepository(dynamoClient)
 	req.userRepo = users.NewRepository(dynamoUserRepository)
 
-	redisRepository := cache.NewRepository(cache.NewRedisCache())
-	req.cacheRepo = redisRepository
+	req.invalidTokenManager = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = logger.NewLoggerWithHandler("token")
@@ -104,7 +103,7 @@ func (req *requestTokenHandler) processToken(request *apigateway.Request) (*apig
 }
 
 func (req *requestTokenHandler) handleValidationError(ctx context.Context, user *models.User) (*apigateway.Response, error) {
-	invalidateTokens := usecases.NewTokenInvalidator(req.cacheRepo, req.log)
+	invalidateTokens := usecases.NewTokenInvalidator(req.invalidTokenManager, req.log)
 
 	err := invalidateTokens(ctx, user)
 	if err != nil {

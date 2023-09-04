@@ -21,17 +21,16 @@ func TestTokenHandler(t *testing.T) {
 
 	usersMock := users.NewDynamoMock()
 	secretMock := secrets.NewSecretMock()
-	redisRepository := cache.NewRepository(cache.NewRedisCacheMock())
 
 	secretMock.RegisterResponder(privateSecretName, func(ctx context.Context, name string) (string, error) {
 		return "-----BEGIN RSA PRIVATE KEY-----\nMIIEpAIBAAKCAQEA5l+M6MGnS6K8SNXUIqOGaaH/IO7NcBxwQJVd4X6uUcLHfdhy\nNFNGEVFXodk9xhn0zJUxNtDzXlsw8aoC8/k4PoIUikiFnuCmkVDxcnl65/jv4DQt\nDL6GGqoLcYo2ENldfj8uDo09CmYS/DKuJxFyntaOREIMTaLQ3F72aDMk0ytVFu0c\nZ5Hyb24ixPBXhWHTMzsNG6yRO3uOVZqtK/D8/ZKklkKTDnOmGlbVOKTvujH6fTJu\nQ8T3p6jLI9J24K77fDlr6b38tZcDcKrhlAqOWTuEpsvMNRubWoLt22c9f4PXaGDw\nqRHo3SeBhb8YA0nSBEzNVgyt8iYfGq01tW98HQIDAQABAoIBAQC8OffcuVVihC2I\n6UUxpCCPsG/PTa6HWoURD7msI6B0Z0wt86qkPCH0xlxufhxt/wk4GvIiEqm2P5YG\n7l0JUGh3EjuMHOMoQ+90rgkI+l7EqG3950OjtQvHP4aoF0BDlgZAv4h3FUl5dJsw\neow2mZfoVe/Zr4lz6YLze5ei3Z7J9YGjj62j7QGbKgbwPLqnqnNrUQqM4T0V9SaJ\nCE6sDxYo8M8kE2yqgiIvsA1D92u4AMchcdnjREBy/ogCRXzvuZQADC4st8UE4aFD\nmDNKwIbprymSa7atjSMz+lfWWBnuuzFmsf+72gXJVRRpmbm7onBxDHcJlqk0fMjv\nm+zuow4hAoGBAPyGYveulOLbwA+88DHBJ5GVKZNJHRGFsMWpysCC45OC5eKs9yrP\nnI6/0mvL1JFXvSbkkDql6qvlbKVcoH80h3ipFwuB4j8KbLXs/LiFMF0yg4IpAoq5\nGIp1RK6VBsv4OvP8vmkJxzakgRn5C7WyswNqJHGW108l7pmYEbOpfohZAoGBAOmL\nIE3ZbttXLOLEcHICcySpNdDTIWaiNqMtyjLLK29Ic8KDpXI1hfYzAw+7Q6y2QyEG\nl9l5IpkY6Wt29LMuWUMH6fnS1H/JeQOSnkT2y8PXSN95QKb2HtbP+ujqSdG12EPs\nILag0918ezcttGLszqWfipSZuSo2ZQ6b0A+uaxllAoGAECkBeFxBxurNNbSfom97\n+sMS8AwDwjVOBLhC82Ls8Wm1EHaFMsYqfLAl5SQcLFjzD+QcnsQzamC6PTLaSomw\nCba4dNIRCnu+TT4nRh+v4qby54d8VChYO7QZexqqXq86BpcsEEjB6OtKH8FiUHRp\nJFTMlEBU8wm4ZTfoGhlEsbECgYAkNJ1ddEfrWShsP2fvRNH07QaaySB0eNFfmsmt\n9jFVnzXTAfW0LvgFowLmfXGQZPEjPZJs9IqYkXQeZOKqpJTR/3gWcsjexq0sEJ7Y\nsioEwmtZucJ8H8vIIZYUZb3r9PUCEqk/ps8xlwrDEyLT80JWCtXBE9PQ533jNeSb\nib6wwQKBgQDkCKsHfxv/z+YgdMe3mUCSZi2gNttPQczjeUSYAxYITj/OJ1TfMuk4\n8gVdOcusHynFH3jEpnA8fqdpZpmhH/sAKPuQl/vwBCefVyBO5LkM14gxEIf9eq69\n7QVBd9ep1cN/5yYcJUJAcpjBxcbR8rXYowLtsYaGsC7G5tMlW8rJTg==\n-----END RSA PRIVATE KEY-----", nil
 	})
 
 	request := &requestTokenHandler{
-		log:            logger.NewLoggerMock(nil),
-		secretsManager: secretMock,
-		userRepo:       users.NewRepository(usersMock),
-		cacheRepo:      redisRepository,
+		log:                 logger.NewLoggerMock(nil),
+		secretsManager:      secretMock,
+		userRepo:            users.NewRepository(usersMock),
+		invalidTokenManager: cache.NewRedisCacheMock(),
 	}
 
 	apigwRequest, err := dummyAPIGatewayProxyRequest()
@@ -54,14 +53,13 @@ func TestTokenHandlerFailed(t *testing.T) {
 	usersMock := users.NewDynamoMock()
 	secretMock := secrets.NewSecretMock()
 	redisMock := cache.NewRedisCacheMock()
-	redisRepository := cache.NewRepository(redisMock)
 	logMock := logger.NewLoggerMock(nil)
 
 	request := &requestTokenHandler{
-		log:            logMock,
-		secretsManager: secretMock,
-		userRepo:       users.NewRepository(usersMock),
-		cacheRepo:      redisRepository,
+		log:                 logMock,
+		secretsManager:      secretMock,
+		userRepo:            users.NewRepository(usersMock),
+		invalidTokenManager: redisMock,
 	}
 
 	t.Run("Invalid token", func(t *testing.T) {
@@ -115,8 +113,8 @@ func TestTokenHandlerFailed(t *testing.T) {
 		apigwRequest := dummyApigwRequest
 
 		response, err := request.processToken(apigwRequest)
-		c.ErrorIs(err, models.ErrUserNotFound)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.NoError(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(logMock.Output.String(), "get_user_failed")
 	})
 
