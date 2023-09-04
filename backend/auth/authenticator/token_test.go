@@ -41,6 +41,9 @@ func TestTokenHandler(t *testing.T) {
 	response, err := request.processToken(apigwRequest)
 	c.Nil(err)
 	c.Equal(http.StatusOK, response.StatusCode)
+	c.Contains(response.Body, "access_token")
+	c.NotNil(response.Headers["Set-Cookie"])
+	c.Contains(response.Headers["Set-Cookie"], refreshTokenCookieName)
 }
 
 func TestTokenHandlerFailed(t *testing.T) {
@@ -68,6 +71,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		response, err := request.processToken(dummyApigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
 
 		dummyApigwRequest.Headers["Cookie"] = refreshTokenCookieName + "=header.payload.signature"
@@ -86,6 +90,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		response, err := request.processToken(apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
+		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "refresh_token_validation_failed")
 	})
 
@@ -103,6 +108,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		response, err := request.processToken(apigwRequest)
 		c.ErrorIs(err, dummyErr)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "refresh_token_validation_failed")
 	})
 
@@ -115,6 +121,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		response, err := request.processToken(apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "get_user_failed")
 	})
 
@@ -124,6 +131,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		response, err := request.processToken(dummyApigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
 	})
 
@@ -137,6 +145,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		response, err := request.processToken(dummyApigwRequest)
 		c.ErrorIs(err, secrets.ErrForceFailure)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "generate_access_token_failed")
 	})
 }
