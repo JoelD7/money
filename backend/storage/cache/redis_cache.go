@@ -20,7 +20,7 @@ func NewRedisCache() *redisCache {
 	return &redisCache{}
 }
 
-func (r *redisCache) getInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
+func (r *redisCache) GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
 	key := keyPrefix + email
 
 	dataStr, err := redisClient.Get(ctx, key)
@@ -42,14 +42,14 @@ func (r *redisCache) getInvalidTokens(ctx context.Context, email string) ([]*mod
 	return invalidTokens, nil
 }
 
-func (r *redisCache) addInvalidToken(ctx context.Context, email, token string, ttl int64) error {
+func (r *redisCache) AddInvalidToken(ctx context.Context, email, token string, ttl int64) error {
 	if time.Now().Unix() > ttl && ttl > 0 {
 		return ErrInvalidTTL
 	}
 
 	key := keyPrefix + email
 
-	invalidTokens, err := r.getInvalidTokens(ctx, email)
+	invalidTokens, err := r.GetInvalidTokens(ctx, email)
 	if err != nil && !errors.Is(err, models.ErrInvalidTokensNotFound) {
 		return err
 	}
