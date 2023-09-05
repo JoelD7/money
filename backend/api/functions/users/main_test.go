@@ -23,9 +23,9 @@ func TestHandlerSuccess(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 
 	request := &userRequest{
-		userRepo:     users.NewRepository(usersMock),
-		expensesRepo: expenses.NewRepository(expensesMock),
-		incomeRepo:   income.NewRepository(incomeMock),
+		userRepo:     usersMock,
+		expensesRepo: expensesMock,
+		incomeRepo:   incomeMock,
 		log:          logMock,
 	}
 
@@ -67,9 +67,9 @@ func TestHandlerFailed(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 
 	request := &userRequest{
-		userRepo:     users.NewRepository(usersMock),
-		expensesRepo: expenses.NewRepository(expensesMock),
-		incomeRepo:   income.NewRepository(incomeMock),
+		userRepo:     usersMock,
+		expensesRepo: expensesMock,
+		incomeRepo:   incomeMock,
 		log:          logMock,
 	}
 

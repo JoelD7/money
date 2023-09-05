@@ -12,18 +12,6 @@ type DynamoAPI interface {
 	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
 }
 
-type RepositoryAPI interface {
-	getExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error)
-}
-
-type Repository struct {
-	client RepositoryAPI
-}
-
-func NewRepository(client RepositoryAPI) *Repository {
-	return &Repository{client}
-}
-
-func (r *Repository) GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error) {
-	return r.client.getExpensesByPeriod(ctx, userID, periodID)
+type Repository interface {
+	GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error)
 }
