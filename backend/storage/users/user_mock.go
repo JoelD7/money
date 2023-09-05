@@ -34,7 +34,7 @@ func (d *DynamoMock) SetMockedUser(user *models.User) {
 	d.mockedUser = user
 }
 
-func (d *DynamoMock) createUser(ctx context.Context, fullName, email, password string) error {
+func (d *DynamoMock) CreateUser(ctx context.Context, fullName, email, password string) error {
 	if d.mockedErr != nil {
 		return d.mockedErr
 	}
@@ -42,7 +42,7 @@ func (d *DynamoMock) createUser(ctx context.Context, fullName, email, password s
 	return nil
 }
 
-func (d *DynamoMock) getUser(ctx context.Context, userID string) (*models.User, error) {
+func (d *DynamoMock) GetUser(ctx context.Context, userID string) (*models.User, error) {
 	if d.mockedErr != nil {
 		return nil, d.mockedErr
 	}
@@ -54,7 +54,7 @@ func (d *DynamoMock) getUser(ctx context.Context, userID string) (*models.User, 
 	return d.mockedUser, nil
 }
 
-func (d *DynamoMock) getUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (d *DynamoMock) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	if d.mockedErr != nil {
 		return nil, d.mockedErr
 	}
@@ -66,7 +66,7 @@ func (d *DynamoMock) getUserByEmail(ctx context.Context, email string) (*models.
 	return d.mockedUser, nil
 }
 
-func (d *DynamoMock) updateUser(ctx context.Context, user *models.User) error {
+func (d *DynamoMock) UpdateUser(ctx context.Context, user *models.User) error {
 	if d.mockedErr != nil {
 		return d.mockedErr
 	}

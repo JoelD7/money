@@ -30,21 +30,17 @@ type userRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
 	err          error
-	userRepo     *users.Repository
-	incomeRepo   *income.Repository
-	expensesRepo *expenses.Repository
+	userRepo     users.Repository
+	incomeRepo   income.Repository
+	expensesRepo expenses.Repository
 }
 
 func (request *userRequest) init() {
 	dynamoClient := initDynamoClient()
 
-	dynamoUserRepository := users.NewDynamoRepository(dynamoClient)
-	dynamoIncomeRepository := income.NewDynamoRepository(dynamoClient)
-	dynamoExpensesRepository := expenses.NewDynamoRepository(dynamoClient)
-
-	request.userRepo = users.NewRepository(dynamoUserRepository)
-	request.incomeRepo = income.NewRepository(dynamoIncomeRepository)
-	request.expensesRepo = expenses.NewRepository(dynamoExpensesRepository)
+	request.userRepo = users.NewDynamoRepository(dynamoClient)
+	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }

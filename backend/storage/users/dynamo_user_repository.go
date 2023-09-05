@@ -33,7 +33,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) createUser(ctx context.Context, fullName, email, password string) error {
+func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, email, password string) error {
 	ok, err := d.userExists(ctx, email)
 	if err != nil && !errors.Is(err, models.ErrUserNotFound) {
 		return err
@@ -76,7 +76,7 @@ func (d *DynamoRepository) createUser(ctx context.Context, fullName, email, pass
 }
 
 func (d *DynamoRepository) userExists(ctx context.Context, email string) (bool, error) {
-	user, err := d.getUserByEmail(ctx, email)
+	user, err := d.GetUserByEmail(ctx, email)
 	if user != nil {
 		return true, nil
 	}
@@ -84,7 +84,7 @@ func (d *DynamoRepository) userExists(ctx context.Context, email string) (bool, 
 	return false, err
 }
 
-func (d *DynamoRepository) getUser(ctx context.Context, userID string) (*models.User, error) {
+func (d *DynamoRepository) GetUser(ctx context.Context, userID string) (*models.User, error) {
 	userKey, err := attributevalue.Marshal(userID)
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (d *DynamoRepository) getUser(ctx context.Context, userID string) (*models.
 	return user, nil
 }
 
-func (d *DynamoRepository) getUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (d *DynamoRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	nameEx := expression.Name("email").Equal(expression.Value(email))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
@@ -149,7 +149,7 @@ func (d *DynamoRepository) getUserByEmail(ctx context.Context, email string) (*m
 	return user, nil
 }
 
-func (d *DynamoRepository) updateUser(ctx context.Context, user *models.User) error {
+func (d *DynamoRepository) UpdateUser(ctx context.Context, user *models.User) error {
 	updatedItem, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err

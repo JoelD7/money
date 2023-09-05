@@ -18,7 +18,7 @@ func NewDynamoMock() *DynamoMock {
 	}
 }
 
-func (d *DynamoMock) getIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.Income, error) {
+func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.Income, error) {
 	if d.mockedErr != nil {
 		return nil, d.mockedErr
 	}

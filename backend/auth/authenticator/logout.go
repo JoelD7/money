@@ -15,11 +15,11 @@ import (
 type requestLogoutHandler struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
 
-	log          logger.LogAPI
-	startingTime time.Time
-	err          error
-	userRepo     *users.Repository
-	cacheRepo    *cache.Repository
+	log                 logger.LogAPI
+	startingTime        time.Time
+	err                 error
+	userRepo            users.Repository
+	invalidTokenManager cache.InvalidTokenManager
 }
 
 func logoutHandler(request *apigateway.Request) (*apigateway.Response, error) {
@@ -34,11 +34,8 @@ func logoutHandler(request *apigateway.Request) (*apigateway.Response, error) {
 func (req *requestLogoutHandler) initLogoutHandler() {
 	dynamoClient := initDynamoClient()
 
-	dynamoUserRepository := users.NewDynamoRepository(dynamoClient)
-
-	req.userRepo = users.NewRepository(dynamoUserRepository)
-	redisRepository := cache.NewRepository(cache.NewRedisCache())
-	req.cacheRepo = redisRepository
+	req.userRepo = users.NewDynamoRepository(dynamoClient)
+	req.invalidTokenManager = cache.NewRedisCache()
 	req.startingTime = time.Now()
 	req.log = logger.NewLoggerWithHandler("logout")
 }
@@ -60,7 +57,7 @@ func (req *requestLogoutHandler) processLogout(request *apigateway.Request) (*ap
 		return getErrorResponse(err)
 	}
 
-	logout := usecases.NewUserLogout(req.userRepo, req.cacheRepo, req.log)
+	logout := usecases.NewUserLogout(req.userRepo, req.invalidTokenManager, req.log)
 	err = logout(ctx, req.RefreshToken)
 	if err != nil {
 		req.err = err

@@ -32,7 +32,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) getExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error) {
+func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error) {
 	if userID == "" {
 		return nil, ErrEmptyUserID
 	}

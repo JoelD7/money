@@ -17,12 +17,11 @@ func TestLogoutHandlerSuccess(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	usersMock := users.NewDynamoMock()
 	redisMock := cache.NewRedisCacheMock()
-	redisRepository := cache.NewRepository(redisMock)
 
 	request := &requestLogoutHandler{
-		log:       logMock,
-		userRepo:  users.NewRepository(usersMock),
-		cacheRepo: redisRepository,
+		log:                 logMock,
+		userRepo:            usersMock,
+		invalidTokenManager: redisMock,
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -44,12 +43,11 @@ func TestLogoutHandlerFailed(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	usersMock := users.NewDynamoMock()
 	redisMock := cache.NewRedisCacheMock()
-	redisRepository := cache.NewRepository(redisMock)
 
 	request := &requestLogoutHandler{
-		log:       logMock,
-		userRepo:  users.NewRepository(usersMock),
-		cacheRepo: redisRepository,
+		log:                 logMock,
+		userRepo:            usersMock,
+		invalidTokenManager: redisMock,
 	}
 
 	apigwRequest := &apigateway.Request{

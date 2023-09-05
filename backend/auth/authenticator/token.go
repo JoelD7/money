@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
@@ -18,12 +19,12 @@ import (
 type requestTokenHandler struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
 
-	log            logger.LogAPI
-	startingTime   time.Time
-	err            error
-	userRepo       *users.Repository
-	cacheRepo      *cache.Repository
-	secretsManager secrets.SecretManager
+	log                 logger.LogAPI
+	startingTime        time.Time
+	err                 error
+	userRepo            users.Repository
+	invalidTokenManager cache.InvalidTokenManager
+	secretsManager      secrets.SecretManager
 }
 
 func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
@@ -38,11 +39,9 @@ func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
 func (req *requestTokenHandler) initTokenHandler() {
 	dynamoClient := initDynamoClient()
 
-	dynamoUserRepository := users.NewDynamoRepository(dynamoClient)
-	req.userRepo = users.NewRepository(dynamoUserRepository)
+	req.userRepo = users.NewDynamoRepository(dynamoClient)
 
-	redisRepository := cache.NewRepository(cache.NewRedisCache())
-	req.cacheRepo = redisRepository
+	req.invalidTokenManager = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = logger.NewLoggerWithHandler("token")
@@ -86,25 +85,29 @@ func (req *requestTokenHandler) processToken(request *apigateway.Request) (*apig
 		return getErrorResponse(err)
 	}
 
-	setCookieHeader := map[string][]string{
-		"Set-Cookie": {
-			fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", accessTokenCookieName, accessToken.Value,
-				accessToken.Expiration.Format(time.RFC1123)),
-			fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
-				refreshToken.Expiration.Format(time.RFC1123)),
-		},
+	response := &accessTokenResponse{accessToken.Value}
+
+	data, err := json.Marshal(response)
+	if err != nil {
+		return getErrorResponse(err)
+	}
+
+	setCookieHeader := map[string]string{
+		"Set-Cookie": fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
+			refreshToken.Expiration.Format(time.RFC1123)),
 	}
 
 	req.log.Info("new_tokens_issued_successfully", []models.LoggerObject{user})
 
 	return &apigateway.Response{
-		StatusCode:        http.StatusOK,
-		MultiValueHeaders: setCookieHeader,
+		StatusCode: http.StatusOK,
+		Body:       string(data),
+		Headers:    setCookieHeader,
 	}, nil
 }
 
 func (req *requestTokenHandler) handleValidationError(ctx context.Context, user *models.User) (*apigateway.Response, error) {
-	invalidateTokens := usecases.NewTokenInvalidator(req.cacheRepo, req.log)
+	invalidateTokens := usecases.NewTokenInvalidator(req.invalidTokenManager, req.log)
 
 	err := invalidateTokens(ctx, user)
 	if err != nil {

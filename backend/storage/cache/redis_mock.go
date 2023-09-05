@@ -25,7 +25,7 @@ func (r *redisMock) DeactivateForceFailure() {
 	r.mockedErr = nil
 }
 
-func (r *redisMock) getInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
+func (r *redisMock) GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error) {
 	if r.mockedErr != nil {
 		return nil, r.mockedErr
 	}
@@ -38,7 +38,7 @@ func (r *redisMock) getInvalidTokens(ctx context.Context, email string) ([]*mode
 	return invalidTokens, nil
 }
 
-func (r *redisMock) addInvalidToken(ctx context.Context, email, token string, ttl int64) error {
+func (r *redisMock) AddInvalidToken(ctx context.Context, email, token string, ttl int64) error {
 	if r.mockedErr != nil {
 		return r.mockedErr
 	}
@@ -52,4 +52,8 @@ func (r *redisMock) addInvalidToken(ctx context.Context, email, token string, tt
 	r.store[email] = append(invalidTokens, &models.InvalidToken{Token: token})
 
 	return nil
+}
+
+func (r *redisMock) DeleteInvalidToken(email string) {
+	delete(r.store, email)
 }
