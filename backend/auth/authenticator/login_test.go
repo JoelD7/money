@@ -40,7 +40,7 @@ func TestLoginHandler(t *testing.T) {
 	})
 
 	request := &requestLoginHandler{
-		userRepo:       users.NewRepository(usersMock),
+		userRepo:       usersMock,
 		secretsManager: secretMock,
 		log:            logger.NewLoggerMock(nil),
 	}
@@ -81,7 +81,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 	})
 
 	request := &requestLoginHandler{
-		userRepo:       users.NewRepository(usersMock),
+		userRepo:       usersMock,
 		secretsManager: secretMock,
 		log:            logger.NewLoggerMock(nil),
 	}

@@ -22,7 +22,7 @@ type requestTokenHandler struct {
 	log                 logger.LogAPI
 	startingTime        time.Time
 	err                 error
-	userRepo            *users.Repository
+	userRepo            users.Repository
 	invalidTokenManager cache.InvalidTokenManager
 	secretsManager      secrets.SecretManager
 }
@@ -39,8 +39,7 @@ func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
 func (req *requestTokenHandler) initTokenHandler() {
 	dynamoClient := initDynamoClient()
 
-	dynamoUserRepository := users.NewDynamoRepository(dynamoClient)
-	req.userRepo = users.NewRepository(dynamoUserRepository)
+	req.userRepo = users.NewDynamoRepository(dynamoClient)
 
 	req.invalidTokenManager = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()

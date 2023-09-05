@@ -29,7 +29,7 @@ func TestTokenHandler(t *testing.T) {
 	request := &requestTokenHandler{
 		log:                 logger.NewLoggerMock(nil),
 		secretsManager:      secretMock,
-		userRepo:            users.NewRepository(usersMock),
+		userRepo:            usersMock,
 		invalidTokenManager: cache.NewRedisCacheMock(),
 	}
 
@@ -61,7 +61,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 	request := &requestTokenHandler{
 		log:                 logMock,
 		secretsManager:      secretMock,
-		userRepo:            users.NewRepository(usersMock),
+		userRepo:            usersMock,
 		invalidTokenManager: redisMock,
 	}
 

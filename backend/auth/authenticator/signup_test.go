@@ -25,7 +25,7 @@ func TestSignUpHandler(t *testing.T) {
 	c.Nil(err)
 
 	request := &requestSignUpHandler{
-		userRepo: users.NewRepository(usersMock),
+		userRepo: usersMock,
 		log:      logger.NewLoggerMock(nil),
 	}
 
@@ -49,7 +49,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	usersMock := users.NewDynamoMock()
 
 	request := &requestSignUpHandler{
-		userRepo: users.NewRepository(usersMock),
+		userRepo: usersMock,
 		log:      logger.NewLoggerMock(nil),
 	}
 

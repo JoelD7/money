@@ -15,7 +15,7 @@ type requestSignUpHandler struct {
 	log          logger.LogAPI
 	startingTime time.Time
 	err          error
-	userRepo     *users.Repository
+	userRepo     users.Repository
 }
 
 func signUpHandler(request *apigateway.Request) (*apigateway.Response, error) {
@@ -30,9 +30,7 @@ func signUpHandler(request *apigateway.Request) (*apigateway.Response, error) {
 func (req *requestSignUpHandler) initSignUpHandler() {
 	dynamoClient := initDynamoClient()
 
-	dynamoUserRepository := users.NewDynamoRepository(dynamoClient)
-
-	req.userRepo = users.NewRepository(dynamoUserRepository)
+	req.userRepo = users.NewDynamoRepository(dynamoClient)
 	req.startingTime = time.Now()
 	req.log = logger.NewLoggerWithHandler("sign-up")
 }

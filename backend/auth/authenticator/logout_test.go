@@ -20,7 +20,7 @@ func TestLogoutHandlerSuccess(t *testing.T) {
 
 	request := &requestLogoutHandler{
 		log:                 logMock,
-		userRepo:            users.NewRepository(usersMock),
+		userRepo:            usersMock,
 		invalidTokenManager: redisMock,
 	}
 
@@ -46,7 +46,7 @@ func TestLogoutHandlerFailed(t *testing.T) {
 
 	request := &requestLogoutHandler{
 		log:                 logMock,
-		userRepo:            users.NewRepository(usersMock),
+		userRepo:            usersMock,
 		invalidTokenManager: redisMock,
 	}
 
