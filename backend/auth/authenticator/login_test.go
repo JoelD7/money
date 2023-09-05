@@ -21,6 +21,8 @@ func TestLoginHandler(t *testing.T) {
 		Password: "1234",
 	}
 
+	ctx := context.Background()
+
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
 
@@ -47,7 +49,7 @@ func TestLoginHandler(t *testing.T) {
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}
 
-	response, err := request.processLogin(apigwRequest)
+	response, err := request.processLogin(ctx, apigwRequest)
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.NotNil(response.Headers["Set-Cookie"])
 	c.Contains(response.Headers["Set-Cookie"], refreshTokenCookieName)
@@ -56,6 +58,8 @@ func TestLoginHandler(t *testing.T) {
 
 func TestLoginHandlerFailed(t *testing.T) {
 	c := require.New(t)
+
+	ctx := context.Background()
 
 	body := Credentials{
 		Email:    "test@gmail.com",
@@ -91,7 +95,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 	secretMock.ActivateForceFailure(secrets.SecretsError)
 	defer secretMock.DeactivateForceFailure()
 
-	response, err := request.processLogin(apigwRequest)
+	response, err := request.processLogin(ctx, apigwRequest)
 	c.ErrorIs(err, secrets.ErrForceFailure)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(apigateway.ErrInternalError.Message, response.Body)
@@ -100,7 +104,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 		usersMock.ActivateForceFailure(models.ErrUserNotFound)
 		defer usersMock.DeactivateForceFailure()
 
-		response, err = request.processLogin(apigwRequest)
+		response, err = request.processLogin(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrUserNotFound.Error(), response.Body)
@@ -108,7 +112,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 	t.Run("Invalid request body", func(t *testing.T) {
 		apigwRequest.Body = "a"
-		response, err = request.processLogin(apigwRequest)
+		response, err = request.processLogin(ctx, apigwRequest)
 		c.NotNil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Equal(apigateway.ErrInternalError.Message, response.Body)
@@ -152,7 +156,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 
 			apigwRequest.Body = jsonBody
 
-			response, err = request.processLogin(apigwRequest)
+			response, err = request.processLogin(ctx, apigwRequest)
 			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
 			c.Equal(tc.expectedErr.Error(), response.Body)

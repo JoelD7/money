@@ -27,13 +27,13 @@ type requestTokenHandler struct {
 	secretsManager      secrets.SecretManager
 }
 
-func tokenHandler(request *apigateway.Request) (*apigateway.Response, error) {
+func tokenHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestTokenHandler{}
 
 	req.initTokenHandler()
 	defer req.finish()
 
-	return req.processToken(request)
+	return req.processToken(ctx, request)
 }
 
 func (req *requestTokenHandler) initTokenHandler() {
@@ -51,9 +51,7 @@ func (req *requestTokenHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestTokenHandler) processToken(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
+func (req *requestTokenHandler) processToken(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	var err error
 	req.RefreshToken, err = getRefreshTokenCookie(request)
 	if err != nil {

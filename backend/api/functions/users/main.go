@@ -65,18 +65,16 @@ func (request *userRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func handler(req *apigateway.Request) (*apigateway.Response, error) {
+func handler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(userRequest)
 
 	request.init()
 	defer request.finish()
 
-	return request.process(req)
+	return request.process(ctx, req)
 }
 
-func (request *userRequest) process(req *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
+func (request *userRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	userID := req.PathParameters["user-id"]
 
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)

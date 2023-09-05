@@ -64,7 +64,7 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 			return "", err
 		}
 
-		publicKey, err := getPublicKeyFromJWKS(jwksVal, secretManager)
+		publicKey, err := getPublicKeyFromJWKS(ctx, jwksVal, secretManager)
 		if err != nil {
 			logger.Error("getting_public_key_failed", err, nil)
 
@@ -99,8 +99,8 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 	}
 }
 
-func getPublicKeyFromJWKS(jwksVal *models.Jwks, secrets SecretManager) (*rsa.PublicKey, error) {
-	kid, err := getKidFromSecret(secrets)
+func getPublicKeyFromJWKS(ctx context.Context, jwksVal *models.Jwks, secrets SecretManager) (*rsa.PublicKey, error) {
+	kid, err := getKidFromSecret(ctx, secrets)
 	if err != nil {
 		return nil, err
 	}

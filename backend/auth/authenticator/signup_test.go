@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -20,6 +21,7 @@ func TestSignUpHandler(t *testing.T) {
 	}
 
 	usersMock := users.NewDynamoMock()
+	ctx := context.Background()
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -31,7 +33,7 @@ func TestSignUpHandler(t *testing.T) {
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}
 
-	response, err := request.processSignUp(apigwRequest)
+	response, err := request.processSignUp(ctx, apigwRequest)
 	c.Equal(http.StatusCreated, response.StatusCode)
 }
 
@@ -42,6 +44,8 @@ func TestSignUpHandlerFailed(t *testing.T) {
 		FullName:    "Joel",
 		Credentials: &Credentials{"test@gmail.com", "1234"},
 	}
+
+	ctx := context.Background()
 
 	jsonBody, err := bodyToJSONString(body)
 	c.Nil(err)
@@ -59,7 +63,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 
 		apigwRequest := &apigateway.Request{Body: jsonBody}
 
-		response, err := request.processSignUp(apigwRequest)
+		response, err := request.processSignUp(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrExistingUser.Error(), response.Body)
@@ -68,7 +72,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	t.Run("Invalid request body", func(t *testing.T) {
 		apigwRequest := &apigateway.Request{Body: "}"}
 
-		response, err := signUpHandler(apigwRequest)
+		response, err := request.processSignUp(ctx, apigwRequest)
 		c.NotNil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Equal(apigateway.ErrInternalError.Message, response.Body)
@@ -107,7 +111,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 
 			apigwRequest := &apigateway.Request{Body: jsonBody}
 
-			response, err := request.processSignUp(apigwRequest)
+			response, err := request.processSignUp(ctx, apigwRequest)
 			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
 			c.Equal(tc.expectedErr.Error(), response.Body)

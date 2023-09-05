@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -17,6 +18,7 @@ func TestLogoutHandlerSuccess(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	usersMock := users.NewDynamoMock()
 	redisMock := cache.NewRedisCacheMock()
+	ctx := context.Background()
 
 	request := &requestLogoutHandler{
 		log:                 logMock,
@@ -30,7 +32,7 @@ func TestLogoutHandlerSuccess(t *testing.T) {
 		},
 	}
 
-	response, err := request.processLogout(apigwRequest)
+	response, err := request.processLogout(ctx, apigwRequest)
 	c.NoError(err)
 	c.NotEmpty(response.Headers["Set-Cookie"])
 	c.Contains(response.Headers["Set-Cookie"], fmt.Sprintf(`%s=;`, refreshTokenCookieName))
@@ -41,6 +43,7 @@ func TestLogoutHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
 	usersMock := users.NewDynamoMock()
 	redisMock := cache.NewRedisCacheMock()
 
@@ -59,7 +62,7 @@ func TestLogoutHandlerFailed(t *testing.T) {
 	t.Run("Cookie header not found", func(t *testing.T) {
 		apigwRequest.Headers = map[string]string{}
 
-		response, err := request.processLogout(apigwRequest)
+		response, err := request.processLogout(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
@@ -70,7 +73,7 @@ func TestLogoutHandlerFailed(t *testing.T) {
 	t.Run("Invalid token length", func(t *testing.T) {
 		apigwRequest.Headers["Cookie"] = fmt.Sprintf("%s=%s", refreshTokenCookieName, "a")
 
-		response, err := request.processLogout(apigwRequest)
+		response, err := request.processLogout(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
