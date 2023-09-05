@@ -22,13 +22,13 @@ type requestLogoutHandler struct {
 	invalidTokenManager cache.InvalidTokenManager
 }
 
-func logoutHandler(request *apigateway.Request) (*apigateway.Response, error) {
+func logoutHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestLogoutHandler{}
 
 	req.initLogoutHandler()
 	defer req.finish()
 
-	return req.processLogout(request)
+	return req.processLogout(ctx, request)
 }
 
 func (req *requestLogoutHandler) initLogoutHandler() {
@@ -44,9 +44,7 @@ func (req *requestLogoutHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestLogoutHandler) processLogout(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
+func (req *requestLogoutHandler) processLogout(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	var err error
 
 	req.RefreshToken, err = getRefreshTokenCookie(request)

@@ -1,8 +1,9 @@
 package router
 
 import (
+	"context"
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -14,6 +15,7 @@ func TestHandle(t *testing.T) {
 	c := require.New(t)
 
 	rootRouter := NewRouter()
+	ctx := context.Background()
 
 	rootRouter.Route("/", func(r *Router) {
 		r.Route("/users", func(r *Router) {
@@ -28,24 +30,24 @@ func TestHandle(t *testing.T) {
 		})
 	})
 
-	request := &events.APIGatewayProxyRequest{
+	request := &apigateway.Request{
 		HTTPMethod: http.MethodGet,
 		Resource:   "/users/{userID}",
 	}
 
-	response, err := rootRouter.Handle(request)
+	response, err := rootRouter.Handle(ctx, request)
 	c.Nil(err)
 	c.Equal("Method: GET, Endpoint: /users/{userID}", response.Body)
 
 	request.Resource = "/users/{userID}/categories"
-	response, err = rootRouter.Handle(request)
+	response, err = rootRouter.Handle(ctx, request)
 	c.Nil(err)
 	c.Equal("Method: GET, Endpoint: /users/{userID}/categories", response.Body)
 
 	request.Resource = "/users/{userID}"
 	request.HTTPMethod = http.MethodPost
 
-	response, err = rootRouter.Handle(request)
+	response, err = rootRouter.Handle(ctx, request)
 	c.Nil(err)
 	c.Equal("Method: POST, Endpoint: /users/{userID}", response.Body)
 }
@@ -54,6 +56,8 @@ func TestHandleError(t *testing.T) {
 	c := require.New(t)
 
 	rootRouter := NewRouter()
+	ctx := context.Background()
+
 	subRouter := &Router{
 		path:           "/users/{userID}",
 		parent:         rootRouter,
@@ -61,12 +65,12 @@ func TestHandleError(t *testing.T) {
 		methodHandlers: nil,
 	}
 
-	request := &events.APIGatewayProxyRequest{
+	request := &apigateway.Request{
 		HTTPMethod: http.MethodGet,
 		Resource:   "/users/{userID}",
 	}
 
-	response, err := subRouter.Handle(request)
+	response, err := subRouter.Handle(ctx, request)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 	c.ErrorIs(err, errRouterIsNotRoot)
@@ -77,7 +81,7 @@ func TestHandleError(t *testing.T) {
 		r.Post("/dummy", dummyHandler())
 	})
 
-	response, err = rootRouter.Handle(request)
+	response, err = rootRouter.Handle(ctx, request)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.ErrorIs(err, errPathNotDefined)
 }
@@ -176,8 +180,8 @@ func dummyRouter() *Router {
 }
 
 func dummyHandler() Handler {
-	return func(request *events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-		return &events.APIGatewayProxyResponse{
+	return func(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+		return &apigateway.Response{
 			Body: fmt.Sprintf("Method: %s, Endpoint: %s", request.HTTPMethod, request.Resource),
 		}, nil
 	}

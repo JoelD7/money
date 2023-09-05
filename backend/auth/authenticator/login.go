@@ -25,13 +25,13 @@ type accessTokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func logInHandler(request *apigateway.Request) (*apigateway.Response, error) {
+func logInHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestLoginHandler{}
 
 	req.initLoginHandler()
 	defer req.finish()
 
-	return req.processLogin(request)
+	return req.processLogin(ctx, request)
 }
 
 func (req *requestLoginHandler) initLoginHandler() {
@@ -47,9 +47,7 @@ func (req *requestLoginHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestLoginHandler) processLogin(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
+func (req *requestLoginHandler) processLogin(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	reqBody := &Credentials{}
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)

@@ -340,15 +340,15 @@ func NewTokenInvalidator(tokenCache InvalidTokenCache, logger Logger) func(ctx c
 }
 
 // GetJsonWebKeySet returns a JWKS using the public and kid secret names passed in.
-func GetJsonWebKeySet(secrets SecretManager, logger Logger) (*models.Jwks, error) {
-	publicKey, err := getPublicKey(secrets)
+func GetJsonWebKeySet(ctx context.Context, secrets SecretManager, logger Logger) (*models.Jwks, error) {
+	publicKey, err := getPublicKey(ctx, secrets)
 	if err != nil {
 		logger.Error("public_key_fetching_failed", err, nil)
 
 		return nil, err
 	}
 
-	kid, err := getKidFromSecret(secrets)
+	kid, err := getKidFromSecret(ctx, secrets)
 	if err != nil {
 		logger.Error("kid_fetching_failed", err, nil)
 
@@ -368,8 +368,8 @@ func GetJsonWebKeySet(secrets SecretManager, logger Logger) (*models.Jwks, error
 	}, nil
 }
 
-func getPublicKey(secrets SecretManager) (*rsa.PublicKey, error) {
-	publicSecret, err := secrets.GetSecret(context.Background(), publicSecretName)
+func getPublicKey(ctx context.Context, secrets SecretManager) (*rsa.PublicKey, error) {
+	publicSecret, err := secrets.GetSecret(ctx, publicSecretName)
 	if err != nil {
 		return nil, err
 	}
@@ -390,8 +390,8 @@ func getPublicKey(secrets SecretManager) (*rsa.PublicKey, error) {
 // The kid of the JWK that contains the public key.
 // Is stored in a secret so that the lambda-authorizer can have access to it to verify that the key received is the
 // right one.
-func getKidFromSecret(secrets SecretManager) (string, error) {
-	kidSecret, err := secrets.GetSecret(context.Background(), kidSecretName)
+func getKidFromSecret(ctx context.Context, secrets SecretManager) (string, error) {
+	kidSecret, err := secrets.GetSecret(ctx, kidSecretName)
 	if err != nil {
 		return "", err
 	}

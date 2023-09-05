@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -18,13 +19,13 @@ type requestJwksHandler struct {
 	secretsManager secrets.SecretManager
 }
 
-func jwksHandler(_ *apigateway.Request) (*apigateway.Response, error) {
+func jwksHandler(ctx context.Context, _ *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestJwksHandler{}
 
 	req.initJwksHandler()
 	defer req.finish()
 
-	return req.processJWKS()
+	return req.processJWKS(ctx)
 }
 
 func (req *requestJwksHandler) initJwksHandler() {
@@ -37,8 +38,8 @@ func (req *requestJwksHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestJwksHandler) processJWKS() (*apigateway.Response, error) {
-	jsonWebKeySet, err := usecases.GetJsonWebKeySet(req.secretsManager, req.log)
+func (req *requestJwksHandler) processJWKS(ctx context.Context) (*apigateway.Response, error) {
+	jsonWebKeySet, err := usecases.GetJsonWebKeySet(ctx, req.secretsManager, req.log)
 	if err != nil {
 		return getErrorResponse(err)
 	}

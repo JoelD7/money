@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
@@ -15,7 +16,7 @@ var (
 	errPathNotDefined  = errors.New("this path does not have a handler")
 )
 
-type Handler func(request *apigateway.Request) (*apigateway.Response, error)
+type Handler func(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error)
 
 type Router struct {
 	path           string
@@ -39,7 +40,7 @@ func NewRouter() *Router {
 	}
 }
 
-func (router *Router) Handle(request *apigateway.Request) (*apigateway.Response, error) {
+func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	if !router.isRoot() {
 		router.log.Error("router_handle_failed", errRouterIsNotRoot, nil)
 
@@ -74,7 +75,7 @@ func (router *Router) Handle(request *apigateway.Request) (*apigateway.Response,
 		}, errPathNotDefined
 	}
 
-	return router.methodHandlers[request.HTTPMethod][request.Resource](request)
+	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, request)
 }
 
 func (router *Router) Route(path string, fn func(r *Router)) {

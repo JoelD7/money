@@ -18,13 +18,13 @@ type requestSignUpHandler struct {
 	userRepo     users.Repository
 }
 
-func signUpHandler(request *apigateway.Request) (*apigateway.Response, error) {
+func signUpHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestSignUpHandler{}
 
 	req.initSignUpHandler()
 	defer req.finish()
 
-	return req.processSignUp(request)
+	return req.processSignUp(ctx, request)
 }
 
 func (req *requestSignUpHandler) initSignUpHandler() {
@@ -39,9 +39,7 @@ func (req *requestSignUpHandler) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestSignUpHandler) processSignUp(request *apigateway.Request) (*apigateway.Response, error) {
-	ctx := context.Background()
-
+func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	reqBody := new(signUpBody)
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)

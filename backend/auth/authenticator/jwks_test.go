@@ -35,7 +35,9 @@ func TestJWKSHandler(t *testing.T) {
 		secretsManager: secretMock,
 	}
 
-	response, err := request.processJWKS()
+	ctx := context.Background()
+
+	response, err := request.processJWKS(ctx)
 	c.Nil(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.Equal(expectedJWKS, response.Body)
@@ -45,7 +47,7 @@ func TestJWKSHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	secretMock := secrets.NewSecretMock()
-
+	ctx := context.Background()
 	logMock := logger.NewLoggerMock(nil)
 
 	request := &requestJwksHandler{
@@ -62,7 +64,7 @@ func TestJWKSHandlerFailed(t *testing.T) {
 
 		defer secretMock.UnregisterResponder(publicSecretName)
 
-		response, err := request.processJWKS()
+		response, err := request.processJWKS(ctx)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.ErrorIs(err, dummyErr)
 		c.Contains(logMock.Output.String(), "public_key_fetching_failed")
@@ -84,7 +86,7 @@ func TestJWKSHandlerFailed(t *testing.T) {
 			secretMock.UnregisterResponder(kidSecretName)
 		}()
 
-		response, err := request.processJWKS()
+		response, err := request.processJWKS(ctx)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.ErrorIs(err, dummyErr)
 		c.Contains(logMock.Output.String(), "kid_fetching_failed")
