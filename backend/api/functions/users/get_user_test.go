@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
@@ -21,8 +22,9 @@ func TestHandlerSuccess(t *testing.T) {
 	expensesMock := expenses.NewDynamoMock()
 	incomeMock := income.NewDynamoMock()
 	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
 
-	request := &userRequest{
+	request := &getUserRequest{
 		userRepo:     usersMock,
 		expensesRepo: expensesMock,
 		incomeRepo:   incomeMock,
@@ -37,7 +39,7 @@ func TestHandlerSuccess(t *testing.T) {
 	}
 
 	t.Run("Happy path", func(t *testing.T) {
-		response, err := request.process(apigwRequest)
+		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
@@ -50,7 +52,7 @@ func TestHandlerSuccess(t *testing.T) {
 
 		usersMock.SetMockedUser(mockedUser)
 
-		response, err := request.process(apigwRequest)
+		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
@@ -65,8 +67,9 @@ func TestHandlerFailed(t *testing.T) {
 	expensesMock := expenses.NewDynamoMock()
 	incomeMock := income.NewDynamoMock()
 	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
 
-	request := &userRequest{
+	request := &getUserRequest{
 		userRepo:     usersMock,
 		expensesRepo: expensesMock,
 		incomeRepo:   incomeMock,
@@ -84,7 +87,7 @@ func TestHandlerFailed(t *testing.T) {
 		usersMock.ActivateForceFailure(errors.New("get user failed"))
 		defer usersMock.DeactivateForceFailure()
 
-		response, err := request.process(apigwRequest)
+		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
@@ -96,7 +99,7 @@ func TestHandlerFailed(t *testing.T) {
 		usersMock.SetMockedUser(nil)
 		defer usersMock.SetMockedUser(users.GetDummyUser())
 
-		response, err := request.process(apigwRequest)
+		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
@@ -109,7 +112,7 @@ func TestHandlerFailed(t *testing.T) {
 		incomeMock.SetMockedIncome(nil)
 		defer incomeMock.SetMockedIncome(income.GetDummyIncome())
 
-		response, err := request.process(apigwRequest)
+		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
@@ -122,7 +125,7 @@ func TestHandlerFailed(t *testing.T) {
 		expensesMock.SetMockedExpenses(nil)
 		defer expensesMock.SetMockedExpenses(expenses.GetDummyExpenses())
 
-		response, err := request.process(apigwRequest)
+		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
