@@ -126,7 +126,14 @@ func TestRoute(t *testing.T) {
 				r.Get("/categories", dummyHandler())
 			})
 		})
+
+		r.Route("/savings", func(r *Router) {
+			r.Get("/", dummyHandler())
+		})
 	})
+
+	_, ok = rootRouter.methodHandlers[http.MethodGet]["/savings"]
+	c.True(ok)
 
 	_, ok = rootRouter.methodHandlers[http.MethodGet]["/users/{userID}"]
 	c.True(ok)
