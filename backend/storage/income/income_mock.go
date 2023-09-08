@@ -24,7 +24,7 @@ func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, userID, periodID str
 	}
 
 	if d.mockedIncome == nil {
-		return nil, ErrNotFound
+		return nil, models.ErrIncomeNotFound
 	}
 
 	return d.mockedIncome, nil

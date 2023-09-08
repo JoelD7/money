@@ -2,7 +2,6 @@ package expenses
 
 import (
 	"context"
-	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -18,10 +17,6 @@ const (
 var (
 	TableName                = env.GetString("EXPENSES_TABLE_NAME", "expenses")
 	periodUserExpenseIDIndex = "period_user-expense_id-index"
-
-	ErrNotFound    = errors.New("expenses not found")
-	ErrEmptyUserID = errors.New("empty userID")
-	ErrEmptyPeriod = errors.New("empty period")
 )
 
 type DynamoRepository struct {
@@ -34,11 +29,11 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error) {
 	if userID == "" {
-		return nil, ErrEmptyUserID
+		return nil, models.ErrEmptyUserID
 	}
 
 	if periodID == "" {
-		return nil, ErrEmptyPeriod
+		return nil, models.ErrEmptyPeriod
 	}
 
 	periodUser := periodID + splitter + userID
@@ -64,7 +59,7 @@ func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, userID, peri
 	}
 
 	if result.Items == nil || len(result.Items) == 0 {
-		return nil, ErrNotFound
+		return nil, models.ErrExpensesNotFound
 	}
 
 	expenses := make([]*models.Expense, 0)

@@ -84,11 +84,13 @@ func TestHandlerFailed(t *testing.T) {
 	}
 
 	t.Run("User fetching failed", func(t *testing.T) {
-		usersMock.ActivateForceFailure(errors.New("get user failed"))
+		dummyError := errors.New("get user failed")
+
+		usersMock.ActivateForceFailure(dummyError)
 		defer usersMock.DeactivateForceFailure()
 
 		response, err := request.process(ctx, apigwRequest)
-		c.Nil(err)
+		c.ErrorIs(err, dummyError)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "user_fetching_failed")
@@ -96,41 +98,41 @@ func TestHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("User not found", func(t *testing.T) {
-		usersMock.SetMockedUser(nil)
-		defer usersMock.SetMockedUser(users.GetDummyUser())
+		usersMock.ActivateForceFailure(models.ErrUserNotFound)
+		defer usersMock.DeactivateForceFailure()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Equal(http.StatusNotFound, response.StatusCode)
 		c.Contains(logMock.Output.String(), "user_fetching_failed")
 		c.Contains(logMock.Output.String(), models.ErrUserNotFound.Error())
 		logMock.Output.Reset()
 	})
 
 	t.Run("Income not found", func(t *testing.T) {
-		incomeMock.SetMockedIncome(nil)
-		defer incomeMock.SetMockedIncome(income.GetDummyIncome())
+		incomeMock.ActivateForceFailure(models.ErrIncomeNotFound)
+		defer incomeMock.DeactivateForceFailure()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Equal(http.StatusNotFound, response.StatusCode)
 		c.Contains(logMock.Output.String(), "user_fetching_failed")
-		c.Contains(logMock.Output.String(), income.ErrNotFound.Error())
+		c.Contains(logMock.Output.String(), models.ErrIncomeNotFound.Error())
 		logMock.Output.Reset()
 	})
 
 	t.Run("Expense not found", func(t *testing.T) {
-		expensesMock.SetMockedExpenses(nil)
-		defer expensesMock.SetMockedExpenses(expenses.GetDummyExpenses())
+		expensesMock.ActivateForceFailure(models.ErrExpensesNotFound)
+		defer expensesMock.DeactivateForceFailure()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Equal(http.StatusNotFound, response.StatusCode)
 		c.Contains(logMock.Output.String(), "user_fetching_failed")
-		c.Contains(logMock.Output.String(), expenses.ErrNotFound.Error())
+		c.Contains(logMock.Output.String(), models.ErrExpensesNotFound.Error())
 		logMock.Output.Reset()
 	})
 }

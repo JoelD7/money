@@ -61,14 +61,7 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 		request.err = err
 		request.log.Error("user_fetching_failed", err, nil)
 
-		return apigateway.NewErrorResponse(errUserFetchingFailed), nil
-	}
-
-	if user == nil {
-		request.err = err
-		request.log.Error("user_not_found", err, nil)
-
-		return apigateway.NewErrorResponse(ErrNotFound), nil
+		return getErrorResponse(err)
 	}
 
 	return apigateway.NewJSONResponse(http.StatusOK, user), nil

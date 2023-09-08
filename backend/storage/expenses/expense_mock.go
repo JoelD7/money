@@ -24,7 +24,7 @@ func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, userID, periodID s
 	}
 
 	if d.mockedExpenses == nil {
-		return nil, ErrNotFound
+		return nil, models.ErrExpensesNotFound
 	}
 
 	return d.mockedExpenses, nil
