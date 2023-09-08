@@ -17,6 +17,14 @@ func NewMock() *Mock {
 	}
 }
 
+func (m *Mock) ActivateForceFailure(err error) {
+	m.mockedErr = err
+}
+
+func (m *Mock) DeactivateForceFailure() {
+	m.mockedErr = nil
+}
+
 func (m *Mock) GetSavings(ctx context.Context, email string) ([]*models.Saving, error) {
 	if m.mockedErr != nil {
 		return nil, m.mockedErr
