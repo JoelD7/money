@@ -115,16 +115,9 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 
 	principalID := subject
 
-	tmp := strings.Split(event.MethodArn, ":")
-	apiGatewayArnTmp := strings.Split(tmp[5], "/")
-	awsAccountID := tmp[4]
+	resp := NewAuthorizerResponse(event.MethodArn, principalID)
 
-	resp := NewAuthorizerResponse(principalID, awsAccountID)
-	resp.Region = tmp[3]
-	resp.APIID = apiGatewayArnTmp[0]
-	resp.Stage = apiGatewayArnTmp[1]
-
-	err = req.verifyUserRequest(resp, apiGatewayArnTmp)
+	err = req.verifyUserRequest(resp, event.MethodArn)
 	if err != nil {
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
@@ -134,12 +127,16 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }
 
-func (req *request) verifyUserRequest(resp *AuthorizerResponse, apiGatewayArnTmp []string) error {
-	if len(apiGatewayArnTmp) < 5 {
+func (req *request) verifyUserRequest(resp *AuthorizerResponse, methodArn string) error {
+	//arn:aws:execute-api:us-east-1:811364018000:38qslpe8d9/ESTestInvoke-stage/GET/users/dummy@gmail.com
+	arnParts := strings.Split(methodArn, ":")
+	apiGatewayArnParts := strings.Split(arnParts[5], "/")
+
+	if len(apiGatewayArnParts) < 5 {
 		return nil
 	}
 
-	userID := apiGatewayArnTmp[4]
+	userID := apiGatewayArnParts[4]
 
 	if resp.PrincipalID != userID {
 		return errUserNotAuthorized
@@ -198,26 +195,24 @@ func (e Effect) String() string {
 	return ""
 }
 
-func NewAuthorizerResponse(principalID string, AccountID string) *AuthorizerResponse {
+func NewAuthorizerResponse(methodArn, principalID string) *AuthorizerResponse {
+	tmp := strings.Split(methodArn, ":")
+	apiGatewayArnTmp := strings.Split(tmp[5], "/")
+
 	return &AuthorizerResponse{
 		APIGatewayCustomAuthorizerResponse: events.APIGatewayCustomAuthorizerResponse{
 			PrincipalID: principalID,
 			PolicyDocument: events.APIGatewayCustomAuthorizerPolicy{
 				Version: "2012-10-17",
 			},
+			Context: map[string]interface{}{
+				"email": principalID,
+			},
 		},
 		Region:    awsRegion,
-		AccountID: AccountID,
-
-		// Replace the placeholder value with a default API Gateway API id to be used in the policy.
-		// Beware of using '*' since it will not simply mean any API Gateway API id, because stars will greedily expand over '/' or other separators.
-		// See https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html for more details.
-		APIID: "<<restApiId>>",
-
-		// Replace the placeholder value with a default stage to be used in the policy.
-		// Beware of using '*' since it will not simply mean any stage, because stars will greedily expand over '/' or other separators.
-		// See https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html for more details.
-		Stage: "<<stage>>",
+		AccountID: tmp[4],
+		APIID:     apiGatewayArnTmp[0],
+		Stage:     apiGatewayArnTmp[1],
 	}
 }
 

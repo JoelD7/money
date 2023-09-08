@@ -49,6 +49,8 @@ func TestHandleRequest(t *testing.T) {
 
 	response, err := req.process(ctx, event)
 	c.Nil(err)
+	c.NotNil(response.Context["email"])
+	c.Equal("test@gmail.com", response.Context["email"])
 	c.Equal(Allow.String(), response.PolicyDocument.Statement[0].Effect)
 }
 
