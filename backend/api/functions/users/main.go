@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
@@ -15,9 +16,11 @@ import (
 var (
 	awsRegion = env.GetString("REGION", "us-east-1")
 
-	ErrNotFound = apigateway.NewError("not found", http.StatusNotFound)
-
-	errUserFetchingFailed = errors.New("user fetching failed")
+	responseByErrors = map[error]apigateway.Error{
+		models.ErrUserNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
+		models.ErrIncomeNotFound:   {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
+		models.ErrExpensesNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
+	}
 )
 
 func initDynamoClient() *dynamodb.Client {
@@ -29,11 +32,23 @@ func initDynamoClient() *dynamodb.Client {
 	return dynamodb.NewFromConfig(cfg)
 }
 
+func getErrorResponse(err error) (*apigateway.Response, error) {
+	for mappedErr, responseErr := range responseByErrors {
+		if errors.Is(err, mappedErr) {
+			return apigateway.NewJSONResponse(responseErr.HTTPCode, responseErr.Message), nil
+		}
+	}
+
+	return apigateway.NewErrorResponse(err), err
+}
+
 func main() {
 	rootRouter := router.NewRouter()
 
-	rootRouter.Route("/users", func(r *router.Router) {
-		r.Get("/{user-id}", getUserHandler)
+	rootRouter.Route("/", func(r *router.Router) {
+		r.Route("/users", func(r *router.Router) {
+			r.Get("/{user-id}", getUserHandler)
+		})
 	})
 
 	lambda.Start(rootRouter.Handle)
