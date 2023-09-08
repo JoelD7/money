@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-lambda-go/events"
+	"strings"
 )
 
 var (
@@ -57,4 +58,42 @@ func NewJSONResponse(statusCode int, v interface{}) *Response {
 		Body:       string(data),
 		Headers:    headers,
 	}
+}
+
+func (req *Request) LogName() string {
+	return "http_request"
+}
+
+func (req *Request) LogProperties() map[string]interface{} {
+	authorizer := map[string]interface{}{
+		"s_event_id":        req.RequestContext.Authorizer["event_id"],
+		"s_username":        req.RequestContext.Authorizer["username"],
+		"s_client_id":       req.RequestContext.Authorizer["client_id"],
+		"s_scope":           req.RequestContext.Authorizer["scope"],
+		"s_api_key_version": req.RequestContext.Authorizer["version"],
+		"b_is_internal":     req.RequestContext.Authorizer["is_internal"],
+	}
+
+	return map[string]interface{}{
+		"s_query_parameters": paramsToString(req.QueryStringParameters),
+		"s_path_parameters":  paramsToString(req.PathParameters),
+		"o_authorizer":       authorizer,
+		"s_user_agent":       req.Headers["User-Agent"],
+		"s_content_type":     req.Headers["Content-Type"],
+		"s_method":           req.HTTPMethod,
+		"s_path":             req.Path,
+	}
+}
+
+func paramsToString(params map[string]string) string {
+	var sb strings.Builder
+
+	for param, value := range params {
+		sb.WriteString(param)
+		sb.WriteString("=")
+		sb.WriteString(value)
+		sb.WriteString(" ")
+	}
+
+	return sb.String()
 }
