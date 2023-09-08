@@ -62,8 +62,6 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 		return err
 	}
 
-	fmt.Printf("item: %+v\n", item)
-
 	input := &dynamodb.PutItemInput{
 		Item:      item,
 		TableName: aws.String(tableName),
