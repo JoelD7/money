@@ -119,12 +119,21 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 
 	err = req.verifyUserRequest(resp, event.MethodArn)
 	if err != nil {
+		req.log.Error("request_denied", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
 
 	resp.AllowAllMethods()
 
 	return resp.APIGatewayCustomAuthorizerResponse, nil
+}
+
+func (req *request) getEventAsLoggerObject(event events.APIGatewayCustomAuthorizerRequest) models.LoggerObject {
+	return req.log.MapToLoggerObject("authorizer_request", map[string]interface{}{
+		"s_type":       event.Type,
+		"s_method_arn": event.MethodArn,
+	})
 }
 
 func (req *request) verifyUserRequest(resp *AuthorizerResponse, methodArn string) error {
