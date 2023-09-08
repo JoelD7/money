@@ -137,7 +137,6 @@ func (req *request) getEventAsLoggerObject(event events.APIGatewayCustomAuthoriz
 }
 
 func (req *request) verifyUserRequest(resp *AuthorizerResponse, methodArn string) error {
-	//arn:aws:execute-api:us-east-1:811364018000:38qslpe8d9/ESTestInvoke-stage/GET/users/dummy@gmail.com
 	arnParts := strings.Split(methodArn, ":")
 	apiGatewayArnParts := strings.Split(arnParts[5], "/")
 
@@ -155,14 +154,7 @@ func (req *request) verifyUserRequest(resp *AuthorizerResponse, methodArn string
 }
 
 func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAuthorizerResponse {
-	tmp := strings.Split(methodArn, ":")
-	apiGatewayArnTmp := strings.Split(tmp[5], "/")
-	awsAccountID := tmp[4]
-
-	resp := NewAuthorizerResponse("user", awsAccountID)
-	resp.Region = tmp[3]
-	resp.APIID = apiGatewayArnTmp[0]
-	resp.Stage = apiGatewayArnTmp[1]
+	resp := NewAuthorizerResponse(methodArn, "user")
 	resp.DenyAllMethods()
 
 	resp.APIGatewayCustomAuthorizerResponse.Context = map[string]interface{}{
