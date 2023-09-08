@@ -46,12 +46,33 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, email string) ([]*mod
 		return nil, models.ErrSavingsNotFound
 	}
 
-	savings := make([]*models.Saving, 0)
+	savings := new([]*models.Saving)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	return savings, nil
+	return *savings, nil
+}
+
+func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
+	item, err := attributevalue.MarshalMap(saving)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("item: %+v\n", item)
+
+	input := &dynamodb.PutItemInput{
+		Item:      item,
+		TableName: aws.String(tableName),
+	}
+
+	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("put item failed: %v", err)
+	}
+
+	return nil
 }

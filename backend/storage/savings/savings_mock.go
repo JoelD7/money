@@ -13,7 +13,7 @@ type Mock struct {
 
 func NewMock() *Mock {
 	return &Mock{
-		mockedSavings: getDummySavings(),
+		mockedSavings: GetDummySavings(),
 	}
 }
 
@@ -33,34 +33,44 @@ func (m *Mock) GetSavings(ctx context.Context, email string) ([]*models.Saving, 
 	return m.mockedSavings, nil
 }
 
-func getDummySavings() []*models.Saving {
+func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) error {
+	if m.mockedErr != nil {
+		return m.mockedErr
+	}
+
+	m.mockedSavings = append(m.mockedSavings, saving)
+
+	return nil
+}
+
+func GetDummySavings() []*models.Saving {
 	return []*models.Saving{
 		{
 			SavingID:     "SV123",
 			SavingGoalID: "SVG123",
 			Email:        "test@gmail.com",
-			CreationDate: time.Time{},
+			CreationDate: time.Now(),
 			Amount:       250,
 		},
 		{
 			SavingID:     "SV456",
 			SavingGoalID: "SVG46",
 			Email:        "test@gmail.com",
-			CreationDate: time.Time{},
+			CreationDate: time.Now(),
 			Amount:       450,
 		},
 		{
 			SavingID:     "SV789",
 			SavingGoalID: "SVG789",
 			Email:        "test@gmail.com",
-			CreationDate: time.Time{},
+			CreationDate: time.Now(),
 			Amount:       789,
 		},
 		{
 			SavingID:     "SV159",
 			SavingGoalID: "SVG159",
 			Email:        "test@gmail.com",
-			CreationDate: time.Time{},
+			CreationDate: time.Now(),
 			Amount:       156,
 		},
 	}
