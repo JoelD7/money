@@ -20,6 +20,8 @@ var (
 		models.ErrUserNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
 		models.ErrIncomeNotFound:   {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
 		models.ErrExpensesNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
+		errNoUserEmailInContext:    {HTTPCode: http.StatusBadRequest, Message: errNoUserEmailInContext.Error()},
+		models.ErrSavingsNotFound:  {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
 	}
 )
 
@@ -48,6 +50,10 @@ func main() {
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/users", func(r *router.Router) {
 			r.Get("/{user-id}", getUserHandler)
+		})
+
+		r.Route("/savings", func(r *router.Router) {
+			r.Get("/", getSavingsHandler)
 		})
 	})
 
