@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"math"
-	"math/rand"
-	"time"
 )
 
 type SavingsManager interface {
 	GetSavings(ctx context.Context, email string) ([]*models.Saving, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
+	UpdateSaving(ctx context.Context, saving *models.Saving) error
 }
 
 func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, email string) ([]*models.Saving, error) {
@@ -49,12 +48,25 @@ func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, sav
 			return fmt.Errorf("saving validation failed: %w", err)
 		}
 
-		saving.SavingID = generateSavingID()
-		saving.CreationDate = time.Now()
-
 		err = sm.CreateSaving(ctx, saving)
 		if err != nil {
 			return fmt.Errorf("saving creation failed: %w", err)
+		}
+
+		return nil
+	}
+}
+
+func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *models.Saving) error {
+	return func(ctx context.Context, saving *models.Saving) error {
+		err := validateSavingForUpdate(saving)
+		if err != nil {
+			return fmt.Errorf("saving validation failed: %w", err)
+		}
+
+		err = sm.UpdateSaving(ctx, saving)
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -78,15 +90,14 @@ func validateSavingInput(saving *models.Saving) error {
 	return nil
 }
 
-func generateSavingID() string {
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	b := make([]byte, 20)
-	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
+func validateSavingForUpdate(saving *models.Saving) error {
+	if err := validateSavingInput(saving); err != nil {
+		return err
 	}
 
-	return "SV" + string(b)
+	if saving.SavingID == "" {
+		return models.ErrMissingSavingID
+	}
+
+	return nil
 }
