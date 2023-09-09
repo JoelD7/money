@@ -29,11 +29,11 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.Income, error) {
 	if userID == "" {
-		return nil, models.ErrEmptyUserID
+		return nil, models.ErrMissingUserID
 	}
 
 	if periodID == "" {
-		return nil, models.ErrEmptyPeriod
+		return nil, models.ErrMissingPeriod
 	}
 
 	periodUser := periodID + splitter + userID
