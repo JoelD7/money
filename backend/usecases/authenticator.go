@@ -228,6 +228,19 @@ func NewRefreshTokenValidator(userGetter UserGetter, logger Logger) func(ctx con
 }
 
 func validateCredentials(email, password string) error {
+	err := validateEmail(email)
+	if err != nil {
+		return err
+	}
+
+	if password == "" {
+		return models.ErrMissingPassword
+	}
+
+	return nil
+}
+
+func validateEmail(email string) error {
 	regex := regexp.MustCompile(emailRegex)
 
 	if email == "" {
@@ -236,10 +249,6 @@ func validateCredentials(email, password string) error {
 
 	if !regex.MatchString(email) {
 		return models.ErrInvalidEmail
-	}
-
-	if password == "" {
-		return models.ErrMissingPassword
 	}
 
 	return nil

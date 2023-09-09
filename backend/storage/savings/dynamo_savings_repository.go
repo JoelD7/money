@@ -69,7 +69,7 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("put item failed: %v", err)
+		return fmt.Errorf("put saving item failed: %v", err)
 	}
 
 	return nil

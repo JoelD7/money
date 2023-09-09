@@ -24,13 +24,7 @@ func TestGetSavingsHandler(t *testing.T) {
 		savingsRepo: savingsMock,
 	}
 
-	apigwRequest := &apigateway.Request{
-		RequestContext: events.APIGatewayProxyRequestContext{
-			Authorizer: map[string]interface{}{
-				"email": "test@gmail.com",
-			},
-		},
-	}
+	apigwRequest := getDummyAPIGatewayRequest()
 
 	response, err := req.process(ctx, apigwRequest)
 	c.NoError(err)
@@ -49,13 +43,7 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		savingsRepo: savingsMock,
 	}
 
-	apigwRequest := &apigateway.Request{
-		RequestContext: events.APIGatewayProxyRequestContext{
-			Authorizer: map[string]interface{}{
-				"email": "test@gmail.com",
-			},
-		},
-	}
+	apigwRequest := getDummyAPIGatewayRequest()
 
 	t.Run("User savings not found", func(t *testing.T) {
 		savingsMock.ActivateForceFailure(models.ErrSavingsNotFound)
@@ -69,12 +57,23 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
-	t.Run("Email not in authorizer context", func(t *testing.T) {
-		apigwRequest = &apigateway.Request{
-			RequestContext: events.APIGatewayProxyRequestContext{
-				Authorizer: map[string]interface{}{},
-			},
+	t.Run("Invalid email", func(t *testing.T) {
+		apigwRequest.RequestContext.Authorizer = map[string]interface{}{
+			"email": "12",
 		}
+		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "invalid_email_detected")
+		c.Contains(logMock.Output.String(), models.ErrInvalidEmail.Error())
+		logMock.Output.Reset()
+	})
+
+	t.Run("Email not in authorizer context", func(t *testing.T) {
+		apigwRequest.RequestContext.Authorizer = map[string]interface{}{}
+		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -83,4 +82,14 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		c.Contains(logMock.Output.String(), errNoUserEmailInContext.Error())
 		logMock.Output.Reset()
 	})
+}
+
+func getDummyAPIGatewayRequest() *apigateway.Request {
+	return &apigateway.Request{
+		RequestContext: events.APIGatewayProxyRequestContext{
+			Authorizer: map[string]interface{}{
+				"email": "test@gmail.com",
+			},
+		},
+	}
 }

@@ -82,6 +82,7 @@ func (req *Request) LogProperties() map[string]interface{} {
 		"s_content_type":     req.Headers["Content-Type"],
 		"s_method":           req.HTTPMethod,
 		"s_path":             req.Path,
+		"s_body":             req.Body,
 	}
 }
 
