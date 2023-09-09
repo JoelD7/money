@@ -66,6 +66,8 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 
 	err = createSaving(ctx, userSaving)
 	if err != nil {
+		request.log.Error("create_saving_failed", err, []models.LoggerObject{req})
+
 		return getErrorResponse(err)
 	}
 

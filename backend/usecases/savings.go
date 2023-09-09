@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"math"
 	"math/rand"
@@ -45,9 +46,7 @@ func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, sav
 	return func(ctx context.Context, saving *models.Saving) error {
 		err := validateSavingInput(saving)
 		if err != nil {
-			l.Error("saving_validation_failed", err, nil)
-
-			return err
+			return fmt.Errorf("saving validation failed: %w", err)
 		}
 
 		saving.SavingID = generateSavingID()
@@ -55,9 +54,7 @@ func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, sav
 
 		err = sm.CreateSaving(ctx, saving)
 		if err != nil {
-			l.Error("create_saving_failed", err, nil)
-
-			return err
+			return fmt.Errorf("saving creation failed: %w", err)
 		}
 
 		return nil
@@ -66,7 +63,7 @@ func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, sav
 
 func validateSavingInput(saving *models.Saving) error {
 	if *saving == (models.Saving{}) {
-		return models.ErrEmptyRequestBody
+		return models.ErrInvalidRequestBody
 	}
 
 	err := validateEmail(saving.Email)

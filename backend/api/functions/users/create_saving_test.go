@@ -49,13 +49,27 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		Body: getDummyRequestBody(),
 	}
 
-	t.Run("Invalid request body", func(t *testing.T) {
+	t.Run("Invalid request body - not JSON", func(t *testing.T) {
 		apigwRequest.Body = "{"
 		defer func() { apigwRequest.Body = getDummyRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
+		c.Contains(logMock.Output.String(), "request_body_unmarshal_failed")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
+		logMock.Output.Reset()
+	})
+
+	t.Run("Invalid request body - not Saving type", func(t *testing.T) {
+		apigwRequest.Body = `{"dummy_field":"SVG123"}`
+		defer func() { apigwRequest.Body = getDummyRequestBody() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Contains(logMock.Output.String(), "create_saving_failed")
+		c.Contains(logMock.Output.String(), models.ErrInvalidRequestBody.Error())
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		logMock.Output.Reset()
 	})
 
 	t.Run("Create saving failed", func(t *testing.T) {
@@ -105,7 +119,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(models.ErrEmptyRequestBody.Error(), response.Body)
+		c.Equal(models.ErrInvalidRequestBody.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 }
