@@ -27,6 +27,8 @@ var (
 		models.ErrMissingEmail:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
 		models.ErrInvalidEmail:       {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
 		models.ErrInvalidRequestBody: {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidRequestBody.Error()},
+		models.ErrCannotUpdateEmail:  {HTTPCode: http.StatusBadRequest, Message: models.ErrCannotUpdateEmail.Error()},
+		models.ErrMissingSavingID:    {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingID.Error()},
 	}
 )
 
@@ -60,6 +62,7 @@ func main() {
 		r.Route("/savings", func(r *router.Router) {
 			r.Get("/", getSavingsHandler)
 			r.Post("/", createSavingHandler)
+			r.Put("/", updateSavingHandler)
 		})
 	})
 
