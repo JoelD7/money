@@ -5,7 +5,7 @@ import "errors"
 var (
 	ErrMissingEmail          = errors.New("missing email")
 	ErrMissingPassword       = errors.New("missing password")
-	ErrInvalidEmail          = errors.New("email is invalid")
+	ErrInvalidEmail          = errors.New("invalid email")
 	ErrUserNotFound          = errors.New("user not found")
 	ErrExistingUser          = errors.New("this account already exists")
 	ErrWrongCredentials      = errors.New("the email or password are incorrect")
@@ -26,4 +26,5 @@ var (
 	ErrEmptyPeriod      = errors.New("empty period")
 	ErrExpensesNotFound = errors.New("user expenses not found")
 	ErrInvalidAmount    = errors.New("invalid amount. The amount has to be a number greater than zero")
+	ErrEmptyRequestBody = errors.New("empty request body")
 )

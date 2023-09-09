@@ -15,6 +15,17 @@ type SavingsManager interface {
 
 func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, email string) ([]*models.Saving, error) {
 	return func(ctx context.Context, email string) ([]*models.Saving, error) {
+		err := validateEmail(email)
+		if err != nil {
+			l.Error("invalid_email_detected", err, []models.LoggerObject{
+				l.MapToLoggerObject("user_data", map[string]interface{}{
+					"s_email": email,
+				}),
+			})
+
+			return nil, err
+		}
+
 		savings, err := sm.GetSavings(ctx, email)
 		if err != nil {
 			l.Error("savings_fetch_failed", err, []models.LoggerObject{
@@ -54,6 +65,10 @@ func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, sav
 }
 
 func validateSavingInput(saving *models.Saving) error {
+	if *saving == (models.Saving{}) {
+		return models.ErrEmptyRequestBody
+	}
+
 	err := validateEmail(saving.Email)
 	if err != nil {
 		return err

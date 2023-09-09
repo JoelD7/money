@@ -26,6 +26,7 @@ var (
 		models.ErrInvalidAmount:    {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
 		models.ErrMissingEmail:     {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
 		models.ErrInvalidEmail:     {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
+		models.ErrEmptyRequestBody: {HTTPCode: http.StatusBadRequest, Message: models.ErrEmptyRequestBody.Error()},
 	}
 )
 

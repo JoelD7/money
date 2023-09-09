@@ -98,6 +98,16 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		c.Equal(models.ErrInvalidAmount.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
+
+	t.Run("Empty request body", func(t *testing.T) {
+		apigwRequest.Body = `{}`
+		defer func() { apigwRequest.Body = getDummyRequestBody() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(models.ErrEmptyRequestBody.Error(), response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+	})
 }
 
 func getDummyRequestBody() string {
