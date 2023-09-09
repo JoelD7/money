@@ -7,6 +7,7 @@ import (
 
 type SavingsManager interface {
 	GetSavings(ctx context.Context, email string) ([]*models.Saving, error)
+	CreateSaving(ctx context.Context, saving *models.Saving) error
 }
 
 func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, email string) ([]*models.Saving, error) {
@@ -23,5 +24,18 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, ema
 		}
 
 		return savings, nil
+	}
+}
+
+func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, saving *models.Saving) error {
+	return func(ctx context.Context, saving *models.Saving) error {
+		err := sm.CreateSaving(ctx, saving)
+		if err != nil {
+			l.Error("create_saving_failed", err, nil)
+
+			return err
+		}
+
+		return nil
 	}
 }

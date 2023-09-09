@@ -21,6 +21,7 @@ var (
 		models.ErrIncomeNotFound:   {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
 		models.ErrExpensesNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
 		errNoUserEmailInContext:    {HTTPCode: http.StatusBadRequest, Message: errNoUserEmailInContext.Error()},
+		errRequestBodyParseFailure: {HTTPCode: http.StatusBadRequest, Message: errRequestBodyParseFailure.Error()},
 		models.ErrSavingsNotFound:  {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
 	}
 )
@@ -54,6 +55,7 @@ func main() {
 
 		r.Route("/savings", func(r *router.Router) {
 			r.Get("/", getSavingsHandler)
+			r.Post("/", createSavingHandler)
 		})
 	})
 
