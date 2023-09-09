@@ -3,6 +3,9 @@ package usecases
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
+	"math"
+	"math/rand"
+	"time"
 )
 
 type SavingsManager interface {
@@ -29,7 +32,17 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, ema
 
 func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, saving *models.Saving) error {
 	return func(ctx context.Context, saving *models.Saving) error {
-		err := sm.CreateSaving(ctx, saving)
+		err := validateSavingInput(saving)
+		if err != nil {
+			l.Error("saving_validation_failed", err, nil)
+
+			return err
+		}
+
+		saving.SavingID = generateSavingID()
+		saving.CreationDate = time.Now()
+
+		err = sm.CreateSaving(ctx, saving)
 		if err != nil {
 			l.Error("create_saving_failed", err, nil)
 
@@ -38,4 +51,30 @@ func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, sav
 
 		return nil
 	}
+}
+
+func validateSavingInput(saving *models.Saving) error {
+	err := validateEmail(saving.Email)
+	if err != nil {
+		return err
+	}
+
+	if saving.Amount <= 0 || saving.Amount > math.MaxFloat64 {
+		return models.ErrInvalidAmount
+	}
+
+	return nil
+}
+
+func generateSavingID() string {
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]byte, 20)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+
+	return "SV" + string(b)
 }

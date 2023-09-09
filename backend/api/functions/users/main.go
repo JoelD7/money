@@ -23,6 +23,9 @@ var (
 		errNoUserEmailInContext:    {HTTPCode: http.StatusBadRequest, Message: errNoUserEmailInContext.Error()},
 		errRequestBodyParseFailure: {HTTPCode: http.StatusBadRequest, Message: errRequestBodyParseFailure.Error()},
 		models.ErrSavingsNotFound:  {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
+		models.ErrInvalidAmount:    {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
+		models.ErrMissingEmail:     {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
+		models.ErrInvalidEmail:     {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
 	}
 )
 

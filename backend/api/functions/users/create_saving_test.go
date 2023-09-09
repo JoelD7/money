@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/savings"
@@ -67,8 +68,38 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		c.ErrorIs(err, dummyError)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
+
+	t.Run("Saving with invalid email", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","email":"12","amount":250}`
+		defer func() { apigwRequest.Body = getDummyRequestBody() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(models.ErrInvalidEmail.Error(), response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+	})
+
+	t.Run("Saving without email", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","amount":250}`
+		defer func() { apigwRequest.Body = getDummyRequestBody() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(models.ErrMissingEmail.Error(), response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+	})
+
+	t.Run("Saving with invalid amount", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","email":"test@gmail.com","amount":-250}`
+		defer func() { apigwRequest.Body = getDummyRequestBody() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(models.ErrInvalidAmount.Error(), response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+	})
 }
 
 func getDummyRequestBody() string {
-	return `{"saving_id":"SV123","saving_goal_id":"SVG123","email":"test@gmail.com","creation_date":"2023-09-08T20:05:41.02376-04:00","amount":250}`
+	return `{"saving_goal_id":"SVG123","email":"test@gmail.com","amount":250}`
 }

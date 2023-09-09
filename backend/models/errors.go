@@ -25,4 +25,5 @@ var (
 	ErrEmptyUserID      = errors.New("empty userID")
 	ErrEmptyPeriod      = errors.New("empty period")
 	ErrExpensesNotFound = errors.New("user expenses not found")
+	ErrInvalidAmount    = errors.New("invalid amount. The amount has to be a number greater than zero")
 )
