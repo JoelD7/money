@@ -105,7 +105,7 @@ func getErrorResponse(err error) (*apigateway.Response, error) {
 		}
 	}
 
-	return apigateway.NewErrorResponse(err), err
+	return apigateway.NewErrorResponse(err), nil
 }
 
 func main() {
