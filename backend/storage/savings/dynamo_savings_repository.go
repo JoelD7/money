@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"math/rand"
 	"time"
 )
@@ -92,8 +93,6 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 		return fmt.Errorf("marshaling saving id key: %v", err)
 	}
 
-	saving.UpdatedDate = time.Now()
-
 	attributeValues, err := getAttributeValues(saving)
 	if err != nil {
 		return fmt.Errorf("getting attribute values: %v", err)
@@ -107,12 +106,16 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 			"saving_id": savingID,
 		},
 		TableName:                 aws.String(tableName),
-		ConditionExpression:       aws.String("attribute_not_exists(saving_id)"),
+		ConditionExpression:       aws.String("attribute_exists(saving_id)"),
 		ExpressionAttributeValues: attributeValues,
 		UpdateExpression:          updateExpression,
 	}
 
 	_, err = d.dynamoClient.UpdateItem(ctx, input)
+	if ae, ok := err.(awserr.RequestFailure); ok && ae.Code() == "ConditionalCheckFailedException" {
+		return fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
+	}
+
 	if err != nil {
 		return fmt.Errorf("updating saving item: %v", err)
 	}
@@ -133,6 +136,11 @@ func getAttributeValues(saving *models.Saving) (map[string]types.AttributeValue,
 		return nil, err
 	}
 
+	updatedDate, err := attributevalue.Marshal(time.Now())
+	if err != nil {
+		return nil, err
+	}
+
 	if saving.SavingGoalID != "" {
 		m[":saving_goal_id"] = savingGoalID
 	}
@@ -140,6 +148,8 @@ func getAttributeValues(saving *models.Saving) (map[string]types.AttributeValue,
 	if saving.Amount > 0 {
 		m[":amount"] = amount
 	}
+
+	m[":updated_date"] = updatedDate
 
 	return m, nil
 }
@@ -153,6 +163,10 @@ func getUpdateExpression(attributeValues map[string]types.AttributeValue) *strin
 
 	if _, ok := attributeValues[":amount"]; ok {
 		expr += " amount = :amount"
+	}
+
+	if _, ok := attributeValues[":updated_date"]; ok {
+		expr += " updated_date = :updated_date"
 	}
 
 	return aws.String(expr)
