@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -155,21 +156,21 @@ func getAttributeValues(saving *models.Saving) (map[string]types.AttributeValue,
 }
 
 func getUpdateExpression(attributeValues map[string]types.AttributeValue) *string {
-	expr := "SET"
+	attributes := make([]string, 0)
 
 	if _, ok := attributeValues[":saving_goal_id"]; ok {
-		expr += " saving_goal_id = :saving_goal_id"
+		attributes = append(attributes, "saving_goal_id = :saving_goal_id")
 	}
 
 	if _, ok := attributeValues[":amount"]; ok {
-		expr += " amount = :amount"
+		attributes = append(attributes, "amount = :amount")
 	}
 
 	if _, ok := attributeValues[":updated_date"]; ok {
-		expr += " updated_date = :updated_date"
+		attributes = append(attributes, "updated_date = :updated_date")
 	}
 
-	return aws.String(expr)
+	return aws.String("SET " + strings.Join(attributes, ", "))
 }
 
 func generateSavingID() string {
