@@ -66,7 +66,7 @@ func TestJWKSHandlerFailed(t *testing.T) {
 
 		response, err := request.processJWKS(ctx)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.ErrorIs(err, dummyErr)
+		c.NoError(err)
 		c.Contains(logMock.Output.String(), "public_key_fetching_failed")
 	})
 
@@ -88,7 +88,7 @@ func TestJWKSHandlerFailed(t *testing.T) {
 
 		response, err := request.processJWKS(ctx)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.ErrorIs(err, dummyErr)
+		c.NoError(err)
 		c.Contains(logMock.Output.String(), "kid_fetching_failed")
 	})
 }

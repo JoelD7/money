@@ -109,7 +109,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		apigwRequest.Headers["Cookie"] = refreshTokenCookieName + "=" + users.DummyPreviousToken
 
 		response, err := request.processToken(ctx, apigwRequest)
-		c.ErrorIs(err, dummyErr)
+		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "refresh_token_validation_failed")
@@ -146,7 +146,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 		apigwRequest.Headers["Cookie"] = refreshTokenCookieName + "=" + users.DummyToken
 
 		response, err := request.processToken(ctx, dummyApigwRequest)
-		c.ErrorIs(err, secrets.ErrForceFailure)
+		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
 		c.Contains(logMock.Output.String(), "generate_access_token_failed")

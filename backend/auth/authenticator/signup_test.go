@@ -73,7 +73,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 		apigwRequest := &apigateway.Request{Body: "}"}
 
 		response, err := request.processSignUp(ctx, apigwRequest)
-		c.NotNil(err)
+		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Equal(apigateway.ErrInternalError.Message, response.Body)
 	})

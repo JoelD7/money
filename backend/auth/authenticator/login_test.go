@@ -96,7 +96,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 	defer secretMock.DeactivateForceFailure()
 
 	response, err := request.processLogin(ctx, apigwRequest)
-	c.ErrorIs(err, secrets.ErrForceFailure)
+	c.NoError(err)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
 	c.Equal(apigateway.ErrInternalError.Message, response.Body)
 
@@ -113,7 +113,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 	t.Run("Invalid request body", func(t *testing.T) {
 		apigwRequest.Body = "a"
 		response, err = request.processLogin(ctx, apigwRequest)
-		c.NotNil(err)
+		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Equal(apigateway.ErrInternalError.Message, response.Body)
 	})
