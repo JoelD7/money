@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"math/rand"
 	"strings"
 	"time"
@@ -113,7 +112,7 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 	}
 
 	_, err = d.dynamoClient.UpdateItem(ctx, input)
-	if ae, ok := err.(awserr.RequestFailure); ok && ae.Code() == "ConditionalCheckFailedException" {
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
 		return fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
 	}
 
