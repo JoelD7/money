@@ -90,7 +90,7 @@ func TestHandlerFailed(t *testing.T) {
 		defer usersMock.DeactivateForceFailure()
 
 		response, err := request.process(ctx, apigwRequest)
-		c.ErrorIs(err, dummyError)
+		c.NoError(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Contains(logMock.Output.String(), "user_fetching_failed")

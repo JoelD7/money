@@ -43,34 +43,42 @@ func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) error {
 	return nil
 }
 
+func (m *Mock) UpdateSaving(ctx context.Context, saving *models.Saving) error {
+	if m.mockedErr != nil {
+		return m.mockedErr
+	}
+
+	return nil
+}
+
 func GetDummySavings() []*models.Saving {
 	return []*models.Saving{
 		{
 			SavingID:     "SV123",
 			SavingGoalID: "SVG123",
 			Email:        "test@gmail.com",
-			CreationDate: time.Now(),
+			CreatedDate:  time.Now(),
 			Amount:       250,
 		},
 		{
 			SavingID:     "SV456",
 			SavingGoalID: "SVG46",
 			Email:        "test@gmail.com",
-			CreationDate: time.Now(),
+			CreatedDate:  time.Now(),
 			Amount:       450,
 		},
 		{
 			SavingID:     "SV789",
 			SavingGoalID: "SVG789",
 			Email:        "test@gmail.com",
-			CreationDate: time.Now(),
+			CreatedDate:  time.Now(),
 			Amount:       789,
 		},
 		{
 			SavingID:     "SV159",
 			SavingGoalID: "SVG159",
 			Email:        "test@gmail.com",
-			CreationDate: time.Now(),
+			CreatedDate:  time.Now(),
 			Amount:       156,
 		},
 	}

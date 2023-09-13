@@ -79,7 +79,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		defer savingsMock.DeactivateForceFailure()
 
 		response, err := req.process(ctx, apigwRequest)
-		c.ErrorIs(err, dummyError)
+		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 

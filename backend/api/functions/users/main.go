@@ -17,16 +17,19 @@ var (
 	awsRegion = env.GetString("REGION", "us-east-1")
 
 	responseByErrors = map[error]apigateway.Error{
-		models.ErrUserNotFound:       {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
-		models.ErrIncomeNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
-		models.ErrExpensesNotFound:   {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
-		errNoUserEmailInContext:      {HTTPCode: http.StatusBadRequest, Message: errNoUserEmailInContext.Error()},
-		errRequestBodyParseFailure:   {HTTPCode: http.StatusBadRequest, Message: errRequestBodyParseFailure.Error()},
-		models.ErrSavingsNotFound:    {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
-		models.ErrInvalidAmount:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
-		models.ErrMissingEmail:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
-		models.ErrInvalidEmail:       {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
-		models.ErrInvalidRequestBody: {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidRequestBody.Error()},
+		models.ErrUserNotFound:         {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
+		models.ErrIncomeNotFound:       {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
+		models.ErrExpensesNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
+		errNoUserEmailInContext:        {HTTPCode: http.StatusBadRequest, Message: errNoUserEmailInContext.Error()},
+		errRequestBodyParseFailure:     {HTTPCode: http.StatusBadRequest, Message: errRequestBodyParseFailure.Error()},
+		models.ErrSavingsNotFound:      {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
+		models.ErrInvalidAmount:        {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
+		models.ErrMissingEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
+		models.ErrInvalidEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
+		models.ErrInvalidRequestBody:   {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidRequestBody.Error()},
+		models.ErrCannotUpdateEmail:    {HTTPCode: http.StatusBadRequest, Message: models.ErrCannotUpdateEmail.Error()},
+		models.ErrMissingSavingID:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingID.Error()},
+		models.ErrUpdateSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrUpdateSavingNotFound.Error()},
 	}
 )
 
@@ -46,7 +49,7 @@ func getErrorResponse(err error) (*apigateway.Response, error) {
 		}
 	}
 
-	return apigateway.NewErrorResponse(err), err
+	return apigateway.NewErrorResponse(err), nil
 }
 
 func main() {
@@ -60,6 +63,7 @@ func main() {
 		r.Route("/savings", func(r *router.Router) {
 			r.Get("/", getSavingsHandler)
 			r.Post("/", createSavingHandler)
+			r.Put("/", updateSavingHandler)
 		})
 	})
 
