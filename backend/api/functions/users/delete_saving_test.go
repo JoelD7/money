@@ -11,20 +11,20 @@ import (
 	"testing"
 )
 
-func TestUpdateSaving(t *testing.T) {
+func TestDeleteHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
 	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
-	req := &updateSavingRequest{
+	req := &deleteSavingRequest{
 		log:         logMock,
 		savingsRepo: savingsMock,
 	}
 
 	apigwRequest := &apigateway.Request{
-		Body: getDummyUpdateRequestBody(),
+		Body: getDummyDeleteRequestBody(),
 	}
 
 	response, err := req.process(ctx, apigwRequest)
@@ -32,53 +32,62 @@ func TestUpdateSaving(t *testing.T) {
 	c.Equal(http.StatusOK, response.StatusCode)
 }
 
-func TestUpdateSavingHandlerFailed(t *testing.T) {
+func TestDeleteHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
-	req := &updateSavingRequest{
+	req := &deleteSavingRequest{
 		log:         logMock,
 		savingsRepo: savingsMock,
 	}
 
 	apigwRequest := &apigateway.Request{
-		Body: getDummyUpdateRequestBody(),
+		Body: getDummyDeleteRequestBody(),
 	}
 
-	t.Run("No email", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","amount":250}`
-		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
+	t.Run("Invalid request body - not JSON", func(t *testing.T) {
+		apigwRequest.Body = "{"
+		defer func() { apigwRequest.Body = getDummyDeleteRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
+		c.Contains(logMock.Output.String(), "request_body_unmarshal_failed")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrMissingEmail.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_saving_failed")
+		logMock.Output.Reset()
 	})
 
-	t.Run("Invalid amount", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","email":"test@gmail.com","amount":0}`
-		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
+	t.Run("Saving with invalid email", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_id":"SVG123","email":"12","amount":250}`
+		defer func() { apigwRequest.Body = getDummyDeleteRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
+		c.Equal(models.ErrInvalidEmail.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrInvalidAmount.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_saving_failed")
+	})
+
+	t.Run("Saving without email", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","amount":250}`
+		defer func() { apigwRequest.Body = getDummyDeleteRequestBody() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(models.ErrMissingEmail.Error(), response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
 	t.Run("No saving ID", func(t *testing.T) {
 		apigwRequest.Body = `{"saving_goal_id":"SVG123","email":"test@gmail.com","amount":250}`
-		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
+		defer func() { apigwRequest.Body = getDummyDeleteRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrMissingSavingID.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_saving_failed")
+		c.Contains(logMock.Output.String(), "delete_saving_failed")
 	})
 
 	t.Run("Saving doesn't exist", func(t *testing.T) {
@@ -90,19 +99,10 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusNotFound, response.StatusCode)
-		c.Contains(response.Body, models.ErrUpdateSavingNotFound.Error())
+		c.Contains(response.Body, models.ErrDeleteSavingNotFound.Error())
 	})
 }
 
-type mockRequestFailure struct{}
-
-func (e *mockRequestFailure) StatusCode() int   { return 0 }
-func (e *mockRequestFailure) RequestID() string { return "" }
-func (e *mockRequestFailure) Code() string      { return "ConditionalCheckFailedException" }
-func (e *mockRequestFailure) Message() string   { return "" }
-func (e *mockRequestFailure) OrigErr() error    { return nil }
-func (e *mockRequestFailure) Error() string     { return "ConditionalCheckFailedException" }
-
-func getDummyUpdateRequestBody() string {
-	return `{"saving_id":"SV123","saving_goal_id":"SVG123","email":"test@gmail.com","amount":250}`
+func getDummyDeleteRequestBody() string {
+	return `{"saving_id":"SV123","email":"test@gmail.com"}`
 }
