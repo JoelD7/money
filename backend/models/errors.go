@@ -22,6 +22,7 @@ var (
 	ErrMalformedToken       = errors.New("invalid token")
 	ErrSavingsNotFound      = errors.New("savings not found")
 	ErrUpdateSavingNotFound = errors.New("the saving you are trying to update does not exist")
+	ErrDeleteSavingNotFound = errors.New("the saving you are trying to delete does not exist")
 	ErrIncomeNotFound       = errors.New("user income not found")
 	ErrMissingUserID        = errors.New("missing userID")
 	ErrMissingPeriod        = errors.New("missing period")

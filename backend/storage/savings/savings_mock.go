@@ -3,6 +3,7 @@ package savings
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
+	"strings"
 	"time"
 )
 
@@ -44,6 +45,22 @@ func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) error {
 }
 
 func (m *Mock) UpdateSaving(ctx context.Context, saving *models.Saving) error {
+	if m.mockedErr != nil && strings.Contains(m.mockedErr.Error(), "ConditionalCheckFailedException") {
+		return models.ErrUpdateSavingNotFound
+	}
+
+	if m.mockedErr != nil {
+		return m.mockedErr
+	}
+
+	return nil
+}
+
+func (m *Mock) DeleteSaving(ctx context.Context, savingID, email string) error {
+	if m.mockedErr != nil && strings.Contains(m.mockedErr.Error(), "ConditionalCheckFailedException") {
+		return models.ErrDeleteSavingNotFound
+	}
+
 	if m.mockedErr != nil {
 		return m.mockedErr
 	}

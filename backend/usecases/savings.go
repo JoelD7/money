@@ -11,6 +11,7 @@ type SavingsManager interface {
 	GetSavings(ctx context.Context, email string) ([]*models.Saving, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
+	DeleteSaving(ctx context.Context, savingID, email string) error
 }
 
 func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, email string) ([]*models.Saving, error) {
@@ -100,4 +101,24 @@ func validateSavingForUpdate(saving *models.Saving) error {
 	}
 
 	return nil
+}
+
+func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, email string) error {
+	return func(ctx context.Context, savingID, email string) error {
+		err := validateEmail(email)
+		if err != nil {
+			return err
+		}
+
+		if savingID == "" {
+			return models.ErrMissingSavingID
+		}
+
+		err = sm.DeleteSaving(ctx, savingID, email)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
 }

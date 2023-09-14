@@ -184,3 +184,35 @@ func generateSavingID() string {
 
 	return "SV" + string(b)
 }
+
+func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, email string) error {
+	emailAtr, err := attributevalue.Marshal(email)
+	if err != nil {
+		return fmt.Errorf("marshaling email key: %v", err)
+	}
+
+	savingIDAtr, err := attributevalue.Marshal(savingID)
+	if err != nil {
+		return fmt.Errorf("marshaling saving id key: %v", err)
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		Key: map[string]types.AttributeValue{
+			"email":     emailAtr,
+			"saving_id": savingIDAtr,
+		},
+		TableName:           aws.String(tableName),
+		ConditionExpression: aws.String("attribute_exists(saving_id)"),
+	}
+
+	_, err = d.dynamoClient.DeleteItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
+	}
+
+	if err != nil {
+		return fmt.Errorf("deleting item: %v", err)
+	}
+
+	return nil
+}

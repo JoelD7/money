@@ -30,6 +30,7 @@ var (
 		models.ErrCannotUpdateEmail:    {HTTPCode: http.StatusBadRequest, Message: models.ErrCannotUpdateEmail.Error()},
 		models.ErrMissingSavingID:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingID.Error()},
 		models.ErrUpdateSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrUpdateSavingNotFound.Error()},
+		models.ErrDeleteSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrDeleteSavingNotFound.Error()},
 	}
 )
 
@@ -64,6 +65,7 @@ func main() {
 			r.Get("/", getSavingsHandler)
 			r.Post("/", createSavingHandler)
 			r.Put("/", updateSavingHandler)
+			r.Delete("/", deleteSavingHandler)
 		})
 	})
 
