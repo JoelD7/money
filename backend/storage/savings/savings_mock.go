@@ -26,12 +26,12 @@ func (m *Mock) DeactivateForceFailure() {
 	m.mockedErr = nil
 }
 
-func (m *Mock) GetSavings(ctx context.Context, email string) ([]*models.Saving, error) {
+func (m *Mock) GetSavings(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
-		return nil, m.mockedErr
+		return nil, "", m.mockedErr
 	}
 
-	return m.mockedSavings, nil
+	return m.mockedSavings, "", nil
 }
 
 func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) error {
