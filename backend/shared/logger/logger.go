@@ -25,14 +25,14 @@ const (
 
 	retries           = 3
 	backoffFactor     = 2
-	connectionTimeout = time.Second * 5
+	connectionTimeout = time.Second * 4
 	//leave this here just in case you decide to add custom log timestamps
 	timestampLayout = "2006-01-02T15:04:05.999999999Z"
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-93-38-155.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-209-251-131.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -82,15 +82,18 @@ func NewLoggerWithHandler(handler string) LogAPI {
 }
 
 func (l *Log) Info(eventName string, objects []models.LoggerObject) {
-	l.sendLog(infoLevel, eventName, nil, objects)
+	l.wg.Add(1)
+	go l.sendLog(infoLevel, eventName, nil, objects)
 }
 
 func (l *Log) Warning(eventName string, err error, objects []models.LoggerObject) {
-	l.sendLog(warningLevel, eventName, err, objects)
+	l.wg.Add(1)
+	go l.sendLog(warningLevel, eventName, err, objects)
 }
 
 func (l *Log) Error(eventName string, err error, objects []models.LoggerObject) {
-	l.sendLog(errLevel, eventName, err, objects)
+	l.wg.Add(1)
+	go l.sendLog(errLevel, eventName, err, objects)
 }
 
 func (l *Log) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
@@ -114,10 +117,13 @@ func (l *Log) LogLambdaTime(startingTime time.Time, err error, panic interface{}
 }
 
 func (l *Log) Critical(eventName string, objects []models.LoggerObject) {
-	l.sendLog(panicLevel, eventName, nil, objects)
+	l.wg.Add(1)
+	go l.sendLog(panicLevel, eventName, nil, objects)
 }
 
 func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) {
+	defer l.wg.Done()
+
 	err := l.connect()
 	if err != nil {
 		errorLogger.Println(fmt.Errorf("error connecting to Logstash server: %w", err))
@@ -143,8 +149,7 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 		panic(fmt.Errorf("logger: error encoding log data: %w", err))
 	}
 
-	l.wg.Add(1)
-	go l.writeToLogstash(dataAsBytes.Bytes())
+	l.writeToLogstash(dataAsBytes.Bytes())
 }
 
 func (l *Log) writeToLogstash(data []byte) {
@@ -154,8 +159,6 @@ func (l *Log) writeToLogstash(data []byte) {
 		//could be setting Cloudwatch alarms to monitor this kind of failures.
 		errorLogger.Println(fmt.Errorf("logger: error writing data to logstash: %w", err))
 	}
-
-	l.wg.Done()
 }
 
 func (l *Log) connect() error {
@@ -165,15 +168,6 @@ func (l *Log) connect() error {
 
 	connection, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
 
-	backoff := time.Second * 2
-
-	for i := 0; i < retries && err != nil; i++ {
-		time.Sleep(backoff)
-
-		connection, err = net.DialTimeout("tcp", logstashHost+":"+logstashPort, time.Second*1)
-		backoff *= backoffFactor
-	}
-
 	l.connection = connection
 
 	return err
@@ -181,7 +175,7 @@ func (l *Log) connect() error {
 
 func (l *Log) write(data []byte) error {
 	_, err := l.connection.Write(data)
-	backoff := time.Second * 2
+	backoff := time.Second * 1
 
 	for i := 0; i < retries && err != nil; i++ {
 		time.Sleep(backoff)
@@ -196,6 +190,11 @@ func (l *Log) write(data []byte) error {
 // Close closes the connection to the Logstash server
 func (l *Log) Close() error {
 	l.wg.Wait()
+
+	// this will be nil if a connection can never be made, in which case, there is no connection to close.
+	if l.connection == nil {
+		return nil
+	}
 
 	err := l.connection.Close()
 	if err != nil {
