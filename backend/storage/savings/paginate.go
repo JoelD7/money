@@ -4,17 +4,30 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
+
+type keys struct {
+	SavingID string `json:"saving_id" dynamodbav:"saving_id"`
+	Email    string `json:"email" dynamodbav:"email"`
+}
 
 func encodeLastKey(lastKey map[string]types.AttributeValue) (string, error) {
 	if len(lastKey) == 0 {
 		return "", nil
 	}
 
-	data, err := json.Marshal(lastKey)
+	primaryKey := new(keys)
+
+	err := attributevalue.UnmarshalMap(lastKey, primaryKey)
 	if err != nil {
-		return "", fmt.Errorf("encoding last key: %v", err)
+		return "", fmt.Errorf("unmarshalling lastKey map: %v", err)
+	}
+
+	data, err := json.Marshal(primaryKey)
+	if err != nil {
+		return "", fmt.Errorf("marshalling primary key: %v", err)
 	}
 
 	encoded := base64.URLEncoding.EncodeToString(data)
@@ -28,11 +41,15 @@ func decodeStartKey(startKey string) (map[string]types.AttributeValue, error) {
 		return nil, fmt.Errorf("decoding last key: %v", err)
 	}
 
-	exclusiveStartKey := map[string]types.AttributeValue{}
-
-	err = json.Unmarshal(decoded, &exclusiveStartKey)
+	primaryKeyDecoded := new(keys)
+	err = json.Unmarshal(decoded, primaryKeyDecoded)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshalling last key: %v", err)
+		return nil, fmt.Errorf("unmarshalling primary key: %v", err)
+	}
+
+	exclusiveStartKey, err := attributevalue.MarshalMap(primaryKeyDecoded)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling to map of attribute value: %v", err)
 	}
 
 	return exclusiveStartKey, nil
