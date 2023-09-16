@@ -34,7 +34,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, email, startKey strin
 	if startKey != "" {
 		decodedStartKey, err = decodeStartKey(startKey)
 		if err != nil {
-			return nil, "", err
+			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
 
