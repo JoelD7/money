@@ -31,7 +31,7 @@ func (m *Mock) GetSavings(ctx context.Context, email, startKey string, pageSize 
 		return nil, "", m.mockedErr
 	}
 
-	return m.mockedSavings, "", nil
+	return m.mockedSavings, "next_key", nil
 }
 
 func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) error {

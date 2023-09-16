@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	tableName = "savings"
+	tableName       = "savings"
+	defaultPageSize = 10
 )
 
 type DynamoRepository struct {
@@ -50,7 +51,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, email, startKey strin
 		KeyConditionExpression:    expr.Condition(),
 		TableName:                 aws.String(tableName),
 		ExclusiveStartKey:         decodedStartKey,
-		Limit:                     aws.Int32(int32(pageSize)),
+		Limit:                     getPageSize(pageSize),
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -200,6 +201,14 @@ func generateSavingID() string {
 	}
 
 	return "SV" + string(b)
+}
+
+func getPageSize(pageSize int) *int32 {
+	if pageSize == 0 {
+		return aws.Int32(defaultPageSize)
+	}
+
+	return aws.Int32(int32(pageSize))
 }
 
 func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, email string) error {
