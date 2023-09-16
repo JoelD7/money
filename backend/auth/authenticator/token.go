@@ -48,6 +48,13 @@ func (req *requestTokenHandler) initTokenHandler() {
 }
 
 func (req *requestTokenHandler) finish() {
+	defer func() {
+		err := req.log.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
@@ -95,6 +102,7 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 			refreshToken.Expiration.Format(time.RFC1123)),
 	}
 
+	fmt.Println("hi")
 	req.log.Info("new_tokens_issued_successfully", []models.LoggerObject{user})
 
 	return &apigateway.Response{
