@@ -31,6 +31,8 @@ var (
 		models.ErrMissingSavingID:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingID.Error()},
 		models.ErrUpdateSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrUpdateSavingNotFound.Error()},
 		models.ErrDeleteSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrDeleteSavingNotFound.Error()},
+		models.ErrInvalidPageSize:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPageSize.Error()},
+		models.ErrInvalidStartKey:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidStartKey.Error()},
 	}
 )
 

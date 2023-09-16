@@ -35,6 +35,13 @@ func (req *requestJwksHandler) initJwksHandler() {
 }
 
 func (req *requestJwksHandler) finish() {
+	defer func() {
+		err := req.log.Close()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 

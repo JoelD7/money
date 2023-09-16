@@ -86,6 +86,10 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 
 func getDummyAPIGatewayRequest() *apigateway.Request {
 	return &apigateway.Request{
+		QueryStringParameters: map[string]string{
+			"page_size": "10",
+			"start_key": "eyJlbWFpbCI6eyJWYWx1ZSI6InRlc3RAZ21haWwuY29tIn0sInNhdmluZ19pZCI6eyJWYWx1ZSI6IlNWMTU5In19",
+		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"email": "test@gmail.com",

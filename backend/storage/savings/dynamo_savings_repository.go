@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	tableName = "savings"
+	tableName       = "savings"
+	defaultPageSize = 10
 )
 
 type DynamoRepository struct {
@@ -26,12 +27,22 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) GetSavings(ctx context.Context, email string) ([]*models.Saving, error) {
+func (d *DynamoRepository) GetSavings(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
+	var decodedStartKey map[string]types.AttributeValue
+	var err error
+
+	if startKey != "" {
+		decodedStartKey, err = decodeStartKey(startKey)
+		if err != nil {
+			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+		}
+	}
+
 	nameEx := expression.Name("email").Equal(expression.Value(email))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	input := &dynamodb.QueryInput{
@@ -39,25 +50,32 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, email string) ([]*mod
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
 		TableName:                 aws.String(tableName),
+		ExclusiveStartKey:         decodedStartKey,
+		Limit:                     getPageSize(pageSize),
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("query failed: %v", err)
+		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
 	if result.Items == nil || len(result.Items) == 0 {
-		return nil, models.ErrSavingsNotFound
+		return nil, "", models.ErrSavingsNotFound
 	}
 
 	savings := new([]*models.Saving)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal savings items failed: %v", err)
+		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	return *savings, nil
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return *savings, nextKey, nil
 }
 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
@@ -183,6 +201,14 @@ func generateSavingID() string {
 	}
 
 	return "SV" + string(b)
+}
+
+func getPageSize(pageSize int) *int32 {
+	if pageSize == 0 {
+		return aws.Int32(defaultPageSize)
+	}
+
+	return aws.Int32(int32(pageSize))
 }
 
 func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, email string) error {

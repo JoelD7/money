@@ -8,14 +8,14 @@ import (
 )
 
 type SavingsManager interface {
-	GetSavings(ctx context.Context, email string) ([]*models.Saving, error)
+	GetSavings(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
 	DeleteSaving(ctx context.Context, savingID, email string) error
 }
 
-func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, email string) ([]*models.Saving, error) {
-	return func(ctx context.Context, email string) ([]*models.Saving, error) {
+func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
 		err := validateEmail(email)
 		if err != nil {
 			l.Error("invalid_email_detected", err, []models.LoggerObject{
@@ -24,21 +24,26 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, ema
 				}),
 			})
 
-			return nil, err
+			return nil, "", err
 		}
 
-		savings, err := sm.GetSavings(ctx, email)
-		if err != nil {
-			l.Error("savings_fetch_failed", err, []models.LoggerObject{
+		if err = validatePageSize(pageSize); err != nil {
+			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
 				l.MapToLoggerObject("user_data", map[string]interface{}{
-					"s_email": email,
+					"s_email":     email,
+					"i_page_size": pageSize,
 				}),
 			})
 
-			return nil, err
+			return nil, "", err
 		}
 
-		return savings, nil
+		savings, nextKey, err := sm.GetSavings(ctx, email, startKey, pageSize)
+		if err != nil {
+			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
+		}
+
+		return savings, nextKey, nil
 	}
 }
 
@@ -98,6 +103,14 @@ func validateSavingForUpdate(saving *models.Saving) error {
 
 	if saving.SavingID == "" {
 		return models.ErrMissingSavingID
+	}
+
+	return nil
+}
+
+func validatePageSize(pageSize int) error {
+	if pageSize < 0 || pageSize > math.MaxInt32 {
+		return models.ErrInvalidPageSize
 	}
 
 	return nil

@@ -31,4 +31,6 @@ var (
 	ErrInvalidRequestBody   = errors.New("invalid request body")
 	ErrCannotUpdateEmail    = errors.New("cannot update email for a saving")
 	ErrMissingSavingID      = errors.New("missing saving id")
+	ErrInvalidPageSize      = errors.New("invalid page size")
+	ErrInvalidStartKey      = errors.New("invalid start key")
 )
