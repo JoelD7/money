@@ -10,6 +10,6 @@ const (
 )
 
 type InvalidTokenManager interface {
-	GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error)
-	AddInvalidToken(ctx context.Context, email, token string, ttl int64) error
+	GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error)
+	AddInvalidToken(ctx context.Context, username, token string, ttl int64) error
 }

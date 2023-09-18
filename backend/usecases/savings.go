@@ -8,19 +8,19 @@ import (
 )
 
 type SavingsManager interface {
-	GetSavings(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error)
+	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
-	DeleteSaving(ctx context.Context, savingID, email string) error
+	DeleteSaving(ctx context.Context, savingID, username string) error
 }
 
-func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
-		err := validateEmail(email)
+func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
+		err := validateEmail(username)
 		if err != nil {
 			l.Error("invalid_email_detected", err, []models.LoggerObject{
 				l.MapToLoggerObject("user_data", map[string]interface{}{
-					"s_email": email,
+					"s_username": username,
 				}),
 			})
 
@@ -30,7 +30,7 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, ema
 		if err = validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
 				l.MapToLoggerObject("user_data", map[string]interface{}{
-					"s_email":     email,
+					"s_username":  username,
 					"i_page_size": pageSize,
 				}),
 			})
@@ -38,7 +38,7 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, ema
 			return nil, "", err
 		}
 
-		savings, nextKey, err := sm.GetSavings(ctx, email, startKey, pageSize)
+		savings, nextKey, err := sm.GetSavings(ctx, username, startKey, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
@@ -84,7 +84,7 @@ func validateSavingInput(saving *models.Saving) error {
 		return models.ErrInvalidRequestBody
 	}
 
-	err := validateEmail(saving.Email)
+	err := validateEmail(saving.Username)
 	if err != nil {
 		return err
 	}
@@ -116,9 +116,9 @@ func validatePageSize(pageSize int) error {
 	return nil
 }
 
-func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, email string) error {
-	return func(ctx context.Context, savingID, email string) error {
-		err := validateEmail(email)
+func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, username string) error {
+	return func(ctx context.Context, savingID, username string) error {
+		err := validateEmail(username)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, ema
 			return models.ErrMissingSavingID
 		}
 
-		err = sm.DeleteSaving(ctx, savingID, email)
+		err = sm.DeleteSaving(ctx, savingID, username)
 		if err != nil {
 			return err
 		}

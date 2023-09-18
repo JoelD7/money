@@ -59,8 +59,8 @@ func TestDeleteHandlerFailed(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
-	t.Run("Saving with invalid email", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SVG123","email":"12","amount":250}`
+	t.Run("Saving with invalid username", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_id":"SVG123","username":"12","amount":250}`
 		defer func() { apigwRequest.Body = getDummyDeleteRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -80,7 +80,7 @@ func TestDeleteHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("No saving ID", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_goal_id":"SVG123","email":"test@gmail.com","amount":250}`
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`
 		defer func() { apigwRequest.Body = getDummyDeleteRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -104,5 +104,5 @@ func TestDeleteHandlerFailed(t *testing.T) {
 }
 
 func getDummyDeleteRequestBody() string {
-	return `{"saving_id":"SV123","email":"test@gmail.com"}`
+	return `{"saving_id":"SV123","username":"test@gmail.com"}`
 }

@@ -60,7 +60,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Invalid amount", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","email":"test@gmail.com","amount":0}`
+		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":0}`
 		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -71,7 +71,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("No saving ID", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_goal_id":"SVG123","email":"test@gmail.com","amount":250}`
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`
 		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -104,5 +104,5 @@ func (e *mockRequestFailure) OrigErr() error    { return nil }
 func (e *mockRequestFailure) Error() string     { return "ConditionalCheckFailedException" }
 
 func getDummyUpdateRequestBody() string {
-	return `{"saving_id":"SV123","saving_goal_id":"SVG123","email":"test@gmail.com","amount":250}`
+	return `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`
 }

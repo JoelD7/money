@@ -92,7 +92,7 @@ func getDummyAPIGatewayRequest() *apigateway.Request {
 		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
-				"email": "test@gmail.com",
+				"username": "test@gmail.com",
 			},
 		},
 	}

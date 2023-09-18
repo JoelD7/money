@@ -1,7 +1,7 @@
 package usecases
 
 type authRequestBody struct {
-	email    string
+	username string
 	password string
 }
 
@@ -11,7 +11,7 @@ func (a authRequestBody) LogName() string {
 
 func (a authRequestBody) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
-		"s_email":    a.email,
+		"s_username": a.username,
 		"s_password": a.password,
 	}
 }

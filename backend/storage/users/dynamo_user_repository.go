@@ -15,8 +15,6 @@ import (
 
 var (
 	TableName = env.GetString("USERS_TABLE_NAME", "users")
-
-	emailIndex = "email-index"
 )
 
 const (

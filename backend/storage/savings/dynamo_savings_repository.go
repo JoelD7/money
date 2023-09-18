@@ -27,7 +27,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) GetSavings(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 
@@ -38,7 +38,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, email, startKey strin
 		}
 	}
 
-	nameEx := expression.Name("email").Equal(expression.Value(email))
+	nameEx := expression.Name("username").Equal(expression.Value(username))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
 	if err != nil {
@@ -101,9 +101,9 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 }
 
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {
-	email, err := attributevalue.Marshal(saving.Email)
+	username, err := attributevalue.Marshal(saving.Username)
 	if err != nil {
-		return fmt.Errorf("marshaling email key: %v", err)
+		return fmt.Errorf("marshaling username key: %v", err)
 	}
 
 	savingID, err := attributevalue.Marshal(saving.SavingID)
@@ -120,7 +120,7 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 
 	input := &dynamodb.UpdateItemInput{
 		Key: map[string]types.AttributeValue{
-			"email":     email,
+			"username":  username,
 			"saving_id": savingID,
 		},
 		TableName:                 aws.String(tableName),
@@ -211,10 +211,10 @@ func getPageSize(pageSize int) *int32 {
 	return aws.Int32(int32(pageSize))
 }
 
-func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, email string) error {
-	emailAtr, err := attributevalue.Marshal(email)
+func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, username string) error {
+	usernameAtr, err := attributevalue.Marshal(username)
 	if err != nil {
-		return fmt.Errorf("marshaling email key: %v", err)
+		return fmt.Errorf("marshaling username key: %v", err)
 	}
 
 	savingIDAtr, err := attributevalue.Marshal(savingID)
@@ -224,7 +224,7 @@ func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, email str
 
 	input := &dynamodb.DeleteItemInput{
 		Key: map[string]types.AttributeValue{
-			"email":     emailAtr,
+			"username":  usernameAtr,
 			"saving_id": savingIDAtr,
 		},
 		TableName:           aws.String(tableName),

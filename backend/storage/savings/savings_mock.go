@@ -26,7 +26,7 @@ func (m *Mock) DeactivateForceFailure() {
 	m.mockedErr = nil
 }
 
-func (m *Mock) GetSavings(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -73,28 +73,28 @@ func GetDummySavings() []*models.Saving {
 		{
 			SavingID:     "SV123",
 			SavingGoalID: "SVG123",
-			Email:        "test@gmail.com",
+			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
 			Amount:       250,
 		},
 		{
 			SavingID:     "SV456",
 			SavingGoalID: "SVG46",
-			Email:        "test@gmail.com",
+			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
 			Amount:       450,
 		},
 		{
 			SavingID:     "SV789",
 			SavingGoalID: "SVG789",
-			Email:        "test@gmail.com",
+			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
 			Amount:       789,
 		},
 		{
 			SavingID:     "SV159",
 			SavingGoalID: "SVG159",
-			Email:        "test@gmail.com",
+			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
 			Amount:       156,
 		},

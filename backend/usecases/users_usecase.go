@@ -7,7 +7,7 @@ import (
 )
 
 type UserGetter interface {
-	GetUser(ctx context.Context, email string) (*models.User, error)
+	GetUser(ctx context.Context, username string) (*models.User, error)
 }
 
 type IncomeGetter interface {
@@ -18,9 +18,9 @@ type ExpenseGetter interface {
 	GetExpensesByPeriod(ctx context.Context, username string, periodID string) ([]*models.Expense, error)
 }
 
-func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, email string) (*models.User, error) {
-	return func(ctx context.Context, email string) (*models.User, error) {
-		user, err := u.GetUser(ctx, email)
+func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
+	return func(ctx context.Context, username string) (*models.User, error) {
+		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return nil, err
 		}
