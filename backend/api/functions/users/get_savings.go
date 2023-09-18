@@ -100,7 +100,7 @@ func (request *getSavingsRequest) process(ctx context.Context, req *apigateway.R
 }
 
 func getUserEmailFromContext(req *apigateway.Request) (string, error) {
-	email, ok := req.RequestContext.Authorizer["email"].(string)
+	email, ok := req.RequestContext.Authorizer["username"].(string)
 	if !ok {
 		return "", errNoUserEmailInContext
 	}

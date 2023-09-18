@@ -60,7 +60,7 @@ func main() {
 
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/users", func(r *router.Router) {
-			r.Get("/{user-id}", getUserHandler)
+			r.Get("/{username}", getUserHandler)
 		})
 
 		r.Route("/savings", func(r *router.Router) {

@@ -207,7 +207,7 @@ func NewAuthorizerResponse(methodArn, principalID string) *AuthorizerResponse {
 				Version: "2012-10-17",
 			},
 			Context: map[string]interface{}{
-				"email": principalID,
+				"username": principalID,
 			},
 		},
 		Region:    awsRegion,
