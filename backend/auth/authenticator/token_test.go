@@ -155,7 +155,7 @@ func TestTokenHandlerFailed(t *testing.T) {
 
 func dummyAPIGatewayProxyRequest() (*apigateway.Request, error) {
 	body := Credentials{
-		Email: "test@gmail.com",
+		Username: "test@gmail.com",
 	}
 
 	jsonBody, err := bodyToJSONString(body)

@@ -59,7 +59,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 
 	saveNewUser := usecases.NewUserCreator(req.userRepo, req.log)
 
-	err = saveNewUser(ctx, reqBody.FullName, reqBody.Email, reqBody.Password)
+	err = saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
 	if err != nil {
 		return getErrorResponse(err)
 	}

@@ -68,7 +68,7 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 	authenticate := usecases.NewUserAuthenticator(req.userRepo, req.log)
 	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
 
-	user, err := authenticate(ctx, reqBody.Email, reqBody.Password)
+	user, err := authenticate(ctx, reqBody.Username, reqBody.Password)
 	if err != nil {
 		return getErrorResponse(err)
 	}

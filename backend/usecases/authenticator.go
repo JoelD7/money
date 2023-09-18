@@ -41,7 +41,7 @@ var (
 )
 
 type UserCreator interface {
-	CreateUser(ctx context.Context, fullName, email, password string) error
+	CreateUser(ctx context.Context, fullName, username, password string) error
 }
 
 type UserUpdater interface {
@@ -55,8 +55,8 @@ type Logger interface {
 }
 
 type InvalidTokenCache interface {
-	GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error)
-	AddInvalidToken(ctx context.Context, email, token string, ttl int64) error
+	GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error)
+	AddInvalidToken(ctx context.Context, username, token string, ttl int64) error
 }
 
 type SecretManager interface {
@@ -64,9 +64,9 @@ type SecretManager interface {
 }
 
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Context, fullName, email, password string) error {
-	return func(ctx context.Context, fullName, email, password string) error {
-		err := validateCredentials(email, password)
+func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Context, fullName, username, password string) error {
+	return func(ctx context.Context, fullName, username, password string) error {
+		err := validateCredentials(username, password)
 		if err != nil {
 			logger.Error("credentials_validation_failed", err, nil)
 
@@ -80,7 +80,7 @@ func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Con
 			return err
 		}
 
-		err = userCreator.CreateUser(ctx, fullName, email, string(hashedPassword))
+		err = userCreator.CreateUser(ctx, fullName, username, string(hashedPassword))
 		if err != nil && errors.Is(err, models.ErrExistingUser) {
 			logger.Warning("user_creation_failed", err, nil)
 
@@ -98,16 +98,16 @@ func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Con
 }
 
 // NewUserAuthenticator authenticates a user.
-func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context.Context, email, password string) (*models.User, error) {
-	return func(ctx context.Context, email, password string) (*models.User, error) {
-		err := validateCredentials(email, password)
+func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context.Context, username, password string) (*models.User, error) {
+	return func(ctx context.Context, username, password string) (*models.User, error) {
+		err := validateCredentials(username, password)
 		if err != nil {
 			logger.Error("credentials_validation_failed", err, nil)
 
 			return nil, err
 		}
 
-		user, err := userGetter.GetUser(ctx, email)
+		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
 			logger.Error("user_fetching_failed", err, nil)
 
@@ -116,7 +116,7 @@ func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 		if err != nil {
-			logger.Error("password_mismatch", err, []models.LoggerObject{authRequestBody{email, password}})
+			logger.Error("password_mismatch", err, []models.LoggerObject{authRequestBody{username, password}})
 
 			return nil, models.ErrWrongCredentials
 		}

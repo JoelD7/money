@@ -42,7 +42,6 @@ var (
 )
 
 const (
-	accessTokenCookieName  = "AccessToken"
 	refreshTokenCookieName = "RefreshToken"
 )
 
@@ -52,7 +51,7 @@ type signUpBody struct {
 }
 
 type Credentials struct {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password,omitempty"`
 }
 
@@ -62,7 +61,7 @@ func (c *Credentials) LogName() string {
 
 func (c *Credentials) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
-		"email": c.Email,
+		"username": c.Username,
 	}
 }
 

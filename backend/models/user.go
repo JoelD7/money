@@ -44,7 +44,7 @@ func (u User) LogName() string {
 
 func (u User) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
-		"s_email":    u.Username,
+		"s_username": u.Username,
 		"s_fullname": u.FullName,
 	}
 }
