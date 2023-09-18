@@ -13,5 +13,5 @@ type DynamoAPI interface {
 }
 
 type Repository interface {
-	GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error)
+	GetExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error)
 }

@@ -27,16 +27,16 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.Income, error) {
-	if userID == "" {
-		return nil, models.ErrMissingUserID
+func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error) {
+	if username == "" {
+		return nil, models.ErrMissingUsername
 	}
 
 	if periodID == "" {
 		return nil, models.ErrMissingPeriod
 	}
 
-	periodUser := periodID + splitter + userID
+	periodUser := periodID + splitter + username
 
 	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 

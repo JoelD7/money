@@ -24,7 +24,6 @@ var (
 	ErrUpdateSavingNotFound = errors.New("the saving you are trying to update does not exist")
 	ErrDeleteSavingNotFound = errors.New("the saving you are trying to delete does not exist")
 	ErrIncomeNotFound       = errors.New("user income not found")
-	ErrMissingUserID        = errors.New("missing userID")
 	ErrMissingPeriod        = errors.New("missing period")
 	ErrExpensesNotFound     = errors.New("user expenses not found")
 	ErrInvalidAmount        = errors.New("invalid amount. The amount has to be a number greater than zero")

@@ -18,7 +18,7 @@ func NewDynamoMock() *DynamoMock {
 	}
 }
 
-func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.Income, error) {
+func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error) {
 	if d.mockedErr != nil {
 		return nil, d.mockedErr
 	}
@@ -49,7 +49,7 @@ func (d *DynamoMock) DeactivateForceFailure() {
 func GetDummyIncome() []*models.Income {
 	return []*models.Income{
 		{
-			UserID:   "test@gmail.com",
+			Username: "test@gmail.com",
 			IncomeID: "INC123",
 			Amount:   8700,
 			Name:     "Salary",
@@ -57,7 +57,7 @@ func GetDummyIncome() []*models.Income {
 			Period:   "2023-5",
 		},
 		{
-			UserID:   "test@gmail.com",
+			Username: "test@gmail.com",
 			IncomeID: "INC12",
 			Amount:   1500,
 			Name:     "Debt collection",
