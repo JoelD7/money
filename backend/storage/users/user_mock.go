@@ -42,19 +42,7 @@ func (d *DynamoMock) CreateUser(ctx context.Context, fullName, email, password s
 	return nil
 }
 
-func (d *DynamoMock) GetUser(ctx context.Context, userID string) (*models.User, error) {
-	if d.mockedErr != nil {
-		return nil, d.mockedErr
-	}
-
-	if d.mockedUser == nil {
-		return nil, models.ErrUserNotFound
-	}
-
-	return d.mockedUser, nil
-}
-
-func (d *DynamoMock) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (d *DynamoMock) GetUser(ctx context.Context, username string) (*models.User, error) {
 	if d.mockedErr != nil {
 		return nil, d.mockedErr
 	}

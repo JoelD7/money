@@ -107,7 +107,7 @@ func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context
 			return nil, err
 		}
 
-		user, err := userGetter.GetUserByEmail(ctx, email)
+		user, err := userGetter.GetUser(ctx, email)
 		if err != nil {
 			logger.Error("user_fetching_failed", err, nil)
 
@@ -209,7 +209,7 @@ func NewRefreshTokenValidator(userGetter UserGetter, logger Logger) func(ctx con
 			return nil, fmt.Errorf("%w: %v", models.ErrMalformedToken, err)
 		}
 
-		user, err := userGetter.GetUserByEmail(ctx, payload.Subject)
+		user, err := userGetter.GetUser(ctx, payload.Subject)
 		if err != nil {
 			logger.Error("get_user_failed", err, nil)
 
@@ -417,7 +417,7 @@ func NewUserLogout(userGetter UserGetter, tokenCache InvalidTokenCache, logger L
 			return fmt.Errorf("%w: %v", models.ErrMalformedToken, err)
 		}
 
-		user, err := userGetter.GetUserByEmail(ctx, payload.Subject)
+		user, err := userGetter.GetUser(ctx, payload.Subject)
 		if err != nil {
 			logger.Error("fetching_user_from_storage_failed", err, nil)
 

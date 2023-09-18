@@ -7,7 +7,6 @@ import (
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
@@ -74,7 +73,7 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, p
 }
 
 func (d *DynamoRepository) userExists(ctx context.Context, username string) (bool, error) {
-	user, err := d.GetUserByEmail(ctx, username)
+	user, err := d.GetUser(ctx, username)
 	if user != nil {
 		return true, nil
 	}
@@ -106,40 +105,6 @@ func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*model
 
 	user := new(models.User)
 	err = attributevalue.UnmarshalMap(result.Item, user)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (d *DynamoRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	nameEx := expression.Name("email").Equal(expression.Value(email))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
-	if err != nil {
-		return nil, err
-	}
-
-	input := &dynamodb.QueryInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.Condition(),
-		IndexName:                 aws.String(emailIndex),
-		TableName:                 aws.String(TableName),
-	}
-
-	result, err := d.dynamoClient.Query(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-
-	if result.Items == nil || len(result.Items) == 0 {
-		return nil, models.ErrUserNotFound
-	}
-
-	user := new(models.User)
-	err = attributevalue.UnmarshalMap(result.Items[0], user)
 	if err != nil {
 		return nil, err
 	}
