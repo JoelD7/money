@@ -55,7 +55,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrMissingEmail.Error(), response.Body)
+		c.Equal(models.ErrMissingUsername.Error(), response.Body)
 		c.Contains(logMock.Output.String(), "update_saving_failed")
 	})
 

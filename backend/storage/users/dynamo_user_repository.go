@@ -22,7 +22,6 @@ var (
 
 const (
 	categoryPrefix = "CTG"
-	userPrefix     = "US"
 )
 
 type DynamoRepository struct {
@@ -33,8 +32,8 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, email, password string) error {
-	ok, err := d.userExists(ctx, email)
+func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, password string) error {
+	ok, err := d.userExists(ctx, username)
 	if err != nil && !errors.Is(err, models.ErrUserNotFound) {
 		return err
 	}
@@ -44,9 +43,8 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, email, pass
 	}
 
 	user := &models.User{
-		UserID:      utils.GenerateDynamoID(userPrefix),
 		FullName:    fullName,
-		Email:       email,
+		Username:    username,
 		Password:    password,
 		Categories:  getDefaultCategories(),
 		CreatedDate: time.Now(),
@@ -75,8 +73,8 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, email, pass
 	return nil
 }
 
-func (d *DynamoRepository) userExists(ctx context.Context, email string) (bool, error) {
-	user, err := d.GetUserByEmail(ctx, email)
+func (d *DynamoRepository) userExists(ctx context.Context, username string) (bool, error) {
+	user, err := d.GetUserByEmail(ctx, username)
 	if user != nil {
 		return true, nil
 	}
@@ -84,8 +82,8 @@ func (d *DynamoRepository) userExists(ctx context.Context, email string) (bool, 
 	return false, err
 }
 
-func (d *DynamoRepository) GetUser(ctx context.Context, userID string) (*models.User, error) {
-	userKey, err := attributevalue.Marshal(userID)
+func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*models.User, error) {
+	userKey, err := attributevalue.Marshal(username)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +91,7 @@ func (d *DynamoRepository) GetUser(ctx context.Context, userID string) (*models.
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(TableName),
 		Key: map[string]types.AttributeValue{
-			"user_id": userKey,
+			"username": userKey,
 		},
 	}
 

@@ -89,9 +89,8 @@ func (d *DynamoMock) DeactivateForceFailure() {
 // GetDummyUser returns the mock item for the user table
 func GetDummyUser() *models.User {
 	return &models.User{
-		UserID:        "123",
 		FullName:      "Joel",
-		Email:         "test@gmail.com",
+		Username:      "test@gmail.com",
 		CurrentPeriod: "2023-5",
 		Password:      "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
 		AccessToken:   hashedDummyToken,

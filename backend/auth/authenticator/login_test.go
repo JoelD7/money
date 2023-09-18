@@ -132,7 +132,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 		},
 		{
 			"Missing email error",
-			models.ErrMissingEmail,
+			models.ErrMissingUsername,
 			Credentials{"", "1234"},
 		},
 		{

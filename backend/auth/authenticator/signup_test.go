@@ -87,7 +87,7 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	testCases := []testCase{
 		{
 			"Missing email error",
-			models.ErrMissingEmail,
+			models.ErrMissingUsername,
 			signUpBody{"", &Credentials{"", "1234"}},
 		},
 		{

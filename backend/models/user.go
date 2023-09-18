@@ -3,9 +3,8 @@ package models
 import "time"
 
 type User struct {
-	UserID        string        `json:"user_id,omitempty" dynamodbav:"user_id"`
 	FullName      string        `json:"full_name,omitempty" dynamodbav:"full_name,omitempty"`
-	Email         string        `json:"email,omitempty" dynamodbav:"email"`
+	Username      string        `json:"username,omitempty" dynamodbav:"username"`
 	Password      string        `json:"-" dynamodbav:"password"`
 	Categories    []*Category   `json:"categories,omitempty" dynamodbav:"categories,omitempty"`
 	SavingGoals   []*SavingGoal `json:"saving_goals,omitempty" dynamodbav:"saving_goals,omitempty"`
@@ -45,7 +44,7 @@ func (u User) LogName() string {
 
 func (u User) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
-		"s_user_id": u.UserID,
-		"s_email":   u.Email,
+		"s_email":    u.Username,
+		"s_fullname": u.FullName,
 	}
 }

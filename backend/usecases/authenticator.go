@@ -134,7 +134,7 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 
 		accessTokenPayload := &jwt.Payload{
 			Issuer:         accessTokenIssuer,
-			Subject:        user.Email,
+			Subject:        user.Username,
 			Audience:       jwt.Audience{accessTokenAudience},
 			ExpirationTime: accessTokenExpiry,
 			IssuedAt:       jwt.NumericDate(now),
@@ -150,7 +150,7 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 		refreshTokenExpiry := jwt.NumericDate(now.Add(time.Duration(refreshTokenDuration) * time.Second))
 
 		refreshTokenPayload := &jwt.Payload{
-			Subject:        user.Email,
+			Subject:        user.Username,
 			ExpirationTime: refreshTokenExpiry,
 		}
 
@@ -244,7 +244,7 @@ func validateEmail(email string) error {
 	regex := regexp.MustCompile(emailRegex)
 
 	if email == "" {
-		return models.ErrMissingEmail
+		return models.ErrMissingUsername
 	}
 
 	if !regex.MatchString(email) {
@@ -330,14 +330,14 @@ func NewTokenInvalidator(tokenCache InvalidTokenCache, logger Logger) func(ctx c
 		accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
 		refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
 
-		err := tokenCache.AddInvalidToken(ctx, user.Email, user.AccessToken, accessTokenTTL)
+		err := tokenCache.AddInvalidToken(ctx, user.Username, user.AccessToken, accessTokenTTL)
 		if err != nil {
 			logger.Error("access_token_invalidation_failed", err, []models.LoggerObject{user})
 
 			return err
 		}
 
-		err = tokenCache.AddInvalidToken(ctx, user.Email, user.RefreshToken, refreshTokenTTL)
+		err = tokenCache.AddInvalidToken(ctx, user.Username, user.RefreshToken, refreshTokenTTL)
 		if err != nil {
 			logger.Error("refresh_token_invalidation_failed", err, []models.LoggerObject{user})
 

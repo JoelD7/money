@@ -3,7 +3,7 @@ package models
 import "errors"
 
 var (
-	ErrMissingEmail          = errors.New("missing email")
+	ErrMissingUsername       = errors.New("missing email")
 	ErrMissingPassword       = errors.New("missing password")
 	ErrInvalidEmail          = errors.New("invalid email")
 	ErrUserNotFound          = errors.New("user not found")

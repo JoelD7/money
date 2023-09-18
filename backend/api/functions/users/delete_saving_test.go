@@ -75,7 +75,7 @@ func TestDeleteHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(models.ErrMissingEmail.Error(), response.Body)
+		c.Equal(models.ErrMissingUsername.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 

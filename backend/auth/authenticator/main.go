@@ -21,7 +21,7 @@ var (
 	errMissingRefreshTokenInCookies = errors.New("missing refresh token in cookies")
 
 	responseByErrors = map[error]apigateway.Error{
-		models.ErrMissingEmail:          {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
+		models.ErrMissingUsername:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
 		models.ErrInvalidEmail:          {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
 		models.ErrMissingPassword:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPassword.Error()},
 		models.ErrInvalidToken:          {HTTPCode: http.StatusUnauthorized, Message: models.ErrInvalidToken.Error()},
