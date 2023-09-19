@@ -2,6 +2,7 @@ package users
 
 import (
 	"context"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
@@ -9,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"strings"
 	"time"
 )
 
@@ -29,15 +31,6 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 }
 
 func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, password string) error {
-	//ok, err := d.userExists(ctx, username)
-	//if err != nil && !errors.Is(err, models.ErrUserNotFound) {
-	//	return err
-	//}
-
-	//if ok {
-	//	return models.ErrExistingUser
-	//}
-
 	user := &models.User{
 		FullName:    fullName,
 		Username:    username,
@@ -59,8 +52,12 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, p
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return fmt.Errorf("%v: %w", err, models.ErrExistingUser)
+	}
+
 	if err != nil {
-		return models.ErrExistingUser
+		return err
 	}
 
 	if err != nil {
@@ -68,15 +65,6 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, p
 	}
 
 	return nil
-}
-
-func (d *DynamoRepository) userExists(ctx context.Context, username string) (bool, error) {
-	user, err := d.GetUser(ctx, username)
-	if user != nil {
-		return true, nil
-	}
-
-	return false, err
 }
 
 func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*models.User, error) {
