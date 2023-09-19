@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
@@ -30,14 +29,14 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 }
 
 func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, password string) error {
-	ok, err := d.userExists(ctx, username)
-	if err != nil && !errors.Is(err, models.ErrUserNotFound) {
-		return err
-	}
+	//ok, err := d.userExists(ctx, username)
+	//if err != nil && !errors.Is(err, models.ErrUserNotFound) {
+	//	return err
+	//}
 
-	if ok {
-		return models.ErrExistingUser
-	}
+	//if ok {
+	//	return models.ErrExistingUser
+	//}
 
 	user := &models.User{
 		FullName:    fullName,
@@ -54,8 +53,9 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, p
 	}
 
 	input := &dynamodb.PutItemInput{
-		Item:      item,
-		TableName: aws.String(TableName),
+		Item:                item,
+		ConditionExpression: aws.String("attribute_not_exists(username)"),
+		TableName:           aws.String(TableName),
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
