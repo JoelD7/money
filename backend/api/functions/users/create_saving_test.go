@@ -84,7 +84,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Saving with invalid email", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_goal_id":"SVG123","email":"12","amount":250}`
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"12","amount":250}`
 		defer func() { apigwRequest.Body = getDummyRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -99,12 +99,12 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(models.ErrMissingEmail.Error(), response.Body)
+		c.Equal(models.ErrMissingUsername.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
 	t.Run("Saving with invalid amount", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_goal_id":"SVG123","email":"test@gmail.com","amount":-250}`
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":-250}`
 		defer func() { apigwRequest.Body = getDummyRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -125,5 +125,5 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 }
 
 func getDummyRequestBody() string {
-	return `{"saving_goal_id":"SVG123","email":"test@gmail.com","amount":250}`
+	return `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`
 }

@@ -144,9 +144,9 @@ func (req *request) verifyUserRequest(resp *AuthorizerResponse, methodArn string
 		return nil
 	}
 
-	userID := apiGatewayArnParts[4]
+	username := apiGatewayArnParts[4]
 
-	if resp.PrincipalID != userID {
+	if resp.PrincipalID != username {
 		return errUserNotAuthorized
 	}
 
@@ -207,7 +207,7 @@ func NewAuthorizerResponse(methodArn, principalID string) *AuthorizerResponse {
 				Version: "2012-10-17",
 			},
 			Context: map[string]interface{}{
-				"email": principalID,
+				"username": principalID,
 			},
 		},
 		Region:    awsRegion,

@@ -10,7 +10,7 @@ import (
 
 type keys struct {
 	SavingID string `json:"saving_id" dynamodbav:"saving_id"`
-	Email    string `json:"email" dynamodbav:"email"`
+	Username string `json:"username" dynamodbav:"username"`
 }
 
 func encodeLastKey(lastKey map[string]types.AttributeValue) (string, error) {

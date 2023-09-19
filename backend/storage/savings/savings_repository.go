@@ -6,8 +6,8 @@ import (
 )
 
 type Repository interface {
-	GetSavings(ctx context.Context, email, startKey string, pageSize int) ([]*models.Saving, string, error)
+	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
-	DeleteSaving(ctx context.Context, savingID, email string) error
+	DeleteSaving(ctx context.Context, savingID, username string) error
 }

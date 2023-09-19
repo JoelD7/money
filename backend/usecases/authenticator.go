@@ -41,7 +41,7 @@ var (
 )
 
 type UserCreator interface {
-	CreateUser(ctx context.Context, fullName, email, password string) error
+	CreateUser(ctx context.Context, fullName, username, password string) error
 }
 
 type UserUpdater interface {
@@ -55,8 +55,8 @@ type Logger interface {
 }
 
 type InvalidTokenCache interface {
-	GetInvalidTokens(ctx context.Context, email string) ([]*models.InvalidToken, error)
-	AddInvalidToken(ctx context.Context, email, token string, ttl int64) error
+	GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error)
+	AddInvalidToken(ctx context.Context, username, token string, ttl int64) error
 }
 
 type SecretManager interface {
@@ -64,9 +64,9 @@ type SecretManager interface {
 }
 
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Context, fullName, email, password string) error {
-	return func(ctx context.Context, fullName, email, password string) error {
-		err := validateCredentials(email, password)
+func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Context, fullName, username, password string) error {
+	return func(ctx context.Context, fullName, username, password string) error {
+		err := validateCredentials(username, password)
 		if err != nil {
 			logger.Error("credentials_validation_failed", err, nil)
 
@@ -80,7 +80,7 @@ func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Con
 			return err
 		}
 
-		err = userCreator.CreateUser(ctx, fullName, email, string(hashedPassword))
+		err = userCreator.CreateUser(ctx, fullName, username, string(hashedPassword))
 		if err != nil && errors.Is(err, models.ErrExistingUser) {
 			logger.Warning("user_creation_failed", err, nil)
 
@@ -98,16 +98,16 @@ func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Con
 }
 
 // NewUserAuthenticator authenticates a user.
-func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context.Context, email, password string) (*models.User, error) {
-	return func(ctx context.Context, email, password string) (*models.User, error) {
-		err := validateCredentials(email, password)
+func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context.Context, username, password string) (*models.User, error) {
+	return func(ctx context.Context, username, password string) (*models.User, error) {
+		err := validateCredentials(username, password)
 		if err != nil {
 			logger.Error("credentials_validation_failed", err, nil)
 
 			return nil, err
 		}
 
-		user, err := userGetter.GetUserByEmail(ctx, email)
+		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
 			logger.Error("user_fetching_failed", err, nil)
 
@@ -116,7 +116,7 @@ func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 		if err != nil {
-			logger.Error("password_mismatch", err, []models.LoggerObject{authRequestBody{email, password}})
+			logger.Error("password_mismatch", err, []models.LoggerObject{authRequestBody{username, password}})
 
 			return nil, models.ErrWrongCredentials
 		}
@@ -134,7 +134,7 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 
 		accessTokenPayload := &jwt.Payload{
 			Issuer:         accessTokenIssuer,
-			Subject:        user.Email,
+			Subject:        user.Username,
 			Audience:       jwt.Audience{accessTokenAudience},
 			ExpirationTime: accessTokenExpiry,
 			IssuedAt:       jwt.NumericDate(now),
@@ -150,7 +150,7 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 		refreshTokenExpiry := jwt.NumericDate(now.Add(time.Duration(refreshTokenDuration) * time.Second))
 
 		refreshTokenPayload := &jwt.Payload{
-			Subject:        user.Email,
+			Subject:        user.Username,
 			ExpirationTime: refreshTokenExpiry,
 		}
 
@@ -209,7 +209,7 @@ func NewRefreshTokenValidator(userGetter UserGetter, logger Logger) func(ctx con
 			return nil, fmt.Errorf("%w: %v", models.ErrMalformedToken, err)
 		}
 
-		user, err := userGetter.GetUserByEmail(ctx, payload.Subject)
+		user, err := userGetter.GetUser(ctx, payload.Subject)
 		if err != nil {
 			logger.Error("get_user_failed", err, nil)
 
@@ -244,7 +244,7 @@ func validateEmail(email string) error {
 	regex := regexp.MustCompile(emailRegex)
 
 	if email == "" {
-		return models.ErrMissingEmail
+		return models.ErrMissingUsername
 	}
 
 	if !regex.MatchString(email) {
@@ -330,14 +330,14 @@ func NewTokenInvalidator(tokenCache InvalidTokenCache, logger Logger) func(ctx c
 		accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
 		refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
 
-		err := tokenCache.AddInvalidToken(ctx, user.Email, user.AccessToken, accessTokenTTL)
+		err := tokenCache.AddInvalidToken(ctx, user.Username, user.AccessToken, accessTokenTTL)
 		if err != nil {
 			logger.Error("access_token_invalidation_failed", err, []models.LoggerObject{user})
 
 			return err
 		}
 
-		err = tokenCache.AddInvalidToken(ctx, user.Email, user.RefreshToken, refreshTokenTTL)
+		err = tokenCache.AddInvalidToken(ctx, user.Username, user.RefreshToken, refreshTokenTTL)
 		if err != nil {
 			logger.Error("refresh_token_invalidation_failed", err, []models.LoggerObject{user})
 
@@ -417,7 +417,7 @@ func NewUserLogout(userGetter UserGetter, tokenCache InvalidTokenCache, logger L
 			return fmt.Errorf("%w: %v", models.ErrMalformedToken, err)
 		}
 
-		user, err := userGetter.GetUserByEmail(ctx, payload.Subject)
+		user, err := userGetter.GetUser(ctx, payload.Subject)
 		if err != nil {
 			logger.Error("fetching_user_from_storage_failed", err, nil)
 

@@ -21,7 +21,7 @@ var (
 	errMissingRefreshTokenInCookies = errors.New("missing refresh token in cookies")
 
 	responseByErrors = map[error]apigateway.Error{
-		models.ErrMissingEmail:          {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
+		models.ErrMissingUsername:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
 		models.ErrInvalidEmail:          {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
 		models.ErrMissingPassword:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPassword.Error()},
 		models.ErrInvalidToken:          {HTTPCode: http.StatusUnauthorized, Message: models.ErrInvalidToken.Error()},
@@ -42,7 +42,6 @@ var (
 )
 
 const (
-	accessTokenCookieName  = "AccessToken"
 	refreshTokenCookieName = "RefreshToken"
 )
 
@@ -52,7 +51,7 @@ type signUpBody struct {
 }
 
 type Credentials struct {
-	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password,omitempty"`
 }
 
@@ -62,7 +61,7 @@ func (c *Credentials) LogName() string {
 
 func (c *Credentials) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
-		"email": c.Email,
+		"username": c.Username,
 	}
 }
 

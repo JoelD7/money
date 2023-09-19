@@ -79,7 +79,7 @@ func TestHandlerFailed(t *testing.T) {
 	apigwRequest := &apigateway.Request{
 		RequestContext: events.APIGatewayProxyRequestContext{},
 		PathParameters: map[string]string{
-			"user-id": "test@gmail.com",
+			"username": "test@gmail.com",
 		},
 	}
 

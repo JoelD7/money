@@ -24,10 +24,9 @@ var (
 		errRequestBodyParseFailure:     {HTTPCode: http.StatusBadRequest, Message: errRequestBodyParseFailure.Error()},
 		models.ErrSavingsNotFound:      {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
 		models.ErrInvalidAmount:        {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
-		models.ErrMissingEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingEmail.Error()},
+		models.ErrMissingUsername:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
 		models.ErrInvalidEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
 		models.ErrInvalidRequestBody:   {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidRequestBody.Error()},
-		models.ErrCannotUpdateEmail:    {HTTPCode: http.StatusBadRequest, Message: models.ErrCannotUpdateEmail.Error()},
 		models.ErrMissingSavingID:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingID.Error()},
 		models.ErrUpdateSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrUpdateSavingNotFound.Error()},
 		models.ErrDeleteSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrDeleteSavingNotFound.Error()},
@@ -60,7 +59,7 @@ func main() {
 
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/users", func(r *router.Router) {
-			r.Get("/{user-id}", getUserHandler)
+			r.Get("/{username}", getUserHandler)
 		})
 
 		r.Route("/savings", func(r *router.Router) {

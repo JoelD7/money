@@ -42,19 +42,7 @@ func (d *DynamoMock) CreateUser(ctx context.Context, fullName, email, password s
 	return nil
 }
 
-func (d *DynamoMock) GetUser(ctx context.Context, userID string) (*models.User, error) {
-	if d.mockedErr != nil {
-		return nil, d.mockedErr
-	}
-
-	if d.mockedUser == nil {
-		return nil, models.ErrUserNotFound
-	}
-
-	return d.mockedUser, nil
-}
-
-func (d *DynamoMock) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (d *DynamoMock) GetUser(ctx context.Context, username string) (*models.User, error) {
 	if d.mockedErr != nil {
 		return nil, d.mockedErr
 	}
@@ -89,9 +77,8 @@ func (d *DynamoMock) DeactivateForceFailure() {
 // GetDummyUser returns the mock item for the user table
 func GetDummyUser() *models.User {
 	return &models.User{
-		UserID:        "123",
 		FullName:      "Joel",
-		Email:         "test@gmail.com",
+		Username:      "test@gmail.com",
 		CurrentPeriod: "2023-5",
 		Password:      "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
 		AccessToken:   hashedDummyToken,

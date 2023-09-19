@@ -71,7 +71,7 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
-	t.Run("Email not in authorizer context", func(t *testing.T) {
+	t.Run("Username not in authorizer context", func(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer = map[string]interface{}{}
 		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
 
@@ -92,7 +92,7 @@ func getDummyAPIGatewayRequest() *apigateway.Request {
 		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
-				"email": "test@gmail.com",
+				"username": "test@gmail.com",
 			},
 		},
 	}

@@ -61,7 +61,7 @@ func getSavingsHandler(ctx context.Context, req *apigateway.Request) (*apigatewa
 func (request *getSavingsRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getSavings := usecases.NewSavingsGetter(request.savingsRepo, request.log)
 
-	email, err := getUserEmailFromContext(req)
+	username, err := getUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
@@ -75,7 +75,7 @@ func (request *getSavingsRequest) process(ctx context.Context, req *apigateway.R
 		return getErrorResponse(err)
 	}
 
-	userSavings, nextKey, err := getSavings(ctx, email, startKey, pageSize)
+	userSavings, nextKey, err := getSavings(ctx, username, startKey, pageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{
 			req,
@@ -99,13 +99,13 @@ func (request *getSavingsRequest) process(ctx context.Context, req *apigateway.R
 	}, nil
 }
 
-func getUserEmailFromContext(req *apigateway.Request) (string, error) {
-	email, ok := req.RequestContext.Authorizer["email"].(string)
+func getUsernameFromContext(req *apigateway.Request) (string, error) {
+	username, ok := req.RequestContext.Authorizer["username"].(string)
 	if !ok {
 		return "", errNoUserEmailInContext
 	}
 
-	return email, nil
+	return username, nil
 }
 
 func getRequestParams(req *apigateway.Request) (string, int, error) {

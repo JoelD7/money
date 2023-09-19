@@ -18,7 +18,7 @@ func NewDynamoMock() *DynamoMock {
 	}
 }
 
-func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, userID, periodID string) ([]*models.Expense, error) {
+func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error) {
 	if d.mockedErr != nil {
 		return nil, d.mockedErr
 	}
@@ -50,7 +50,7 @@ func GetDummyExpenses() []*models.Expense {
 	return []*models.Expense{
 		{
 			ExpenseID:     "EXP123",
-			UserID:        "test@mail.com",
+			Username:      "test@mail.com",
 			CategoryID:    "",
 			SubcategoryID: "",
 			SavingGoalID:  "",
@@ -64,7 +64,7 @@ func GetDummyExpenses() []*models.Expense {
 		},
 		{
 			ExpenseID:     "EXP456",
-			UserID:        "test@mail.com",
+			Username:      "test@mail.com",
 			CategoryID:    "",
 			SubcategoryID: "",
 			SavingGoalID:  "",
@@ -78,7 +78,7 @@ func GetDummyExpenses() []*models.Expense {
 		},
 		{
 			ExpenseID:     "EXP789",
-			UserID:        "test@mail.com",
+			Username:      "test@mail.com",
 			CategoryID:    "",
 			SubcategoryID: "",
 			SavingGoalID:  "",

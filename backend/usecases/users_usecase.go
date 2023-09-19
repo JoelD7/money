@@ -7,20 +7,20 @@ import (
 )
 
 type UserGetter interface {
-	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	GetUser(ctx context.Context, username string) (*models.User, error)
 }
 
 type IncomeGetter interface {
-	GetIncomeByPeriod(ctx context.Context, userID string, periodID string) ([]*models.Income, error)
+	GetIncomeByPeriod(ctx context.Context, username string, periodID string) ([]*models.Income, error)
 }
 
 type ExpenseGetter interface {
-	GetExpensesByPeriod(ctx context.Context, userID string, periodID string) ([]*models.Expense, error)
+	GetExpensesByPeriod(ctx context.Context, username string, periodID string) ([]*models.Expense, error)
 }
 
-func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, email string) (*models.User, error) {
-	return func(ctx context.Context, email string) (*models.User, error) {
-		user, err := u.GetUserByEmail(ctx, email)
+func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
+	return func(ctx context.Context, username string) (*models.User, error) {
+		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return nil, err
 		}
@@ -29,12 +29,12 @@ func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx conte
 			return user, nil
 		}
 
-		userExpenses, err := e.GetExpensesByPeriod(ctx, user.UserID, user.CurrentPeriod)
+		userExpenses, err := e.GetExpensesByPeriod(ctx, user.Username, user.CurrentPeriod)
 		if err != nil {
 			return user, fmt.Errorf("the remainder for the user's current period couldn't be calculated: %w", err)
 		}
 
-		userIncome, err := i.GetIncomeByPeriod(ctx, user.UserID, user.CurrentPeriod)
+		userIncome, err := i.GetIncomeByPeriod(ctx, user.Username, user.CurrentPeriod)
 		if err != nil {
 			return user, fmt.Errorf("the remainder for the user's current period couldn't be calculated: %w", err)
 		}

@@ -59,7 +59,7 @@ func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway
 
 	deleteSaving := usecases.NewSavingDeleter(request.savingsRepo)
 
-	err = deleteSaving(ctx, userSaving.SavingID, userSaving.Email)
+	err = deleteSaving(ctx, userSaving.SavingID, userSaving.Username)
 	if err != nil {
 		request.log.Error("delete_saving_failed", err, []models.LoggerObject{req})
 

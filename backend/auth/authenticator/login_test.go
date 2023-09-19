@@ -17,7 +17,7 @@ func TestLoginHandler(t *testing.T) {
 	c := require.New(t)
 
 	body := Credentials{
-		Email:    "test@gmail.com",
+		Username: "test@gmail.com",
 		Password: "1234",
 	}
 
@@ -62,7 +62,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 	ctx := context.Background()
 
 	body := Credentials{
-		Email:    "test@gmail.com",
+		Username: "test@gmail.com",
 		Password: "1234",
 	}
 
@@ -132,7 +132,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 		},
 		{
 			"Missing email error",
-			models.ErrMissingEmail,
+			models.ErrMissingUsername,
 			Credentials{"", "1234"},
 		},
 		{

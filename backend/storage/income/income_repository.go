@@ -6,5 +6,5 @@ import (
 )
 
 type Repository interface {
-	GetIncomeByPeriod(ctx context.Context, userID, periodID string) ([]*models.Income, error)
+	GetIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error)
 }

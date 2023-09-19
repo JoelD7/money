@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Income struct {
-	UserID   string    `json:"user_id,omitempty"`
+	Username string    `json:"username,omitempty"`
 	IncomeID string    `json:"income_id,omitempty"`
 	Amount   float64   `json:"amount"`
 	Name     string    `json:"name,omitempty"`

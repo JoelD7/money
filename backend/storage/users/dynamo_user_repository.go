@@ -2,27 +2,24 @@ package users
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"strings"
 	"time"
 )
 
 var (
 	TableName = env.GetString("USERS_TABLE_NAME", "users")
-
-	emailIndex = "email-index"
 )
 
 const (
 	categoryPrefix = "CTG"
-	userPrefix     = "US"
 )
 
 type DynamoRepository struct {
@@ -33,20 +30,10 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, email, password string) error {
-	ok, err := d.userExists(ctx, email)
-	if err != nil && !errors.Is(err, models.ErrUserNotFound) {
-		return err
-	}
-
-	if ok {
-		return models.ErrExistingUser
-	}
-
+func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, password string) error {
 	user := &models.User{
-		UserID:      utils.GenerateDynamoID(userPrefix),
 		FullName:    fullName,
-		Email:       email,
+		Username:    username,
 		Password:    password,
 		Categories:  getDefaultCategories(),
 		CreatedDate: time.Now(),
@@ -59,13 +46,18 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, email, pass
 	}
 
 	input := &dynamodb.PutItemInput{
-		Item:      item,
-		TableName: aws.String(TableName),
+		Item:                item,
+		ConditionExpression: aws.String("attribute_not_exists(username)"),
+		TableName:           aws.String(TableName),
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return fmt.Errorf("%v: %w", err, models.ErrExistingUser)
+	}
+
 	if err != nil {
-		return models.ErrExistingUser
+		return err
 	}
 
 	if err != nil {
@@ -75,17 +67,8 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, email, pass
 	return nil
 }
 
-func (d *DynamoRepository) userExists(ctx context.Context, email string) (bool, error) {
-	user, err := d.GetUserByEmail(ctx, email)
-	if user != nil {
-		return true, nil
-	}
-
-	return false, err
-}
-
-func (d *DynamoRepository) GetUser(ctx context.Context, userID string) (*models.User, error) {
-	userKey, err := attributevalue.Marshal(userID)
+func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*models.User, error) {
+	userKey, err := attributevalue.Marshal(username)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +76,7 @@ func (d *DynamoRepository) GetUser(ctx context.Context, userID string) (*models.
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(TableName),
 		Key: map[string]types.AttributeValue{
-			"user_id": userKey,
+			"username": userKey,
 		},
 	}
 
@@ -108,40 +91,6 @@ func (d *DynamoRepository) GetUser(ctx context.Context, userID string) (*models.
 
 	user := new(models.User)
 	err = attributevalue.UnmarshalMap(result.Item, user)
-	if err != nil {
-		return nil, err
-	}
-
-	return user, nil
-}
-
-func (d *DynamoRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	nameEx := expression.Name("email").Equal(expression.Value(email))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
-	if err != nil {
-		return nil, err
-	}
-
-	input := &dynamodb.QueryInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.Condition(),
-		IndexName:                 aws.String(emailIndex),
-		TableName:                 aws.String(TableName),
-	}
-
-	result, err := d.dynamoClient.Query(ctx, input)
-	if err != nil {
-		return nil, err
-	}
-
-	if result.Items == nil || len(result.Items) == 0 {
-		return nil, models.ErrUserNotFound
-	}
-
-	user := new(models.User)
-	err = attributevalue.UnmarshalMap(result.Items[0], user)
 	if err != nil {
 		return nil, err
 	}

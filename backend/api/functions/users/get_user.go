@@ -52,11 +52,11 @@ func getUserHandler(ctx context.Context, req *apigateway.Request) (*apigateway.R
 }
 
 func (request *getUserRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	userID := req.PathParameters["user-id"]
+	username := req.PathParameters["username"]
 
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)
 
-	user, err := getUser(ctx, userID)
+	user, err := getUser(ctx, username)
 	if err != nil {
 		request.err = err
 		request.log.Error("user_fetching_failed", err, nil)
