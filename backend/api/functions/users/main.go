@@ -27,7 +27,6 @@ var (
 		models.ErrMissingUsername:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
 		models.ErrInvalidEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
 		models.ErrInvalidRequestBody:   {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidRequestBody.Error()},
-		models.ErrCannotUpdateEmail:    {HTTPCode: http.StatusBadRequest, Message: models.ErrCannotUpdateEmail.Error()},
 		models.ErrMissingSavingID:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingID.Error()},
 		models.ErrUpdateSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrUpdateSavingNotFound.Error()},
 		models.ErrDeleteSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrDeleteSavingNotFound.Error()},

@@ -3,9 +3,9 @@ package models
 import "errors"
 
 var (
-	ErrMissingUsername       = errors.New("missing email")
+	ErrMissingUsername       = errors.New("missing username")
 	ErrMissingPassword       = errors.New("missing password")
-	ErrInvalidEmail          = errors.New("invalid email")
+	ErrInvalidEmail          = errors.New("invalid username. username must be a valid email address")
 	ErrUserNotFound          = errors.New("user not found")
 	ErrExistingUser          = errors.New("this account already exists")
 	ErrWrongCredentials      = errors.New("the email or password are incorrect")
@@ -28,7 +28,6 @@ var (
 	ErrExpensesNotFound     = errors.New("user expenses not found")
 	ErrInvalidAmount        = errors.New("invalid amount. The amount has to be a number greater than zero")
 	ErrInvalidRequestBody   = errors.New("invalid request body")
-	ErrCannotUpdateEmail    = errors.New("cannot update email for a saving")
 	ErrMissingSavingID      = errors.New("missing saving id")
 	ErrInvalidPageSize      = errors.New("invalid page size")
 	ErrInvalidStartKey      = errors.New("invalid start key")
