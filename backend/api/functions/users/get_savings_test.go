@@ -26,7 +26,7 @@ func TestGetSavingsHandler(t *testing.T) {
 
 	apigwRequest := getDummyAPIGatewayRequest()
 
-	response, err := req.process(ctx, apigwRequest)
+	response, err := req.getUserSavings(ctx, apigwRequest)
 	c.NoError(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 }
@@ -49,7 +49,7 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		savingsMock.ActivateForceFailure(models.ErrSavingsNotFound)
 		defer savingsMock.DeactivateForceFailure()
 
-		response, err := req.process(ctx, apigwRequest)
+		response, err := req.getUserSavings(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusNotFound, response.StatusCode)
 		c.Contains(logMock.Output.String(), "savings_fetch_failed")
@@ -63,7 +63,7 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		}
 		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
 
-		response, err := req.process(ctx, apigwRequest)
+		response, err := req.getUserSavings(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(logMock.Output.String(), "invalid_email_detected")
@@ -75,7 +75,7 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer = map[string]interface{}{}
 		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
 
-		response, err := req.process(ctx, apigwRequest)
+		response, err := req.getUserSavings(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(logMock.Output.String(), "get_user_email_from_context_failed")

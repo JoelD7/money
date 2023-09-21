@@ -23,6 +23,7 @@ type getSavingsRequest struct {
 	startingTime time.Time
 	err          error
 	savingsRepo  savings.Repository
+	username     string
 }
 
 type savingsResponse struct {
@@ -55,18 +56,48 @@ func getSavingsHandler(ctx context.Context, req *apigateway.Request) (*apigatewa
 	request.init()
 	defer request.finish()
 
-	return request.process(ctx, req)
-}
-
-func (request *getSavingsRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getSavings := usecases.NewSavingsGetter(request.savingsRepo, request.log)
-
-	username, err := getUsernameFromContext(req)
+	err := request.setUsername(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
 		return getErrorResponse(err)
 	}
+
+	return request.routeToHandlers(ctx, req)
+}
+
+func (request *getSavingsRequest) setUsername(req *apigateway.Request) error {
+	username, err := getUsernameFromContext(req)
+	if err != nil {
+		return err
+	}
+
+	request.username = username
+
+	return nil
+}
+
+func (request *getSavingsRequest) routeToHandlers(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	_, periodOk := req.QueryStringParameters["period"]
+	_, savingGoalOk := req.QueryStringParameters["saving_goal_id"]
+
+	if periodOk && savingGoalOk {
+		return request.getUserSavingsByPeriodAndSavingGoal(ctx, req)
+	}
+
+	if periodOk && !savingGoalOk {
+		return request.getUserSavingsByPeriod(ctx, req)
+	}
+
+	if !periodOk && savingGoalOk {
+		return request.getUserSavingsByPeriodAndSavingGoal(ctx, req)
+	}
+
+	return request.getUserSavings(ctx, req)
+}
+
+func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	getSavings := usecases.NewSavingsGetter(request.savingsRepo, request.log)
 
 	startKey, pageSize, err := getRequestParams(req)
 	if err != nil {
@@ -75,7 +106,7 @@ func (request *getSavingsRequest) process(ctx context.Context, req *apigateway.R
 		return getErrorResponse(err)
 	}
 
-	userSavings, nextKey, err := getSavings(ctx, username, startKey, pageSize)
+	userSavings, nextKey, err := getSavings(ctx, request.username, startKey, pageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{
 			req,
@@ -97,6 +128,15 @@ func (request *getSavingsRequest) process(ctx context.Context, req *apigateway.R
 		StatusCode: http.StatusOK,
 		Body:       string(responseJSON),
 	}, nil
+}
+
+func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+}
+
+func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+}
+
+func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 }
 
 func getUsernameFromContext(req *apigateway.Request) (string, error) {
