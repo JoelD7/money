@@ -10,6 +10,7 @@ import (
 type SavingsManager interface {
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error)
+	GetSavingsBySavingGoal(ctx context.Context, username, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
 	DeleteSaving(ctx context.Context, savingID, username string) error
@@ -63,6 +64,28 @@ func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Conte
 		}
 
 		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, username, period, startKey, pageSize)
+		if err != nil {
+			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
+		}
+
+		return savings, nextKey, nil
+	}
+}
+
+func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, username, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+		err := validateEmail(username)
+		if err != nil {
+			l.Error("invalid_email_detected", err, []models.LoggerObject{
+				l.MapToLoggerObject("user_data", map[string]interface{}{
+					"s_username": username,
+				}),
+			})
+
+			return nil, "", err
+		}
+
+		savings, nextKey, err := sm.GetSavingsBySavingGoal(ctx, username, savingGoalID, startKey, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
