@@ -11,6 +11,7 @@ type SavingsManager interface {
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
+	GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
 	DeleteSaving(ctx context.Context, savingID, username string) error
@@ -63,7 +64,7 @@ func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Conte
 			return nil, "", err
 		}
 
-		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, username, period, startKey, pageSize)
+		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, username, startKey, period, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
@@ -74,7 +75,18 @@ func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Conte
 
 func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
-		savings, nextKey, err := sm.GetSavingsBySavingGoal(ctx, savingGoalID, startKey, pageSize)
+		savings, nextKey, err := sm.GetSavingsBySavingGoal(ctx, startKey, savingGoalID, pageSize)
+		if err != nil {
+			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
+		}
+
+		return savings, nextKey, nil
+	}
+}
+
+func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+		savings, nextKey, err := sm.GetSavingsBySavingGoalAndPeriod(ctx, startKey, savingGoalID, period, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}

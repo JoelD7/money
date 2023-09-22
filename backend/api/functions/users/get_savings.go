@@ -181,6 +181,29 @@ func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context
 }
 
 func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	period := req.QueryStringParameters["period"]
+	savingGoal := req.QueryStringParameters["saving_goal_id"]
+
+	getSavingsBySavingGoalAndPeriod := usecases.NewSavingBySavingGoalAndPeriodGetter(request.savingsRepo, request.log)
+
+	userSavings, nextKey, err := getSavingsBySavingGoalAndPeriod(ctx, request.startKey, savingGoal, period, request.pageSize)
+	if err != nil {
+		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
+
+		return getErrorResponse(err)
+	}
+
+	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
+	if err != nil {
+		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
+
+		return getErrorResponse(err)
+	}
+
+	return &apigateway.Response{
+		StatusCode: http.StatusOK,
+		Body:       responseJSON,
+	}, nil
 }
 
 func getUsernameFromContext(req *apigateway.Request) (string, error) {

@@ -186,6 +186,65 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 	return *savings, nextKey, nil
 }
 
+func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+	var decodedStartKey map[string]types.AttributeValue
+	var err error
+
+	if startKey != "" {
+		decodedStartKey, err = decodeStartKey(startKey)
+		if err != nil {
+			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+		}
+	}
+
+	nameEx := expression.Name("saving_goal_id").Equal(expression.Value(savingGoalID))
+	filterCondition := expression.Name("period").Equal(expression.Value(period))
+
+	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	if err != nil {
+		return nil, "", err
+	}
+
+	filterEx, err := expression.NewBuilder().WithFilter(filterCondition).Build()
+	if err != nil {
+		return nil, "", err
+	}
+
+	input := &dynamodb.QueryInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          filterEx.Filter(),
+		KeyConditionExpression:    expr.Condition(),
+		TableName:                 aws.String(tableName),
+		IndexName:                 aws.String(savingGoalSavingIndex),
+		ExclusiveStartKey:         decodedStartKey,
+		Limit:                     getPageSize(pageSize),
+	}
+
+	result, err := d.dynamoClient.Query(ctx, input)
+	if err != nil {
+		return nil, "", fmt.Errorf("query failed: %v", err)
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrSavingsNotFound
+	}
+
+	savings := new([]*models.Saving)
+
+	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
+	if err != nil {
+		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
+	}
+
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return *savings, nextKey, nil
+}
+
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
 	saving.SavingID = generateSavingID()
 	saving.CreatedDate = time.Now()
