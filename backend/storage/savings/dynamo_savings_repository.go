@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	tableName       = "savings"
-	defaultPageSize = 10
+	tableName         = "savings"
+	periodSavingIndex = "period_user-saving_id-index"
+	defaultPageSize   = 10
 )
 
 type DynamoRepository struct {
@@ -50,6 +51,60 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
 		TableName:                 aws.String(tableName),
+		ExclusiveStartKey:         decodedStartKey,
+		Limit:                     getPageSize(pageSize),
+	}
+
+	result, err := d.dynamoClient.Query(ctx, input)
+	if err != nil {
+		return nil, "", fmt.Errorf("query failed: %v", err)
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrSavingsNotFound
+	}
+
+	savings := new([]*models.Saving)
+
+	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
+	if err != nil {
+		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
+	}
+
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return *savings, nextKey, nil
+}
+
+func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+	var decodedStartKey map[string]types.AttributeValue
+	var err error
+
+	if startKey != "" {
+		decodedStartKey, err = decodeStartKey(startKey)
+		if err != nil {
+			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+		}
+	}
+
+	periodUser := buildPeriodUser(username, period)
+
+	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
+
+	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	if err != nil {
+		return nil, "", err
+	}
+
+	input := &dynamodb.QueryInput{
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.Condition(),
+		TableName:                 aws.String(tableName),
+		IndexName:                 aws.String(periodSavingIndex),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(pageSize),
 	}
@@ -241,4 +296,8 @@ func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, username 
 	}
 
 	return nil
+}
+
+func buildPeriodUser(username, period string) string {
+	return fmt.Sprintf("%s:%s", period, username)
 }

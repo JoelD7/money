@@ -24,6 +24,8 @@ type getSavingsRequest struct {
 	err          error
 	savingsRepo  savings.Repository
 	username     string
+	startKey     string
+	pageSize     int
 }
 
 type savingsResponse struct {
@@ -56,23 +58,30 @@ func getSavingsHandler(ctx context.Context, req *apigateway.Request) (*apigatewa
 	request.init()
 	defer request.finish()
 
-	err := request.setUsername(req)
+	err := request.prepareRequest(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
-
 		return getErrorResponse(err)
 	}
 
 	return request.routeToHandlers(ctx, req)
 }
 
-func (request *getSavingsRequest) setUsername(req *apigateway.Request) error {
-	username, err := getUsernameFromContext(req)
+func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error {
+	var err error
+
+	request.username, err = getUsernameFromContext(req)
 	if err != nil {
+		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+
 		return err
 	}
 
-	request.username = username
+	request.startKey, request.pageSize, err = getRequestParams(req)
+	if err != nil {
+		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
+
+		return err
+	}
 
 	return nil
 }
@@ -81,15 +90,15 @@ func (request *getSavingsRequest) routeToHandlers(ctx context.Context, req *apig
 	_, periodOk := req.QueryStringParameters["period"]
 	_, savingGoalOk := req.QueryStringParameters["saving_goal_id"]
 
-	if periodOk && savingGoalOk {
-		return request.getUserSavingsByPeriodAndSavingGoal(ctx, req)
-	}
-
 	if periodOk && !savingGoalOk {
 		return request.getUserSavingsByPeriod(ctx, req)
 	}
 
 	if !periodOk && savingGoalOk {
+		return request.getUserSavingsBySavingGoal(ctx, req)
+	}
+
+	if periodOk && savingGoalOk {
 		return request.getUserSavingsByPeriodAndSavingGoal(ctx, req)
 	}
 
@@ -99,14 +108,7 @@ func (request *getSavingsRequest) routeToHandlers(ctx context.Context, req *apig
 func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getSavings := usecases.NewSavingsGetter(request.savingsRepo, request.log)
 
-	startKey, pageSize, err := getRequestParams(req)
-	if err != nil {
-		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
-
-		return getErrorResponse(err)
-	}
-
-	userSavings, nextKey, err := getSavings(ctx, request.username, startKey, pageSize)
+	userSavings, nextKey, err := getSavings(ctx, request.username, request.startKey, request.pageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{
 			req,
@@ -115,9 +117,7 @@ func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apiga
 		return getErrorResponse(err)
 	}
 
-	response := &savingsResponse{userSavings, nextKey}
-
-	responseJSON, err := json.Marshal(response)
+	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
 		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
 
@@ -126,11 +126,33 @@ func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apiga
 
 	return &apigateway.Response{
 		StatusCode: http.StatusOK,
-		Body:       string(responseJSON),
+		Body:       responseJSON,
 	}, nil
 }
 
 func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	period := req.QueryStringParameters["period"]
+
+	getSavingsByPeriod := usecases.NewSavingByPeriodGetter(request.savingsRepo, request.log)
+
+	userSavings, nextKey, err := getSavingsByPeriod(ctx, request.username, request.startKey, period, request.pageSize)
+	if err != nil {
+		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
+
+		return getErrorResponse(err)
+	}
+
+	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
+	if err != nil {
+		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
+
+		return getErrorResponse(err)
+	}
+
+	return &apigateway.Response{
+		StatusCode: http.StatusOK,
+		Body:       responseJSON,
+	}, nil
 }
 
 func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
@@ -160,4 +182,15 @@ func getRequestParams(req *apigateway.Request) (string, int, error) {
 	}
 
 	return req.QueryStringParameters["start_key"], pageSizeParam, nil
+}
+
+func (request *getSavingsRequest) getSavingsResponse(savings []*models.Saving, nextKey string) (string, error) {
+	response := &savingsResponse{savings, nextKey}
+
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		return "", err
+	}
+
+	return string(responseJSON), nil
 }

@@ -9,6 +9,7 @@ import (
 
 type SavingsManager interface {
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
+	GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
 	DeleteSaving(ctx context.Context, savingID, username string) error
@@ -27,6 +28,7 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, use
 			return nil, "", err
 		}
 
+		//TODO: remove this when the request validation model is done
 		if err = validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
 				l.MapToLoggerObject("user_data", map[string]interface{}{
@@ -39,6 +41,28 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, use
 		}
 
 		savings, nextKey, err := sm.GetSavings(ctx, username, startKey, pageSize)
+		if err != nil {
+			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
+		}
+
+		return savings, nextKey, nil
+	}
+}
+
+func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+		err := validateEmail(username)
+		if err != nil {
+			l.Error("invalid_email_detected", err, []models.LoggerObject{
+				l.MapToLoggerObject("user_data", map[string]interface{}{
+					"s_username": username,
+				}),
+			})
+
+			return nil, "", err
+		}
+
+		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, username, period, startKey, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
