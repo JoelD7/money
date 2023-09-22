@@ -160,7 +160,7 @@ func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context
 
 	getSavingsBySavingGoal := usecases.NewSavingBySavingGoalGetter(request.savingsRepo, request.log)
 
-	userSavings, nextKey, err := getSavingsBySavingGoal(ctx, request.username, request.startKey, savingGoal, request.pageSize)
+	userSavings, nextKey, err := getSavingsBySavingGoal(ctx, request.startKey, savingGoal, request.pageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
 

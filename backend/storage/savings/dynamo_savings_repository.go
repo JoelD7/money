@@ -134,7 +134,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, sta
 	return *savings, nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, username, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 
