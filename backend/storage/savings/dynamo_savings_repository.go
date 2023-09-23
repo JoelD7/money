@@ -29,6 +29,40 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
+func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error) {
+	userKey, err := attributevalue.Marshal(username)
+	if err != nil {
+		return nil, err
+	}
+
+	savingIDKey, err := attributevalue.Marshal(savingID)
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"username":  userKey,
+			"saving_id": savingIDKey,
+		},
+	}
+
+	result, err := d.dynamoClient.GetItem(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("get saving item failed: %v", err)
+	}
+
+	saving := new(models.Saving)
+
+	err = attributevalue.UnmarshalMap(result.Item, saving)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal saving item failed: %v", err)
+	}
+
+	return saving, nil
+}
+
 func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error

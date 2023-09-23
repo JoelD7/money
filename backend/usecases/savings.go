@@ -8,6 +8,7 @@ import (
 )
 
 type SavingsManager interface {
+	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
@@ -15,6 +16,28 @@ type SavingsManager interface {
 	CreateSaving(ctx context.Context, saving *models.Saving) error
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
 	DeleteSaving(ctx context.Context, savingID, username string) error
+}
+
+func NewSavingGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
+	return func(ctx context.Context, username, savingID string) (*models.Saving, error) {
+		err := validateEmail(username)
+		if err != nil {
+			l.Error("invalid_email_detected", err, []models.LoggerObject{
+				l.MapToLoggerObject("user_data", map[string]interface{}{
+					"s_username": username,
+				}),
+			})
+
+			return nil, err
+		}
+
+		saving, err := sm.GetSaving(ctx, username, savingID)
+		if err != nil {
+			return nil, err
+		}
+
+		return saving, nil
+	}
 }
 
 func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
