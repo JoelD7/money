@@ -26,6 +26,38 @@ func (m *Mock) DeactivateForceFailure() {
 	m.mockedErr = nil
 }
 
+func (m *Mock) GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error) {
+	if m.mockedErr != nil {
+		return nil, m.mockedErr
+	}
+
+	return m.mockedSavings[0], nil
+}
+
+func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+	if m.mockedErr != nil {
+		return nil, "", m.mockedErr
+	}
+
+	return m.mockedSavings, "next_key", nil
+}
+
+func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+	if m.mockedErr != nil {
+		return nil, "", m.mockedErr
+	}
+
+	return m.mockedSavings, "next_key", nil
+}
+
+func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+	if m.mockedErr != nil {
+		return nil, "", m.mockedErr
+	}
+
+	return m.mockedSavings, "next_key", nil
+}
+
 func (m *Mock) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr

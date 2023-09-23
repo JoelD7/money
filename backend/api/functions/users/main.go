@@ -32,6 +32,7 @@ var (
 		models.ErrDeleteSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrDeleteSavingNotFound.Error()},
 		models.ErrInvalidPageSize:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPageSize.Error()},
 		models.ErrInvalidStartKey:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidStartKey.Error()},
+		errMissingSavingID:             {HTTPCode: http.StatusBadRequest, Message: errMissingSavingID.Error()},
 	}
 )
 
@@ -63,6 +64,7 @@ func main() {
 		})
 
 		r.Route("/savings", func(r *router.Router) {
+			r.Get("/{savingID}", getSavingHandler)
 			r.Get("/", getSavingsHandler)
 			r.Post("/", createSavingHandler)
 			r.Put("/", updateSavingHandler)
