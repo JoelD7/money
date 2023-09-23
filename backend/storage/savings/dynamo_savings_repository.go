@@ -234,12 +234,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	nameEx := expression.Name("saving_goal_id").Equal(expression.Value(savingGoalID))
 	filterCondition := expression.Name("period").Equal(expression.Value(period))
 
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
-	if err != nil {
-		return nil, "", err
-	}
-
-	filterEx, err := expression.NewBuilder().WithFilter(filterCondition).Build()
+	expr, err := expression.NewBuilder().WithCondition(nameEx).WithFilter(filterCondition).Build()
 	if err != nil {
 		return nil, "", err
 	}
@@ -247,7 +242,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	input := &dynamodb.QueryInput{
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          filterEx.Filter(),
+		FilterExpression:          expr.Filter(),
 		KeyConditionExpression:    expr.Condition(),
 		TableName:                 aws.String(tableName),
 		IndexName:                 aws.String(savingGoalSavingIndex),
