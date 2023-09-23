@@ -71,8 +71,10 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
-			Body:       errPathNotDefined.Error(),
-		}, errPathNotDefined
+			//In a regular, public API this error shouldn't be returned. I do it here because it wasn't possible
+			//to use the logger here in the router. Look notes for explanation.
+			Body: errPathNotDefined.Error(),
+		}, nil
 	}
 
 	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, request)

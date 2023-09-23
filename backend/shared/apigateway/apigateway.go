@@ -3,13 +3,37 @@ package apigateway
 import (
 	"encoding/json"
 	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-lambda-go/events"
+	"net/http"
 	"strings"
 )
 
 var (
 	origin = env.GetString("CORS_ORIGIN", "*")
+
+	responseByErrors = map[error]Error{
+		models.ErrUserNotFound:         {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
+		models.ErrIncomeNotFound:       {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
+		models.ErrExpensesNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
+		models.ErrSavingsNotFound:      {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
+		models.ErrInvalidAmount:        {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
+		models.ErrMissingUsername:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
+		models.ErrInvalidEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
+		models.ErrInvalidRequestBody:   {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidRequestBody.Error()},
+		models.ErrMissingSavingID:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingID.Error()},
+		models.ErrUpdateSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrUpdateSavingNotFound.Error()},
+		models.ErrDeleteSavingNotFound: {HTTPCode: http.StatusNotFound, Message: models.ErrDeleteSavingNotFound.Error()},
+		models.ErrInvalidPageSize:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPageSize.Error()},
+		models.ErrInvalidStartKey:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidStartKey.Error()},
+		models.ErrMissingUsername:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
+		models.ErrMissingPassword:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPassword.Error()},
+		models.ErrInvalidToken:         {HTTPCode: http.StatusUnauthorized, Message: models.ErrInvalidToken.Error()},
+		models.ErrMalformedToken:       {HTTPCode: http.StatusUnauthorized, Message: models.ErrMalformedToken.Error()},
+		models.ErrExistingUser:         {HTTPCode: http.StatusBadRequest, Message: models.ErrExistingUser.Error()},
+		models.ErrWrongCredentials:     {HTTPCode: http.StatusBadRequest, Message: models.ErrWrongCredentials.Error()},
+	}
 )
 
 type Response events.APIGatewayProxyResponse
@@ -19,7 +43,13 @@ type Request events.APIGatewayProxyRequest
 func NewErrorResponse(err error) *Response {
 	var knownError *Error
 	if errors.As(err, &knownError) {
-		return NewJSONResponse(knownError.HTTPCode, knownError)
+		return NewJSONResponse(knownError.HTTPCode, knownError.Message)
+	}
+
+	for mappedErr, responseErr := range responseByErrors {
+		if errors.Is(err, mappedErr) {
+			return NewJSONResponse(responseErr.HTTPCode, responseErr.Message)
+		}
 	}
 
 	return NewJSONResponse(ErrInternalError.HTTPCode, ErrInternalError.Message)

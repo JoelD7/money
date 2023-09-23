@@ -9,8 +9,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"golang.org/x/crypto/bcrypt"
 	"math/big"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -37,7 +39,7 @@ var (
 	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
 	refreshTokenDuration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
 
-	errInvalidTokenLength = errors.New("invalid token length")
+	errInvalidTokenLength = apigateway.NewError("invalid token length", http.StatusUnauthorized)
 )
 
 type UserCreator interface {

@@ -65,36 +65,41 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 		req.err = err
 		req.log.Error("getting_refresh_token_cookie_failed", err, nil)
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	validateRefreshToken := usecases.NewRefreshTokenValidator(req.userRepo, req.log)
 
 	user, err := validateRefreshToken(ctx, req.RefreshToken)
+
 	if err != nil && errors.Is(err, models.ErrInvalidToken) {
 		req.err = err
 
 		return req.handleValidationError(ctx, user)
 	}
 
+	if errors.Is(err, models.ErrUserNotFound) {
+		return apigateway.NewErrorResponse(errUserNotFound), nil
+	}
+
 	if err != nil {
 		req.err = err
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
 
 	accessToken, refreshToken, err := generateTokens(ctx, user)
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	response := &accessTokenResponse{accessToken.Value}
 
 	data, err := json.Marshal(response)
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	setCookieHeader := map[string]string{
@@ -117,7 +122,7 @@ func (req *requestTokenHandler) handleValidationError(ctx context.Context, user 
 
 	err := invalidateTokens(ctx, user)
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

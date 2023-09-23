@@ -1,7 +1,5 @@
 package apigateway
 
-import "fmt"
-
 var (
 	// ErrInternalError is returned when there's an internal error that must be retried
 	ErrInternalError = &Error{
@@ -20,7 +18,7 @@ type Error struct {
 
 // Error returns the error message
 func (e *Error) Error() string {
-	return fmt.Sprintf("%s (%d)", e.Message, e.Code)
+	return e.Message
 }
 
 // NewError method to initialize custom error

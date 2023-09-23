@@ -4,8 +4,6 @@ package main
 
 import (
 	"context"
-	"errors"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
@@ -17,21 +15,9 @@ import (
 )
 
 var (
-	errCookiesNotFound              = errors.New("cookies not found in request object")
-	errMissingRefreshTokenInCookies = errors.New("missing refresh token in cookies")
-
-	responseByErrors = map[error]apigateway.Error{
-		models.ErrMissingUsername:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
-		models.ErrInvalidEmail:          {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
-		models.ErrMissingPassword:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPassword.Error()},
-		models.ErrInvalidToken:          {HTTPCode: http.StatusUnauthorized, Message: models.ErrInvalidToken.Error()},
-		models.ErrMalformedToken:        {HTTPCode: http.StatusUnauthorized, Message: models.ErrMalformedToken.Error()},
-		errMissingRefreshTokenInCookies: {HTTPCode: http.StatusBadRequest, Message: errMissingRefreshTokenInCookies.Error()},
-		models.ErrExistingUser:          {HTTPCode: http.StatusBadRequest, Message: models.ErrExistingUser.Error()},
-		models.ErrUserNotFound:          {HTTPCode: http.StatusBadRequest, Message: models.ErrUserNotFound.Error()},
-		models.ErrWrongCredentials:      {HTTPCode: http.StatusBadRequest, Message: models.ErrWrongCredentials.Error()},
-		errCookiesNotFound:              {HTTPCode: http.StatusBadRequest, Message: ""},
-	}
+	errCookiesNotFound              = apigateway.NewError("cookies not found in request object", http.StatusBadRequest)
+	errMissingRefreshTokenInCookies = apigateway.NewError("missing refresh token in cookies", http.StatusBadRequest)
+	errUserNotFound                 = apigateway.NewError("", http.StatusBadRequest)
 )
 
 var (
@@ -95,16 +81,6 @@ func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
 	}
 
 	return "", errMissingRefreshTokenInCookies
-}
-
-func getErrorResponse(err error) (*apigateway.Response, error) {
-	for mappedErr, responseErr := range responseByErrors {
-		if errors.Is(err, mappedErr) {
-			return apigateway.NewJSONResponse(responseErr.HTTPCode, responseErr.Message), nil
-		}
-	}
-
-	return apigateway.NewErrorResponse(err), nil
 }
 
 func main() {

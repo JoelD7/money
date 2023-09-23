@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -14,7 +13,7 @@ import (
 )
 
 var (
-	errMissingSavingID = errors.New("missing savingID")
+	errMissingSavingID = apigateway.NewError("missing savingID", http.StatusBadRequest)
 )
 
 type getSavingRequest struct {
@@ -57,14 +56,14 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 	if !ok {
 		request.log.Error("saving_id", errMissingSavingID, []models.LoggerObject{req})
 
-		return getErrorResponse(errMissingSavingID)
+		return apigateway.NewErrorResponse(errMissingSavingID), nil
 	}
 
 	username, err := getUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.log)
@@ -73,14 +72,14 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 	if err != nil {
 		request.log.Error("get_saving_failed", err, []models.LoggerObject{req})
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := json.Marshal(saving)
 	if err != nil {
 		request.log.Error("get_saving_marshal_failed", err, []models.LoggerObject{req})
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

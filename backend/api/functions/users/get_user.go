@@ -28,7 +28,7 @@ func (request *getUserRequest) init() {
 	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = logger.NewLoggerWithHandler("get-user")
 }
 
 func (request *getUserRequest) finish() {
@@ -61,7 +61,7 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 		request.err = err
 		request.log.Error("user_fetching_failed", err, nil)
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	return apigateway.NewJSONResponse(http.StatusOK, user), nil
