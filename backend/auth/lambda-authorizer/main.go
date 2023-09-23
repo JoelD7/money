@@ -106,7 +106,7 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 
 	subject, err := verifyToken(ctx, token)
 	if errors.Is(err, models.ErrUnauthorized) {
-		return events.APIGatewayCustomAuthorizerResponse{}, err
+		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
 	if err != nil {
