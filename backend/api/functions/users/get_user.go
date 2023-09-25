@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
@@ -57,6 +59,17 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)
 
 	user, err := getUser(ctx, username)
+	if user.CurrentPeriod == "" {
+		request.log.Warning("user_has_no_period_set", nil, []models.LoggerObject{req})
+	}
+
+	if errors.Is(err, models.ErrIncomeNotFound) || errors.Is(err, models.ErrExpensesNotFound) {
+		request.err = err
+		request.log.Warning("user_remainder_could_not_be_calculated", err, []models.LoggerObject{req})
+
+		return apigateway.NewJSONResponse(http.StatusOK, user), nil
+	}
+
 	if err != nil {
 		request.err = err
 		request.log.Error("user_fetching_failed", err, nil)
