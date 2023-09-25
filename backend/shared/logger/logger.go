@@ -6,9 +6,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
-	"log"
 	"net"
-	"os"
 	"regexp"
 	"runtime/debug"
 	"sync"
@@ -32,11 +30,10 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-234-100-95.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-161-45-153.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
-	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 type LogAPI interface {
@@ -211,6 +208,7 @@ func (l *Log) MapToLoggerObject(name string, m map[string]interface{}) models.Lo
 	}
 }
 
+// getLogObjects transforms the logger objects to a serializable representation.
 func getLogObjects(objects []models.LoggerObject) map[string]map[string]interface{} {
 	lObjects := make(map[string]map[string]interface{})
 

@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"net/http"
-
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"net/http"
 )
 
 var (
@@ -28,7 +27,7 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
-		log: logger.NewLogger(),
+		log: logger.NewConsoleLogger("router"),
 		methodHandlers: map[string]map[string]Handler{
 			http.MethodGet:    make(map[string]Handler),
 			http.MethodHead:   make(map[string]Handler),
