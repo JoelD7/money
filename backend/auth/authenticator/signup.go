@@ -54,14 +54,14 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("request_body_json_unmarshal_failed", err, nil)
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	saveNewUser := usecases.NewUserCreator(req.userRepo, req.log)
 
 	err = saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

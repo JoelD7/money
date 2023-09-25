@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"net/http"
-
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"net/http"
 )
 
 var (
@@ -28,7 +27,7 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
-		log: logger.NewLogger(),
+		log: logger.NewConsoleLogger("router"),
 		methodHandlers: map[string]map[string]Handler{
 			http.MethodGet:    make(map[string]Handler),
 			http.MethodHead:   make(map[string]Handler),
@@ -71,8 +70,10 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
-			Body:       errPathNotDefined.Error(),
-		}, errPathNotDefined
+			//In a regular, public API this error shouldn't be returned. I do it here because it wasn't possible
+			//to use the logger here in the router. Look notes for explanation.
+			Body: errPathNotDefined.Error(),
+		}, nil
 	}
 
 	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, request)

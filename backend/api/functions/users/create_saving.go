@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -14,7 +13,7 @@ import (
 )
 
 var (
-	errRequestBodyParseFailure = errors.New("couldn't parse the request body. Please check it")
+	errRequestBodyParseFailure = apigateway.NewError("couldn't parse the request body. Please check it", http.StatusBadRequest)
 )
 
 type createSavingRequest struct {
@@ -59,7 +58,7 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("request_body_unmarshal_failed", err, []models.LoggerObject{req})
 
-		return getErrorResponse(errRequestBodyParseFailure)
+		return apigateway.NewErrorResponse(errRequestBodyParseFailure), nil
 	}
 
 	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.log)
@@ -68,7 +67,7 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("create_saving_failed", err, []models.LoggerObject{req})
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

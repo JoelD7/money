@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
@@ -62,27 +64,31 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 		req.err = err
 		req.log.Error("request_body_json_unmarshal_failed", err, nil)
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	authenticate := usecases.NewUserAuthenticator(req.userRepo, req.log)
 	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
 
 	user, err := authenticate(ctx, reqBody.Username, reqBody.Password)
+	if errors.Is(err, models.ErrUserNotFound) {
+		return apigateway.NewErrorResponse(errUserNotFound), nil
+	}
+
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	accessToken, refreshToken, err := generateTokens(ctx, user)
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	response := &accessTokenResponse{accessToken.Value}
 
 	data, err := json.Marshal(response)
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	setCookieHeader := map[string]string{

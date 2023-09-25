@@ -48,7 +48,7 @@ func (req *requestJwksHandler) finish() {
 func (req *requestJwksHandler) processJWKS(ctx context.Context) (*apigateway.Response, error) {
 	jsonWebKeySet, err := usecases.GetJsonWebKeySet(ctx, req.secretsManager, req.log)
 	if err != nil {
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	jsonResponse, err := json.Marshal(jsonWebKeySet)
@@ -56,7 +56,7 @@ func (req *requestJwksHandler) processJWKS(ctx context.Context) (*apigateway.Res
 		req.err = err
 		req.log.Error("jwks_response_marshall_failed", err, nil)
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

@@ -54,7 +54,7 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("request_body_unmarshal_failed", err, []models.LoggerObject{req})
 
-		return getErrorResponse(errRequestBodyParseFailure)
+		return apigateway.NewErrorResponse(errRequestBodyParseFailure), nil
 	}
 
 	updateSaving := usecases.NewSavingUpdater(request.savingsRepo)
@@ -63,7 +63,7 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("update_saving_failed", err, []models.LoggerObject{req})
 
-		return getErrorResponse(err)
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{
