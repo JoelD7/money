@@ -38,7 +38,10 @@ func main() {
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/users", func(r *router.Router) {
 			r.Get("/", getUserHandler)
-			r.Get("/categories", getCategoriesHandler)
+			r.Route("/categories", func(r *router.Router) {
+				r.Get("/", getCategoriesHandler)
+				r.Put("/{categoryID}", updateCategoryHandler)
+			})
 		})
 
 		r.Route("/savings", func(r *router.Router) {
