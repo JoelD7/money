@@ -37,7 +37,7 @@ func main() {
 
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/users", func(r *router.Router) {
-			r.Get("/{username}", getUserHandler)
+			r.Get("/", getUserHandler)
 			r.Get("/categories", getCategoriesHandler)
 		})
 

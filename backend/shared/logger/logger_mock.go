@@ -35,11 +35,17 @@ func (l *LogMock) Info(eventName string, objects []models.LoggerObject) {
 }
 func (l *LogMock) Warning(eventName string, err error, objects []models.LoggerObject) {
 	_, _ = l.Output.Write([]byte(eventName))
-	_, _ = l.Output.Write([]byte(err.Error()))
+
+	if err != nil {
+		_, _ = l.Output.Write([]byte(err.Error()))
+	}
 }
 func (l *LogMock) Error(eventName string, err error, objects []models.LoggerObject) {
 	_, _ = l.Output.Write([]byte(eventName))
-	_, _ = l.Output.Write([]byte(err.Error()))
+
+	if err != nil {
+		_, _ = l.Output.Write([]byte(err.Error()))
+	}
 }
 
 func (l *LogMock) Critical(eventName string, objects []models.LoggerObject) {
