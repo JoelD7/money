@@ -55,3 +55,18 @@ func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx conte
 		return user, nil
 	}
 }
+
+func NewCategoriesGetter(u UserGetter) func(ctx context.Context, username string) ([]*models.Category, error) {
+	return func(ctx context.Context, username string) ([]*models.Category, error) {
+		user, err := u.GetUser(ctx, username)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(user.Categories) == 0 {
+			return nil, models.ErrCategoriesNotFound
+		}
+
+		return user.Categories, nil
+	}
+}

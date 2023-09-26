@@ -31,4 +31,5 @@ var (
 	ErrMissingSavingID      = errors.New("missing saving id")
 	ErrInvalidPageSize      = errors.New("invalid page size")
 	ErrInvalidStartKey      = errors.New("invalid start key")
+	ErrCategoriesNotFound   = errors.New("categories not found")
 )

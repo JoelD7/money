@@ -106,10 +106,14 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 
 	subject, err := verifyToken(ctx, token)
 	if errors.Is(err, models.ErrUnauthorized) {
+		req.log.Error("request_unauthorized", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
 	if err != nil {
+		req.log.Error("request_denied", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
 
@@ -137,6 +141,8 @@ func (req *request) getEventAsLoggerObject(event events.APIGatewayCustomAuthoriz
 }
 
 func (req *request) verifyUserRequest(resp *AuthorizerResponse, methodArn string) error {
+	// arn:aws:execute-api:us-east-1:811364018000:38qslpe8d9/staging/GET/users/categories
+	//arn:aws:execute-api:us-east-1:811364018000:38qslpe8d9/staging/GET/users/test@gmail.com
 	arnParts := strings.Split(methodArn, ":")
 	apiGatewayArnParts := strings.Split(arnParts[5], "/")
 
