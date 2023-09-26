@@ -49,8 +49,8 @@ func TestHandleRequest(t *testing.T) {
 
 	response, err := req.process(ctx, event)
 	c.Nil(err)
-	c.NotNil(response.Context["email"])
-	c.Equal("test@gmail.com", response.Context["email"])
+	c.NotNil(response.Context["username"])
+	c.Equal("test@gmail.com", response.Context["username"])
 	c.Equal(Allow.String(), response.PolicyDocument.Statement[0].Effect)
 }
 
@@ -157,25 +157,6 @@ func TestHandlerError(t *testing.T) {
 		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
 		c.Contains(logMock.Output.String(), "jwt_validation_failed")
 		logMock.Output.Reset()
-	})
-
-	t.Run("User tries to access other users data", func(t *testing.T) {
-		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
-		c.Nil(err)
-
-		event = dummyHandlerEvent()
-
-		secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
-			return "123", nil
-		})
-
-		event.MethodArn = "arn:aws:execute-api:us-east-1:811364018000:38qslpe8d9/ESTestInvoke-stage/GET/users/dummy@gmail.com"
-
-		response, err := req.process(ctx, event)
-		c.Nil(err)
-		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
-		c.NotNil(response.Context["stringKey"])
-		c.Equal("access to this user's data is forbidden", response.Context["stringKey"])
 	})
 }
 

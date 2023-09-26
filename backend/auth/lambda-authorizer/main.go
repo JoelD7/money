@@ -117,13 +117,6 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 
 	resp := NewAuthorizerResponse(event.MethodArn, principalID)
 
-	err = req.verifyUserRequest(resp, event.MethodArn)
-	if err != nil {
-		req.log.Error("request_denied", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
-
-		return defaultDenyAllPolicy(event.MethodArn, err), nil
-	}
-
 	resp.AllowAllMethods()
 
 	return resp.APIGatewayCustomAuthorizerResponse, nil
@@ -134,23 +127,6 @@ func (req *request) getEventAsLoggerObject(event events.APIGatewayCustomAuthoriz
 		"s_type":       event.Type,
 		"s_method_arn": event.MethodArn,
 	})
-}
-
-func (req *request) verifyUserRequest(resp *AuthorizerResponse, methodArn string) error {
-	arnParts := strings.Split(methodArn, ":")
-	apiGatewayArnParts := strings.Split(arnParts[5], "/")
-
-	if len(apiGatewayArnParts) < 5 {
-		return nil
-	}
-
-	username := apiGatewayArnParts[4]
-
-	if resp.PrincipalID != username {
-		return errUserNotAuthorized
-	}
-
-	return nil
 }
 
 func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAuthorizerResponse {

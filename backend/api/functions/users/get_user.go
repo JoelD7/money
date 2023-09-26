@@ -54,12 +54,17 @@ func getUserHandler(ctx context.Context, req *apigateway.Request) (*apigateway.R
 }
 
 func (request *getUserRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	username := req.PathParameters["username"]
+	username, err := getUsernameFromContext(req)
+	if err != nil {
+		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
 
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)
 
 	user, err := getUser(ctx, username)
-	if user.CurrentPeriod == "" {
+	if user != nil && user.CurrentPeriod == "" {
 		request.log.Warning("user_has_no_period_set", nil, []models.LoggerObject{req})
 	}
 
