@@ -32,9 +32,10 @@ func TestHandlerSuccess(t *testing.T) {
 	}
 
 	apigwRequest := &apigateway.Request{
-		RequestContext: events.APIGatewayProxyRequestContext{},
-		PathParameters: map[string]string{
-			"user-id": "test@gmail.com",
+		RequestContext: events.APIGatewayProxyRequestContext{
+			Authorizer: map[string]interface{}{
+				"username": "test@gmail.com",
+			},
 		},
 	}
 
@@ -77,9 +78,10 @@ func TestHandlerFailed(t *testing.T) {
 	}
 
 	apigwRequest := &apigateway.Request{
-		RequestContext: events.APIGatewayProxyRequestContext{},
-		PathParameters: map[string]string{
-			"username": "test@gmail.com",
+		RequestContext: events.APIGatewayProxyRequestContext{
+			Authorizer: map[string]interface{}{
+				"username": "test@gmail.com",
+			},
 		},
 	}
 
@@ -117,8 +119,8 @@ func TestHandlerFailed(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
-		c.Equal(http.StatusNotFound, response.StatusCode)
-		c.Contains(logMock.Output.String(), "user_fetching_failed")
+		c.Equal(http.StatusOK, response.StatusCode)
+		c.Contains(logMock.Output.String(), "user_remainder_could_not_be_calculated")
 		c.Contains(logMock.Output.String(), models.ErrIncomeNotFound.Error())
 		logMock.Output.Reset()
 	})
@@ -130,8 +132,8 @@ func TestHandlerFailed(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
-		c.Equal(http.StatusNotFound, response.StatusCode)
-		c.Contains(logMock.Output.String(), "user_fetching_failed")
+		c.Equal(http.StatusOK, response.StatusCode)
+		c.Contains(logMock.Output.String(), "user_remainder_could_not_be_calculated")
 		c.Contains(logMock.Output.String(), models.ErrExpensesNotFound.Error())
 		logMock.Output.Reset()
 	})
