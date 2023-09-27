@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -27,9 +28,7 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 
 	t.Run("No category id in path", func(t *testing.T) {
 		apigwRequest = getUpdateCategoryRequest()
-		apigwRequest.PathParameters = map[string]string{
-			"categoryID": "",
-		}
+		apigwRequest.PathParameters = map[string]string{}
 
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
@@ -44,8 +43,30 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "request_body_validation_failed")
+	})
+
+	t.Run("Update category failed", func(t *testing.T) {
+		usersMock.ActivateForceFailure(errors.New("dummy"))
+		defer usersMock.DeactivateForceFailure()
+
+		apigwRequest = getUpdateCategoryRequest()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "unmarshal_request_body_failed")
+		c.Contains(logMock.Output.String(), "update_category_failed")
+	})
+
+	t.Run("Invalid budget", func(t *testing.T) {
+		apigwRequest = getUpdateCategoryRequest()
+		apigwRequest.Body = `{"category_id":"CTGrR7fO4ndmI0IthJ7Wg8f","category_name":"Entertainment","color":"#ff8733","budget":-89}`
+
+		response, err := req.process(ctx, apigwRequest)
+		c.Nil(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "request_body_validation_failed")
 	})
 }
 

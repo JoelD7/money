@@ -4,15 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
+	"github.com/JoelD7/money/backend/usecases"
+	"net/http"
+	"strings"
 	"time"
 )
 
 var (
 	errNoCategoryIDInPath = errors.New("no category id in path")
+	errInvalidBudget      = apigateway.NewError("budget must be greater than or equal to 0", http.StatusBadRequest)
 )
 
 type updateCategoryRequest struct {
@@ -59,11 +64,9 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		return apigateway.NewErrorResponse(errNoCategoryIDInPath), nil
 	}
 
-	requestCategory := new(models.Category)
-
-	err := json.Unmarshal([]byte(req.Body), requestCategory)
+	requestCategory, err := validateRequestBody(req)
 	if err != nil {
-		request.log.Error("unmarshal_request_body_failed", err, []models.LoggerObject{req})
+		request.log.Error("request_body_validation_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
@@ -76,5 +79,37 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return nil, nil
+	updateCategory := usecases.NewCategoryUpdater(request.userRepo)
+
+	err = updateCategory(ctx, username, categoryID, requestCategory)
+	if err != nil {
+		request.err = err
+		request.log.Error("update_category_failed", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
+	return &apigateway.Response{
+		StatusCode: http.StatusOK,
+	}, nil
+}
+
+func validateRequestBody(req *apigateway.Request) (*models.Category, error) {
+	requestCategory := new(models.Category)
+
+	err := json.Unmarshal([]byte(req.Body), requestCategory)
+	if err != nil {
+		return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidRequestBody)
+	}
+
+	if requestCategory.Budget < 0 {
+		return nil, errInvalidBudget
+	}
+
+	//This indicates that the budget should not be updated
+	if !strings.Contains(req.Body, "budget") {
+		requestCategory.Budget = -1
+	}
+
+	return requestCategory, nil
 }

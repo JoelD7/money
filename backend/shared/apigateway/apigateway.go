@@ -19,6 +19,7 @@ var (
 		models.ErrExpensesNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
 		models.ErrCategoriesNotFound:   {HTTPCode: http.StatusNotFound, Message: models.ErrCategoriesNotFound.Error()},
 		models.ErrSavingsNotFound:      {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
+		models.ErrCategoryNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrCategoryNotFound.Error()},
 		models.ErrInvalidAmount:        {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
 		models.ErrMissingUsername:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
 		models.ErrInvalidEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},

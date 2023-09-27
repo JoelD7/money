@@ -16,8 +16,8 @@ type User struct {
 }
 
 type Category struct {
-	CategoryID    string         `json:"category_id,omitempty" dynamodbav:"category_id"`
-	CategoryName  string         `json:"category_name,omitempty" dynamodbav:"category_name"`
+	ID            string         `json:"id,omitempty" dynamodbav:"id"`
+	Name          string         `json:"name,omitempty" dynamodbav:"name"`
 	Budget        float64        `json:"budget,omitempty" dynamodbav:"budget,omitempty"`
 	Color         string         `json:"color,omitempty" dynamodbav:"color,omitempty"`
 	Keywords      []string       `json:"keywords,omitempty" dynamodbav:"keywords,stringset,omitempty"`
@@ -25,9 +25,9 @@ type Category struct {
 }
 
 type Subcategory struct {
-	SubcategoryID   string `json:"subcategory_id,omitempty" dynamodbav:"subcategory_id"`
-	SubcategoryName string `json:"subcategory_name,omitempty" dynamodbav:"subcategory_name,omitempty"`
-	Color           string `json:"color,omitempty" dynamodbav:"color,omitempty"`
+	ID    string `json:"id,omitempty" dynamodbav:"id"`
+	Name  string `json:"name,omitempty" dynamodbav:"name,omitempty"`
+	Color string `json:"color,omitempty" dynamodbav:"color,omitempty"`
 }
 
 func (u User) LogName() string {

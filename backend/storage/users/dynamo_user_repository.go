@@ -116,19 +116,19 @@ func (d *DynamoRepository) UpdateUser(ctx context.Context, user *models.User) er
 func getDefaultCategories() []*models.Category {
 	return []*models.Category{
 		{
-			CategoryID:   utils.GenerateDynamoID(categoryPrefix),
-			CategoryName: "Entertainment",
-			Color:        "#ff8733",
+			ID:    utils.GenerateDynamoID(categoryPrefix),
+			Name:  "Entertainment",
+			Color: "#ff8733",
 		},
 		{
-			CategoryID:   utils.GenerateDynamoID(categoryPrefix),
-			CategoryName: "Health",
-			Color:        "#00b85e",
+			ID:    utils.GenerateDynamoID(categoryPrefix),
+			Name:  "Health",
+			Color: "#00b85e",
 		},
 		{
-			CategoryID:   utils.GenerateDynamoID(categoryPrefix),
-			CategoryName: "Utilities",
-			Color:        "#009eb8",
+			ID:    utils.GenerateDynamoID(categoryPrefix),
+			Name:  "Utilities",
+			Color: "#009eb8",
 		},
 	}
 }
