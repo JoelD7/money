@@ -6,8 +6,9 @@ import (
 	"github.com/JoelD7/money/backend/models"
 )
 
-type UserGetter interface {
+type UserManager interface {
 	GetUser(ctx context.Context, username string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) error
 }
 
 type IncomeGetter interface {
@@ -18,7 +19,7 @@ type ExpenseGetter interface {
 	GetExpensesByPeriod(ctx context.Context, username string, periodID string) ([]*models.Expense, error)
 }
 
-func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
+func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
@@ -56,7 +57,7 @@ func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx conte
 	}
 }
 
-func NewCategoriesGetter(u UserGetter) func(ctx context.Context, username string) ([]*models.Category, error) {
+func NewCategoriesGetter(u UserManager) func(ctx context.Context, username string) ([]*models.Category, error) {
 	return func(ctx context.Context, username string) ([]*models.Category, error) {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
@@ -68,5 +69,45 @@ func NewCategoriesGetter(u UserGetter) func(ctx context.Context, username string
 		}
 
 		return user.Categories, nil
+	}
+}
+
+func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
+	return func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
+		user, err := u.GetUser(ctx, username)
+		if err != nil {
+			return err
+		}
+
+		newCategories := make([]*models.Category, 0, len(user.Categories))
+
+		categoryToUpdate := new(models.Category)
+
+		for _, cat := range user.Categories {
+			if cat.ID == categoryID {
+				categoryToUpdate = cat
+				continue
+			}
+
+			newCategories = append(newCategories, cat)
+		}
+
+		if categoryToUpdate == nil {
+			return models.ErrCategoryNotFound
+		}
+
+		if newCategory.Budget != -1 {
+			categoryToUpdate.Budget = newCategory.Budget
+		}
+
+		if newCategory.Color != "" {
+			categoryToUpdate.Color = newCategory.Color
+		}
+
+		newCategories = append(newCategories, categoryToUpdate)
+
+		user.Categories = newCategories
+
+		return nil
 	}
 }

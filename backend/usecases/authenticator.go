@@ -100,7 +100,7 @@ func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Con
 }
 
 // NewUserAuthenticator authenticates a user.
-func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context.Context, username, password string) (*models.User, error) {
+func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx context.Context, username, password string) (*models.User, error) {
 	return func(ctx context.Context, username, password string) (*models.User, error) {
 		err := validateCredentials(username, password)
 		if err != nil {
@@ -128,7 +128,7 @@ func NewUserAuthenticator(userGetter UserGetter, logger Logger) func(ctx context
 }
 
 // NewUserTokenGenerator generates access and refresh tokens for the user.
-func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager, logger Logger) func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
+func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager, logger Logger) func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 	return func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 		now := time.Now()
 
@@ -180,7 +180,7 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 		user.RefreshToken = hashedRefresh
 		user.AccessToken = hashedAccess
 
-		err = userUpdater.UpdateUser(ctx, user)
+		err = userManager.UpdateUser(ctx, user)
 		if err != nil {
 			logger.Error("update_user_failed", err, []models.LoggerObject{user})
 
@@ -202,7 +202,7 @@ func NewUserTokenGenerator(userUpdater UserUpdater, secretManager SecretManager,
 }
 
 // NewRefreshTokenValidator validates a refresh token.
-func NewRefreshTokenValidator(userGetter UserGetter, logger Logger) func(ctx context.Context, refreshToken string) (*models.User, error) {
+func NewRefreshTokenValidator(userGetter UserManager, logger Logger) func(ctx context.Context, refreshToken string) (*models.User, error) {
 	return func(ctx context.Context, refreshToken string) (*models.User, error) {
 		payload, err := getTokenPayload(refreshToken)
 		if err != nil {
@@ -410,7 +410,7 @@ func getKidFromSecret(ctx context.Context, secrets SecretManager) (string, error
 	return kidSecret, nil
 }
 
-func NewUserLogout(userGetter UserGetter, tokenCache InvalidTokenCache, logger Logger) func(ctx context.Context, token string) error {
+func NewUserLogout(userGetter UserManager, tokenCache InvalidTokenCache, logger Logger) func(ctx context.Context, token string) error {
 	return func(ctx context.Context, token string) error {
 		payload, err := getTokenPayload(token)
 		if err != nil {
