@@ -80,28 +80,26 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 		}
 
 		newCategories := make([]*models.Category, 0, len(user.Categories))
-		categoryToUpdate := new(models.Category)
-		var found bool
+		var categoryToUpdate *models.Category
 
 		for _, cat := range user.Categories {
 			if cat.ID == categoryID {
 				categoryToUpdate = cat
-				found = true
 				continue
 			}
 
 			newCategories = append(newCategories, cat)
 		}
 
-		if !found {
+		if categoryToUpdate == nil {
 			return models.ErrCategoryNotFound
 		}
 
-		if newCategory.Budget != -1 {
+		if newCategory.Budget != nil {
 			categoryToUpdate.Budget = newCategory.Budget
 		}
 
-		if newCategory.Color != "" {
+		if newCategory.Color != nil {
 			categoryToUpdate.Color = newCategory.Color
 		}
 

@@ -117,18 +117,18 @@ func getDefaultCategories() []*models.Category {
 	return []*models.Category{
 		{
 			ID:    utils.GenerateDynamoID(categoryPrefix),
-			Name:  "Entertainment",
-			Color: "#ff8733",
+			Name:  aws.String("Entertainment"),
+			Color: aws.String("#ff8733"),
 		},
 		{
 			ID:    utils.GenerateDynamoID(categoryPrefix),
-			Name:  "Health",
-			Color: "#00b85e",
+			Name:  aws.String("Health"),
+			Color: aws.String("#00b85e"),
 		},
 		{
 			ID:    utils.GenerateDynamoID(categoryPrefix),
-			Name:  "Utilities",
-			Color: "#009eb8",
+			Name:  aws.String("Utilities"),
+			Color: aws.String("#009eb8"),
 		},
 	}
 }
