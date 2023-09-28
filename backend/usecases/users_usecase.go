@@ -4,6 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"regexp"
+)
+
+var (
+	hexColorPattern = "^#[0-9A-Fa-f]{1,6}$"
 )
 
 type UserManager interface {
@@ -79,6 +84,18 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 			return err
 		}
 
+		err = validateCategoryColor(newCategory.Color)
+		if err != nil {
+			return err
+		}
+
+		if user.Categories == nil {
+			newCategory.ID = categoryID
+			user.Categories = append(user.Categories, newCategory)
+
+			return nil
+		}
+
 		newCategories := make([]*models.Category, 0, len(user.Categories))
 		var categoryToUpdate *models.Category
 
@@ -114,4 +131,18 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 
 		return nil
 	}
+}
+
+func validateCategoryColor(color *string) error {
+	if color == nil {
+		return nil
+	}
+
+	regExp := regexp.MustCompile(hexColorPattern)
+
+	if !regExp.MatchString(*color) {
+		return models.ErrInvalidHexColor
+	}
+
+	return nil
 }

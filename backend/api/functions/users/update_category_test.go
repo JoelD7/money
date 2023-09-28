@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -11,6 +12,42 @@ import (
 	"net/http"
 	"testing"
 )
+
+func TestUpdateCategoryHandler(t *testing.T) {
+	c := require.New(t)
+
+	usersMock := users.NewDynamoMock()
+	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
+
+	req := &updateCategoryRequest{
+		userRepo: usersMock,
+		log:      logMock,
+	}
+
+	apigwRequest := getUpdateCategoryRequest()
+	response, err := req.process(ctx, apigwRequest)
+	c.Nil(err)
+	c.Equal(http.StatusOK, response.StatusCode)
+
+	t.Run("Update success without sending name", func(t *testing.T) {
+		apigwRequest = getUpdateCategoryRequest()
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","color":"#ff8733","budget":1000}`
+
+		response, err := req.process(ctx, apigwRequest)
+		c.Nil(err)
+		c.Equal(http.StatusOK, response.StatusCode)
+	})
+
+	t.Run("Update success without sending budget", func(t *testing.T) {
+		apigwRequest = getUpdateCategoryRequest()
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment","color":"#ff8733"}`
+
+		response, err := req.process(ctx, apigwRequest)
+		c.Nil(err)
+		c.Equal(http.StatusOK, response.StatusCode)
+	})
+}
 
 func TestUpdateCategoryHandlerFailed(t *testing.T) {
 	c := require.New(t)
@@ -61,20 +98,41 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 
 	t.Run("Invalid budget", func(t *testing.T) {
 		apigwRequest = getUpdateCategoryRequest()
-		apigwRequest.Body = `{"category_id":"CTGrR7fO4ndmI0IthJ7Wg8f","category_name":"Entertainment","color":"#ff8733","budget":-89}`
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":789,"color":"#ff8733","budget":-89}`
 
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(logMock.Output.String(), "request_body_validation_failed")
 	})
+
+	t.Run("Name should not be empty", func(t *testing.T) {
+		apigwRequest = getUpdateCategoryRequest()
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"","color":"#ff8733","budget":1000}`
+
+		response, err := req.process(ctx, apigwRequest)
+		c.Nil(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "request_body_validation_failed")
+	})
+
+	t.Run("Invalid color", func(t *testing.T) {
+		apigwRequest = getUpdateCategoryRequest()
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment","color":"asdf","budget":1000}`
+
+		response, err := req.process(ctx, apigwRequest)
+		c.Nil(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "update_category_failed")
+		c.Contains(response.Body, models.ErrInvalidHexColor.Error())
+	})
 }
 
 func getUpdateCategoryRequest() *apigateway.Request {
 	return &apigateway.Request{
-		Body: `{"category_id":"CTGrR7fO4ndmI0IthJ7Wg8f","category_name":"Entertainment","color":"#ff8733","budget":1000}`,
+		Body: `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment","color":"#ff8733","budget":1000}`,
 		PathParameters: map[string]string{
-			"categoryID": "CTGad",
+			"categoryID": "CTGzJeEzCNz6HMTiPKwgPmj",
 		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{

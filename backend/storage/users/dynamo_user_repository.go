@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -116,17 +115,17 @@ func (d *DynamoRepository) UpdateUser(ctx context.Context, user *models.User) er
 func getDefaultCategories() []*models.Category {
 	return []*models.Category{
 		{
-			ID:    utils.GenerateDynamoID(categoryPrefix),
+			ID:    "CTGzJeEzCNz6HMTiPKwgPmj",
 			Name:  aws.String("Entertainment"),
 			Color: aws.String("#ff8733"),
 		},
 		{
-			ID:    utils.GenerateDynamoID(categoryPrefix),
+			ID:    "CTGtClGT160UteOl02jIH4F",
 			Name:  aws.String("Health"),
 			Color: aws.String("#00b85e"),
 		},
 		{
-			ID:    utils.GenerateDynamoID(categoryPrefix),
+			ID:    "CTGrR7fO4ndmI0IthJ7Wg8f",
 			Name:  aws.String("Utilities"),
 			Color: aws.String("#009eb8"),
 		},

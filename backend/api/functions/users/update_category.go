@@ -10,8 +10,8 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
+	"math"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -102,13 +102,12 @@ func validateRequestBody(req *apigateway.Request) (*models.Category, error) {
 		return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidRequestBody)
 	}
 
-	if requestCategory.Budget < 0 {
-		return nil, errInvalidBudget
+	if requestCategory.Name != nil && *requestCategory.Name == "" {
+		return nil, models.ErrNameShouldNotBeEmpty
 	}
 
-	//This indicates that the budget should not be updated
-	if !strings.Contains(req.Body, "budget") {
-		requestCategory.Budget = -1
+	if requestCategory.Budget != nil && (*requestCategory.Budget < 0 || *requestCategory.Budget >= math.MaxFloat64) {
+		return nil, errInvalidBudget
 	}
 
 	return requestCategory, nil

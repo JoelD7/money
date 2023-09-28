@@ -35,6 +35,8 @@ var (
 		models.ErrMalformedToken:       {HTTPCode: http.StatusUnauthorized, Message: models.ErrMalformedToken.Error()},
 		models.ErrExistingUser:         {HTTPCode: http.StatusBadRequest, Message: models.ErrExistingUser.Error()},
 		models.ErrWrongCredentials:     {HTTPCode: http.StatusBadRequest, Message: models.ErrWrongCredentials.Error()},
+		models.ErrNameShouldNotBeEmpty: {HTTPCode: http.StatusBadRequest, Message: models.ErrNameShouldNotBeEmpty.Error()},
+		models.ErrInvalidHexColor:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidHexColor.Error()},
 	}
 )
 
