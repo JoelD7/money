@@ -98,6 +98,8 @@ func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*model
 }
 
 func (d *DynamoRepository) UpdateUser(ctx context.Context, user *models.User) error {
+	user.UpdatedDate = time.Now()
+
 	updatedItem, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err
