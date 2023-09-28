@@ -17,7 +17,9 @@ var (
 		models.ErrUserNotFound:         {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
 		models.ErrIncomeNotFound:       {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
 		models.ErrExpensesNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
+		models.ErrCategoriesNotFound:   {HTTPCode: http.StatusNotFound, Message: models.ErrCategoriesNotFound.Error()},
 		models.ErrSavingsNotFound:      {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
+		models.ErrCategoryNotFound:     {HTTPCode: http.StatusNotFound, Message: models.ErrCategoryNotFound.Error()},
 		models.ErrInvalidAmount:        {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidAmount.Error()},
 		models.ErrMissingUsername:      {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingUsername.Error()},
 		models.ErrInvalidEmail:         {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidEmail.Error()},
@@ -33,6 +35,8 @@ var (
 		models.ErrMalformedToken:       {HTTPCode: http.StatusUnauthorized, Message: models.ErrMalformedToken.Error()},
 		models.ErrExistingUser:         {HTTPCode: http.StatusBadRequest, Message: models.ErrExistingUser.Error()},
 		models.ErrWrongCredentials:     {HTTPCode: http.StatusBadRequest, Message: models.ErrWrongCredentials.Error()},
+		models.ErrNameShouldNotBeEmpty: {HTTPCode: http.StatusBadRequest, Message: models.ErrNameShouldNotBeEmpty.Error()},
+		models.ErrInvalidHexColor:      {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidHexColor.Error()},
 	}
 )
 

@@ -205,15 +205,6 @@ func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx contex
 	}, nil
 }
 
-func getUsernameFromContext(req *apigateway.Request) (string, error) {
-	username, ok := req.RequestContext.Authorizer["username"].(string)
-	if !ok {
-		return "", errNoUserEmailInContext
-	}
-
-	return username, nil
-}
-
 func getRequestParams(req *apigateway.Request) (string, int, error) {
 	pageSizeParam := 0
 	var err error

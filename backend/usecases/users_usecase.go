@@ -4,10 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"regexp"
 )
 
-type UserGetter interface {
+var (
+	hexColorPattern = "^#[0-9A-Fa-f]{1,6}$"
+)
+
+type UserManager interface {
 	GetUser(ctx context.Context, username string) (*models.User, error)
+	UpdateUser(ctx context.Context, user *models.User) error
 }
 
 type IncomeGetter interface {
@@ -18,7 +24,7 @@ type ExpenseGetter interface {
 	GetExpensesByPeriod(ctx context.Context, username string, periodID string) ([]*models.Expense, error)
 }
 
-func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
+func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
@@ -54,4 +60,93 @@ func NewUserGetter(u UserGetter, i IncomeGetter, e ExpenseGetter) func(ctx conte
 
 		return user, nil
 	}
+}
+
+func NewCategoriesGetter(u UserManager) func(ctx context.Context, username string) ([]*models.Category, error) {
+	return func(ctx context.Context, username string) ([]*models.Category, error) {
+		user, err := u.GetUser(ctx, username)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(user.Categories) == 0 {
+			return nil, models.ErrCategoriesNotFound
+		}
+
+		return user.Categories, nil
+	}
+}
+
+func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
+	return func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
+		user, err := u.GetUser(ctx, username)
+		if err != nil {
+			return err
+		}
+
+		err = validateCategoryColor(newCategory.Color)
+		if err != nil {
+			return err
+		}
+
+		if user.Categories == nil {
+			newCategory.ID = categoryID
+			user.Categories = append(user.Categories, newCategory)
+
+			return nil
+		}
+
+		newCategories := make([]*models.Category, 0, len(user.Categories))
+		var categoryToUpdate *models.Category
+
+		for _, cat := range user.Categories {
+			if cat.ID == categoryID {
+				categoryToUpdate = cat
+				continue
+			}
+
+			newCategories = append(newCategories, cat)
+		}
+
+		if categoryToUpdate == nil {
+			return models.ErrCategoryNotFound
+		}
+
+		if newCategory.Name != nil {
+			categoryToUpdate.Name = newCategory.Name
+		}
+
+		if newCategory.Budget != nil {
+			categoryToUpdate.Budget = newCategory.Budget
+		}
+
+		if newCategory.Color != nil {
+			categoryToUpdate.Color = newCategory.Color
+		}
+
+		newCategories = append(newCategories, categoryToUpdate)
+
+		user.Categories = newCategories
+
+		err = u.UpdateUser(ctx, user)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+func validateCategoryColor(color *string) error {
+	if color == nil {
+		return nil
+	}
+
+	regExp := regexp.MustCompile(hexColorPattern)
+
+	if !regExp.MatchString(*color) {
+		return models.ErrInvalidHexColor
+	}
+
+	return nil
 }

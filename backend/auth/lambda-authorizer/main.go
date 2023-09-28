@@ -106,10 +106,14 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 
 	subject, err := verifyToken(ctx, token)
 	if errors.Is(err, models.ErrUnauthorized) {
+		req.log.Error("request_unauthorized", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
 	if err != nil {
+		req.log.Error("request_denied", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
 
