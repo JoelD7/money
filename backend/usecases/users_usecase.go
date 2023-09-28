@@ -112,6 +112,10 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 			return models.ErrCategoryNotFound
 		}
 
+		if newCategory.Name != nil {
+			categoryToUpdate.Name = newCategory.Name
+		}
+
 		if newCategory.Budget != nil {
 			categoryToUpdate.Budget = newCategory.Budget
 		}

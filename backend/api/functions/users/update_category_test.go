@@ -47,6 +47,15 @@ func TestUpdateCategoryHandler(t *testing.T) {
 		c.Nil(err)
 		c.Equal(http.StatusOK, response.StatusCode)
 	})
+
+	t.Run("Update success without sending color", func(t *testing.T) {
+		apigwRequest = getUpdateCategoryRequest()
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment","budget":1000}`
+
+		response, err := req.process(ctx, apigwRequest)
+		c.Nil(err)
+		c.Equal(http.StatusOK, response.StatusCode)
+	})
 }
 
 func TestUpdateCategoryHandlerFailed(t *testing.T) {
