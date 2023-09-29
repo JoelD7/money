@@ -127,13 +127,23 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 
 	t.Run("Invalid color", func(t *testing.T) {
 		apigwRequest = getUpdateCategoryRequest()
-		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment","color":"asdf","budget":1000}`
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Streaming","color":"asdf","budget":1000}`
 
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(logMock.Output.String(), "update_category_failed")
 		c.Contains(response.Body, models.ErrInvalidHexColor.Error())
+	})
+
+	t.Run("Category name already exists", func(t *testing.T) {
+		apiGatewayRequest := getUpdateCategoryRequest()
+
+		response, err := req.process(ctx, apiGatewayRequest)
+		c.Nil(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "update_category_failed")
+		c.Contains(logMock.Output.String(), models.ErrCategoryNameAlreadyExists.Error())
 	})
 }
 
