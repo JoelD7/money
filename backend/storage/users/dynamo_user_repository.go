@@ -17,10 +17,6 @@ var (
 	TableName = env.GetString("USERS_TABLE_NAME", "users")
 )
 
-const (
-	categoryPrefix = "CTG"
-)
-
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
 }

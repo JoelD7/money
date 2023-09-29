@@ -40,6 +40,7 @@ func main() {
 			r.Get("/", getUserHandler)
 			r.Route("/categories", func(r *router.Router) {
 				r.Get("/", getCategoriesHandler)
+				r.Post("/", createCategoryHandler)
 				r.Put("/{categoryID}", updateCategoryHandler)
 			})
 		})

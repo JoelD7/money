@@ -11,6 +11,10 @@ var (
 	hexColorPattern = "^#[0-9A-Fa-f]{1,6}$"
 )
 
+const (
+	categoryPrefix = "CTG"
+)
+
 type UserManager interface {
 	GetUser(ctx context.Context, username string) (*models.User, error)
 	UpdateUser(ctx context.Context, user *models.User) error
@@ -22,6 +26,10 @@ type IncomeGetter interface {
 
 type ExpenseGetter interface {
 	GetExpensesByPeriod(ctx context.Context, username string, periodID string) ([]*models.Expense, error)
+}
+
+type IDGenerator interface {
+	GenerateID(prefix string) string
 }
 
 func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
@@ -62,6 +70,34 @@ func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx cont
 	}
 }
 
+func NewCategoryCreator(u UserManager, ig IDGenerator) func(ctx context.Context, username string, category *models.Category) error {
+	return func(ctx context.Context, username string, category *models.Category) error {
+		user, err := u.GetUser(ctx, username)
+		if err != nil {
+			return err
+		}
+
+		if user.Categories == nil {
+			user.Categories = make([]*models.Category, 0)
+		}
+
+		err = validateCategoryName(category, user.Categories)
+		if err != nil {
+			return err
+		}
+
+		err = validateCategoryColor(category.Color)
+		if err != nil {
+			return err
+		}
+
+		category.ID = ig.GenerateID(categoryPrefix)
+		user.Categories = append(user.Categories, category)
+
+		return u.UpdateUser(ctx, user)
+	}
+}
+
 func NewCategoriesGetter(u UserManager) func(ctx context.Context, username string) ([]*models.Category, error) {
 	return func(ctx context.Context, username string) ([]*models.Category, error) {
 		user, err := u.GetUser(ctx, username)
@@ -84,16 +120,18 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 			return err
 		}
 
+		err = validateCategoryName(newCategory, user.Categories)
+		if err != nil {
+			return err
+		}
+
 		err = validateCategoryColor(newCategory.Color)
 		if err != nil {
 			return err
 		}
 
 		if user.Categories == nil {
-			newCategory.ID = categoryID
-			user.Categories = append(user.Categories, newCategory)
-
-			return nil
+			return models.ErrCategoryNotFound
 		}
 
 		newCategories := make([]*models.Category, 0, len(user.Categories))
@@ -128,13 +166,18 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 
 		user.Categories = newCategories
 
-		err = u.UpdateUser(ctx, user)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return u.UpdateUser(ctx, user)
 	}
+}
+
+func validateCategoryName(newCategory *models.Category, userCategories []*models.Category) error {
+	for _, category := range userCategories {
+		if category.Name != nil && *category.Name == *newCategory.Name {
+			return models.ErrCategoryNameAlreadyExists
+		}
+	}
+
+	return nil
 }
 
 func validateCategoryColor(color *string) error {

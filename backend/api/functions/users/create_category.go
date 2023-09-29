@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
@@ -15,18 +15,20 @@ import (
 	"time"
 )
 
-var (
-	errNoCategoryIDInPath = errors.New("no category id in path")
-)
-
-type updateCategoryRequest struct {
+type createCategoryRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	userRepo     users.Repository
 }
 
-func (request *updateCategoryRequest) init() {
+type categoryIDGenerator struct{}
+
+func (g *categoryIDGenerator) GenerateID(prefix string) string {
+	return utils.GenerateDynamoID(prefix)
+}
+
+func (request *createCategoryRequest) init() {
 	dynamoClient := initDynamoClient()
 
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
@@ -34,7 +36,7 @@ func (request *updateCategoryRequest) init() {
 	request.log = logger.NewLoggerWithHandler("update-category")
 }
 
-func (request *updateCategoryRequest) finish() {
+func (request *createCategoryRequest) finish() {
 	defer func() {
 		err := request.log.Close()
 		if err != nil {
@@ -45,8 +47,8 @@ func (request *updateCategoryRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func updateCategoryHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(updateCategoryRequest)
+func createCategoryHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	request := new(createCategoryRequest)
 
 	request.init()
 	defer request.finish()
@@ -54,16 +56,8 @@ func updateCategoryHandler(ctx context.Context, req *apigateway.Request) (*apiga
 	return request.process(ctx, req)
 }
 
-func (request *updateCategoryRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	categoryID, ok := req.PathParameters["categoryID"]
-	if !ok {
-		request.err = errNoCategoryIDInPath
-		request.log.Error("get_category_id_from_path_failed", errNoCategoryIDInPath, []models.LoggerObject{req})
-
-		return apigateway.NewErrorResponse(errNoCategoryIDInPath), nil
-	}
-
-	requestCategory, err := validateRequestBody(req)
+func (request *createCategoryRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	category, err := validateCreateCategoryRequestBody(req)
 	if err != nil {
 		request.log.Error("request_body_validation_failed", err, []models.LoggerObject{req})
 
@@ -78,12 +72,13 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	updateCategory := usecases.NewCategoryUpdater(request.userRepo)
+	idGenerator := new(categoryIDGenerator)
+	createCategory := usecases.NewCategoryCreator(request.userRepo, idGenerator)
 
-	err = updateCategory(ctx, username, categoryID, requestCategory)
+	err = createCategory(ctx, username, category)
 	if err != nil {
 		request.err = err
-		request.log.Error("update_category_failed", err, []models.LoggerObject{req})
+		request.log.Error("create_category_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
@@ -93,21 +88,29 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 	}, nil
 }
 
-func validateRequestBody(req *apigateway.Request) (*models.Category, error) {
-	requestCategory := new(models.Category)
+func validateCreateCategoryRequestBody(req *apigateway.Request) (*models.Category, error) {
+	category := new(models.Category)
 
-	err := json.Unmarshal([]byte(req.Body), requestCategory)
+	err := json.Unmarshal([]byte(req.Body), category)
 	if err != nil {
 		return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidRequestBody)
 	}
 
-	if requestCategory.Name != nil && *requestCategory.Name == "" {
+	if category.Name == nil {
 		return nil, models.ErrMissingCategoryName
 	}
 
-	if requestCategory.Budget != nil && (*requestCategory.Budget < 0 || *requestCategory.Budget >= math.MaxFloat64) {
+	if category.Budget == nil {
+		return nil, models.ErrMissingCategoryBudget
+	}
+
+	if *category.Budget < 0 || *category.Budget >= math.MaxFloat64 {
 		return nil, models.ErrInvalidBudget
 	}
 
-	return requestCategory, nil
+	if category.Color == nil {
+		return nil, models.ErrMissingCategoryColor
+	}
+
+	return category, nil
 }
