@@ -96,7 +96,7 @@ func validateCreateCategoryRequestBody(req *apigateway.Request) (*models.Categor
 		return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidRequestBody)
 	}
 
-	if category.Name == nil {
+	if category.Name == nil || *category.Name == "" {
 		return nil, models.ErrMissingCategoryName
 	}
 
@@ -108,7 +108,7 @@ func validateCreateCategoryRequestBody(req *apigateway.Request) (*models.Categor
 		return nil, models.ErrInvalidBudget
 	}
 
-	if category.Color == nil {
+	if category.Color == nil || *category.Color == "" {
 		return nil, models.ErrMissingCategoryColor
 	}
 
