@@ -25,16 +25,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) CreateUser(ctx context.Context, fullName, username, password string) error {
-	user := &models.User{
-		FullName:    fullName,
-		Username:    username,
-		Password:    password,
-		Categories:  getDefaultCategories(),
-		CreatedDate: time.Now(),
-		UpdatedDate: time.Now(),
-	}
-
+func (d *DynamoRepository) CreateUser(ctx context.Context, user *models.User) error {
 	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err
@@ -108,24 +99,4 @@ func (d *DynamoRepository) UpdateUser(ctx context.Context, user *models.User) er
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	return err
-}
-
-func getDefaultCategories() []*models.Category {
-	return []*models.Category{
-		{
-			ID:    "CTGzJeEzCNz6HMTiPKwgPmj",
-			Name:  aws.String("Entertainment"),
-			Color: aws.String("#ff8733"),
-		},
-		{
-			ID:    "CTGtClGT160UteOl02jIH4F",
-			Name:  aws.String("Health"),
-			Color: aws.String("#00b85e"),
-		},
-		{
-			ID:    "CTGrR7fO4ndmI0IthJ7Wg8f",
-			Name:  aws.String("Utilities"),
-			Color: aws.String("#009eb8"),
-		},
-	}
 }

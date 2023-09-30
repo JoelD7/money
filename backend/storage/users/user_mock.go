@@ -35,7 +35,7 @@ func (d *DynamoMock) SetMockedUser(user *models.User) {
 	d.mockedUser = user
 }
 
-func (d *DynamoMock) CreateUser(ctx context.Context, fullName, email, password string) error {
+func (d *DynamoMock) CreateUser(ctx context.Context, user *models.User) error {
 	if d.mockedErr != nil {
 		return d.mockedErr
 	}

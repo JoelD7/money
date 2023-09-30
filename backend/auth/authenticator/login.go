@@ -68,7 +68,7 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 	}
 
 	authenticate := usecases.NewUserAuthenticator(req.userRepo, req.log)
-	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
+	generateTokens := usecases.NewTokenGenerator(req.userRepo, req.secretsManager, req.log)
 
 	user, err := authenticate(ctx, reqBody.Username, reqBody.Password)
 	if errors.Is(err, models.ErrUserNotFound) {
