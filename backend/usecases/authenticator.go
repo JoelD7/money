@@ -12,6 +12,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"golang.org/x/crypto/bcrypt"
 	"math/big"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"strings"
@@ -66,7 +67,7 @@ type SecretManager interface {
 }
 
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Context, fullName, username, password string) error {
+func NewUserCreator(userManager UserManager, logger Logger) func(ctx context.Context, fullName, username, password string) error {
 	return func(ctx context.Context, fullName, username, password string) error {
 		err := validateCredentials(username, password)
 		if err != nil {
@@ -82,7 +83,16 @@ func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Con
 			return err
 		}
 
-		err = userCreator.CreateUser(ctx, fullName, username, string(hashedPassword))
+		user := &models.User{
+			FullName:    fullName,
+			Username:    username,
+			Password:    string(hashedPassword),
+			Categories:  getDefaultCategories(),
+			CreatedDate: time.Now(),
+			UpdatedDate: time.Now(),
+		}
+
+		err = userManager.CreateUser(ctx, user)
 		if err != nil && errors.Is(err, models.ErrExistingUser) {
 			logger.Warning("user_creation_failed", err, nil)
 
@@ -97,6 +107,44 @@ func NewUserCreator(userCreator UserCreator, logger Logger) func(ctx context.Con
 
 		return nil
 	}
+}
+
+func getDefaultCategories() []*models.Category {
+	return []*models.Category{
+		{
+			ID:    generateDynamoID("CTG"),
+			Name:  getStringPtr("Entertainment"),
+			Color: getStringPtr("#ff8733"),
+		},
+		{
+			ID:    generateDynamoID("CTG"),
+			Name:  getStringPtr("Health"),
+			Color: getStringPtr("#00b85e"),
+		},
+		{
+			ID:    generateDynamoID("CTG"),
+			Name:  getStringPtr("Utilities"),
+			Color: getStringPtr("#009eb8"),
+		},
+	}
+}
+
+func getStringPtr(s string) *string {
+	return &s
+}
+
+// generateDynamoID generates a hex-based random unique ID with the given prefix
+func generateDynamoID(prefix string) string {
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]byte, 20)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+
+	return prefix + string(b)
 }
 
 // NewUserAuthenticator authenticates a user.

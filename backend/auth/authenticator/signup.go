@@ -61,6 +61,9 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 
 	err = saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
 	if err != nil {
+		req.err = err
+		req.log.Error("save_new_user_failed", err, nil)
+
 		return apigateway.NewErrorResponse(err), nil
 	}
 
