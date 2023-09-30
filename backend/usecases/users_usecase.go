@@ -71,7 +71,7 @@ func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx cont
 	}
 }
 
-func NewCategoryCreator(u UserManager, ig IDGenerator) func(ctx context.Context, username string, category *models.Category) error {
+func NewCategoryCreator(u UserManager) func(ctx context.Context, username string, category *models.Category) error {
 	return func(ctx context.Context, username string, category *models.Category) error {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
@@ -92,7 +92,7 @@ func NewCategoryCreator(u UserManager, ig IDGenerator) func(ctx context.Context,
 			return err
 		}
 
-		category.ID = ig.GenerateID(categoryPrefix)
+		category.ID = generateDynamoID(categoryPrefix)
 		user.Categories = append(user.Categories, category)
 
 		return u.UpdateUser(ctx, user)

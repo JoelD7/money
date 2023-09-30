@@ -7,7 +7,6 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
-	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
@@ -20,12 +19,6 @@ type createCategoryRequest struct {
 	startingTime time.Time
 	err          error
 	userRepo     users.Repository
-}
-
-type categoryIDGenerator struct{}
-
-func (g *categoryIDGenerator) GenerateID(prefix string) string {
-	return utils.GenerateDynamoID(prefix)
 }
 
 func (request *createCategoryRequest) init() {
@@ -72,8 +65,7 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	idGenerator := new(categoryIDGenerator)
-	createCategory := usecases.NewCategoryCreator(request.userRepo, idGenerator)
+	createCategory := usecases.NewCategoryCreator(request.userRepo)
 
 	err = createCategory(ctx, username, category)
 	if err != nil {

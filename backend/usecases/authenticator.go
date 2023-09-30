@@ -175,8 +175,8 @@ func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx contex
 	}
 }
 
-// NewTokenGenerator generates access and refresh tokens for the user.
-func NewTokenGenerator(userManager UserManager, secretManager SecretManager, logger Logger) func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
+// NewUserTokenGenerator generates access and refresh tokens for the user.
+func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager, logger Logger) func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 	return func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 		now := time.Now()
 
