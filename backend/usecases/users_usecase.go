@@ -35,6 +35,11 @@ type IDGenerator interface {
 
 func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
+		err := validateEmail(username)
+		if err != nil {
+			return nil, fmt.Errorf("invalid email detected: %v", err)
+		}
+
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return nil, err
@@ -73,6 +78,11 @@ func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx cont
 
 func NewCategoryCreator(u UserManager) func(ctx context.Context, username string, category *models.Category) error {
 	return func(ctx context.Context, username string, category *models.Category) error {
+		err := validateEmail(username)
+		if err != nil {
+			return fmt.Errorf("invalid email detected: %v", err)
+		}
+
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return err
@@ -101,6 +111,11 @@ func NewCategoryCreator(u UserManager) func(ctx context.Context, username string
 
 func NewCategoriesGetter(u UserManager) func(ctx context.Context, username string) ([]*models.Category, error) {
 	return func(ctx context.Context, username string) ([]*models.Category, error) {
+		err := validateEmail(username)
+		if err != nil {
+			return nil, fmt.Errorf("invalid email detected: %v", err)
+		}
+
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return nil, err
@@ -116,6 +131,11 @@ func NewCategoriesGetter(u UserManager) func(ctx context.Context, username strin
 
 func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
 	return func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
+		err := validateEmail(username)
+		if err != nil {
+			return fmt.Errorf("invalid email detected: %v", err)
+		}
+
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return err

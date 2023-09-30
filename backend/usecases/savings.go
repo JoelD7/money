@@ -53,7 +53,6 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, use
 			return nil, "", err
 		}
 
-		//TODO: remove this when the request validation model is done
 		if err = validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
 				l.MapToLoggerObject("user_data", map[string]interface{}{
@@ -87,6 +86,17 @@ func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Conte
 			return nil, "", err
 		}
 
+		if err = validatePageSize(pageSize); err != nil {
+			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
+				l.MapToLoggerObject("user_data", map[string]interface{}{
+					"s_username":  username,
+					"i_page_size": pageSize,
+				}),
+			})
+
+			return nil, "", err
+		}
+
 		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, username, startKey, period, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
@@ -98,6 +108,16 @@ func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Conte
 
 func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+		if err := validatePageSize(pageSize); err != nil {
+			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
+				l.MapToLoggerObject("user_data", map[string]interface{}{
+					"i_page_size": pageSize,
+				}),
+			})
+
+			return nil, "", err
+		}
+
 		savings, nextKey, err := sm.GetSavingsBySavingGoal(ctx, startKey, savingGoalID, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
@@ -109,6 +129,16 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.C
 
 func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+		if err := validatePageSize(pageSize); err != nil {
+			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
+				l.MapToLoggerObject("user_data", map[string]interface{}{
+					"i_page_size": pageSize,
+				}),
+			})
+
+			return nil, "", err
+		}
+
 		savings, nextKey, err := sm.GetSavingsBySavingGoalAndPeriod(ctx, startKey, savingGoalID, period, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
