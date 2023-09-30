@@ -16,18 +16,11 @@ type User struct {
 }
 
 type Category struct {
-	ID            string         `json:"id,omitempty" dynamodbav:"id"`
-	Name          *string        `json:"name,omitempty" dynamodbav:"name"`
-	Budget        *float64       `json:"budget,omitempty" dynamodbav:"budget,omitempty"`
-	Color         *string        `json:"color,omitempty" dynamodbav:"color,omitempty"`
-	Keywords      []string       `json:"keywords,omitempty" dynamodbav:"keywords,stringset,omitempty"`
-	Subcategories []*Subcategory `json:"subcategories,omitempty" dynamodbav:"subcategories,omitempty"`
-}
-
-type Subcategory struct {
-	ID    string `json:"id,omitempty" dynamodbav:"id"`
-	Name  string `json:"name,omitempty" dynamodbav:"name,omitempty"`
-	Color string `json:"color,omitempty" dynamodbav:"color,omitempty"`
+	ID       string   `json:"id,omitempty" dynamodbav:"id"`
+	Name     *string  `json:"name,omitempty" dynamodbav:"name"`
+	Budget   *float64 `json:"budget,omitempty" dynamodbav:"budget,omitempty"`
+	Color    *string  `json:"color,omitempty" dynamodbav:"color,omitempty"`
+	Keywords []string `json:"keywords,omitempty" dynamodbav:"keywords,stringset,omitempty"`
 }
 
 func (u User) LogName() string {
