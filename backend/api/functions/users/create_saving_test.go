@@ -71,18 +71,6 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
-	//t.Run("Invalid request body - not Saving type", func(t *testing.T) {
-	//	apigwRequest.Body = `{"dummy_field":"SVG123"}`
-	//	defer func() { apigwRequest.Body = getDummyRequestBody() }()
-	//
-	//	response, err := req.process(ctx, apigwRequest)
-	//	c.NoError(err)
-	//	c.Contains(logMock.Output.String(), "create_saving_failed")
-	//	c.Contains(logMock.Output.String(), models.ErrInvalidRequestBody.Error())
-	//	c.Equal(http.StatusBadRequest, response.StatusCode)
-	//	logMock.Output.Reset()
-	//})
-
 	t.Run("Create saving failed", func(t *testing.T) {
 		dummyError := errors.New("dummy error")
 
@@ -104,13 +92,23 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
-	t.Run("Saving without email", func(t *testing.T) {
+	t.Run("Saving without username", func(t *testing.T) {
 		apigwRequest.Body = `{"saving_goal_id":"SVG123","amount":250}`
 		defer func() { apigwRequest.Body = getDummyRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(models.ErrMissingUsername.Error(), response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+	})
+
+	t.Run("Saving without amount", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com"}`
+		defer func() { apigwRequest.Body = getDummyRequestBody() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(models.ErrMissingSavingAmount.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 

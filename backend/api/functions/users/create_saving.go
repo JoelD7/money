@@ -87,7 +87,7 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 	}
 
 	if userSaving.Amount == 0 {
-		return nil, models.ErrMissingCategoryBudget
+		return nil, models.ErrMissingSavingAmount
 	}
 
 	if userSaving.Amount < 0 || userSaving.Amount >= math.MaxFloat64 {
