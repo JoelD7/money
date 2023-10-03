@@ -53,14 +53,14 @@ func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID str
 		return nil, fmt.Errorf("get saving item failed: %v", err)
 	}
 
-	saving := new(models.Saving)
+	savingEnt := new(savingEntity)
 
-	err = attributevalue.UnmarshalMap(result.Item, saving)
+	err = attributevalue.UnmarshalMap(result.Item, savingEnt)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal saving item failed: %v", err)
 	}
 
-	return saving, nil
+	return toSavingModel(savingEnt), nil
 }
 
 func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
@@ -99,7 +99,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -111,7 +111,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
@@ -153,7 +153,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, sta
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -165,7 +165,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, sta
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
@@ -205,7 +205,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -217,7 +217,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
@@ -259,7 +259,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -271,14 +271,16 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
-	saving.SavingID = generateSavingID()
-	saving.CreatedDate = time.Now()
+	savingEnt := toSavingEntity(saving)
 
-	item, err := attributevalue.MarshalMap(saving)
+	savingEnt.SavingID = generateSavingID()
+	savingEnt.CreatedDate = time.Now()
+
+	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
 		return err
 	}
@@ -297,17 +299,19 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 }
 
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {
-	username, err := attributevalue.Marshal(saving.Username)
+	savingEnt := toSavingEntity(saving)
+
+	username, err := attributevalue.Marshal(savingEnt.Username)
 	if err != nil {
 		return fmt.Errorf("marshaling username key: %v", err)
 	}
 
-	savingID, err := attributevalue.Marshal(saving.SavingID)
+	savingID, err := attributevalue.Marshal(savingEnt.SavingID)
 	if err != nil {
 		return fmt.Errorf("marshaling saving id key: %v", err)
 	}
 
-	attributeValues, err := getAttributeValues(saving)
+	attributeValues, err := getAttributeValues(savingEnt)
 	if err != nil {
 		return fmt.Errorf("getting attribute values: %v", err)
 	}
@@ -337,7 +341,7 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 	return nil
 }
 
-func getAttributeValues(saving *models.Saving) (map[string]types.AttributeValue, error) {
+func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, error) {
 	m := make(map[string]types.AttributeValue)
 
 	savingGoalID, err := attributevalue.Marshal(saving.SavingGoalID)

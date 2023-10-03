@@ -39,7 +39,7 @@ func toUserEntity(u *models.User) *userEntity {
 }
 
 func toCategoryEntities(modelCategories []*models.Category) []*categoryEntity {
-	categories := make([]*categoryEntity, len(modelCategories))
+	categories := make([]*categoryEntity, 0, len(modelCategories))
 
 	for _, v := range modelCategories {
 		categories = append(categories, toCategoryEntity(v))
@@ -72,7 +72,7 @@ func toUserModel(u *userEntity) *models.User {
 }
 
 func toCategoryModels(entityCategories []*categoryEntity) []*models.Category {
-	categories := make([]*models.Category, len(entityCategories))
+	categories := make([]*models.Category, 0, len(entityCategories))
 
 	for _, v := range entityCategories {
 		categories = append(categories, toCategoryModel(v))

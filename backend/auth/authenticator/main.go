@@ -32,7 +32,7 @@ const (
 )
 
 type signUpBody struct {
-	FullName string `json:"full_name"`
+	FullName string `json:"fullname"`
 	*Credentials
 }
 
