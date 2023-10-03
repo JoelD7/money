@@ -39,4 +39,6 @@ var (
 	ErrInvalidBudget             = errors.New("budget must be greater than or equal to 0")
 	ErrMissingCategoryBudget     = errors.New("missing budget")
 	ErrCategoryNameAlreadyExists = errors.New("category name already exists")
+	ErrMissingSavingAmount       = errors.New("missing saving amount")
+	ErrInvalidSavingAmount       = errors.New("saving amount must be greater than or equal to 0")
 )

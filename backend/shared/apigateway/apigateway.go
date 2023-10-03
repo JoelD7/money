@@ -41,6 +41,8 @@ var (
 		models.ErrMissingCategoryBudget:     {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingCategoryBudget.Error()},
 		models.ErrInvalidBudget:             {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidBudget.Error()},
 		models.ErrCategoryNameAlreadyExists: {HTTPCode: http.StatusBadRequest, Message: models.ErrCategoryNameAlreadyExists.Error()},
+		models.ErrMissingSavingAmount:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingAmount.Error()},
+		models.ErrInvalidSavingAmount:       {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidSavingAmount.Error()},
 	}
 )
 

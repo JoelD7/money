@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
+	"math"
 	"net/http"
 	"time"
 )
@@ -52,13 +53,11 @@ func createSavingHandler(ctx context.Context, req *apigateway.Request) (*apigate
 }
 
 func (request *createSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	userSaving := new(models.Saving)
-
-	err := json.Unmarshal([]byte(req.Body), userSaving)
+	userSaving, err := validateBody(req)
 	if err != nil {
-		request.log.Error("request_body_unmarshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(errRequestBodyParseFailure), nil
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.log)
@@ -73,4 +72,27 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 	return &apigateway.Response{
 		StatusCode: http.StatusCreated,
 	}, nil
+}
+
+func validateBody(req *apigateway.Request) (*models.Saving, error) {
+	userSaving := new(models.Saving)
+
+	err := json.Unmarshal([]byte(req.Body), userSaving)
+	if err != nil {
+		return nil, errRequestBodyParseFailure
+	}
+
+	if userSaving.Username == "" {
+		return nil, models.ErrMissingUsername
+	}
+
+	if userSaving.Amount == 0 {
+		return nil, models.ErrMissingCategoryBudget
+	}
+
+	if userSaving.Amount < 0 || userSaving.Amount >= math.MaxFloat64 {
+		return nil, models.ErrInvalidSavingAmount
+	}
+
+	return userSaving, nil
 }
