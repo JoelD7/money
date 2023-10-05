@@ -152,10 +152,6 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, l Logger) func(ctx 
 
 func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context, username string, saving *models.Saving) error {
 	return func(ctx context.Context, username string, saving *models.Saving) error {
-		err := validateSavingInput(saving)
-		if err != nil {
-			return fmt.Errorf("saving validation failed: %w", err)
-		}
 
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
@@ -163,6 +159,7 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 		}
 
 		saving.SavingID = generateSavingID()
+		saving.Username = username
 		saving.Period = user.CurrentPeriod
 		saving.CreatedDate = time.Now()
 
