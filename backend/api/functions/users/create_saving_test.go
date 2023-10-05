@@ -118,7 +118,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(models.ErrInvalidAmount.Error(), response.Body)
+		c.Equal(models.ErrInvalidSavingAmount.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
