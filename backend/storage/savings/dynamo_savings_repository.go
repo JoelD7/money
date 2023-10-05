@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"math/rand"
 	"strings"
 	"time"
 )
@@ -277,8 +276,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
 	savingEnt := toSavingEntity(saving)
 
-	savingEnt.SavingID = generateSavingID()
-	savingEnt.CreatedDate = time.Now()
+	savingEnt.PeriodUser = buildPeriodUser(savingEnt.Username, savingEnt.Period)
 
 	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
@@ -388,19 +386,6 @@ func getUpdateExpression(attributeValues map[string]types.AttributeValue) *strin
 	}
 
 	return aws.String("SET " + strings.Join(attributes, ", "))
-}
-
-func generateSavingID() string {
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	b := make([]byte, 20)
-	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
-	}
-
-	return "SV" + string(b)
 }
 
 func getPageSize(pageSize int) *int32 {

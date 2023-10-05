@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"math"
+	"math/rand"
+	"time"
 )
 
 type SavingsManager interface {
@@ -148,12 +150,21 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, l Logger) func(ctx 
 	}
 }
 
-func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, saving *models.Saving) error {
-	return func(ctx context.Context, saving *models.Saving) error {
+func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context, username string, saving *models.Saving) error {
+	return func(ctx context.Context, username string, saving *models.Saving) error {
 		err := validateSavingInput(saving)
 		if err != nil {
 			return fmt.Errorf("saving validation failed: %w", err)
 		}
+
+		user, err := u.GetUser(ctx, username)
+		if err != nil {
+			return fmt.Errorf("user fetch failed: %w", err)
+		}
+
+		saving.SavingID = generateSavingID()
+		saving.Period = user.CurrentPeriod
+		saving.CreatedDate = time.Now()
 
 		err = sm.CreateSaving(ctx, saving)
 		if err != nil {
@@ -170,6 +181,8 @@ func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *model
 		if err != nil {
 			return fmt.Errorf("saving validation failed: %w", err)
 		}
+
+		saving.UpdatedDate = time.Now()
 
 		err = sm.UpdateSaving(ctx, saving)
 		if err != nil {
@@ -235,4 +248,17 @@ func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, use
 
 		return nil
 	}
+}
+
+func generateSavingID() string {
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]byte, 20)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+
+	return "SV" + string(b)
 }

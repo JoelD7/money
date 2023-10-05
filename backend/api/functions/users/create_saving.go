@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/savings"
+	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
 	"net/http"
@@ -22,12 +23,14 @@ type createSavingRequest struct {
 	startingTime time.Time
 	err          error
 	savingsRepo  savings.Repository
+	userRepo     users.Repository
 }
 
 func (request *createSavingRequest) init() {
 	dynamoClient := initDynamoClient()
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -60,9 +63,16 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.log)
+	username, err := getUsernameFromContext(req)
+	if err != nil {
+		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
-	err = createSaving(ctx, userSaving)
+		return apigateway.NewErrorResponse(err), nil
+	}
+
+	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.userRepo)
+
+	err = createSaving(ctx, username, userSaving)
 	if err != nil {
 		request.log.Error("create_saving_failed", err, []models.LoggerObject{req})
 
