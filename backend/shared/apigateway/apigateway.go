@@ -43,6 +43,7 @@ var (
 		models.ErrCategoryNameAlreadyExists: {HTTPCode: http.StatusBadRequest, Message: models.ErrCategoryNameAlreadyExists.Error()},
 		models.ErrMissingSavingAmount:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingAmount.Error()},
 		models.ErrInvalidSavingAmount:       {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidSavingAmount.Error()},
+		models.ErrSavingNotFound:            {HTTPCode: http.StatusBadRequest, Message: models.ErrSavingNotFound.Error()},
 	}
 )
 

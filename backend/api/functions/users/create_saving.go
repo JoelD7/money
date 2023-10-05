@@ -92,10 +92,6 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 		return nil, errRequestBodyParseFailure
 	}
 
-	if userSaving.Username == "" {
-		return nil, models.ErrMissingUsername
-	}
-
 	if userSaving.Amount == 0 {
 		return nil, models.ErrMissingSavingAmount
 	}

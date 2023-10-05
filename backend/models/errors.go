@@ -20,7 +20,8 @@ var (
 	// was denied. If we were to state that 'this token is malformed,' it could signal an attacker that the denial was
 	// linked to the token's structure or content, inadvertently assisting him.
 	ErrMalformedToken            = errors.New("invalid token")
-	ErrSavingsNotFound           = errors.New("savings not found")
+	ErrSavingsNotFound           = errors.New("user savings not found")
+	ErrSavingNotFound            = errors.New("saving not found")
 	ErrUpdateSavingNotFound      = errors.New("the saving you are trying to update does not exist")
 	ErrDeleteSavingNotFound      = errors.New("the saving you are trying to delete does not exist")
 	ErrIncomeNotFound            = errors.New("user income not found")
