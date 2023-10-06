@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+const (
+	// This value indicates that a saving hasn't a saving goal associated. It cannot be left empty because saving_goal_id
+	// belongs to one of the indices of the table.
+	savingGoalIDUnset = "unset"
+)
+
 type SavingsManager interface {
 	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
@@ -162,6 +168,10 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 		saving.Username = username
 		saving.Period = user.CurrentPeriod
 		saving.CreatedDate = time.Now()
+
+		if saving.SavingGoalID == "" {
+			saving.SavingGoalID = savingGoalIDUnset
+		}
 
 		err = sm.CreateSaving(ctx, saving)
 		if err != nil {
