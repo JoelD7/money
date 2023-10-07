@@ -5,6 +5,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -17,11 +18,14 @@ func TestGetSavingsHandler(t *testing.T) {
 
 	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
+	savingGoalMock := savingoal.NewMock()
 	ctx := context.Background()
 
 	req := &getSavingsRequest{
-		log:         logMock,
-		savingsRepo: savingsMock,
+		username:       "test@gmail.com",
+		log:            logMock,
+		savingsRepo:    savingsMock,
+		savingGoalRepo: savingGoalMock,
 	}
 
 	apigwRequest := getDummyAPIGatewayRequest()
@@ -36,11 +40,14 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 
 	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
+	savingGoalMock := savingoal.NewMock()
 	ctx := context.Background()
 
 	req := &getSavingsRequest{
-		log:         logMock,
-		savingsRepo: savingsMock,
+		username:       "test@gmail.com",
+		log:            logMock,
+		savingGoalRepo: savingGoalMock,
+		savingsRepo:    savingsMock,
 	}
 
 	apigwRequest := getDummyAPIGatewayRequest()
@@ -57,9 +64,10 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
+	//TODO: fix this test when input validation is on the controller
 	t.Run("Invalid email", func(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer = map[string]interface{}{
-			"email": "12",
+			"username": "12",
 		}
 		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
 
