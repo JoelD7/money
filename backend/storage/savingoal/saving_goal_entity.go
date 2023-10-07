@@ -22,3 +22,13 @@ func toSavingGoalModel(s *savingGoalEntity) *models.SavingGoal {
 		Deadline:     s.Deadline,
 	}
 }
+
+func toSavingGoalModels(entities []*savingGoalEntity) []*models.SavingGoal {
+	savingGoals := make([]*models.SavingGoal, 0, len(entities))
+
+	for _, savingGoal := range entities {
+		savingGoals = append(savingGoals, toSavingGoalModel(savingGoal))
+	}
+
+	return savingGoals
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
@@ -54,4 +55,34 @@ func (d *DynamoRepository) GetSavingGoal(ctx context.Context, username, savingGo
 	}
 
 	return toSavingGoalModel(savingGoal), nil
+}
+
+func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error) {
+	nameEx := expression.Name("username").Equal(expression.Value(username))
+
+	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(tableName),
+		KeyConditionExpression:    expr.Condition(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	}
+
+	result, err := d.dynamoClient.Query(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("get saving goals failed: %v", err)
+	}
+
+	savingGoalsEntities := make([]*savingGoalEntity, 0, len(result.Items))
+
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &savingGoalsEntities)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal saving goal items failed: %v", err)
+	}
+
+	return toSavingGoalModels(savingGoalsEntities), nil
 }

@@ -294,3 +294,10 @@ func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Sav
 
 	return nil
 }
+
+func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, savings []*models.Saving) error {
+	//get all saving goals of user
+	//match goal with saving
+
+	return nil
+}
