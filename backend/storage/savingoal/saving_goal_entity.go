@@ -6,11 +6,11 @@ import (
 )
 
 type savingGoalEntity struct {
-	SavingGoalID string    `json:"saving_goal_id,omitempty"`
-	Username     string    `json:"username,omitempty"`
-	Name         string    `json:"name,omitempty"`
-	Goal         float64   `json:"goal,omitempty"`
-	Deadline     time.Time `json:"deadline,omitempty"`
+	SavingGoalID string    `json:"saving_goal_id,omitempty" dynamodbav:"saving_goal_id"`
+	Username     string    `json:"username,omitempty" dynamodbav:"username"`
+	Name         string    `json:"name,omitempty" dynamodbav:"name"`
+	Goal         float64   `json:"goal,omitempty" dynamodbav:"goal"`
+	Deadline     time.Time `json:"deadline,omitempty" dynamodbav:"deadline"`
 }
 
 func toSavingGoalModel(s *savingGoalEntity) *models.SavingGoal {

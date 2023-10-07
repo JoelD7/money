@@ -77,12 +77,12 @@ func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string) 
 		return nil, fmt.Errorf("get saving goals failed: %v", err)
 	}
 
-	savingGoalsEntities := make([]*savingGoalEntity, 0, len(result.Items))
+	savingGoalsEntities := new([]*savingGoalEntity)
 
-	err = attributevalue.UnmarshalListOfMaps(result.Items, &savingGoalsEntities)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, savingGoalsEntities)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal saving goal items failed: %v", err)
 	}
 
-	return toSavingGoalModels(savingGoalsEntities), nil
+	return toSavingGoalModels(*savingGoalsEntities), nil
 }
