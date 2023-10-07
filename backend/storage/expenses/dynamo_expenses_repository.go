@@ -62,11 +62,11 @@ func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, pe
 		return nil, models.ErrExpensesNotFound
 	}
 
-	expenses := make([]*models.Expense, 0)
-	err = attributevalue.UnmarshalListOfMaps(result.Items, &expenses)
+	expensesEntities := new([]*expenseEntity)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &expensesEntities)
 	if err != nil {
 		return nil, err
 	}
 
-	return expenses, nil
+	return toExpenseModels(*expensesEntities), nil
 }

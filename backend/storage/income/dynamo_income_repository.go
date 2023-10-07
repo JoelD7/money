@@ -62,14 +62,14 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, models.ErrIncomeNotFound
 	}
 
-	income := make([]*models.Income, 0)
+	incomeEntities := new([]*incomeEntity)
 
-	err = attributevalue.UnmarshalListOfMaps(result.Items, &income)
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &incomeEntities)
 	if err != nil {
 		return nil, err
 	}
 
-	return income, nil
+	return toIncomeModels(*incomeEntities), nil
 }
 
 //TODO: el create income debe requerir un period
