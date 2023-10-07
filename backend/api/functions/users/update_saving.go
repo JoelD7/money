@@ -48,13 +48,11 @@ func updateSavingHandler(ctx context.Context, req *apigateway.Request) (*apigate
 }
 
 func (request *updateSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	userSaving := new(models.Saving)
-
-	err := json.Unmarshal([]byte(req.Body), userSaving)
+	userSaving, err := validateUpdateInputs(req)
 	if err != nil {
-		request.log.Error("request_body_unmarshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_input_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(errRequestBodyParseFailure), nil
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	updateSaving := usecases.NewSavingUpdater(request.savingsRepo)
@@ -69,4 +67,29 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 	}, nil
+}
+
+func validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {
+	saving := new(models.Saving)
+
+	err := json.Unmarshal([]byte(req.Body), saving)
+	if err != nil {
+		return nil, errRequestBodyParseFailure
+	}
+
+	if saving.SavingID == "" {
+		return nil, models.ErrMissingSavingID
+	}
+
+	err = validateEmail(saving.Username)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateAmount(saving.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	return saving, nil
 }

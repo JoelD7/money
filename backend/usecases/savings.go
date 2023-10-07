@@ -214,49 +214,15 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 
 func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *models.Saving) error {
 	return func(ctx context.Context, saving *models.Saving) error {
-		err := validateSavingForUpdate(saving)
-		if err != nil {
-			return fmt.Errorf("saving validation failed: %w", err)
-		}
-
 		saving.UpdatedDate = time.Now()
 
-		err = sm.UpdateSaving(ctx, saving)
+		err := sm.UpdateSaving(ctx, saving)
 		if err != nil {
 			return err
 		}
 
 		return nil
 	}
-}
-
-func validateSavingInput(saving *models.Saving) error {
-	if *saving == (models.Saving{}) {
-		return models.ErrInvalidRequestBody
-	}
-
-	err := validateEmail(saving.Username)
-	if err != nil {
-		return err
-	}
-
-	if saving.Amount <= 0 || saving.Amount > math.MaxFloat64 {
-		return models.ErrInvalidAmount
-	}
-
-	return nil
-}
-
-func validateSavingForUpdate(saving *models.Saving) error {
-	if err := validateSavingInput(saving); err != nil {
-		return err
-	}
-
-	if saving.SavingID == "" {
-		return models.ErrMissingSavingID
-	}
-
-	return nil
 }
 
 func validatePageSize(pageSize int) error {
