@@ -48,15 +48,15 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		Body: getDummyUpdateRequestBody(),
 	}
 
-	t.Run("No email", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","amount":250}`
+	t.Run("Invalid email", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test","amount":250}`
 		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrMissingUsername.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_saving_failed")
+		c.Equal(models.ErrInvalidEmail.Error(), response.Body)
+		c.Contains(logMock.Output.String(), "update_input_validation_failed")
 	})
 
 	t.Run("Invalid amount", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrInvalidAmount.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_saving_failed")
+		c.Contains(logMock.Output.String(), "update_input_validation_failed")
 	})
 
 	t.Run("No saving ID", func(t *testing.T) {
@@ -78,7 +78,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrMissingSavingID.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_saving_failed")
+		c.Contains(logMock.Output.String(), "update_input_validation_failed")
 	})
 
 	t.Run("Saving doesn't exist", func(t *testing.T) {

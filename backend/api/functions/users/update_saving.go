@@ -50,7 +50,7 @@ func updateSavingHandler(ctx context.Context, req *apigateway.Request) (*apigate
 func (request *updateSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	userSaving, err := validateUpdateInputs(req)
 	if err != nil {
-		request.log.Error("update_input_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_input_validation_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
