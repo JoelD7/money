@@ -28,6 +28,7 @@ type SavingsManager interface {
 
 type SavingGoalManager interface {
 	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
+	GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error)
 }
 
 func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
@@ -86,6 +87,11 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(c
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
+		err = setSavingGoalNames(ctx, sgm, username, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
+		}
+
 		return savings, nextKey, nil
 	}
 }
@@ -119,6 +125,11 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger)
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
+		err = setSavingGoalNames(ctx, sgm, username, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
+		}
+
 		return savings, nextKey, nil
 	}
 }
@@ -140,6 +151,11 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, l Log
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
+		err = setSavingGoalNamesForSavingGoal(ctx, sgm, savings[0].Username, savingGoalID, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
+		}
+
 		return savings, nextKey, nil
 	}
 }
@@ -159,6 +175,11 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 		savings, nextKey, err := sm.GetSavingsBySavingGoalAndPeriod(ctx, startKey, savingGoalID, period, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
+		}
+
+		err = setSavingGoalNames(ctx, sgm, savings[0].Username, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
 		}
 
 		return savings, nextKey, nil
@@ -295,9 +316,43 @@ func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Sav
 	return nil
 }
 
-func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, savings []*models.Saving) error {
-	//get all saving goals of user
-	//match goal with saving
+func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username string, savings []*models.Saving) error {
+	savingGoalsMap := make(map[string]*models.SavingGoal)
+
+	savingGoals, err := sgm.GetSavingGoals(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	for _, savingGoal := range savingGoals {
+		savingGoalsMap[savingGoal.SavingGoalID] = savingGoal
+	}
+
+	for _, saving := range savings {
+		if saving.SavingGoalID == savingGoalIDUnset {
+			continue
+		}
+
+		savingGoal, ok := savingGoalsMap[saving.SavingGoalID]
+		if !ok {
+			continue
+		}
+
+		saving.SavingGoalName = savingGoal.Name
+	}
+
+	return nil
+}
+
+func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager, username, savingGoalID string, savings []*models.Saving) error {
+	savingGoal, err := sgm.GetSavingGoal(ctx, username, savingGoalID)
+	if err != nil {
+		return err
+	}
+
+	for _, saving := range savings {
+		saving.SavingGoalName = savingGoal.Name
+	}
 
 	return nil
 }
