@@ -2,17 +2,21 @@ package main
 
 import (
 	"context"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"regexp"
 )
 
 var (
 	awsRegion = env.GetString("REGION", "us-east-1")
 )
+
+const emailRegex = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
 
 func initDynamoClient() *dynamodb.Client {
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
@@ -30,6 +34,20 @@ func getUsernameFromContext(req *apigateway.Request) (string, error) {
 	}
 
 	return username, nil
+}
+
+func validateEmail(email string) error {
+	regex := regexp.MustCompile(emailRegex)
+
+	if email == "" {
+		return models.ErrMissingUsername
+	}
+
+	if !regex.MatchString(email) {
+		return models.ErrInvalidEmail
+	}
+
+	return nil
 }
 
 func main() {
