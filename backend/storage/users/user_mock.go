@@ -20,25 +20,23 @@ var (
 var mockedPerson *models.User
 
 type DynamoMock struct {
-	mockedErr  error
-	mockedUser *models.User
+	mockedErr   error
+	mockedUsers []*models.User
 }
 
 func NewDynamoMock() *DynamoMock {
 	return &DynamoMock{
-		mockedUser: GetDummyUser(),
-		mockedErr:  nil,
+		mockedUsers: []*models.User{GetDummyUser()},
+		mockedErr:   nil,
 	}
-}
-
-func (d *DynamoMock) SetMockedUser(user *models.User) {
-	d.mockedUser = user
 }
 
 func (d *DynamoMock) CreateUser(ctx context.Context, user *models.User) error {
 	if d.mockedErr != nil {
 		return d.mockedErr
 	}
+
+	d.mockedUsers = append(d.mockedUsers, user)
 
 	return nil
 }
@@ -48,11 +46,17 @@ func (d *DynamoMock) GetUser(ctx context.Context, username string) (*models.User
 		return nil, d.mockedErr
 	}
 
-	if d.mockedUser == nil {
+	if d.mockedUsers == nil {
 		return nil, models.ErrUserNotFound
 	}
 
-	return d.mockedUser, nil
+	for _, user := range d.mockedUsers {
+		if user.Username == username {
+			return user, nil
+		}
+	}
+
+	return nil, models.ErrUserNotFound
 }
 
 func (d *DynamoMock) UpdateUser(ctx context.Context, user *models.User) error {

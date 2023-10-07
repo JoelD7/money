@@ -25,7 +25,9 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) CreateUser(ctx context.Context, user *models.User) error {
+func (d *DynamoRepository) CreateUser(ctx context.Context, u *models.User) error {
+	user := toUserEntity(u)
+
 	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
 		return err
@@ -75,16 +77,18 @@ func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*model
 		return nil, models.ErrUserNotFound
 	}
 
-	user := new(models.User)
+	user := new(userEntity)
 	err = attributevalue.UnmarshalMap(result.Item, user)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return toUserModel(user), nil
 }
 
-func (d *DynamoRepository) UpdateUser(ctx context.Context, user *models.User) error {
+func (d *DynamoRepository) UpdateUser(ctx context.Context, u *models.User) error {
+	user := toUserEntity(u)
+
 	user.UpdatedDate = time.Now()
 
 	updatedItem, err := attributevalue.MarshalMap(user)

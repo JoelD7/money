@@ -31,7 +31,13 @@ func (m *Mock) GetSaving(ctx context.Context, username, savingID string) (*model
 		return nil, m.mockedErr
 	}
 
-	return m.mockedSavings[0], nil
+	for _, saving := range m.mockedSavings {
+		if saving.SavingID == savingID {
+			return saving, nil
+		}
+	}
+
+	return nil, models.ErrSavingNotFound
 }
 
 func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
@@ -39,7 +45,15 @@ func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, perio
 		return nil, "", m.mockedErr
 	}
 
-	return m.mockedSavings, "next_key", nil
+	savings := make([]*models.Saving, 0)
+
+	for _, saving := range m.mockedSavings {
+		if saving.Period == period && saving.Username == username {
+			savings = append(savings, saving)
+		}
+	}
+
+	return savings, "next_key", nil
 }
 
 func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
@@ -47,7 +61,15 @@ func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalI
 		return nil, "", m.mockedErr
 	}
 
-	return m.mockedSavings, "next_key", nil
+	savings := make([]*models.Saving, 0)
+
+	for _, saving := range m.mockedSavings {
+		if saving.SavingGoalID == savingGoalID {
+			savings = append(savings, saving)
+		}
+	}
+
+	return savings, "next_key", nil
 }
 
 func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
@@ -55,7 +77,14 @@ func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, sa
 		return nil, "", m.mockedErr
 	}
 
-	return m.mockedSavings, "next_key", nil
+	savings := make([]*models.Saving, 0)
+	for _, saving := range m.mockedSavings {
+		if saving.SavingGoalID == savingGoalID && saving.Period == period {
+			savings = append(savings, saving)
+		}
+	}
+
+	return savings, "next_key", nil
 }
 
 func (m *Mock) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
@@ -63,7 +92,14 @@ func (m *Mock) GetSavings(ctx context.Context, username, startKey string, pageSi
 		return nil, "", m.mockedErr
 	}
 
-	return m.mockedSavings, "next_key", nil
+	savings := make([]*models.Saving, 0)
+	for _, saving := range m.mockedSavings {
+		if saving.Username == username {
+			savings = append(savings, saving)
+		}
+	}
+
+	return savings, "next_key", nil
 }
 
 func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) error {

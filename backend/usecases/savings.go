@@ -5,6 +5,14 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"math"
+	"math/rand"
+	"time"
+)
+
+const (
+	// This value indicates that a saving hasn't a saving goal associated. It cannot be left empty because saving_goal_id
+	// belongs to one of the indices of the table.
+	savingGoalIDUnset = "unset"
 )
 
 type SavingsManager interface {
@@ -18,7 +26,12 @@ type SavingsManager interface {
 	DeleteSaving(ctx context.Context, savingID, username string) error
 }
 
-func NewSavingGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
+type SavingGoalManager interface {
+	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
+	GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error)
+}
+
+func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 	return func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 		err := validateEmail(username)
 		if err != nil {
@@ -36,11 +49,16 @@ func NewSavingGetter(sm SavingsManager, l Logger) func(ctx context.Context, user
 			return nil, err
 		}
 
+		err = setSavingGoalName(ctx, sgm, saving)
+		if err != nil {
+			return saving, models.ErrSavingGoalNameSettingFailed
+		}
+
 		return saving, nil
 	}
 }
 
-func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 		err := validateEmail(username)
 		if err != nil {
@@ -69,11 +87,16 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, use
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
+		err = setSavingGoalNames(ctx, sgm, username, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
+		}
+
 		return savings, nextKey, nil
 	}
 }
 
-func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 		err := validateEmail(username)
 		if err != nil {
@@ -102,11 +125,16 @@ func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Conte
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
+		err = setSavingGoalNames(ctx, sgm, username, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
+		}
+
 		return savings, nextKey, nil
 	}
 }
 
-func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
@@ -123,11 +151,16 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.C
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
+		err = setSavingGoalNamesForSavingGoal(ctx, sgm, savings[0].Username, savingGoalID, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
+		}
+
 		return savings, nextKey, nil
 	}
 }
 
-func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
@@ -144,15 +177,30 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, l Logger) func(ctx 
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
+		err = setSavingGoalNames(ctx, sgm, savings[0].Username, savings)
+		if err != nil {
+			return savings, "", models.ErrSavingGoalNameSettingFailed
+		}
+
 		return savings, nextKey, nil
 	}
 }
 
-func NewSavingCreator(sm SavingsManager, l Logger) func(ctx context.Context, saving *models.Saving) error {
-	return func(ctx context.Context, saving *models.Saving) error {
-		err := validateSavingInput(saving)
+func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context, username string, saving *models.Saving) error {
+	return func(ctx context.Context, username string, saving *models.Saving) error {
+
+		user, err := u.GetUser(ctx, username)
 		if err != nil {
-			return fmt.Errorf("saving validation failed: %w", err)
+			return fmt.Errorf("user fetch failed: %w", err)
+		}
+
+		saving.SavingID = generateSavingID()
+		saving.Username = username
+		saving.Period = user.CurrentPeriod
+		saving.CreatedDate = time.Now()
+
+		if saving.SavingGoalID == "" {
+			saving.SavingGoalID = savingGoalIDUnset
 		}
 
 		err = sm.CreateSaving(ctx, saving)
@@ -170,6 +218,8 @@ func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *model
 		if err != nil {
 			return fmt.Errorf("saving validation failed: %w", err)
 		}
+
+		saving.UpdatedDate = time.Now()
 
 		err = sm.UpdateSaving(ctx, saving)
 		if err != nil {
@@ -235,4 +285,74 @@ func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, use
 
 		return nil
 	}
+}
+
+func generateSavingID() string {
+	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	b := make([]byte, 20)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+
+	return "SV" + string(b)
+}
+
+func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Saving) error {
+	if s.SavingGoalID == savingGoalIDUnset {
+		return nil
+	}
+
+	savingGoal, err := sgm.GetSavingGoal(ctx, s.Username, s.SavingGoalID)
+	if err != nil {
+		s.SavingGoalName = savingGoalIDUnset
+		return err
+	}
+
+	s.SavingGoalName = savingGoal.Name
+
+	return nil
+}
+
+func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username string, savings []*models.Saving) error {
+	savingGoalsMap := make(map[string]*models.SavingGoal)
+
+	savingGoals, err := sgm.GetSavingGoals(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	for _, savingGoal := range savingGoals {
+		savingGoalsMap[savingGoal.SavingGoalID] = savingGoal
+	}
+
+	for _, saving := range savings {
+		if saving.SavingGoalID == savingGoalIDUnset {
+			continue
+		}
+
+		savingGoal, ok := savingGoalsMap[saving.SavingGoalID]
+		if !ok {
+			continue
+		}
+
+		saving.SavingGoalName = savingGoal.Name
+	}
+
+	return nil
+}
+
+func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager, username, savingGoalID string, savings []*models.Saving) error {
+	savingGoal, err := sgm.GetSavingGoal(ctx, username, savingGoalID)
+	if err != nil {
+		return err
+	}
+
+	for _, saving := range savings {
+		saving.SavingGoalName = savingGoal.Name
+	}
+
+	return nil
 }

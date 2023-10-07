@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
-	"math/rand"
 	"strings"
 	"time"
 )
@@ -53,14 +52,18 @@ func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID str
 		return nil, fmt.Errorf("get saving item failed: %v", err)
 	}
 
-	saving := new(models.Saving)
+	if result.Item == nil {
+		return nil, models.ErrSavingNotFound
+	}
 
-	err = attributevalue.UnmarshalMap(result.Item, saving)
+	savingEnt := new(savingEntity)
+
+	err = attributevalue.UnmarshalMap(result.Item, savingEnt)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal saving item failed: %v", err)
 	}
 
-	return saving, nil
+	return toSavingModel(savingEnt), nil
 }
 
 func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
@@ -99,7 +102,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -111,7 +114,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
@@ -153,7 +156,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, sta
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -165,7 +168,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, sta
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
@@ -205,7 +208,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -217,7 +220,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
@@ -259,7 +262,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*models.Saving)
+	savings := new([]*savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
@@ -271,14 +274,15 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", err
 	}
 
-	return *savings, nextKey, nil
+	return toSavingModels(*savings), nextKey, nil
 }
 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
-	saving.SavingID = generateSavingID()
-	saving.CreatedDate = time.Now()
+	savingEnt := toSavingEntity(saving)
 
-	item, err := attributevalue.MarshalMap(saving)
+	savingEnt.PeriodUser = buildPeriodUser(savingEnt.Username, savingEnt.Period)
+
+	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
 		return err
 	}
@@ -297,17 +301,19 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 }
 
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {
-	username, err := attributevalue.Marshal(saving.Username)
+	savingEnt := toSavingEntity(saving)
+
+	username, err := attributevalue.Marshal(savingEnt.Username)
 	if err != nil {
 		return fmt.Errorf("marshaling username key: %v", err)
 	}
 
-	savingID, err := attributevalue.Marshal(saving.SavingID)
+	savingID, err := attributevalue.Marshal(savingEnt.SavingID)
 	if err != nil {
 		return fmt.Errorf("marshaling saving id key: %v", err)
 	}
 
-	attributeValues, err := getAttributeValues(saving)
+	attributeValues, err := getAttributeValues(savingEnt)
 	if err != nil {
 		return fmt.Errorf("getting attribute values: %v", err)
 	}
@@ -337,7 +343,7 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 	return nil
 }
 
-func getAttributeValues(saving *models.Saving) (map[string]types.AttributeValue, error) {
+func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, error) {
 	m := make(map[string]types.AttributeValue)
 
 	savingGoalID, err := attributevalue.Marshal(saving.SavingGoalID)
@@ -384,19 +390,6 @@ func getUpdateExpression(attributeValues map[string]types.AttributeValue) *strin
 	}
 
 	return aws.String("SET " + strings.Join(attributes, ", "))
-}
-
-func generateSavingID() string {
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	b := make([]byte, 20)
-	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
-	}
-
-	return "SV" + string(b)
 }
 
 func getPageSize(pageSize int) *int32 {
