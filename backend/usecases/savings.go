@@ -26,7 +26,11 @@ type SavingsManager interface {
 	DeleteSaving(ctx context.Context, savingID, username string) error
 }
 
-func NewSavingGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
+type SavingGoalManager interface {
+	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
+}
+
+func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 	return func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 		err := validateEmail(username)
 		if err != nil {
@@ -44,11 +48,16 @@ func NewSavingGetter(sm SavingsManager, l Logger) func(ctx context.Context, user
 			return nil, err
 		}
 
+		err = setSavingGoalName(ctx, sgm, saving)
+		if err != nil {
+			return saving, models.ErrSavingGoalNameSettingFailed
+		}
+
 		return saving, nil
 	}
 }
 
-func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 		err := validateEmail(username)
 		if err != nil {
@@ -81,7 +90,7 @@ func NewSavingsGetter(sm SavingsManager, l Logger) func(ctx context.Context, use
 	}
 }
 
-func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 		err := validateEmail(username)
 		if err != nil {
@@ -114,7 +123,7 @@ func NewSavingByPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Conte
 	}
 }
 
-func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
@@ -135,7 +144,7 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, l Logger) func(ctx context.C
 	}
 }
 
-func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, l Logger) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
@@ -268,4 +277,20 @@ func generateSavingID() string {
 	}
 
 	return "SV" + string(b)
+}
+
+func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Saving) error {
+	if s.SavingGoalID == savingGoalIDUnset {
+		return nil
+	}
+
+	savingGoal, err := sgm.GetSavingGoal(ctx, s.Username, s.SavingGoalID)
+	if err != nil {
+		s.SavingGoalName = savingGoalIDUnset
+		return err
+	}
+
+	s.SavingGoalName = savingGoal.Name
+
+	return nil
 }

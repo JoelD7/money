@@ -37,7 +37,7 @@ func (m *Mock) GetSaving(ctx context.Context, username, savingID string) (*model
 		}
 	}
 
-	return nil, models.ErrSavingsNotFound
+	return nil, models.ErrSavingNotFound
 }
 
 func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {

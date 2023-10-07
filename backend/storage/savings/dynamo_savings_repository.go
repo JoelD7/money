@@ -52,6 +52,10 @@ func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID str
 		return nil, fmt.Errorf("get saving item failed: %v", err)
 	}
 
+	if result.Item == nil {
+		return nil, models.ErrSavingNotFound
+	}
+
 	savingEnt := new(savingEntity)
 
 	err = attributevalue.UnmarshalMap(result.Item, savingEnt)

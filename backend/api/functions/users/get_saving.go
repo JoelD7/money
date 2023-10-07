@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -17,16 +18,18 @@ var (
 )
 
 type getSavingRequest struct {
-	log          logger.LogAPI
-	startingTime time.Time
-	err          error
-	savingsRepo  savings.Repository
+	log            logger.LogAPI
+	startingTime   time.Time
+	err            error
+	savingsRepo    savings.Repository
+	savingGoalRepo savingoal.Repository
 }
 
 func (request *getSavingRequest) init() {
 	dynamoClient := initDynamoClient()
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+	request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -54,7 +57,7 @@ func getSavingHandler(ctx context.Context, req *apigateway.Request) (*apigateway
 func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	savingID, ok := req.PathParameters["savingID"]
 	if !ok {
-		request.log.Error("saving_id", errMissingSavingID, []models.LoggerObject{req})
+		request.log.Error("missing_saving_id", errMissingSavingID, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(errMissingSavingID), nil
 	}
@@ -66,24 +69,20 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.log)
+	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.savingGoalRepo, request.log)
 
 	saving, err := getSaving(ctx, username, savingID)
+	if errors.Is(err, models.ErrSavingGoalNameSettingFailed) {
+		request.log.Error("get_saving_goal_name_failed", err, []models.LoggerObject{req})
+
+		return apigateway.NewJSONResponse(http.StatusOK, saving), nil
+	}
+
 	if err != nil {
 		request.log.Error("get_saving_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	responseJSON, err := json.Marshal(saving)
-	if err != nil {
-		request.log.Error("get_saving_marshal_failed", err, []models.LoggerObject{req})
-
-		return apigateway.NewErrorResponse(err), nil
-	}
-
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       string(responseJSON),
-	}, nil
+	return apigateway.NewJSONResponse(http.StatusOK, saving), nil
 }
