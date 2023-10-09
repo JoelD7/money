@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -48,21 +49,12 @@ func updateSavingHandler(ctx context.Context, req *apigateway.Request) (*apigate
 }
 
 func (request *updateSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	savingID, ok := req.PathParameters["savingID"]
-	if !ok {
-		request.log.Error("missing_saving_id", errMissingSavingID, []models.LoggerObject{req})
-
-		return apigateway.NewErrorResponse(errMissingSavingID), nil
-	}
-
-	userSaving, err := validateUpdateInputs(req)
+	userSaving, err := request.validateUpdateInputs(req)
 	if err != nil {
 		request.log.Error("update_input_validation_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
-
-	userSaving.SavingID = savingID
 
 	updateSaving := usecases.NewSavingUpdater(request.savingsRepo)
 
@@ -78,15 +70,27 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 	}, nil
 }
 
-func validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {
-	saving := new(models.Saving)
+func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {
+	savingID, ok := req.PathParameters["savingID"]
+	if !ok {
+		return nil, errMissingSavingID
+	}
 
-	err := json.Unmarshal([]byte(req.Body), saving)
+	username, err := getUsernameFromContext(req)
+	if err != nil {
+		return nil, fmt.Errorf("get username from context failed")
+	}
+
+	saving := &models.Saving{
+		SavingID: savingID,
+	}
+
+	err = json.Unmarshal([]byte(req.Body), saving)
 	if err != nil {
 		return nil, errRequestBodyParseFailure
 	}
 
-	err = validateEmail(saving.Username)
+	err = validateEmail(username)
 	if err != nil {
 		return nil, err
 	}
