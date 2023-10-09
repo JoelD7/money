@@ -4,7 +4,7 @@ import "time"
 
 type Saving struct {
 	SavingID       string    `json:"saving_id,omitempty"`
-	SavingGoalID   string    `json:"saving_goal_id,omitempty"`
+	SavingGoalID   *string   `json:"saving_goal_id,omitempty"`
 	SavingGoalName string    `json:"saving_goal_name,omitempty"`
 	Username       string    `json:"username,omitempty"`
 	Period         string    `json:"period,omitempty"`

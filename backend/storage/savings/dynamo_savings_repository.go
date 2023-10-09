@@ -361,7 +361,7 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 		return nil, err
 	}
 
-	if saving.SavingGoalID != "" {
+	if saving.SavingGoalID != nil {
 		m[":saving_goal_id"] = savingGoalID
 	}
 

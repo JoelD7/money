@@ -7,7 +7,7 @@ import (
 
 type savingEntity struct {
 	SavingID     string    `json:"saving_id,omitempty"  dynamodbav:"saving_id"`
-	SavingGoalID string    `json:"saving_goal_id,omitempty"  dynamodbav:"saving_goal_id"`
+	SavingGoalID *string   `json:"saving_goal_id,omitempty"  dynamodbav:"saving_goal_id"`
 	Username     string    `json:"username,omitempty"  dynamodbav:"username"`
 	Period       string    `json:"period,omitempty"  dynamodbav:"period"`
 	PeriodUser   string    `json:"period_user,omitempty"  dynamodbav:"period_user"`
