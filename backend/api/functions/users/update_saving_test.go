@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/savings"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -23,9 +24,7 @@ func TestUpdateSaving(t *testing.T) {
 		savingsRepo: savingsMock,
 	}
 
-	apigwRequest := &apigateway.Request{
-		Body: getDummyUpdateRequestBody(),
-	}
+	apigwRequest := getDummyUpdateRequest()
 
 	response, err := req.process(ctx, apigwRequest)
 	c.NoError(err)
@@ -44,13 +43,11 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		savingsRepo: savingsMock,
 	}
 
-	apigwRequest := &apigateway.Request{
-		Body: getDummyUpdateRequestBody(),
-	}
+	apigwRequest := getDummyUpdateRequest()
 
 	t.Run("Invalid email", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test","amount":250}`
-		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
+		apigwRequest.RequestContext.Authorizer["username"] = "test"
+		defer func() { apigwRequest = getDummyUpdateRequest() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -60,8 +57,8 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("Invalid amount", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":0}`
-		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
+		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","amount":0}`
+		defer func() { apigwRequest = getDummyUpdateRequest() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -71,8 +68,8 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 	})
 
 	t.Run("No saving ID", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`
-		defer func() { apigwRequest.Body = getDummyUpdateRequestBody() }()
+		apigwRequest.PathParameters["savingID"] = ""
+		defer func() { apigwRequest = getDummyUpdateRequest() }()
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -103,6 +100,16 @@ func (e *mockRequestFailure) Message() string   { return "" }
 func (e *mockRequestFailure) OrigErr() error    { return nil }
 func (e *mockRequestFailure) Error() string     { return "ConditionalCheckFailedException" }
 
-func getDummyUpdateRequestBody() string {
-	return `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`
+func getDummyUpdateRequest() *apigateway.Request {
+	return &apigateway.Request{
+		Body: `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`,
+		RequestContext: events.APIGatewayProxyRequestContext{
+			Authorizer: map[string]interface{}{
+				"username": "test@gmail.com",
+			},
+		},
+		PathParameters: map[string]string{
+			"savingID": "SV123",
+		},
+	}
 }

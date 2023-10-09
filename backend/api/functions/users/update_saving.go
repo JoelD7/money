@@ -72,8 +72,8 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 
 func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {
 	savingID, ok := req.PathParameters["savingID"]
-	if !ok {
-		return nil, errMissingSavingID
+	if !ok || savingID == "" {
+		return nil, models.ErrMissingSavingID
 	}
 
 	username, err := getUsernameFromContext(req)
