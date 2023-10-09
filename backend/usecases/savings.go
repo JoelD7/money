@@ -216,6 +216,10 @@ func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *model
 	return func(ctx context.Context, saving *models.Saving) error {
 		saving.UpdatedDate = time.Now()
 
+		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
+			saving.SavingGoalID = &savingGoalIDUnset
+		}
+
 		err := sm.UpdateSaving(ctx, saving)
 		if err != nil {
 			return err
