@@ -49,7 +49,7 @@ func main() {
 			r.Get("/{savingID}", getSavingHandler)
 			r.Get("/", getSavingsHandler)
 			r.Post("/", createSavingHandler)
-			r.Put("/", updateSavingHandler)
+			r.Put("/{savingID}", updateSavingHandler)
 			r.Delete("/", deleteSavingHandler)
 		})
 	})

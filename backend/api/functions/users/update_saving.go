@@ -48,12 +48,21 @@ func updateSavingHandler(ctx context.Context, req *apigateway.Request) (*apigate
 }
 
 func (request *updateSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	savingID, ok := req.PathParameters["savingID"]
+	if !ok {
+		request.log.Error("missing_saving_id", errMissingSavingID, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(errMissingSavingID), nil
+	}
+
 	userSaving, err := validateUpdateInputs(req)
 	if err != nil {
 		request.log.Error("update_input_validation_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
+
+	userSaving.SavingID = savingID
 
 	updateSaving := usecases.NewSavingUpdater(request.savingsRepo)
 
@@ -75,10 +84,6 @@ func validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {
 	err := json.Unmarshal([]byte(req.Body), saving)
 	if err != nil {
 		return nil, errRequestBodyParseFailure
-	}
-
-	if saving.SavingID == "" {
-		return nil, models.ErrMissingSavingID
 	}
 
 	err = validateEmail(saving.Username)
