@@ -12,7 +12,7 @@ import (
 var (
 	// This value indicates that a saving hasn't a saving goal associated. It cannot be left empty because saving_goal_id
 	// belongs to one of the indices of the table.
-	savingGoalIDUnset = "unset"
+	savingGoalIDNone = "none"
 )
 
 type SavingsManager interface {
@@ -200,7 +200,7 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 		saving.CreatedDate = time.Now()
 
 		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
-			saving.SavingGoalID = &savingGoalIDUnset
+			saving.SavingGoalID = &savingGoalIDNone
 		}
 
 		err = sm.CreateSaving(ctx, saving)
@@ -217,7 +217,7 @@ func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *model
 		saving.UpdatedDate = time.Now()
 
 		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
-			saving.SavingGoalID = &savingGoalIDUnset
+			saving.SavingGoalID = &savingGoalIDNone
 		}
 
 		err := sm.UpdateSaving(ctx, saving)
@@ -271,13 +271,13 @@ func generateSavingID() string {
 }
 
 func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Saving) error {
-	if s.SavingGoalID != nil && *s.SavingGoalID == savingGoalIDUnset {
+	if s.SavingGoalID != nil && *s.SavingGoalID == savingGoalIDNone {
 		return nil
 	}
 
 	savingGoal, err := sgm.GetSavingGoal(ctx, s.Username, *s.SavingGoalID)
 	if err != nil {
-		s.SavingGoalName = savingGoalIDUnset
+		s.SavingGoalName = savingGoalIDNone
 		return err
 	}
 
@@ -299,7 +299,7 @@ func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username str
 	}
 
 	for _, saving := range savings {
-		if *saving.SavingGoalID == savingGoalIDUnset {
+		if *saving.SavingGoalID == savingGoalIDNone {
 			continue
 		}
 
