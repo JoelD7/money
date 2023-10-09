@@ -83,6 +83,7 @@ func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request
 
 	saving := &models.Saving{
 		SavingID: savingID,
+		Username: username,
 	}
 
 	err = json.Unmarshal([]byte(req.Body), saving)
