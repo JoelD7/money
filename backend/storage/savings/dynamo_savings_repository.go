@@ -365,7 +365,7 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 		m[":saving_goal_id"] = savingGoalID
 	}
 
-	if saving.Amount > 0 {
+	if saving.Amount != nil {
 		m[":amount"] = amount
 	}
 

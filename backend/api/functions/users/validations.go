@@ -22,8 +22,8 @@ func validateEmail(email string) error {
 	return nil
 }
 
-func validateAmount(amount float64) error {
-	if amount <= 0 || amount > math.MaxFloat64 {
+func validateAmount(amount *float64) error {
+	if amount != nil && (*amount <= 0 || *amount > math.MaxFloat64) {
 		return models.ErrInvalidAmount
 	}
 

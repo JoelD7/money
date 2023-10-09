@@ -11,5 +11,5 @@ type Saving struct {
 	PeriodUser     string    `json:"-"`
 	CreatedDate    time.Time `json:"created_date,omitempty"`
 	UpdatedDate    time.Time `json:"updated_date,omitempty"`
-	Amount         float64   `json:"amount"`
+	Amount         *float64  `json:"amount"`
 }

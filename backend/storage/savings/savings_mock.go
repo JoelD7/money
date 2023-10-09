@@ -143,32 +143,36 @@ func GetDummySavings() []*models.Saving {
 			SavingGoalID: getStringPtr("SVG123"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       250,
+			Amount:       getFloatPtr(250),
 		},
 		{
 			SavingID:     "SV456",
 			SavingGoalID: getStringPtr("SVG46"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       450,
+			Amount:       getFloatPtr(450),
 		},
 		{
 			SavingID:     "SV789",
 			SavingGoalID: getStringPtr("SVG789"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       789,
+			Amount:       getFloatPtr(789),
 		},
 		{
 			SavingID:     "SV159",
 			SavingGoalID: getStringPtr("SVG159"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       156,
+			Amount:       getFloatPtr(156),
 		},
 	}
 }
 
 func getStringPtr(s string) *string {
 	return &s
+}
+
+func getFloatPtr(f float64) *float64 {
+	return &f
 }

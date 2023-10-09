@@ -13,7 +13,7 @@ type savingEntity struct {
 	PeriodUser   string    `json:"period_user,omitempty"  dynamodbav:"period_user"`
 	CreatedDate  time.Time `json:"created_date,omitempty"  dynamodbav:"created_date"`
 	UpdatedDate  time.Time `json:"updated_date,omitempty"  dynamodbav:"updated_date"`
-	Amount       float64   `json:"amount" dynamodbav:"amount"`
+	Amount       *float64  `json:"amount" dynamodbav:"amount"`
 }
 
 func toSavingEntity(s *models.Saving) *savingEntity {

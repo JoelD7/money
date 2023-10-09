@@ -9,7 +9,6 @@ import (
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
-	"math"
 	"net/http"
 	"time"
 )
@@ -92,11 +91,12 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 		return nil, errRequestBodyParseFailure
 	}
 
-	if userSaving.Amount == 0 {
+	if userSaving.Amount != nil && *userSaving.Amount == 0 {
 		return nil, models.ErrMissingSavingAmount
 	}
 
-	if userSaving.Amount < 0 || userSaving.Amount >= math.MaxFloat64 {
+	err = validateAmount(userSaving.Amount)
+	if err != nil {
 		return nil, models.ErrInvalidSavingAmount
 	}
 
