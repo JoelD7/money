@@ -64,7 +64,7 @@ func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalI
 	savings := make([]*models.Saving, 0)
 
 	for _, saving := range m.mockedSavings {
-		if saving.SavingGoalID == savingGoalID {
+		if *saving.SavingGoalID == savingGoalID {
 			savings = append(savings, saving)
 		}
 	}
@@ -79,7 +79,7 @@ func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, sa
 
 	savings := make([]*models.Saving, 0)
 	for _, saving := range m.mockedSavings {
-		if saving.SavingGoalID == savingGoalID && saving.Period == period {
+		if *saving.SavingGoalID == savingGoalID && saving.Period == period {
 			savings = append(savings, saving)
 		}
 	}
@@ -140,31 +140,39 @@ func GetDummySavings() []*models.Saving {
 	return []*models.Saving{
 		{
 			SavingID:     "SV123",
-			SavingGoalID: "SVG123",
+			SavingGoalID: getStringPtr("SVG123"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       250,
+			Amount:       getFloatPtr(250),
 		},
 		{
 			SavingID:     "SV456",
-			SavingGoalID: "SVG46",
+			SavingGoalID: getStringPtr("SVG46"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       450,
+			Amount:       getFloatPtr(450),
 		},
 		{
 			SavingID:     "SV789",
-			SavingGoalID: "SVG789",
+			SavingGoalID: getStringPtr("SVG789"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       789,
+			Amount:       getFloatPtr(789),
 		},
 		{
 			SavingID:     "SV159",
-			SavingGoalID: "SVG159",
+			SavingGoalID: getStringPtr("SVG159"),
 			Username:     "test@gmail.com",
 			CreatedDate:  time.Now(),
-			Amount:       156,
+			Amount:       getFloatPtr(156),
 		},
 	}
+}
+
+func getStringPtr(s string) *string {
+	return &s
+}
+
+func getFloatPtr(f float64) *float64 {
+	return &f
 }

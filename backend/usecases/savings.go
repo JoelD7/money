@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-const (
+var (
 	// This value indicates that a saving hasn't a saving goal associated. It cannot be left empty because saving_goal_id
 	// belongs to one of the indices of the table.
-	savingGoalIDUnset = "unset"
+	savingGoalIDNone = "none"
 )
 
 type SavingsManager interface {
@@ -199,8 +199,8 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 		saving.Period = user.CurrentPeriod
 		saving.CreatedDate = time.Now()
 
-		if saving.SavingGoalID == "" {
-			saving.SavingGoalID = savingGoalIDUnset
+		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
+			saving.SavingGoalID = &savingGoalIDNone
 		}
 
 		err = sm.CreateSaving(ctx, saving)
@@ -214,49 +214,19 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 
 func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *models.Saving) error {
 	return func(ctx context.Context, saving *models.Saving) error {
-		err := validateSavingForUpdate(saving)
-		if err != nil {
-			return fmt.Errorf("saving validation failed: %w", err)
-		}
-
 		saving.UpdatedDate = time.Now()
 
-		err = sm.UpdateSaving(ctx, saving)
+		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
+			saving.SavingGoalID = &savingGoalIDNone
+		}
+
+		err := sm.UpdateSaving(ctx, saving)
 		if err != nil {
 			return err
 		}
 
 		return nil
 	}
-}
-
-func validateSavingInput(saving *models.Saving) error {
-	if *saving == (models.Saving{}) {
-		return models.ErrInvalidRequestBody
-	}
-
-	err := validateEmail(saving.Username)
-	if err != nil {
-		return err
-	}
-
-	if saving.Amount <= 0 || saving.Amount > math.MaxFloat64 {
-		return models.ErrInvalidAmount
-	}
-
-	return nil
-}
-
-func validateSavingForUpdate(saving *models.Saving) error {
-	if err := validateSavingInput(saving); err != nil {
-		return err
-	}
-
-	if saving.SavingID == "" {
-		return models.ErrMissingSavingID
-	}
-
-	return nil
 }
 
 func validatePageSize(pageSize int) error {
@@ -301,13 +271,13 @@ func generateSavingID() string {
 }
 
 func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Saving) error {
-	if s.SavingGoalID == savingGoalIDUnset {
+	if s.SavingGoalID != nil && *s.SavingGoalID == savingGoalIDNone {
 		return nil
 	}
 
-	savingGoal, err := sgm.GetSavingGoal(ctx, s.Username, s.SavingGoalID)
+	savingGoal, err := sgm.GetSavingGoal(ctx, s.Username, *s.SavingGoalID)
 	if err != nil {
-		s.SavingGoalName = savingGoalIDUnset
+		s.SavingGoalName = savingGoalIDNone
 		return err
 	}
 
@@ -329,11 +299,11 @@ func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username str
 	}
 
 	for _, saving := range savings {
-		if saving.SavingGoalID == savingGoalIDUnset {
+		if *saving.SavingGoalID == savingGoalIDNone {
 			continue
 		}
 
-		savingGoal, ok := savingGoalsMap[saving.SavingGoalID]
+		savingGoal, ok := savingGoalsMap[*saving.SavingGoalID]
 		if !ok {
 			continue
 		}

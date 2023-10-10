@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -48,13 +49,11 @@ func updateSavingHandler(ctx context.Context, req *apigateway.Request) (*apigate
 }
 
 func (request *updateSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	userSaving := new(models.Saving)
-
-	err := json.Unmarshal([]byte(req.Body), userSaving)
+	userSaving, err := request.validateUpdateInputs(req)
 	if err != nil {
-		request.log.Error("request_body_unmarshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_input_validation_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(errRequestBodyParseFailure), nil
+		return apigateway.NewErrorResponse(err), nil
 	}
 
 	updateSaving := usecases.NewSavingUpdater(request.savingsRepo)
@@ -69,4 +68,38 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 	}, nil
+}
+
+func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {
+	savingID, ok := req.PathParameters["savingID"]
+	if !ok || savingID == "" {
+		return nil, models.ErrMissingSavingID
+	}
+
+	username, err := getUsernameFromContext(req)
+	if err != nil {
+		return nil, fmt.Errorf("get username from context failed")
+	}
+
+	saving := &models.Saving{
+		SavingID: savingID,
+		Username: username,
+	}
+
+	err = json.Unmarshal([]byte(req.Body), saving)
+	if err != nil {
+		return nil, errRequestBodyParseFailure
+	}
+
+	err = validateEmail(username)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validateAmount(saving.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	return saving, nil
 }

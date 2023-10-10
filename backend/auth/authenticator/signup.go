@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -47,12 +48,10 @@ func (req *requestSignUpHandler) finish() {
 }
 
 func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
-	reqBody := new(signUpBody)
-
-	err := json.Unmarshal([]byte(request.Body), reqBody)
+	reqBody, err := validateSingUpInput(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("request_body_json_unmarshal_failed", err, nil)
+		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
@@ -62,7 +61,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 	err = saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
 	if err != nil {
 		req.err = err
-		req.log.Error("save_new_user_failed", err, nil)
+		req.log.Error("save_new_user_failed", err, []models.LoggerObject{request})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
@@ -70,4 +69,21 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 	return &apigateway.Response{
 		StatusCode: http.StatusCreated,
 	}, nil
+}
+
+func validateSingUpInput(request *apigateway.Request) (*signUpBody, error) {
+	reqBody := new(signUpBody)
+
+	err := json.Unmarshal([]byte(request.Body), reqBody)
+	if err != nil {
+
+		return nil, err
+	}
+
+	err = validateCredentials(reqBody.Username, reqBody.Password)
+	if err != nil {
+		return nil, err
+	}
+
+	return reqBody, nil
 }
