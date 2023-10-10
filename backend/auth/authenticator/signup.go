@@ -48,7 +48,7 @@ func (req *requestSignUpHandler) finish() {
 }
 
 func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
-	reqBody, err := validateInput(request)
+	reqBody, err := validateSingUpInput(request)
 	if err != nil {
 		req.err = err
 		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
@@ -71,7 +71,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 	}, nil
 }
 
-func validateInput(request *apigateway.Request) (*signUpBody, error) {
+func validateSingUpInput(request *apigateway.Request) (*signUpBody, error) {
 	reqBody := new(signUpBody)
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)

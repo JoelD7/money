@@ -143,13 +143,6 @@ func generateDynamoID(prefix string) string {
 // NewUserAuthenticator authenticates a user.
 func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx context.Context, username, password string) (*models.User, error) {
 	return func(ctx context.Context, username, password string) (*models.User, error) {
-		err := validateCredentials(username, password)
-		if err != nil {
-			logger.Error("credentials_validation_failed", err, nil)
-
-			return nil, err
-		}
-
 		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
 			logger.Error("user_fetching_failed", err, nil)
@@ -268,19 +261,6 @@ func NewRefreshTokenValidator(userGetter UserManager, logger Logger) func(ctx co
 
 		return user, nil
 	}
-}
-
-func validateCredentials(email, password string) error {
-	err := validateEmail(email)
-	if err != nil {
-		return err
-	}
-
-	if password == "" {
-		return models.ErrMissingPassword
-	}
-
-	return nil
 }
 
 func validateEmail(email string) error {
