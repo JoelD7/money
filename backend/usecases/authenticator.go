@@ -69,13 +69,6 @@ type SecretManager interface {
 // NewUserCreator creates a new user with password.
 func NewUserCreator(userManager UserManager, logger Logger) func(ctx context.Context, fullName, username, password string) error {
 	return func(ctx context.Context, fullName, username, password string) error {
-		err := validateCredentials(username, password)
-		if err != nil {
-			logger.Error("credentials_validation_failed", err, nil)
-
-			return err
-		}
-
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 		if err != nil {
 			logger.Error("password_hashing_failed", err, nil)

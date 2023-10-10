@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
@@ -11,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -29,6 +31,7 @@ var (
 
 const (
 	refreshTokenCookieName = "RefreshToken"
+	emailRegex             = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
 )
 
 type signUpBody struct {
@@ -81,6 +84,33 @@ func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
 	}
 
 	return "", errMissingRefreshTokenInCookies
+}
+
+func validateCredentials(email, password string) error {
+	err := validateEmail(email)
+	if err != nil {
+		return err
+	}
+
+	if password == "" {
+		return models.ErrMissingPassword
+	}
+
+	return nil
+}
+
+func validateEmail(email string) error {
+	regex := regexp.MustCompile(emailRegex)
+
+	if email == "" {
+		return models.ErrMissingUsername
+	}
+
+	if !regex.MatchString(email) {
+		return models.ErrInvalidEmail
+	}
+
+	return nil
 }
 
 func main() {
