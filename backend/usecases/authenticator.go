@@ -14,7 +14,6 @@ import (
 	"math/big"
 	"math/rand"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -261,20 +260,6 @@ func NewRefreshTokenValidator(userGetter UserManager, logger Logger) func(ctx co
 
 		return user, nil
 	}
-}
-
-func validateEmail(email string) error {
-	regex := regexp.MustCompile(emailRegex)
-
-	if email == "" {
-		return models.ErrMissingUsername
-	}
-
-	if !regex.MatchString(email) {
-		return models.ErrInvalidEmail
-	}
-
-	return nil
 }
 
 func generateJWT(secrets SecretManager, payload *jwt.Payload, scope string) (string, error) {
