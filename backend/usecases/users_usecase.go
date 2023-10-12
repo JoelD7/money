@@ -25,17 +25,18 @@ type IncomeGetter interface {
 	GetIncomeByPeriod(ctx context.Context, username string, periodID string) ([]*models.Income, error)
 }
 
-type ExpenseGetter interface {
+type ExpenseManager interface {
 	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
+	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 }
 
 type IDGenerator interface {
 	GenerateID(prefix string) string
 }
 
-func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
+func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
 
 		user, err := u.GetUser(ctx, username)

@@ -56,6 +56,15 @@ func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, pe
 	return d.performQuery(ctx, input)
 }
 
+func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+	input, err := buildQueryInput(username, "", startKey, categories, pageSize)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return d.performQuery(ctx, input)
+}
+
 func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
 	conditionEx := expression.Name("username").Equal(expression.Value(username))
 
