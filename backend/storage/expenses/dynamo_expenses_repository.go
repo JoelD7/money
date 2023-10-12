@@ -29,6 +29,34 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
+func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"username":   &types.AttributeValueMemberS{Value: username},
+			"expense_id": &types.AttributeValueMemberS{Value: expenseID},
+		},
+	}
+
+	result, err := d.dynamoClient.GetItem(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("get expense failed: %v", err)
+	}
+
+	if result.Item == nil {
+		return nil, models.ErrExpenseNotFound
+	}
+
+	entity := new(expenseEntity)
+
+	err = attributevalue.UnmarshalMap(result.Item, entity)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal expense item failed: %v", err)
+	}
+
+	return toExpenseModel(entity), nil
+}
+
 func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
 	input, err := buildQueryInput(username, "", startKey, nil, pageSize)
 	if err != nil {

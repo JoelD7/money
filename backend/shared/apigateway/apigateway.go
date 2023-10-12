@@ -16,6 +16,7 @@ var (
 	responseByErrors = map[error]Error{
 		models.ErrUserNotFound:              {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
 		models.ErrIncomeNotFound:            {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
+		models.ErrExpenseNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrExpenseNotFound.Error()},
 		models.ErrExpensesNotFound:          {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
 		models.ErrCategoriesNotFound:        {HTTPCode: http.StatusNotFound, Message: models.ErrCategoriesNotFound.Error()},
 		models.ErrSavingsNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
