@@ -77,7 +77,7 @@ func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request
 		return nil, models.ErrMissingSavingID
 	}
 
-	username, err := getUsernameFromContext(req)
+	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		return nil, fmt.Errorf("get username from context failed")
 	}

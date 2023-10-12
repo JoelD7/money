@@ -72,7 +72,7 @@ func getSavingsHandler(ctx context.Context, req *apigateway.Request) (*apigatewa
 func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error {
 	var err error
 
-	request.username, err = getUsernameFromContext(req)
+	request.username, err = apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 

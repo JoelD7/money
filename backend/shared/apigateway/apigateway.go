@@ -46,6 +46,7 @@ var (
 		models.ErrInvalidSavingAmount:       {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidSavingAmount.Error()},
 		models.ErrSavingNotFound:            {HTTPCode: http.StatusNotFound, Message: models.ErrSavingNotFound.Error()},
 		models.ErrSavingGoalNotFound:        {HTTPCode: http.StatusNotFound, Message: models.ErrSavingGoalNotFound.Error()},
+		models.ErrNoUsernameInContext:       {HTTPCode: http.StatusBadRequest, Message: models.ErrNoUsernameInContext.Error()},
 	}
 )
 
@@ -140,4 +141,13 @@ func paramsToString(params map[string]string) string {
 	}
 
 	return sb.String()
+}
+
+func GetUsernameFromContext(req *Request) (string, error) {
+	username, ok := req.RequestContext.Authorizer["username"].(string)
+	if !ok {
+		return "", models.ErrNoUsernameInContext
+	}
+
+	return username, nil
 }

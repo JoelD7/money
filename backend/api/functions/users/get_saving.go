@@ -63,7 +63,7 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 		return apigateway.NewErrorResponse(errMissingSavingID), nil
 	}
 
-	username, err := getUsernameFromContext(req)
+	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
