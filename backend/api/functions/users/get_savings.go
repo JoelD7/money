@@ -78,6 +78,17 @@ func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error 
 		return err
 	}
 
+	err = validateEmail(request.username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{
+			request.log.MapToLoggerObject("user_data", map[string]interface{}{
+				"s_username": request.username,
+			}),
+		})
+
+		return err
+	}
+
 	request.startKey, request.pageSize, err = getRequestParams(req)
 	if err != nil {
 		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})

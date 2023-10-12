@@ -55,6 +55,13 @@ func (request *getCategoriesRequest) process(ctx context.Context, req *apigatewa
 		return apigateway.NewErrorResponse(err), nil
 	}
 
+	err = validateEmail(username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
 	getCategories := usecases.NewCategoriesGetter(request.userRepo)
 
 	categories, err := getCategories(ctx, username)

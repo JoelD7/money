@@ -33,17 +33,6 @@ type SavingGoalManager interface {
 
 func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 	return func(ctx context.Context, username, savingID string) (*models.Saving, error) {
-		err := validateEmail(username)
-		if err != nil {
-			l.Error("invalid_email_detected", err, []models.LoggerObject{
-				l.MapToLoggerObject("user_data", map[string]interface{}{
-					"s_username": username,
-				}),
-			})
-
-			return nil, err
-		}
-
 		saving, err := sm.GetSaving(ctx, username, savingID)
 		if err != nil {
 			return nil, err
@@ -60,18 +49,7 @@ func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ct
 
 func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
-		err := validateEmail(username)
-		if err != nil {
-			l.Error("invalid_email_detected", err, []models.LoggerObject{
-				l.MapToLoggerObject("user_data", map[string]interface{}{
-					"s_username": username,
-				}),
-			})
-
-			return nil, "", err
-		}
-
-		if err = validatePageSize(pageSize); err != nil {
+		if err := validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
 				l.MapToLoggerObject("user_data", map[string]interface{}{
 					"s_username":  username,
@@ -98,18 +76,7 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(c
 
 func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
-		err := validateEmail(username)
-		if err != nil {
-			l.Error("invalid_email_detected", err, []models.LoggerObject{
-				l.MapToLoggerObject("user_data", map[string]interface{}{
-					"s_username": username,
-				}),
-			})
-
-			return nil, "", err
-		}
-
-		if err = validatePageSize(pageSize); err != nil {
+		if err := validatePageSize(pageSize); err != nil {
 			l.Error("invalid_page_size_detected", err, []models.LoggerObject{
 				l.MapToLoggerObject("user_data", map[string]interface{}{
 					"s_username":  username,
@@ -239,16 +206,11 @@ func validatePageSize(pageSize int) error {
 
 func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, username string) error {
 	return func(ctx context.Context, savingID, username string) error {
-		err := validateEmail(username)
-		if err != nil {
-			return err
-		}
-
 		if savingID == "" {
 			return models.ErrMissingSavingID
 		}
 
-		err = sm.DeleteSaving(ctx, savingID, username)
+		err := sm.DeleteSaving(ctx, savingID, username)
 		if err != nil {
 			return err
 		}

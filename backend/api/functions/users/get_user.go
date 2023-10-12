@@ -61,6 +61,13 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 		return apigateway.NewErrorResponse(err), nil
 	}
 
+	err = validateEmail(username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)
 
 	user, err := getUser(ctx, username)

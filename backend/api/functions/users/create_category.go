@@ -65,6 +65,13 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 		return apigateway.NewErrorResponse(err), nil
 	}
 
+	err = validateEmail(username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
 	createCategory := usecases.NewCategoryCreator(request.userRepo)
 
 	err = createCategory(ctx, username, category)

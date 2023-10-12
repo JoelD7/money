@@ -69,6 +69,17 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 		return apigateway.NewErrorResponse(err), nil
 	}
 
+	err = validateEmail(username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{
+			request.log.MapToLoggerObject("user_data", map[string]interface{}{
+				"s_username": username,
+			}),
+		})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
 	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.savingGoalRepo, request.log)
 
 	saving, err := getSaving(ctx, username, savingID)

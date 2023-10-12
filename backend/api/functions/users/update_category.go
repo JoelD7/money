@@ -78,6 +78,13 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		return apigateway.NewErrorResponse(err), nil
 	}
 
+	err = validateEmail(username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
 	updateCategory := usecases.NewCategoryUpdater(request.userRepo)
 
 	err = updateCategory(ctx, username, categoryID, requestCategory)

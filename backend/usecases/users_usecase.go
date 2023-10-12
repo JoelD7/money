@@ -26,7 +26,9 @@ type IncomeGetter interface {
 }
 
 type ExpenseGetter interface {
-	GetExpensesByPeriod(ctx context.Context, username string, periodID string) ([]*models.Expense, error)
+	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
+	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
+	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 }
 
 type IDGenerator interface {
@@ -35,10 +37,6 @@ type IDGenerator interface {
 
 func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
-		err := validateEmail(username)
-		if err != nil {
-			return nil, fmt.Errorf("invalid email detected: %v", err)
-		}
 
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
@@ -49,7 +47,8 @@ func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx cont
 			return user, nil
 		}
 
-		userExpenses, err := e.GetExpensesByPeriod(ctx, user.Username, user.CurrentPeriod)
+		//TODO: handle when user has more expenses than 10
+		userExpenses, _, err := e.GetExpensesByPeriod(ctx, user.Username, user.CurrentPeriod, "", 10)
 		if err != nil {
 			return user, fmt.Errorf("the remainder for the user's current period couldn't be calculated: %w", err)
 		}
@@ -78,11 +77,6 @@ func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseGetter) func(ctx cont
 
 func NewCategoryCreator(u UserManager) func(ctx context.Context, username string, category *models.Category) error {
 	return func(ctx context.Context, username string, category *models.Category) error {
-		err := validateEmail(username)
-		if err != nil {
-			return fmt.Errorf("invalid email detected: %v", err)
-		}
-
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return err
@@ -111,11 +105,6 @@ func NewCategoryCreator(u UserManager) func(ctx context.Context, username string
 
 func NewCategoriesGetter(u UserManager) func(ctx context.Context, username string) ([]*models.Category, error) {
 	return func(ctx context.Context, username string) ([]*models.Category, error) {
-		err := validateEmail(username)
-		if err != nil {
-			return nil, fmt.Errorf("invalid email detected: %v", err)
-		}
-
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return nil, err
@@ -131,11 +120,6 @@ func NewCategoriesGetter(u UserManager) func(ctx context.Context, username strin
 
 func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
 	return func(ctx context.Context, username, categoryID string, newCategory *models.Category) error {
-		err := validateEmail(username)
-		if err != nil {
-			return fmt.Errorf("invalid email detected: %v", err)
-		}
-
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return err
