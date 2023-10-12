@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -91,12 +92,12 @@ func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request
 		return nil, errRequestBodyParseFailure
 	}
 
-	err = validateEmail(username)
+	err = validate.Email(username)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateAmount(saving.Amount)
+	err = validate.Amount(saving.Amount)
 	if err != nil {
 		return nil, err
 	}

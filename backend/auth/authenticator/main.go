@@ -8,11 +8,11 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
@@ -87,27 +87,13 @@ func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
 }
 
 func validateCredentials(email, password string) error {
-	err := validateEmail(email)
+	err := validate.Email(email)
 	if err != nil {
 		return err
 	}
 
 	if password == "" {
 		return models.ErrMissingPassword
-	}
-
-	return nil
-}
-
-func validateEmail(email string) error {
-	regex := regexp.MustCompile(emailRegex)
-
-	if email == "" {
-		return models.ErrMissingUsername
-	}
-
-	if !regex.MatchString(email) {
-		return models.ErrInvalidEmail
 	}
 
 	return nil

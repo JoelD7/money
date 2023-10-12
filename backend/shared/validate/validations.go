@@ -1,4 +1,4 @@
-package main
+package validate
 
 import (
 	"github.com/JoelD7/money/backend/models"

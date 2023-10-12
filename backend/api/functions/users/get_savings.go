@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
@@ -78,7 +79,7 @@ func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error 
 		return err
 	}
 
-	err = validateEmail(request.username)
+	err = validate.Email(request.username)
 	if err != nil {
 		request.log.Error("invalid_username", err, []models.LoggerObject{
 			request.log.MapToLoggerObject("user_data", map[string]interface{}{

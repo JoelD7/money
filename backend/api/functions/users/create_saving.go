@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
@@ -95,7 +96,7 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 		return nil, models.ErrMissingSavingAmount
 	}
 
-	err = validateAmount(userSaving.Amount)
+	err = validate.Amount(userSaving.Amount)
 	if err != nil {
 		return nil, models.ErrInvalidSavingAmount
 	}
