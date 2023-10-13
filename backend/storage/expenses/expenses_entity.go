@@ -18,6 +18,21 @@ type expenseEntity struct {
 	UpdateDate time.Time `json:"update_date,omitempty" dynamodbav:"update_date"`
 }
 
+func toExpenseEntity(e *models.Expense) *expenseEntity {
+	return &expenseEntity{
+		ExpenseID:  e.ExpenseID,
+		Username:   e.Username,
+		CategoryID: e.CategoryID,
+		Amount:     e.Amount,
+		Currency:   e.Currency,
+		Name:       e.Name,
+		Notes:      e.Notes,
+		Date:       e.Date,
+		Period:     e.Period,
+		UpdateDate: e.UpdateDate,
+	}
+}
+
 func toExpenseModel(e *expenseEntity) *models.Expense {
 	return &models.Expense{
 		ExpenseID:  e.ExpenseID,

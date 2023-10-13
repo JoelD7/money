@@ -29,6 +29,27 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
+func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) error {
+	entity := toExpenseEntity(expense)
+
+	item, err := attributevalue.MarshalMap(entity)
+	if err != nil {
+		return fmt.Errorf("marshal expense failed: %v", err)
+	}
+
+	input := &dynamodb.PutItemInput{
+		TableName: aws.String(tableName),
+		Item:      item,
+	}
+
+	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("put expense failed: %v", err)
+	}
+
+	return nil
+}
+
 func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
