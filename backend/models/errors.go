@@ -48,4 +48,5 @@ var (
 	ErrSavingGoalNameSettingFailed = errors.New("saving goal name not set")
 	ErrSavingGoalNotFound          = errors.New("saving goal not found")
 	ErrNoUsernameInContext         = errors.New("couldn't identify the user. Check if your Bearer token header is correct")
+	ErrCategoryNameSettingFailed   = errors.New("category name not set")
 )
