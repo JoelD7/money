@@ -30,6 +30,22 @@ func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Contex
 	}
 }
 
+func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+	return func(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+		expenses, nextKey, err := em.GetExpensesByCategory(ctx, username, startKey, categories, pageSize)
+		if err != nil {
+			return nil, "", err
+		}
+
+		err = setExpensesCategoryNames(ctx, username, um, expenses)
+		if err != nil {
+			return expenses, "", err
+		}
+
+		return expenses, nextKey, nil
+	}
+}
+
 func setExpensesCategoryNames(ctx context.Context, username string, um UserManager, expenses []*models.Expense) error {
 	user, err := um.GetUser(ctx, username)
 	if err != nil {
