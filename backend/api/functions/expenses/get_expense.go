@@ -1,4 +1,4 @@
-package expenses
+package main
 
 import (
 	"context"
