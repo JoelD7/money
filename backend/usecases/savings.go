@@ -161,7 +161,7 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 			return fmt.Errorf("user fetch failed: %w", err)
 		}
 
-		saving.SavingID = generateSavingID()
+		saving.SavingID = generateID("SV")
 		saving.Username = username
 		saving.Period = user.CurrentPeriod
 		saving.CreatedDate = time.Now()
@@ -219,7 +219,7 @@ func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, use
 	}
 }
 
-func generateSavingID() string {
+func generateID(prefix string) string {
 	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -229,7 +229,7 @@ func generateSavingID() string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 
-	return "SV" + string(b)
+	return prefix + string(b)
 }
 
 func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Saving) error {
