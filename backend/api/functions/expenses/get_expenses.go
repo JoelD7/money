@@ -172,7 +172,10 @@ func (request *getExpensesRequest) getByPeriod(ctx context.Context, req *apigate
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return nil, nil
+	return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+		Expenses: userExpenses,
+		NextKey:  nextKey,
+	}), nil
 }
 
 func (request *getExpensesRequest) getByCategoriesAndPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
