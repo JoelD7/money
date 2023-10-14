@@ -285,7 +285,7 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 
 	conditionBuilder := expression.NewBuilder().WithCondition(conditionEx)
 
-	if categories == nil || len(categories) > 0 {
+	if categories != nil || len(categories) > 0 {
 		filterCondition := buildCategoriesConditionFilter(categories)
 		conditionBuilder = conditionBuilder.WithFilter(filterCondition)
 	}
