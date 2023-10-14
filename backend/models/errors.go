@@ -50,4 +50,5 @@ var (
 	ErrNoUsernameInContext         = errors.New("couldn't identify the user. Check if your Bearer token header is correct")
 	ErrCategoryNameSettingFailed   = errors.New("category name not set")
 	ErrMissingName                 = errors.New("missing name")
+	ErrMissingExpenseID            = errors.New("missing expense id")
 )

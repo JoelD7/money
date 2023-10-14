@@ -28,6 +28,7 @@ func main() {
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/expenses", func(r *router.Router) {
 			r.Get("/{expenseID}", getExpenseHandler)
+			r.Put("/{expenseID}", updateExpenseHandler)
 			r.Get("/", getExpensesHandler)
 			r.Post("/", createExpenseHandler)
 		})

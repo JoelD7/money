@@ -36,9 +36,10 @@ func NewExpenseCreator(em ExpenseManager, um UserManager) func(ctx context.Conte
 	}
 }
 
-func NewExpenseUpdater(em ExpenseManager) func(ctx context.Context, username string, expense *models.Expense) error {
-	return func(ctx context.Context, username string, expense *models.Expense) error {
+func NewExpenseUpdater(em ExpenseManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) error {
+	return func(ctx context.Context, expenseID, username string, expense *models.Expense) error {
 		expense.Username = username
+		expense.ExpenseID = expenseID
 
 		err := em.UpdateExpense(ctx, expense)
 		if err != nil {
@@ -142,7 +143,7 @@ func setExpensesCategoryNames(ctx context.Context, username string, um UserManag
 	}
 
 	for _, expense := range expenses {
-		expense.CategoryName = categoryNamesByID[expense.CategoryID]
+		expense.CategoryName = categoryNamesByID[*expense.CategoryID]
 	}
 
 	return nil

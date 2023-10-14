@@ -128,7 +128,7 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 		return nil, err
 	}
 
-	if expense.CategoryID != "" {
+	if expense.CategoryID != nil {
 		attrValues[":category_id"] = categoryID
 	}
 

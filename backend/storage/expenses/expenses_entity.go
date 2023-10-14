@@ -8,7 +8,7 @@ import (
 type expenseEntity struct {
 	ExpenseID   string    `json:"expense_id" dynamodbav:"expense_id"`
 	Username    string    `json:"username,omitempty" dynamodbav:"username"`
-	CategoryID  string    `json:"category_id,omitempty" dynamodbav:"category_id"`
+	CategoryID  *string   `json:"category_id,omitempty" dynamodbav:"category_id"`
 	Amount      float64   `json:"amount" dynamodbav:"amount"`
 	Name        string    `json:"name,omitempty" dynamodbav:"name"`
 	Notes       string    `json:"notes,omitempty" dynamodbav:"notes"`

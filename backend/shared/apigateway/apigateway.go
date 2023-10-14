@@ -48,6 +48,7 @@ var (
 		models.ErrSavingGoalNotFound:        {HTTPCode: http.StatusNotFound, Message: models.ErrSavingGoalNotFound.Error()},
 		models.ErrNoUsernameInContext:       {HTTPCode: http.StatusBadRequest, Message: models.ErrNoUsernameInContext.Error()},
 		models.ErrMissingName:               {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingName.Error()},
+		models.ErrMissingExpenseID:          {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingExpenseID.Error()},
 	}
 )
 
