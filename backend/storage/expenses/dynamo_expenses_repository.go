@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"strings"
 	"time"
 )
 
@@ -51,6 +52,126 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 	}
 
 	return nil
+}
+
+func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
+	entity := toExpenseEntity(expense)
+
+	entity.UpdateDate = time.Now()
+
+	username, err := attributevalue.Marshal(entity.Username)
+	if err != nil {
+		return fmt.Errorf("marshaling username key: %v", err)
+	}
+
+	expenseID, err := attributevalue.Marshal(entity.ExpenseID)
+	if err != nil {
+		return fmt.Errorf("marshaling expense id key: %v", err)
+	}
+
+	attributeValues, err := getAttributeValues(entity)
+	if err != nil {
+		return fmt.Errorf("get attribute values failed: %v", err)
+	}
+
+	updateExpression := getUpdateExpression(attributeValues)
+
+	input := &dynamodb.UpdateItemInput{
+		Key: map[string]types.AttributeValue{
+			"username":   username,
+			"expense_id": expenseID,
+		},
+		TableName:                 aws.String(tableName),
+		ConditionExpression:       aws.String("attribute_exists(expense_id)"),
+		ExpressionAttributeValues: attributeValues,
+		UpdateExpression:          updateExpression,
+	}
+
+	_, err = d.dynamoClient.UpdateItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return fmt.Errorf("%v: %w", err, models.ErrExpensesNotFound)
+	}
+
+	if err != nil {
+		return fmt.Errorf("put expense failed: %v", err)
+	}
+
+	return nil
+}
+
+func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue, error) {
+	attrValues := make(map[string]types.AttributeValue)
+
+	categoryID, err := attributevalue.Marshal(expense.CategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	amount, err := attributevalue.Marshal(expense.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	name, err := attributevalue.Marshal(expense.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	notes, err := attributevalue.Marshal(expense.Notes)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedDate, err := attributevalue.Marshal(time.Now())
+	if err != nil {
+		return nil, err
+	}
+
+	if expense.CategoryID != "" {
+		attrValues[":category_id"] = categoryID
+	}
+
+	if expense.Amount != 0 {
+		attrValues[":amount"] = amount
+	}
+
+	if expense.Name != "" {
+		attrValues[":name"] = name
+	}
+
+	if expense.Notes != "" {
+		attrValues[":notes"] = notes
+	}
+
+	attrValues[":update_date"] = updatedDate
+
+	return attrValues, nil
+}
+
+func getUpdateExpression(attributeValues map[string]types.AttributeValue) *string {
+	attributes := make([]string, 0)
+
+	if _, ok := attributeValues[":category_id"]; ok {
+		attributes = append(attributes, "category_id = :category_id")
+	}
+
+	if _, ok := attributeValues[":amount"]; ok {
+		attributes = append(attributes, "amount = :amount")
+	}
+
+	if _, ok := attributeValues[":name"]; ok {
+		attributes = append(attributes, "name = :name")
+	}
+
+	if _, ok := attributeValues[":notes"]; ok {
+		attributes = append(attributes, "notes = :notes")
+	}
+
+	if _, ok := attributeValues[":update_date"]; ok {
+		attributes = append(attributes, "update_date = :update_date")
+	}
+
+	return aws.String("SET " + strings.Join(attributes, ", "))
 }
 
 func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
