@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"math"
-	"math/rand"
 	"time"
 )
 
@@ -161,7 +160,7 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 			return fmt.Errorf("user fetch failed: %w", err)
 		}
 
-		saving.SavingID = generateID("SV")
+		saving.SavingID = generateDynamoID("SV")
 		saving.Username = username
 		saving.Period = user.CurrentPeriod
 		saving.CreatedDate = time.Now()
@@ -217,19 +216,6 @@ func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, use
 
 		return nil
 	}
-}
-
-func generateID(prefix string) string {
-	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	seededRand := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	b := make([]byte, 20)
-	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
-	}
-
-	return prefix + string(b)
 }
 
 func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Saving) error {
