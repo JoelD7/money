@@ -8,7 +8,7 @@ import (
 type Repository interface {
 	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
-	GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error)
+	GetSavingsByPeriod(ctx context.Context, startKey, periodUser string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
