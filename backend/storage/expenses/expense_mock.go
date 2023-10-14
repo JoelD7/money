@@ -18,18 +18,6 @@ func NewDynamoMock() *DynamoMock {
 	}
 }
 
-func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error) {
-	if d.mockedErr != nil {
-		return nil, d.mockedErr
-	}
-
-	if d.mockedExpenses == nil {
-		return nil, models.ErrExpensesNotFound
-	}
-
-	return d.mockedExpenses, nil
-}
-
 // ActivateForceFailure makes any of the Dynamo operations fail with the specified error.
 // This invocation should always be followed by a deferred call to DeactivateForceFailure so that no other tests are
 // affected by this behavior.
@@ -44,6 +32,82 @@ func (d *DynamoMock) DeactivateForceFailure() {
 
 func (d *DynamoMock) SetMockedExpenses(expenses []*models.Expense) {
 	d.mockedExpenses = expenses
+}
+
+func (d *DynamoMock) CreateExpense(ctx context.Context, expense *models.Expense) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
+	}
+
+	return nil
+}
+
+func (d *DynamoMock) UpdateExpense(ctx context.Context, expense *models.Expense) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
+	}
+
+	return nil
+}
+
+func (d *DynamoMock) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
+	if d.mockedErr != nil {
+		return nil, "", d.mockedErr
+	}
+
+	if d.mockedExpenses == nil {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
+	return d.mockedExpenses, "", nil
+}
+
+func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
+	if d.mockedErr != nil {
+		return nil, "", d.mockedErr
+	}
+
+	if d.mockedExpenses == nil {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
+	return d.mockedExpenses, "", nil
+}
+
+func (d *DynamoMock) GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+	if d.mockedErr != nil {
+		return nil, "", d.mockedErr
+	}
+
+	if d.mockedExpenses == nil {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
+	return d.mockedExpenses, "", nil
+}
+
+func (d *DynamoMock) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+	if d.mockedErr != nil {
+		return nil, "", d.mockedErr
+	}
+
+	if d.mockedExpenses == nil {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
+	return d.mockedExpenses, "", nil
+}
+
+func (d *DynamoMock) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
+	if d.mockedErr != nil {
+		return nil, d.mockedErr
+	}
+
+	if d.mockedExpenses == nil {
+		return nil, models.ErrExpenseNotFound
+	}
+
+	return d.mockedExpenses[0], nil
 }
 
 func GetDummyExpenses() []*models.Expense {
