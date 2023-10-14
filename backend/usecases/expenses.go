@@ -8,6 +8,7 @@ import (
 
 type ExpenseManager interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) error
+	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
@@ -27,6 +28,19 @@ func NewExpenseCreator(em ExpenseManager, um UserManager) func(ctx context.Conte
 		expense.Period = user.CurrentPeriod
 
 		err = em.CreateExpense(ctx, expense)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
+func NewExpenseUpdater(em ExpenseManager) func(ctx context.Context, username string, expense *models.Expense) error {
+	return func(ctx context.Context, username string, expense *models.Expense) error {
+		expense.Username = username
+
+		err := em.UpdateExpense(ctx, expense)
 		if err != nil {
 			return err
 		}
