@@ -146,11 +146,15 @@ func setExpensesCategoryNames(ctx context.Context, username string, um UserManag
 	categoryNamesByID := make(map[string]string)
 
 	for _, category := range user.Categories {
-		categoryNamesByID[category.ID] = *category.Name
+		if category.Name != nil {
+			categoryNamesByID[category.ID] = *category.Name
+		}
 	}
 
 	for _, expense := range expenses {
-		expense.CategoryName = categoryNamesByID[*expense.CategoryID]
+		if expense.CategoryID != nil {
+			expense.CategoryName = categoryNamesByID[*expense.CategoryID]
+		}
 	}
 
 	return nil

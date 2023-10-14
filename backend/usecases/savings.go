@@ -246,7 +246,7 @@ func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username str
 	}
 
 	for _, saving := range savings {
-		if *saving.SavingGoalID == savingGoalIDNone {
+		if ignoreSaving(saving) {
 			continue
 		}
 
@@ -259,6 +259,10 @@ func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username str
 	}
 
 	return nil
+}
+
+func ignoreSaving(s *models.Saving) bool {
+	return (s.SavingGoalID != nil && *s.SavingGoalID == savingGoalIDNone) || s.SavingGoalID == nil
 }
 
 func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager, username, savingGoalID string, savings []*models.Saving) error {
