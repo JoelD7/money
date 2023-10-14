@@ -117,7 +117,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, periodUser string, pageSize int) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, username, period string, pageSize int) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 
@@ -127,6 +127,8 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, per
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
+
+	periodUser := buildPeriodUser(username, period)
 
 	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
@@ -278,6 +280,8 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
 	savingEnt := toSavingEntity(saving)
 
+	savingEnt.PeriodUser = buildPeriodUser(savingEnt.Username, savingEnt.Period)
+
 	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
 		return err
@@ -426,4 +430,8 @@ func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, username 
 	}
 
 	return nil
+}
+
+func buildPeriodUser(username, period string) string {
+	return fmt.Sprintf("%s:%s", period, username)
 }

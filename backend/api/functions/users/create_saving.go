@@ -93,7 +93,7 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 	}
 
 	if userSaving.Amount != nil && *userSaving.Amount == 0 {
-		return nil, models.ErrMissingSavingAmount
+		return nil, models.ErrMissingAmount
 	}
 
 	err = validate.Amount(userSaving.Amount)

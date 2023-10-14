@@ -17,7 +17,7 @@ var (
 type SavingsManager interface {
 	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
-	GetSavingsByPeriod(ctx context.Context, startKey, periodUser string, pageSize int) ([]*models.Saving, string, error)
+	GetSavingsByPeriod(ctx context.Context, startKey, username, period string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) error
@@ -86,9 +86,7 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger)
 			return nil, "", err
 		}
 
-		periodUser := buildPeriodUser(username, period)
-
-		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, startKey, periodUser, pageSize)
+		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, startKey, username, period, pageSize)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
@@ -164,7 +162,6 @@ func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context
 		saving.SavingID = generateDynamoID("SV")
 		saving.Username = username
 		saving.Period = user.CurrentPeriod
-		saving.PeriodUser = buildPeriodUser(username, user.CurrentPeriod)
 		saving.CreatedDate = time.Now()
 
 		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
@@ -275,8 +272,4 @@ func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager,
 	}
 
 	return nil
-}
-
-func buildPeriodUser(username, period string) string {
-	return fmt.Sprintf("%s:%s", period, username)
 }
