@@ -110,12 +110,20 @@ func (d *DynamoMock) GetExpense(ctx context.Context, username, expenseID string)
 	return d.mockedExpenses[0], nil
 }
 
+func (d *DynamoMock) DeleteExpense(ctx context.Context, expenseID, username string) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
+	}
+
+	return nil
+}
+
 func GetDummyExpenses() []*models.Expense {
 	return []*models.Expense{
 		{
 			ExpenseID:   "EXP123",
 			Username:    "test@mail.com",
-			CategoryID:  "",
+			CategoryID:  getStringPtr(""),
 			Amount:      getFloat64Ptr(893),
 			Name:        getStringPtr("Jordan shopping"),
 			Notes:       "",
@@ -126,7 +134,7 @@ func GetDummyExpenses() []*models.Expense {
 		{
 			ExpenseID:   "EXP456",
 			Username:    "test@mail.com",
-			CategoryID:  "",
+			CategoryID:  getStringPtr(""),
 			Amount:      getFloat64Ptr(112),
 			Name:        getStringPtr("Uber drive"),
 			Notes:       "",
@@ -137,7 +145,7 @@ func GetDummyExpenses() []*models.Expense {
 		{
 			ExpenseID:   "EXP789",
 			Username:    "test@mail.com",
-			CategoryID:  "",
+			CategoryID:  getStringPtr(""),
 			Amount:      getFloat64Ptr(525),
 			Name:        getStringPtr("Lunch"),
 			Notes:       "",

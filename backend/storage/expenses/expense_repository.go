@@ -20,4 +20,5 @@ type Repository interface {
 	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
+	DeleteExpense(ctx context.Context, expenseID, username string) error
 }

@@ -239,6 +239,23 @@ func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, 
 	return d.performQuery(ctx, input)
 }
 
+func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, username string) error {
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"username":   &types.AttributeValueMemberS{Value: username},
+			"expense_id": &types.AttributeValueMemberS{Value: expenseID},
+		},
+	}
+
+	_, err := d.dynamoClient.DeleteItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("delete expense failed: %v", err)
+	}
+
+	return nil
+}
+
 func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
 	conditionEx := expression.Name("username").Equal(expression.Value(username))
 
