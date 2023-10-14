@@ -57,6 +57,11 @@ func getExpensesHandler(ctx context.Context, req *apigateway.Request) (*apigatew
 	request.init()
 	defer request.finish()
 
+	err := request.prepareRequest(req)
+	if err != nil {
+		return apigateway.NewErrorResponse(err), nil
+	}
+
 	return request.routeToHandlers(ctx, req)
 }
 
