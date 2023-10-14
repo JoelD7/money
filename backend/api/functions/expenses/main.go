@@ -29,6 +29,7 @@ func main() {
 		r.Route("/expenses", func(r *router.Router) {
 			r.Get("/{expenseID}", getExpenseHandler)
 			r.Get("/", getExpensesHandler)
+			r.Post("/", createExpenseHandler)
 		})
 	})
 

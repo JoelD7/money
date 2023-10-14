@@ -15,6 +15,26 @@ type ExpenseManager interface {
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
 }
 
+func NewExpenseCreator(em ExpenseManager, um UserManager) func(ctx context.Context, username string, expense *models.Expense) error {
+	return func(ctx context.Context, username string, expense *models.Expense) error {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return err
+		}
+
+		expense.ExpenseID = generateDynamoID("EX")
+		expense.Username = username
+		expense.Period = user.CurrentPeriod
+
+		err = em.CreateExpense(ctx, expense)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
 func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 	return func(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 		expense, err := em.GetExpense(ctx, username, expenseID)

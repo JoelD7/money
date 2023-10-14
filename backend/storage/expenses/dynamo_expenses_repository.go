@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"time"
 )
 
 const (
@@ -31,6 +32,8 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) error {
 	entity := toExpenseEntity(expense)
+
+	entity.CreatedDate = time.Now()
 
 	item, err := attributevalue.MarshalMap(entity)
 	if err != nil {
