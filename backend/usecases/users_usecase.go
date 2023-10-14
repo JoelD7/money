@@ -55,7 +55,7 @@ func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseManager) func(ctx con
 		totalExpense := 0.0
 
 		for _, expense := range userExpenses {
-			totalExpense += expense.Amount
+			totalExpense += *expense.Amount
 		}
 
 		totalIncome := 0.0

@@ -35,6 +35,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 	entity := toExpenseEntity(expense)
 
 	entity.CreatedDate = time.Now()
+	entity.PeriodUser = buildPeriodUser(entity.Username, entity.Period)
 
 	item, err := attributevalue.MarshalMap(entity)
 	if err != nil {
