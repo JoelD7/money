@@ -257,7 +257,7 @@ func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, usernam
 }
 
 func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
-	conditionEx := expression.Name("username").Equal(expression.Value(username))
+	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
 
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
@@ -280,10 +280,10 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 		input.IndexName = aws.String(periodUserExpenseIDIndex)
 
 		periodUser := buildPeriodUser(username, periodID)
-		conditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
+		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
 	}
 
-	conditionBuilder := expression.NewBuilder().WithCondition(conditionEx)
+	conditionBuilder := expression.NewBuilder().WithCondition(keyConditionEx)
 
 	if categories != nil || len(categories) > 0 {
 		filterCondition := buildCategoriesConditionFilter(categories)
@@ -298,6 +298,7 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 	input.ExpressionAttributeNames = expr.Names()
 	input.ExpressionAttributeValues = expr.Values()
 	input.KeyConditionExpression = expr.Condition()
+	input.FilterExpression = expr.Filter()
 
 	return input, nil
 }
