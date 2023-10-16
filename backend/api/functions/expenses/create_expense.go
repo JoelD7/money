@@ -68,16 +68,14 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.userRepo)
 
-	err = createExpense(ctx, username, expense)
+	newExpense, err := createExpense(ctx, username, expense)
 	if err != nil {
 		request.log.Error("create_expense_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusCreated,
-	}, nil
+	return apigateway.NewJSONResponse(http.StatusCreated, newExpense), nil
 }
 
 func validateInput(req *apigateway.Request, username string) (*models.Expense, error) {

@@ -7,7 +7,7 @@ import (
 )
 
 type ExpenseManager interface {
-	CreateExpense(ctx context.Context, expense *models.Expense) error
+	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
@@ -17,23 +17,23 @@ type ExpenseManager interface {
 	DeleteExpense(ctx context.Context, expenseID, username string) error
 }
 
-func NewExpenseCreator(em ExpenseManager, um UserManager) func(ctx context.Context, username string, expense *models.Expense) error {
-	return func(ctx context.Context, username string, expense *models.Expense) error {
+func NewExpenseCreator(em ExpenseManager, um UserManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
+	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		expense.ExpenseID = generateDynamoID("EX")
 		expense.Username = username
 		expense.Period = user.CurrentPeriod
 
-		err = em.CreateExpense(ctx, expense)
+		newExpense, err := em.CreateExpense(ctx, expense)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return nil
+		return newExpense, nil
 	}
 }
 

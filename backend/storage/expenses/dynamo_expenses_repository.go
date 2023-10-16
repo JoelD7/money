@@ -31,7 +31,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) error {
+func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error) {
 	entity := toExpenseEntity(expense)
 
 	entity.CreatedDate = time.Now()
@@ -39,7 +39,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 
 	item, err := attributevalue.MarshalMap(entity)
 	if err != nil {
-		return fmt.Errorf("marshal expense failed: %v", err)
+		return nil, fmt.Errorf("marshal expense failed: %v", err)
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -49,10 +49,10 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("put expense failed: %v", err)
+		return nil, fmt.Errorf("put expense failed: %v", err)
 	}
 
-	return nil
+	return toExpenseModel(entity), nil
 }
 
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {

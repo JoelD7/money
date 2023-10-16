@@ -34,12 +34,12 @@ func (d *DynamoMock) SetMockedExpenses(expenses []*models.Expense) {
 	d.mockedExpenses = expenses
 }
 
-func (d *DynamoMock) CreateExpense(ctx context.Context, expense *models.Expense) error {
+func (d *DynamoMock) CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error) {
 	if d.mockedErr != nil {
-		return d.mockedErr
+		return nil, d.mockedErr
 	}
 
-	return nil
+	return expense, nil
 }
 
 func (d *DynamoMock) UpdateExpense(ctx context.Context, expense *models.Expense) error {
