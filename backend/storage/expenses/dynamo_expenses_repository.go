@@ -304,6 +304,10 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 }
 
 func buildCategoriesConditionFilter(categories []string) expression.ConditionBuilder {
+	if categories[0] == "" {
+		return expression.Name("category_id").AttributeNotExists()
+	}
+
 	conditions := make([]expression.ConditionBuilder, 0, len(categories))
 
 	for _, categoryID := range categories {
