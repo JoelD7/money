@@ -45,6 +45,20 @@ func TestGetExpensesSuccess(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusOK, response.StatusCode)
 	})
+
+	t.Run("Query by category", func(t *testing.T) {
+		apigwRequest.MultiValueQueryStringParameters = map[string][]string{
+			"category": {"CTGiBScOP3V16LYBjdIStP9"},
+		}
+		defer func() { apigwRequest = getGetExpensesRequest() }()
+
+		err := request.prepareRequest(apigwRequest)
+		c.NoError(err)
+
+		response, err := request.routeToHandlers(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(http.StatusOK, response.StatusCode)
+	})
 }
 
 func getGetExpensesRequest() *apigateway.Request {
