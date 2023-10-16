@@ -9,8 +9,8 @@ import (
 )
 
 type keys struct {
-	SavingID string `json:"saving_id" dynamodbav:"saving_id"`
-	Username string `json:"username" dynamodbav:"username"`
+	ExpenseID string `json:"expense_id" dynamodbav:"expense_id"`
+	Username  string `json:"username" dynamodbav:"username"`
 }
 
 func encodeLastKey(lastKey map[string]types.AttributeValue) (string, error) {

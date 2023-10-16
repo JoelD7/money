@@ -2,6 +2,7 @@ package expenses
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -263,11 +264,15 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 	var err error
 
 	if startKey != "" {
+		fmt.Println("Decoding start key...")
 		decodedStartKey, err = decodeStartKey(startKey)
 		if err != nil {
 			return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
+
+	b, _ := json.Marshal(decodedStartKey)
+	fmt.Println(string(b))
 
 	input := &dynamodb.QueryInput{
 		TableName:         aws.String(tableName),
