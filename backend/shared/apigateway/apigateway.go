@@ -121,14 +121,15 @@ func (req *Request) LogProperties() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"s_query_parameters": paramsToString(req.QueryStringParameters),
-		"s_path_parameters":  paramsToString(req.PathParameters),
-		"o_authorizer":       authorizer,
-		"s_user_agent":       req.Headers["User-Agent"],
-		"s_content_type":     req.Headers["Content-Type"],
-		"s_method":           req.HTTPMethod,
-		"s_path":             req.Path,
-		"s_body":             req.Body,
+		"s_query_parameters":             paramsToString(req.QueryStringParameters),
+		"s_multi_value_query_parameters": multiValueParamsToString(req.MultiValueQueryStringParameters),
+		"s_path_parameters":              paramsToString(req.PathParameters),
+		"o_authorizer":                   authorizer,
+		"s_user_agent":                   req.Headers["User-Agent"],
+		"s_content_type":                 req.Headers["Content-Type"],
+		"s_method":                       req.HTTPMethod,
+		"s_path":                         req.Path,
+		"s_body":                         req.Body,
 	}
 }
 
@@ -139,6 +140,19 @@ func paramsToString(params map[string]string) string {
 		sb.WriteString(param)
 		sb.WriteString("=")
 		sb.WriteString(value)
+		sb.WriteString(" ")
+	}
+
+	return sb.String()
+}
+
+func multiValueParamsToString(params map[string][]string) string {
+	var sb strings.Builder
+
+	for param, values := range params {
+		sb.WriteString(param)
+		sb.WriteString("=")
+		sb.WriteString(strings.Join(values, ","))
 		sb.WriteString(" ")
 	}
 
