@@ -2,7 +2,6 @@ package expenses
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -271,9 +270,6 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 		}
 	}
 
-	b, _ := json.Marshal(decodedStartKey)
-	fmt.Println(string(b))
-
 	input := &dynamodb.QueryInput{
 		TableName:         aws.String(tableName),
 		ExclusiveStartKey: decodedStartKey,
@@ -331,6 +327,12 @@ func buildCategoriesConditionFilter(categories []string) expression.ConditionBui
 }
 
 func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
+	// If the query has a filter expression it may not include all the items one intends to fetch.
+	// See more details here: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.FilterExpression.html
+	if input.FilterExpression != nil {
+		//return d.performQueryWithFilter(ctx, input)
+	}
+
 	result, err := d.dynamoClient.Query(ctx, input)
 	if err != nil {
 		return nil, "", fmt.Errorf("query failed: %v", err)
@@ -353,6 +355,65 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 	}
 
 	return toExpenseModels(*expensesEntities), nextKey, nil
+}
+
+func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
+	retrievedItems := 0
+	expensesEntities := make([]*expenseEntity, 0)
+	tmp := make([]*expenseEntity, 0)
+	var result *dynamodb.QueryOutput
+	var err error
+
+	for {
+		result, err = d.dynamoClient.Query(ctx, input)
+		if err != nil {
+			return nil, "", fmt.Errorf("query failed: %v", err)
+		}
+
+		if (result.Items == nil || len(result.Items) == 0) && result.LastEvaluatedKey == nil {
+			return nil, "", models.ErrExpensesNotFound
+		}
+
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+
+		if result.Items == nil || len(result.Items) == 0 {
+			continue
+		}
+
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &tmp)
+		if err != nil {
+			return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
+		}
+
+		retrievedItems += len(result.Items)
+		//limit = 5
+		//1. 2 items
+		//2. 5 items
+		//5-2 = 3 ✅
+
+		//1. 3 items
+		//2. 7 items
+		//5-3 = 2 ✅
+
+		//1. 0 items
+		//2. 3 items
+		//3. 4 items
+		//5-3 = 2 ✅
+
+		if result.LastEvaluatedKey == nil || retrievedItems >= int(*input.Limit) {
+			expensesEntities = append(expensesEntities, tmp[0:int(*input.Limit)-len(expensesEntities)]...)
+			break
+		}
+
+		expensesEntities = append(expensesEntities, tmp...)
+	}
+
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return toExpenseModels(expensesEntities), nextKey, nil
 }
 
 func getPageSize(pageSize int) *int32 {
