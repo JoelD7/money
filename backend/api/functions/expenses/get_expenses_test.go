@@ -65,7 +65,9 @@ func getGetExpensesRequest() *apigateway.Request {
 	return &apigateway.Request{
 		QueryStringParameters: map[string]string{
 			"category": "test",
-			"period":   "2023-7",
+			//"period":    "2023-7",
+			"page_size": "20",
+			//"start_key": "eyJleHBlbnNlX2lkIjoiRVhzOUFoV0ljQ3ZLN3oxcmFtWjQzayIsInVzZXJuYW1lIjoidGVzdEBnbWFpbC5jb20ifQ==",
 		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{

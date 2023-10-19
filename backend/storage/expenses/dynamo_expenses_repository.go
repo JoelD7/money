@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"math"
 	"strings"
 	"time"
 )
@@ -21,6 +22,7 @@ const (
 var (
 	tableName                = env.GetString("EXPENSES_TABLE_NAME", "expenses")
 	periodUserExpenseIDIndex = "period_user-expense_id-index"
+	categoryPeriodUserIndex  = "category_id-period_user-expense_id-index"
 )
 
 type DynamoRepository struct {
@@ -263,7 +265,6 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 	var err error
 
 	if startKey != "" {
-		fmt.Println("Decoding start key...")
 		decodedStartKey, err = decodeStartKey(startKey)
 		if err != nil {
 			return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
@@ -360,7 +361,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
 	retrievedItems := 0
 	expensesEntities := make([]*expenseEntity, 0)
-	tmp := make([]*expenseEntity, 0)
+	itemsInQuery := make([]*expenseEntity, 0)
 	var result *dynamodb.QueryOutput
 	var err error
 
@@ -370,50 +371,96 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 			return nil, "", fmt.Errorf("query failed: %v", err)
 		}
 
-		if (result.Items == nil || len(result.Items) == 0) && result.LastEvaluatedKey == nil {
-			return nil, "", models.ErrExpensesNotFound
+		if result.Items == nil || len(result.Items) == 0 {
+			break
 		}
 
 		input.ExclusiveStartKey = result.LastEvaluatedKey
 
-		if result.Items == nil || len(result.Items) == 0 {
-			continue
-		}
-
-		err = attributevalue.UnmarshalListOfMaps(result.Items, &tmp)
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &itemsInQuery)
 		if err != nil {
 			return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
 		}
 
 		retrievedItems += len(result.Items)
-		//limit = 5
-		//1. 2 items
-		//2. 5 items
-		//5-2 = 3 ✅
 
-		//1. 3 items
-		//2. 7 items
-		//5-3 = 2 ✅
+		if retrievedItems >= int(*input.Limit) {
+			copyUpto := getCopyUpto(itemsInQuery, expensesEntities, input)
 
-		//1. 0 items
-		//2. 3 items
-		//3. 4 items
-		//5-3 = 2 ✅
+			expensesEntities = append(expensesEntities, itemsInQuery[0:copyUpto]...)
+			fmt.Printf("-debug\nFirst item in query: %s\nLast item in query: %s\nLast evaluated item: %s\n", itemsInQuery[0].ExpenseID, itemsInQuery[len(itemsInQuery)-1].ExpenseID, expensesEntities[len(expensesEntities)-1].ExpenseID)
 
-		if result.LastEvaluatedKey == nil || retrievedItems >= int(*input.Limit) {
-			expensesEntities = append(expensesEntities, tmp[0:int(*input.Limit)-len(expensesEntities)]...)
+			input.ExclusiveStartKey, err = getAttributeValuePK(expensesEntities[len(expensesEntities)-1], input)
+			if err != nil {
+				return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
+			}
+
+			nextKey, err := encodeLastKey(input.ExclusiveStartKey)
+			if err != nil {
+				return nil, "", err
+			}
+
+			if len(expensesEntities) == 0 {
+				return nil, "", models.ErrExpensesNotFound
+			}
+
+			return toExpenseModels(expensesEntities), nextKey, nil
+		}
+
+		expensesEntities = append(expensesEntities, itemsInQuery...)
+
+		if result.LastEvaluatedKey == nil {
 			break
 		}
 
-		expensesEntities = append(expensesEntities, tmp...)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(input.ExclusiveStartKey)
 	if err != nil {
 		return nil, "", err
 	}
 
+	if len(expensesEntities) == 0 {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
 	return toExpenseModels(expensesEntities), nextKey, nil
+}
+
+// getCopyUpto returns the index up to which we can copy the tmp slice to the expensesEntities slice.
+func getCopyUpto(itemsInQuery []*expenseEntity, expensesEntities []*expenseEntity, input *dynamodb.QueryInput) int {
+	limitAccumulatedDiff := int(math.Abs(float64(int(*input.Limit) - len(expensesEntities))))
+	if len(itemsInQuery) < limitAccumulatedDiff {
+		return len(itemsInQuery)
+	}
+
+	return limitAccumulatedDiff
+}
+
+func getAttributeValuePK(item *expenseEntity, input *dynamodb.QueryInput) (map[string]types.AttributeValue, error) {
+	if input.IndexName != nil && *input.IndexName == periodUserExpenseIDIndex {
+		expenseKeys := struct {
+			ExpenseID  string `json:"expense_id" dynamodbav:"expense_id"`
+			Username   string `json:"username,omitempty" dynamodbav:"username"`
+			PeriodUser string `json:"period_user,omitempty" dynamodbav:"period_user"`
+		}{
+			ExpenseID:  item.ExpenseID,
+			Username:   item.Username,
+			PeriodUser: item.PeriodUser,
+		}
+
+		return attributevalue.MarshalMap(expenseKeys)
+	}
+
+	expenseKeys := struct {
+		ExpenseID string `json:"expense_id" dynamodbav:"expense_id"`
+		Username  string `json:"username,omitempty" dynamodbav:"username"`
+	}{
+		ExpenseID: item.ExpenseID,
+		Username:  item.Username,
+	}
+
+	return attributevalue.MarshalMap(expenseKeys)
 }
 
 func getPageSize(pageSize int) *int32 {
