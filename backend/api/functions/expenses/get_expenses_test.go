@@ -15,12 +15,8 @@ import (
 func TestGetExpensesSuccess(t *testing.T) {
 	c := require.New(t)
 
-	dynamoClient := initDynamoClient()
-
-	usersMock := users.NewDynamoRepository(dynamoClient)
-	expensesMock := expenses.NewDynamoRepository(dynamoClient)
-	//usersMock := users.NewDynamoMock()
-	//expensesMock := expenses.NewDynamoMock()
+	usersMock := users.NewDynamoMock()
+	expensesMock := expenses.NewDynamoMock()
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
@@ -64,10 +60,9 @@ func TestGetExpensesSuccess(t *testing.T) {
 func getGetExpensesRequest() *apigateway.Request {
 	return &apigateway.Request{
 		QueryStringParameters: map[string]string{
-			"category": "test",
-			//"period":    "2023-7",
-			"page_size": "20",
-			//"start_key": "eyJleHBlbnNlX2lkIjoiRVhzOUFoV0ljQ3ZLN3oxcmFtWjQzayIsInVzZXJuYW1lIjoidGVzdEBnbWFpbC5jb20ifQ==",
+			"category":  "test",
+			"period":    "2023-7",
+			"page_size": "5",
 		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
