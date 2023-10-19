@@ -32,7 +32,7 @@ func toExpenseEntity(e *models.Expense) *expenseEntity {
 	}
 }
 
-func toExpenseModel(e *expenseEntity) *models.Expense {
+func toExpenseModel(e expenseEntity) *models.Expense {
 	return &models.Expense{
 		ExpenseID:   e.ExpenseID,
 		Username:    e.Username,
@@ -49,7 +49,7 @@ func toExpenseModel(e *expenseEntity) *models.Expense {
 func toExpenseModels(es []expenseEntity) []*models.Expense {
 	expenses := make([]*models.Expense, len(es))
 	for i, e := range es {
-		expenses[i] = toExpenseModel(&e)
+		expenses[i] = toExpenseModel(e)
 	}
 
 	return expenses

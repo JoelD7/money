@@ -54,7 +54,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 		return nil, fmt.Errorf("put expense failed: %v", err)
 	}
 
-	return toExpenseModel(entity), nil
+	return toExpenseModel(*entity), nil
 }
 
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
@@ -202,7 +202,7 @@ func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID s
 		return nil, fmt.Errorf("unmarshal expense item failed: %v", err)
 	}
 
-	return toExpenseModel(entity), nil
+	return toExpenseModel(*entity), nil
 }
 
 func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
