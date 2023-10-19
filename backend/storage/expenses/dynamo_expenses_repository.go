@@ -331,7 +331,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 	// If the query has a filter expression it may not include all the items one intends to fetch.
 	// See more details here: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.FilterExpression.html
 	if input.FilterExpression != nil {
-		//return d.performQueryWithFilter(ctx, input)
+		return d.performQueryWithFilter(ctx, input)
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -343,7 +343,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", models.ErrExpensesNotFound
 	}
 
-	expensesEntities := new([]*expenseEntity)
+	expensesEntities := make([]expenseEntity, 0)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &expensesEntities)
 	if err != nil {
@@ -355,13 +355,13 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", err
 	}
 
-	return toExpenseModels(*expensesEntities), nextKey, nil
+	return toExpenseModels(expensesEntities), nextKey, nil
 }
 
 func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
 	retrievedItems := 0
-	expensesEntities := make([]*expenseEntity, 0)
-	itemsInQuery := make([]*expenseEntity, 0)
+	expensesEntities := make([]expenseEntity, 0)
+	itemsInQuery := make([]expenseEntity, 0)
 	var result *dynamodb.QueryOutput
 	var err error
 
@@ -388,7 +388,6 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 			copyUpto := getCopyUpto(itemsInQuery, expensesEntities, input)
 
 			expensesEntities = append(expensesEntities, itemsInQuery[0:copyUpto]...)
-			fmt.Printf("-debug\nFirst item in query: %s\nLast item in query: %s\nLast evaluated item: %s\n", itemsInQuery[0].ExpenseID, itemsInQuery[len(itemsInQuery)-1].ExpenseID, expensesEntities[len(expensesEntities)-1].ExpenseID)
 
 			input.ExclusiveStartKey, err = getAttributeValuePK(expensesEntities[len(expensesEntities)-1], input)
 			if err != nil {
@@ -412,7 +411,6 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 		if result.LastEvaluatedKey == nil {
 			break
 		}
-
 	}
 
 	nextKey, err := encodeLastKey(input.ExclusiveStartKey)
@@ -428,7 +426,7 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 }
 
 // getCopyUpto returns the index up to which we can copy the tmp slice to the expensesEntities slice.
-func getCopyUpto(itemsInQuery []*expenseEntity, expensesEntities []*expenseEntity, input *dynamodb.QueryInput) int {
+func getCopyUpto(itemsInQuery []expenseEntity, expensesEntities []expenseEntity, input *dynamodb.QueryInput) int {
 	limitAccumulatedDiff := int(math.Abs(float64(int(*input.Limit) - len(expensesEntities))))
 	if len(itemsInQuery) < limitAccumulatedDiff {
 		return len(itemsInQuery)
@@ -437,7 +435,7 @@ func getCopyUpto(itemsInQuery []*expenseEntity, expensesEntities []*expenseEntit
 	return limitAccumulatedDiff
 }
 
-func getAttributeValuePK(item *expenseEntity, input *dynamodb.QueryInput) (map[string]types.AttributeValue, error) {
+func getAttributeValuePK(item expenseEntity, input *dynamodb.QueryInput) (map[string]types.AttributeValue, error) {
 	if input.IndexName != nil && *input.IndexName == periodUserExpenseIDIndex {
 		expenseKeys := struct {
 			ExpenseID  string `json:"expense_id" dynamodbav:"expense_id"`
