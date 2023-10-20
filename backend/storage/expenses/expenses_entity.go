@@ -19,17 +19,25 @@ type expenseEntity struct {
 }
 
 func toExpenseEntity(e *models.Expense) *expenseEntity {
-	return &expenseEntity{
+	entity := &expenseEntity{
 		ExpenseID:   e.ExpenseID,
 		Username:    e.Username,
 		CategoryID:  e.CategoryID,
-		Amount:      *e.Amount,
-		Name:        *e.Name,
 		Notes:       e.Notes,
 		CreatedDate: e.CreatedDate,
 		Period:      e.Period,
 		UpdateDate:  e.UpdateDate,
 	}
+
+	if e.Amount != nil {
+		entity.Amount = *e.Amount
+	}
+
+	if e.Name != nil {
+		entity.Name = *e.Name
+	}
+
+	return entity
 }
 
 func toExpenseModel(e expenseEntity) *models.Expense {
