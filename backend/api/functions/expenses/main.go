@@ -26,21 +26,12 @@ func main() {
 	rootRouter := router.NewRouter()
 
 	rootRouter.Route("/", func(r *router.Router) {
-		r.Route("/users", func(r *router.Router) {
-			r.Get("/", getUserHandler)
-			r.Route("/categories", func(r *router.Router) {
-				r.Get("/", getCategoriesHandler)
-				r.Post("/", createCategoryHandler)
-				r.Put("/{categoryID}", updateCategoryHandler)
-			})
-		})
-
-		r.Route("/savings", func(r *router.Router) {
-			r.Get("/{savingID}", getSavingHandler)
-			r.Get("/", getSavingsHandler)
-			r.Post("/", createSavingHandler)
-			r.Put("/{savingID}", updateSavingHandler)
-			r.Delete("/", deleteSavingHandler)
+		r.Route("/expenses", func(r *router.Router) {
+			r.Get("/{expenseID}", getExpenseHandler)
+			r.Put("/{expenseID}", updateExpenseHandler)
+			r.Delete("/{expenseID}", deleteExpenseHandler)
+			r.Get("/", getExpensesHandler)
+			r.Post("/", createExpenseHandler)
 		})
 	})
 

@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
@@ -71,9 +72,20 @@ func getSavingsHandler(ctx context.Context, req *apigateway.Request) (*apigatewa
 func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error {
 	var err error
 
-	request.username, err = getUsernameFromContext(req)
+	request.username, err = apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+
+		return err
+	}
+
+	err = validate.Email(request.username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{
+			request.log.MapToLoggerObject("user_data", map[string]interface{}{
+				"s_username": request.username,
+			}),
+		})
 
 		return err
 	}

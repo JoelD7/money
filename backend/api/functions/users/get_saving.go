@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
@@ -14,7 +15,7 @@ import (
 )
 
 var (
-	errMissingSavingID = apigateway.NewError("missing savingID", http.StatusBadRequest)
+	errMissingSavingID = apigateway.NewError("missing saving ID", http.StatusBadRequest)
 )
 
 type getSavingRequest struct {
@@ -62,9 +63,20 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 		return apigateway.NewErrorResponse(errMissingSavingID), nil
 	}
 
-	username, err := getUsernameFromContext(req)
+	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
+	err = validate.Email(username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{
+			request.log.MapToLoggerObject("user_data", map[string]interface{}{
+				"s_username": username,
+			}),
+		})
 
 		return apigateway.NewErrorResponse(err), nil
 	}

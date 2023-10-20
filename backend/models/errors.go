@@ -1,6 +1,8 @@
 package models
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrMissingUsername       = errors.New("missing username")
@@ -26,6 +28,7 @@ var (
 	ErrDeleteSavingNotFound        = errors.New("the saving you are trying to delete does not exist")
 	ErrIncomeNotFound              = errors.New("user income not found")
 	ErrMissingPeriod               = errors.New("missing period")
+	ErrExpenseNotFound             = errors.New("expense not found")
 	ErrExpensesNotFound            = errors.New("user expenses not found")
 	ErrInvalidAmount               = errors.New("invalid amount. The amount has to be a number greater than zero")
 	ErrInvalidRequestBody          = errors.New("invalid request body")
@@ -40,8 +43,12 @@ var (
 	ErrInvalidBudget               = errors.New("budget must be greater than or equal to 0")
 	ErrMissingCategoryBudget       = errors.New("missing budget")
 	ErrCategoryNameAlreadyExists   = errors.New("category name already exists")
-	ErrMissingSavingAmount         = errors.New("missing saving amount")
+	ErrMissingAmount               = errors.New("missing amount")
 	ErrInvalidSavingAmount         = errors.New("saving amount must be greater than or equal to 0")
 	ErrSavingGoalNameSettingFailed = errors.New("saving goal name not set")
 	ErrSavingGoalNotFound          = errors.New("saving goal not found")
+	ErrNoUsernameInContext         = errors.New("couldn't identify the user. Check if your Bearer token header is correct")
+	ErrCategoryNameSettingFailed   = errors.New("category name not set")
+	ErrMissingName                 = errors.New("missing name")
+	ErrMissingExpenseID            = errors.New("missing expense id")
 )

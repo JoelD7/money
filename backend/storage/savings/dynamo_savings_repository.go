@@ -117,7 +117,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, username, period string, pageSize int) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 

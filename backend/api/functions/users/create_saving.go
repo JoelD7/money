@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
@@ -62,7 +63,7 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	username, err := getUsernameFromContext(req)
+	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
@@ -92,10 +93,10 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 	}
 
 	if userSaving.Amount != nil && *userSaving.Amount == 0 {
-		return nil, models.ErrMissingSavingAmount
+		return nil, models.ErrMissingAmount
 	}
 
-	err = validateAmount(userSaving.Amount)
+	err = validate.Amount(userSaving.Amount)
 	if err != nil {
 		return nil, models.ErrInvalidSavingAmount
 	}

@@ -16,6 +16,7 @@ var (
 	responseByErrors = map[error]Error{
 		models.ErrUserNotFound:              {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
 		models.ErrIncomeNotFound:            {HTTPCode: http.StatusNotFound, Message: models.ErrIncomeNotFound.Error()},
+		models.ErrExpenseNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrExpenseNotFound.Error()},
 		models.ErrExpensesNotFound:          {HTTPCode: http.StatusNotFound, Message: models.ErrExpensesNotFound.Error()},
 		models.ErrCategoriesNotFound:        {HTTPCode: http.StatusNotFound, Message: models.ErrCategoriesNotFound.Error()},
 		models.ErrSavingsNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrSavingsNotFound.Error()},
@@ -41,10 +42,13 @@ var (
 		models.ErrMissingCategoryBudget:     {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingCategoryBudget.Error()},
 		models.ErrInvalidBudget:             {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidBudget.Error()},
 		models.ErrCategoryNameAlreadyExists: {HTTPCode: http.StatusBadRequest, Message: models.ErrCategoryNameAlreadyExists.Error()},
-		models.ErrMissingSavingAmount:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingSavingAmount.Error()},
+		models.ErrMissingAmount:             {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingAmount.Error()},
 		models.ErrInvalidSavingAmount:       {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidSavingAmount.Error()},
 		models.ErrSavingNotFound:            {HTTPCode: http.StatusNotFound, Message: models.ErrSavingNotFound.Error()},
 		models.ErrSavingGoalNotFound:        {HTTPCode: http.StatusNotFound, Message: models.ErrSavingGoalNotFound.Error()},
+		models.ErrNoUsernameInContext:       {HTTPCode: http.StatusBadRequest, Message: models.ErrNoUsernameInContext.Error()},
+		models.ErrMissingName:               {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingName.Error()},
+		models.ErrMissingExpenseID:          {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingExpenseID.Error()},
 	}
 )
 
@@ -117,14 +121,15 @@ func (req *Request) LogProperties() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"s_query_parameters": paramsToString(req.QueryStringParameters),
-		"s_path_parameters":  paramsToString(req.PathParameters),
-		"o_authorizer":       authorizer,
-		"s_user_agent":       req.Headers["User-Agent"],
-		"s_content_type":     req.Headers["Content-Type"],
-		"s_method":           req.HTTPMethod,
-		"s_path":             req.Path,
-		"s_body":             req.Body,
+		"s_query_parameters":             paramsToString(req.QueryStringParameters),
+		"s_multi_value_query_parameters": multiValueParamsToString(req.MultiValueQueryStringParameters),
+		"s_path_parameters":              paramsToString(req.PathParameters),
+		"o_authorizer":                   authorizer,
+		"s_user_agent":                   req.Headers["User-Agent"],
+		"s_content_type":                 req.Headers["Content-Type"],
+		"s_method":                       req.HTTPMethod,
+		"s_path":                         req.Path,
+		"s_body":                         req.Body,
 	}
 }
 
@@ -139,4 +144,26 @@ func paramsToString(params map[string]string) string {
 	}
 
 	return sb.String()
+}
+
+func multiValueParamsToString(params map[string][]string) string {
+	var sb strings.Builder
+
+	for param, values := range params {
+		sb.WriteString(param)
+		sb.WriteString("=")
+		sb.WriteString(strings.Join(values, ","))
+		sb.WriteString(" ")
+	}
+
+	return sb.String()
+}
+
+func GetUsernameFromContext(req *Request) (string, error) {
+	username, ok := req.RequestContext.Authorizer["username"].(string)
+	if !ok {
+		return "", models.ErrNoUsernameInContext
+	}
+
+	return username, nil
 }

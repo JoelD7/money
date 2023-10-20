@@ -1,4 +1,4 @@
-package main
+package validate
 
 import (
 	"github.com/JoelD7/money/backend/models"
@@ -8,7 +8,7 @@ import (
 
 const emailRegex = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
 
-func validateEmail(email string) error {
+func Email(email string) error {
 	regex := regexp.MustCompile(emailRegex)
 
 	if email == "" {
@@ -22,7 +22,7 @@ func validateEmail(email string) error {
 	return nil
 }
 
-func validateAmount(amount *float64) error {
+func Amount(amount *float64) error {
 	if amount != nil && (*amount <= 0 || *amount > math.MaxFloat64) {
 		return models.ErrInvalidAmount
 	}

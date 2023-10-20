@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
@@ -70,10 +71,17 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	username, err := getUsernameFromContext(req)
+	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
+	err = validate.Email(username)
+	if err != nil {
+		request.log.Error("invalid_username", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}

@@ -13,5 +13,12 @@ type DynamoAPI interface {
 }
 
 type Repository interface {
-	GetExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error)
+	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
+	UpdateExpense(ctx context.Context, expense *models.Expense) error
+	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
+	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
+	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
+	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
+	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
+	DeleteExpense(ctx context.Context, expenseID, username string) error
 }
