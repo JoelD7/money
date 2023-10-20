@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -83,7 +84,7 @@ func validateInput(req *apigateway.Request, username string) (*models.Expense, e
 
 	err := json.Unmarshal([]byte(req.Body), expense)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidRequestBody)
 	}
 
 	err = validate.Email(username)
