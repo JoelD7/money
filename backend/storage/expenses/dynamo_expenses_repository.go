@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	defaultPageSize = 10
+	defaultPageSize   = 10
+	nameAttributeName = "#n"
 )
 
 var (
@@ -88,6 +89,10 @@ func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Ex
 		ConditionExpression:       aws.String("attribute_exists(expense_id)"),
 		ExpressionAttributeValues: attributeValues,
 		UpdateExpression:          updateExpression,
+	}
+
+	if expense.Name != nil {
+		input.ExpressionAttributeNames = map[string]string{nameAttributeName: "name"}
 	}
 
 	_, err = d.dynamoClient.UpdateItem(ctx, input)
@@ -163,7 +168,7 @@ func getUpdateExpression(attributeValues map[string]types.AttributeValue) *strin
 	}
 
 	if _, ok := attributeValues[":name"]; ok {
-		attributes = append(attributes, "name = :name")
+		attributes = append(attributes, fmt.Sprintf("%s = :name", nameAttributeName))
 	}
 
 	if _, ok := attributeValues[":notes"]; ok {
