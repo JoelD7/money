@@ -71,7 +71,7 @@ func (request *deleteExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	deleteExpense := usecases.NewExpensesDeleter(request.expensesRepo)
 
-	err = deleteExpense(ctx, username, expenseID)
+	err = deleteExpense(ctx, expenseID, username)
 	if err != nil {
 		request.log.Error("delete_expense_failed", err, []models.LoggerObject{req})
 
