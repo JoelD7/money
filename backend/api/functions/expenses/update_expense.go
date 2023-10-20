@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -61,7 +63,7 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	expense, err := validateInput(req, username)
+	expense, err := validateUpdateInput(req, username)
 	if err != nil {
 		request.log.Error("validate_input_failed", err, []models.LoggerObject{req})
 
@@ -80,4 +82,27 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 	return &apigateway.Response{
 		StatusCode: http.StatusOK,
 	}, nil
+}
+
+func validateUpdateInput(req *apigateway.Request, username string) (*models.Expense, error) {
+	expense := new(models.Expense)
+
+	err := json.Unmarshal([]byte(req.Body), expense)
+	if err != nil {
+		return nil, err
+	}
+
+	err = validate.Email(username)
+	if err != nil {
+		return nil, err
+	}
+
+	expense.Username = username
+
+	err = validate.Amount(expense.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	return expense, nil
 }
