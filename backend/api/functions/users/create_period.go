@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -82,7 +83,7 @@ func (request *createPeriodRequest) validateCreateRequestBody(req *apigateway.Re
 
 	err := json.Unmarshal([]byte(req.Body), p)
 	if err != nil {
-		return nil, models.ErrInvalidRequestBody
+		return nil, fmt.Errorf("%v:%w", err, models.ErrInvalidRequestBody)
 	}
 
 	if p.StartDate == nil || p.EndDate == nil {

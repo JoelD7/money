@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"strconv"
@@ -23,6 +24,11 @@ type PeriodManager interface {
 
 func NewPeriodCreator(pm PeriodManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
+		err := validatePeriod(period)
+		if err != nil {
+			return nil, err
+		}
+
 		periodID, err := generateNewPeriodID(ctx, pm, username)
 		if err != nil {
 			return nil, fmt.Errorf("generate new period ID failed: %w", err)
@@ -38,8 +44,12 @@ func NewPeriodCreator(pm PeriodManager) func(ctx context.Context, username strin
 
 func generateNewPeriodID(ctx context.Context, pm PeriodManager, username string) (string, error) {
 	lastPeriod, err := pm.GetLastPeriod(ctx, username)
-	if err != nil {
+	if err != nil && !errors.Is(err, models.ErrPeriodsNotFound) {
 		return "", err
+	}
+
+	if errors.Is(err, models.ErrPeriodsNotFound) {
+		return fmt.Sprintf("%s-%s", strconv.Itoa(time.Now().Year()), "1"), nil
 	}
 
 	errMalformedPeriodID := fmt.Errorf("malformed period ID: %s", lastPeriod.ID)
@@ -67,4 +77,12 @@ func generateNewPeriodID(ctx context.Context, pm PeriodManager, username string)
 	}
 
 	return fmt.Sprintf("%s-%s", strconv.Itoa(periodYear), strconv.Itoa(periodNumber)), nil
+}
+
+func validatePeriod(period *models.Period) error {
+	if period.StartDate.After(period.EndDate.Time) {
+		return models.ErrStartDateShouldBeBeforeEndDate
+	}
+
+	return nil
 }
