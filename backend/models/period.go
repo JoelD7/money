@@ -1,13 +1,62 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 type Period struct {
-	Username    string     `json:"username,omitempty" dynamodbav:"username"`
-	ID          string     `json:"period_id,omitempty" dynamodbav:"period_id"`
-	Name        string     `json:"name,omitempty" dynamodbav:"name"`
-	StartDate   *time.Time `json:"start_date,omitempty" dynamodbav:"start_date"`
-	EndDate     *time.Time `json:"end_date,omitempty" dynamodbav:"end_date"`
-	CreatedDate time.Time  `json:"created_date,omitempty" dynamodbav:"created_date"`
-	UpdatedDate time.Time  `json:"updated_date,omitempty" dynamodbav:"updated_date"`
+	Username    string      `json:"username,omitempty"`
+	ID          string      `json:"period,omitempty"`
+	Name        string      `json:"name,omitempty"`
+	StartDate   *PeriodTime `json:"start_date,omitempty"`
+	EndDate     *PeriodTime `json:"end_date,omitempty"`
+	CreatedDate time.Time   `json:"created_date,omitempty"`
+	UpdatedDate time.Time   `json:"updated_date,omitempty"`
+}
+
+type PeriodTime struct {
+	time.Time
+}
+
+const ctLayout = "2006-01-02"
+
+func ToTime(p *PeriodTime) *time.Time {
+	return &p.Time
+}
+
+func ToPeriodTime(t time.Time) *PeriodTime {
+	return &PeriodTime{t}
+}
+
+func (ct *PeriodTime) UnmarshalJSON(b []byte) error {
+	s := strings.Trim(string(b), "\"")
+	if s == "null" {
+		ct.Time = time.Time{}
+		return nil
+	}
+
+	var err error
+
+	ct.Time, err = time.Parse(ctLayout, s)
+	if err != nil {
+		return fmt.Errorf("cannot unmarshal %s into a time.Time: %w", b, err)
+	}
+
+	return err
+}
+
+func (ct *PeriodTime) MarshalJSON() ([]byte, error) {
+	if ct.Time.IsZero() {
+		return []byte("null"), nil
+	}
+
+	return []byte(fmt.Sprintf("\"%s\"", ct.Time.Format(ctLayout))), nil
+}
+
+//var nilTime = (time.Time{}).UnixNano()
+
+func (ct *PeriodTime) IsSet() bool {
+	return !ct.IsZero()
 }
