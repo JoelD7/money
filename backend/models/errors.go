@@ -51,4 +51,6 @@ var (
 	ErrCategoryNameSettingFailed   = errors.New("category name not set")
 	ErrMissingName                 = errors.New("missing name")
 	ErrMissingExpenseID            = errors.New("missing expense id")
+	ErrPeriodNotFound              = errors.New("period not found")
+	ErrPeriodsNotFound             = errors.New("periods not found")
 )

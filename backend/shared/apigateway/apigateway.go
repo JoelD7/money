@@ -49,6 +49,8 @@ var (
 		models.ErrNoUsernameInContext:       {HTTPCode: http.StatusBadRequest, Message: models.ErrNoUsernameInContext.Error()},
 		models.ErrMissingName:               {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingName.Error()},
 		models.ErrMissingExpenseID:          {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingExpenseID.Error()},
+		models.ErrPeriodNotFound:            {HTTPCode: http.StatusNotFound, Message: models.ErrPeriodNotFound.Error()},
+		models.ErrPeriodsNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrPeriodsNotFound.Error()},
 	}
 )
 
