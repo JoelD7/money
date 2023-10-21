@@ -53,4 +53,5 @@ var (
 	ErrMissingExpenseID            = errors.New("missing expense id")
 	ErrPeriodNotFound              = errors.New("period not found")
 	ErrPeriodsNotFound             = errors.New("periods not found")
+	ErrInvalidPeriod               = errors.New("invalid period")
 )

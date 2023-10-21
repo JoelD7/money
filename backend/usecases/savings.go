@@ -152,16 +152,24 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 	}
 }
 
-func NewSavingCreator(sm SavingsManager, u UserManager) func(ctx context.Context, username string, saving *models.Saving) error {
+func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ctx context.Context, username string, saving *models.Saving) error {
 	return func(ctx context.Context, username string, saving *models.Saving) error {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return fmt.Errorf("user fetch failed: %w", err)
 		}
 
+		err = validateSavingPeriod(ctx, saving, username, p)
+		if err != nil {
+			return err
+		}
+
+		if saving.Period == "" {
+			saving.Period = user.CurrentPeriod
+		}
+
 		saving.SavingID = generateDynamoID("SV")
 		saving.Username = username
-		saving.Period = user.CurrentPeriod
 		saving.CreatedDate = time.Now()
 
 		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
@@ -276,4 +284,23 @@ func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager,
 	}
 
 	return nil
+}
+
+func validateSavingPeriod(ctx context.Context, saving *models.Saving, username string, p PeriodManager) error {
+	if saving.Period == "" {
+		return nil
+	}
+
+	periods, err := p.GetPeriods(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	for _, period := range periods {
+		if period.ID == saving.Period {
+			return nil
+		}
+	}
+
+	return models.ErrInvalidPeriod
 }
