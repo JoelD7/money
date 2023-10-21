@@ -277,14 +277,14 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
+func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	savingEnt := toSavingEntity(saving)
 
 	savingEnt.PeriodUser = buildPeriodUser(savingEnt.Username, savingEnt.Period)
 
 	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -294,28 +294,28 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("put saving item failed: %v", err)
+		return nil, fmt.Errorf("put saving item failed: %v", err)
 	}
 
-	return nil
+	return toSavingModel(savingEnt), nil
 }
 
-func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {
+func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	savingEnt := toSavingEntity(saving)
 
 	username, err := attributevalue.Marshal(savingEnt.Username)
 	if err != nil {
-		return fmt.Errorf("marshaling username key: %v", err)
+		return nil, fmt.Errorf("marshaling username key: %v", err)
 	}
 
 	savingID, err := attributevalue.Marshal(savingEnt.SavingID)
 	if err != nil {
-		return fmt.Errorf("marshaling saving id key: %v", err)
+		return nil, fmt.Errorf("marshaling saving id key: %v", err)
 	}
 
 	attributeValues, err := getAttributeValues(savingEnt)
 	if err != nil {
-		return fmt.Errorf("getting attribute values: %v", err)
+		return nil, fmt.Errorf("getting attribute values: %v", err)
 	}
 
 	updateExpression := getUpdateExpression(attributeValues)
@@ -333,14 +333,14 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 
 	_, err = d.dynamoClient.UpdateItem(ctx, input)
 	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
-		return fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
+		return nil, fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
 	}
 
 	if err != nil {
-		return fmt.Errorf("updating saving item: %v", err)
+		return nil, fmt.Errorf("updating saving item: %v", err)
 	}
 
-	return nil
+	return toSavingModel(savingEnt), nil
 }
 
 func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, error) {

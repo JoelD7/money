@@ -20,8 +20,8 @@ type SavingsManager interface {
 	GetSavingsByPeriod(ctx context.Context, startKey, username, period string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error)
-	CreateSaving(ctx context.Context, saving *models.Saving) error
-	UpdateSaving(ctx context.Context, saving *models.Saving) error
+	CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error)
+	UpdateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error)
 	DeleteSaving(ctx context.Context, savingID, username string) error
 }
 
@@ -152,16 +152,16 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 	}
 }
 
-func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ctx context.Context, username string, saving *models.Saving) error {
-	return func(ctx context.Context, username string, saving *models.Saving) error {
+func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
+	return func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
-			return fmt.Errorf("user fetch failed: %w", err)
+			return nil, fmt.Errorf("user fetch failed: %w", err)
 		}
 
 		err = validateSavingPeriod(ctx, saving, username, p)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if saving.Period == "" {
@@ -172,33 +172,33 @@ func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ct
 		saving.Username = username
 		saving.CreatedDate = time.Now()
 
-		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
+		if (saving.SavingGoalID != nil && *saving.SavingGoalID == "") || saving.SavingGoalID == nil {
 			saving.SavingGoalID = &savingGoalIDNone
 		}
 
-		err = sm.CreateSaving(ctx, saving)
+		newSaving, err := sm.CreateSaving(ctx, saving)
 		if err != nil {
-			return fmt.Errorf("saving creation failed: %w", err)
+			return nil, fmt.Errorf("saving creation failed: %w", err)
 		}
 
-		return nil
+		return newSaving, nil
 	}
 }
 
-func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *models.Saving) error {
-	return func(ctx context.Context, saving *models.Saving) error {
+func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
+	return func(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 		saving.UpdatedDate = time.Now()
 
 		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
 			saving.SavingGoalID = &savingGoalIDNone
 		}
 
-		err := sm.UpdateSaving(ctx, saving)
+		updatedSaving, err := sm.UpdateSaving(ctx, saving)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return nil
+		return updatedSaving, nil
 	}
 }
 

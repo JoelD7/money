@@ -102,26 +102,26 @@ func (m *Mock) GetSavings(ctx context.Context, username, startKey string, pageSi
 	return savings, "next_key", nil
 }
 
-func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) error {
+func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	if m.mockedErr != nil {
-		return m.mockedErr
+		return nil, m.mockedErr
 	}
 
 	m.mockedSavings = append(m.mockedSavings, saving)
 
-	return nil
+	return saving, nil
 }
 
-func (m *Mock) UpdateSaving(ctx context.Context, saving *models.Saving) error {
+func (m *Mock) UpdateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	if m.mockedErr != nil && strings.Contains(m.mockedErr.Error(), "ConditionalCheckFailedException") {
-		return models.ErrUpdateSavingNotFound
+		return nil, models.ErrUpdateSavingNotFound
 	}
 
 	if m.mockedErr != nil {
-		return m.mockedErr
+		return nil, m.mockedErr
 	}
 
-	return nil
+	return saving, nil
 }
 
 func (m *Mock) DeleteSaving(ctx context.Context, savingID, email string) error {
