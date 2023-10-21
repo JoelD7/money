@@ -23,12 +23,12 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
-func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) error {
-	periodStruct := toPeriodEntity(period)
+func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error) {
+	periodStruct := toPeriodEntity(*period)
 
 	attrValue, err := attributevalue.MarshalMap(periodStruct)
 	if err != nil {
-		return fmt.Errorf("marshal period item failed: %v", err)
+		return nil, fmt.Errorf("marshal period item failed: %v", err)
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -38,10 +38,10 @@ func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Peri
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return period, nil
 }
 
 func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {
@@ -62,7 +62,7 @@ func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period strin
 		return nil, models.ErrPeriodNotFound
 	}
 
-	periodStruct := new(periodEntity)
+	periodStruct := periodEntity{}
 
 	err = attributevalue.UnmarshalMap(result.Item, &periodStruct)
 	if err != nil {
@@ -97,7 +97,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username string) ([]*
 		return nil, models.ErrPeriodsNotFound
 	}
 
-	periods := make([]*periodEntity, 0, len(result.Items))
+	periods := make([]periodEntity, 0, len(result.Items))
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &periods)
 	if err != nil {
@@ -105,4 +105,40 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username string) ([]*
 	}
 
 	return toPeriodModels(periods), nil
+}
+
+func (d *DynamoRepository) GetLastPeriod(ctx context.Context, username string) (*models.Period, error) {
+	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
+
+	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
+
+	expr, err := conditionBuilder.Build()
+	if err != nil {
+		return nil, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(tableName),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeValues: expr.Values(),
+		ScanIndexForward:          aws.Bool(false),
+	}
+
+	result, err := d.dynamoClient.Query(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, models.ErrPeriodsNotFound
+	}
+
+	periodStruct := periodEntity{}
+
+	err = attributevalue.UnmarshalMap(result.Items[0], &periodStruct)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal period item failed: %v", err)
+	}
+
+	return toPeriodModel(periodStruct), nil
 }

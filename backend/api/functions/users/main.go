@@ -42,6 +42,10 @@ func main() {
 			r.Put("/{savingID}", updateSavingHandler)
 			r.Delete("/", deleteSavingHandler)
 		})
+
+		r.Route("/periods", func(r *router.Router) {
+			r.Post("/", createPeriodHandler)
+		})
 	})
 
 	lambda.Start(rootRouter.Handle)

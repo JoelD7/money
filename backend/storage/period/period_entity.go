@@ -15,19 +15,19 @@ type periodEntity struct {
 	UpdatedDate time.Time `json:"updated_date,omitempty" dynamodbav:"updated_date"`
 }
 
-func toPeriodModel(p *periodEntity) *models.Period {
+func toPeriodModel(p periodEntity) *models.Period {
 	return &models.Period{
 		Username:    p.Username,
 		ID:          p.ID,
 		Name:        p.Name,
-		StartDate:   p.StartDate,
-		EndDate:     p.EndDate,
+		StartDate:   &p.StartDate,
+		EndDate:     &p.EndDate,
 		CreatedDate: p.CreatedDate,
 		UpdatedDate: p.UpdatedDate,
 	}
 }
 
-func toPeriodModels(periods []*periodEntity) []*models.Period {
+func toPeriodModels(periods []periodEntity) []*models.Period {
 	periodModels := make([]*models.Period, 0, len(periods))
 
 	for _, period := range periods {
@@ -37,13 +37,13 @@ func toPeriodModels(periods []*periodEntity) []*models.Period {
 	return periodModels
 }
 
-func toPeriodEntity(period *models.Period) *periodEntity {
-	return &periodEntity{
+func toPeriodEntity(period models.Period) periodEntity {
+	return periodEntity{
 		Username:    period.Username,
 		ID:          period.ID,
 		Name:        period.Name,
-		StartDate:   period.StartDate,
-		EndDate:     period.EndDate,
+		StartDate:   *period.StartDate,
+		EndDate:     *period.EndDate,
 		CreatedDate: period.CreatedDate,
 		UpdatedDate: period.UpdatedDate,
 	}

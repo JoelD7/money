@@ -52,6 +52,7 @@ var (
 		models.ErrPeriodNotFound:            {HTTPCode: http.StatusNotFound, Message: models.ErrPeriodNotFound.Error()},
 		models.ErrPeriodsNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrPeriodsNotFound.Error()},
 		models.ErrInvalidPeriod:             {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPeriod.Error()},
+		models.ErrMissingPeriodDates:        {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodDates.Error()},
 	}
 )
 
