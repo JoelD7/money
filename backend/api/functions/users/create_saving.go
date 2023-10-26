@@ -75,16 +75,14 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 
 	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.userRepo, request.periodRepo)
 
-	err = createSaving(ctx, username, userSaving)
+	saving, err := createSaving(ctx, username, userSaving)
 	if err != nil {
 		request.log.Error("create_saving_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusCreated,
-	}, nil
+	return apigateway.NewJSONResponse(http.StatusCreated, saving), nil
 }
 
 func validateBody(req *apigateway.Request) (*models.Saving, error) {
