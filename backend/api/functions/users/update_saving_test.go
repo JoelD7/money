@@ -5,6 +5,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -17,11 +18,13 @@ func TestUpdateSaving(t *testing.T) {
 
 	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
+	periodMock := period.NewDynamoMock()
 	ctx := context.Background()
 
 	req := &updateSavingRequest{
 		log:         logMock,
 		savingsRepo: savingsMock,
+		periodRepo:  periodMock,
 	}
 
 	apigwRequest := getDummyUpdateRequest()
@@ -35,12 +38,14 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	logMock := logger.NewLoggerMock(nil)
+	periodMock := period.NewDynamoMock()
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
 	req := &updateSavingRequest{
 		log:         logMock,
 		savingsRepo: savingsMock,
+		periodRepo:  periodMock,
 	}
 
 	apigwRequest := getDummyUpdateRequest()
@@ -89,6 +94,28 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		c.Equal(http.StatusNotFound, response.StatusCode)
 		c.Contains(response.Body, models.ErrUpdateSavingNotFound.Error())
 	})
+
+	t.Run("Get username from context failed", func(t *testing.T) {
+		apigwRequest.RequestContext.Authorizer = map[string]interface{}{}
+		defer func() { apigwRequest = getDummyUpdateRequest() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(response.Body, models.ErrNoUsernameInContext.Error())
+		c.Contains(logMock.Output.String(), "update_input_validation_failed")
+		logMock.Output.Reset()
+	})
+
+	t.Run("Period doesn't exist", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250,"period":"8888-01"}`
+		defer func() { apigwRequest = getDummyUpdateRequest() }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(response.Body, models.ErrInvalidPeriod.Error())
+	})
 }
 
 type mockRequestFailure struct{}
@@ -102,7 +129,7 @@ func (e *mockRequestFailure) Error() string     { return "ConditionalCheckFailed
 
 func getDummyUpdateRequest() *apigateway.Request {
 	return &apigateway.Request{
-		Body: `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`,
+		Body: `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250,"period":"2020-01"}`,
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"username": "test@gmail.com",

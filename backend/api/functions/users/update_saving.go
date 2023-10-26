@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -19,12 +19,14 @@ type updateSavingRequest struct {
 	startingTime time.Time
 	err          error
 	savingsRepo  savings.Repository
+	periodRepo   period.Repository
 }
 
 func (request *updateSavingRequest) init() {
 	dynamoClient := initDynamoClient()
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -57,18 +59,16 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	updateSaving := usecases.NewSavingUpdater(request.savingsRepo)
+	updateSaving := usecases.NewSavingUpdater(request.savingsRepo, request.periodRepo)
 
-	err = updateSaving(ctx, userSaving)
+	saving, err := updateSaving(ctx, userSaving.Username, userSaving)
 	if err != nil {
 		request.log.Error("update_saving_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-	}, nil
+	return apigateway.NewJSONResponse(http.StatusOK, saving), nil
 }
 
 func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {
@@ -79,7 +79,7 @@ func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		return nil, fmt.Errorf("get username from context failed")
+		return nil, models.ErrNoUsernameInContext
 	}
 
 	saving := &models.Saving{
@@ -89,7 +89,7 @@ func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request
 
 	err = json.Unmarshal([]byte(req.Body), saving)
 	if err != nil {
-		return nil, errRequestBodyParseFailure
+		return nil, models.ErrInvalidRequestBody
 	}
 
 	err = validate.Email(username)

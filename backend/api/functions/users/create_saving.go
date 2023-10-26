@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-var (
-	errRequestBodyParseFailure = apigateway.NewError("couldn't parse the request body. Please check it", http.StatusBadRequest)
-)
-
 type createSavingRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
@@ -90,7 +86,7 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 
 	err := json.Unmarshal([]byte(req.Body), userSaving)
 	if err != nil {
-		return nil, errRequestBodyParseFailure
+		return nil, models.ErrInvalidRequestBody
 	}
 
 	if userSaving.Amount != nil && *userSaving.Amount == 0 {

@@ -185,8 +185,13 @@ func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ct
 	}
 }
 
-func NewSavingUpdater(sm SavingsManager) func(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
-	return func(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
+func NewSavingUpdater(sm SavingsManager, pm PeriodManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
+	return func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
+		err := validateSavingPeriod(ctx, saving, username, pm)
+		if err != nil {
+			return nil, err
+		}
+
 		saving.UpdatedDate = time.Now()
 
 		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
