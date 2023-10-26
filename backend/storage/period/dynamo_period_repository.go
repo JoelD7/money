@@ -85,6 +85,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username string) ([]*
 	input := &dynamodb.QueryInput{
 		TableName:                 aws.String(tableName),
 		KeyConditionExpression:    expr.KeyCondition(),
+		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 	}
 
