@@ -301,7 +301,7 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 	return toSavingModel(savingEnt), nil
 }
 
-func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
+func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {
 	savingEnt := toSavingEntity(saving)
 
 	if savingEnt.Period != nil {
@@ -311,17 +311,17 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 
 	username, err := attributevalue.Marshal(savingEnt.Username)
 	if err != nil {
-		return nil, fmt.Errorf("marshaling username key: %v", err)
+		return fmt.Errorf("marshaling username key: %v", err)
 	}
 
 	savingID, err := attributevalue.Marshal(savingEnt.SavingID)
 	if err != nil {
-		return nil, fmt.Errorf("marshaling saving id key: %v", err)
+		return fmt.Errorf("marshaling saving id key: %v", err)
 	}
 
 	attributeValues, err := getAttributeValues(savingEnt)
 	if err != nil {
-		return nil, fmt.Errorf("getting attribute values: %v", err)
+		return fmt.Errorf("getting attribute values: %v", err)
 	}
 
 	updateExpression := getUpdateExpression(attributeValues)
@@ -339,14 +339,14 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 
 	_, err = d.dynamoClient.UpdateItem(ctx, input)
 	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
-		return nil, fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
+		return fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("updating saving item: %v", err)
+		return fmt.Errorf("updating saving item: %v", err)
 	}
 
-	return toSavingModel(savingEnt), nil
+	return nil
 }
 
 func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, error) {

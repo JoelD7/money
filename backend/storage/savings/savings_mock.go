@@ -112,16 +112,16 @@ func (m *Mock) CreateSaving(ctx context.Context, saving *models.Saving) (*models
 	return saving, nil
 }
 
-func (m *Mock) UpdateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
+func (m *Mock) UpdateSaving(ctx context.Context, saving *models.Saving) error {
 	if m.mockedErr != nil && strings.Contains(m.mockedErr.Error(), "ConditionalCheckFailedException") {
-		return nil, models.ErrUpdateSavingNotFound
+		return models.ErrUpdateSavingNotFound
 	}
 
 	if m.mockedErr != nil {
-		return nil, m.mockedErr
+		return m.mockedErr
 	}
 
-	return saving, nil
+	return nil
 }
 
 func (m *Mock) DeleteSaving(ctx context.Context, savingID, email string) error {

@@ -21,7 +21,7 @@ type SavingsManager interface {
 	GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error)
-	UpdateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error)
+	UpdateSaving(ctx context.Context, saving *models.Saving) error
 	DeleteSaving(ctx context.Context, savingID, username string) error
 }
 
@@ -198,9 +198,14 @@ func NewSavingUpdater(sm SavingsManager, pm PeriodManager) func(ctx context.Cont
 			saving.SavingGoalID = &savingGoalIDNone
 		}
 
-		updatedSaving, err := sm.UpdateSaving(ctx, saving)
+		err = sm.UpdateSaving(ctx, saving)
 		if err != nil {
 			return nil, err
+		}
+
+		updatedSaving, err := sm.GetSaving(ctx, username, saving.SavingID)
+		if err != nil {
+			return nil, fmt.Errorf("getting updated saving failed: %w", err)
 		}
 
 		return updatedSaving, nil
