@@ -10,6 +10,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"time"
@@ -20,6 +21,7 @@ type updateExpenseRequest struct {
 	startingTime time.Time
 	err          error
 	expensesRepo expenses.Repository
+	userRepo     users.Repository
 	periodRepo   period.Repository
 }
 
@@ -28,6 +30,7 @@ func (request *updateExpenseRequest) init() {
 
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -74,7 +77,7 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	updateExpense := usecases.NewExpenseUpdater(request.expensesRepo, request.periodRepo)
+	updateExpense := usecases.NewExpenseUpdater(request.expensesRepo, request.periodRepo, request.userRepo)
 
 	updatedExpense, err := updateExpense(ctx, expenseID, username, expense)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -17,12 +18,16 @@ func TestUpdateHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
 	expensesMock := expenses.NewDynamoMock()
+	periodMock := period.NewDynamoMock()
+	userMock := users.NewDynamoMock()
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
 	request := &updateExpenseRequest{
 		log:          logMock,
 		expensesRepo: expensesMock,
+		periodRepo:   periodMock,
+		userRepo:     userMock,
 	}
 
 	apigwRequest := getUpdateExpenseRequest()
@@ -37,6 +42,7 @@ func TestUpdateHandlerFailed(t *testing.T) {
 
 	expensesMock := expenses.NewDynamoMock()
 	periodMock := period.NewDynamoMock()
+	userMock := users.NewDynamoMock()
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
@@ -44,6 +50,7 @@ func TestUpdateHandlerFailed(t *testing.T) {
 		log:          logMock,
 		expensesRepo: expensesMock,
 		periodRepo:   periodMock,
+		userRepo:     userMock,
 	}
 
 	apigwRequest := getUpdateExpenseRequest()

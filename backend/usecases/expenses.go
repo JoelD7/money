@@ -42,7 +42,7 @@ func NewExpenseCreator(em ExpenseManager, um UserManager, pm PeriodManager) func
 	}
 }
 
-func NewExpenseUpdater(em ExpenseManager, pm PeriodManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
+func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
 		expense.Username = username
 		expense.ExpenseID = expenseID
@@ -60,6 +60,11 @@ func NewExpenseUpdater(em ExpenseManager, pm PeriodManager) func(ctx context.Con
 		updatedExpense, err := em.GetExpense(ctx, username, expenseID)
 		if err != nil {
 			return nil, fmt.Errorf("getting updated expense failed: %w", err)
+		}
+
+		err = setExpensesCategoryNames(ctx, username, um, []*models.Expense{updatedExpense})
+		if err != nil {
+			return updatedExpense, err
 		}
 
 		return updatedExpense, nil
