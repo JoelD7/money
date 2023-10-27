@@ -8,12 +8,6 @@ import (
 	"time"
 )
 
-var (
-	// This value indicates that a saving hasn't a saving goal associated. It cannot be left empty because saving_goal_id
-	// belongs to one of the indices of the table.
-	savingGoalIDNone = "none"
-)
-
 type SavingsManager interface {
 	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
 	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
@@ -172,10 +166,6 @@ func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ct
 		saving.Username = username
 		saving.CreatedDate = time.Now()
 
-		if (saving.SavingGoalID != nil && *saving.SavingGoalID == "") || saving.SavingGoalID == nil {
-			saving.SavingGoalID = &savingGoalIDNone
-		}
-
 		newSaving, err := sm.CreateSaving(ctx, saving)
 		if err != nil {
 			return nil, fmt.Errorf("saving creation failed: %w", err)
@@ -193,10 +183,6 @@ func NewSavingUpdater(sm SavingsManager, pm PeriodManager) func(ctx context.Cont
 		}
 
 		saving.UpdatedDate = time.Now()
-
-		if saving.SavingGoalID != nil && *saving.SavingGoalID == "" {
-			saving.SavingGoalID = &savingGoalIDNone
-		}
 
 		err = sm.UpdateSaving(ctx, saving)
 		if err != nil {
@@ -236,13 +222,12 @@ func NewSavingDeleter(sm SavingsManager) func(ctx context.Context, savingID, use
 }
 
 func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Saving) error {
-	if s.SavingGoalID != nil && *s.SavingGoalID == savingGoalIDNone {
+	if s.SavingGoalID != nil && *s.SavingGoalID == "" {
 		return nil
 	}
 
 	savingGoal, err := sgm.GetSavingGoal(ctx, s.Username, *s.SavingGoalID)
 	if err != nil {
-		s.SavingGoalName = savingGoalIDNone
 		return err
 	}
 
@@ -280,7 +265,7 @@ func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username str
 }
 
 func ignoreSaving(s *models.Saving) bool {
-	return (s.SavingGoalID != nil && *s.SavingGoalID == savingGoalIDNone) || s.SavingGoalID == nil
+	return (s.SavingGoalID != nil && *s.SavingGoalID == "") || s.SavingGoalID == nil
 }
 
 func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager, username, savingGoalID string, savings []*models.Saving) error {
