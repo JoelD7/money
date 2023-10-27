@@ -164,8 +164,8 @@ func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ct
 			return nil, err
 		}
 
-		if saving.Period == "" {
-			saving.Period = user.CurrentPeriod
+		if saving.Period == nil || *saving.Period == "" {
+			saving.Period = &user.CurrentPeriod
 		}
 
 		saving.SavingID = generateDynamoID("SV")
@@ -292,7 +292,7 @@ func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager,
 }
 
 func validateSavingPeriod(ctx context.Context, saving *models.Saving, username string, p PeriodManager) error {
-	if saving.Period == "" {
+	if saving.Period == nil {
 		return nil
 	}
 
@@ -302,7 +302,7 @@ func validateSavingPeriod(ctx context.Context, saving *models.Saving, username s
 	}
 
 	for _, period := range periods {
-		if period.ID == saving.Period {
+		if period.ID == *saving.Period {
 			return nil
 		}
 	}

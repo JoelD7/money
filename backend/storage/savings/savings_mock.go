@@ -48,7 +48,7 @@ func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, perio
 	savings := make([]*models.Saving, 0)
 
 	for _, saving := range m.mockedSavings {
-		if saving.Period == period && saving.Username == username {
+		if *saving.Period == period && saving.Username == username {
 			savings = append(savings, saving)
 		}
 	}
@@ -79,7 +79,7 @@ func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, sa
 
 	savings := make([]*models.Saving, 0)
 	for _, saving := range m.mockedSavings {
-		if *saving.SavingGoalID == savingGoalID && saving.Period == period {
+		if *saving.SavingGoalID == savingGoalID && *saving.Period == period {
 			savings = append(savings, saving)
 		}
 	}
