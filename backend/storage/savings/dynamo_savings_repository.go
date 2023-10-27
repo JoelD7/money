@@ -398,16 +398,11 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 func getUpdateExpression(attributeValues map[string]types.AttributeValue) *string {
 	attributes := make([]string, 0)
 
-	if _, ok := attributeValues[":saving_goal_id"]; ok {
-		attributes = append(attributes, "saving_goal_id = :saving_goal_id")
-	}
-
-	if _, ok := attributeValues[":amount"]; ok {
-		attributes = append(attributes, "amount = :amount")
-	}
-
-	if _, ok := attributeValues[":updated_date"]; ok {
-		attributes = append(attributes, "updated_date = :updated_date")
+	for key, _ := range attributeValues {
+		attributeName := strings.ReplaceAll(key, ":", "")
+		//The assumption here is that the attribute name is the same as the key without the colon
+		//Example: "amount(attribute)" -> ":amount(key)"
+		attributes = append(attributes, fmt.Sprintf("%s = %s", attributeName, key))
 	}
 
 	return aws.String("SET " + strings.Join(attributes, ", "))
