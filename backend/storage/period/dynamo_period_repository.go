@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	tableName = "period"
+	tableName       = "period"
+	defaultPageSize = 10
 )
 
 type DynamoRepository struct {
@@ -82,11 +83,22 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		return nil, fmt.Errorf("build expression failed: %v", err)
 	}
 
+	var decodedStartKey map[string]types.AttributeValue
+
+	if startKey != "" {
+		decodedStartKey, err = decodeStartKey(startKey)
+		if err != nil {
+			return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+		}
+	}
+
 	input := &dynamodb.QueryInput{
 		TableName:                 aws.String(tableName),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
+		ExclusiveStartKey:         decodedStartKey,
+		Limit:                     getPageSize(pageSize),
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -143,4 +155,12 @@ func (d *DynamoRepository) GetLastPeriod(ctx context.Context, username string) (
 	}
 
 	return toPeriodModel(periodStruct), nil
+}
+
+func getPageSize(pageSize int) *int32 {
+	if pageSize == 0 {
+		return aws.Int32(defaultPageSize)
+	}
+
+	return aws.Int32(int32(pageSize))
 }
