@@ -72,7 +72,7 @@ func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period strin
 	return toPeriodModel(periodStruct), nil
 }
 
-func (d *DynamoRepository) GetPeriods(ctx context.Context, username string) ([]*models.Period, error) {
+func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error) {
 	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
 
 	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
