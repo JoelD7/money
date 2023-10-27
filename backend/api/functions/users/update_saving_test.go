@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -18,13 +19,15 @@ func TestUpdateSaving(t *testing.T) {
 
 	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
+	savingGoalMock := savingoal.NewMock()
 	periodMock := period.NewDynamoMock()
 	ctx := context.Background()
 
 	req := &updateSavingRequest{
-		log:         logMock,
-		savingsRepo: savingsMock,
-		periodRepo:  periodMock,
+		log:            logMock,
+		savingsRepo:    savingsMock,
+		periodRepo:     periodMock,
+		savingGoalRepo: savingGoalMock,
 	}
 
 	apigwRequest := getDummyUpdateRequest()
@@ -129,7 +132,7 @@ func (e *mockRequestFailure) Error() string     { return "ConditionalCheckFailed
 
 func getDummyUpdateRequest() *apigateway.Request {
 	return &apigateway.Request{
-		Body: `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250,"period":"2020-01"}`,
+		Body: `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":250,"period":"2020-01"}`,
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"username": "test@gmail.com",

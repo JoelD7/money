@@ -33,7 +33,7 @@ func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ct
 
 		err = setSavingGoalName(ctx, sgm, saving)
 		if err != nil {
-			return saving, models.ErrSavingGoalNameSettingFailed
+			return saving, fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
 		return saving, nil
@@ -60,7 +60,7 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(c
 
 		err = setSavingGoalNames(ctx, sgm, username, savings)
 		if err != nil {
-			return savings, "", models.ErrSavingGoalNameSettingFailed
+			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
 		return savings, nextKey, nil
@@ -87,7 +87,7 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger)
 
 		err = setSavingGoalNames(ctx, sgm, username, savings)
 		if err != nil {
-			return savings, "", models.ErrSavingGoalNameSettingFailed
+			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
 		return savings, nextKey, nil
@@ -113,7 +113,7 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, l Log
 
 		err = setSavingGoalNamesForSavingGoal(ctx, sgm, savings[0].Username, savingGoalID, savings)
 		if err != nil {
-			return savings, "", models.ErrSavingGoalNameSettingFailed
+			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
 		return savings, nextKey, nil
@@ -139,7 +139,7 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 
 		err = setSavingGoalNames(ctx, sgm, savings[0].Username, savings)
 		if err != nil {
-			return savings, "", models.ErrSavingGoalNameSettingFailed
+			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
 		return savings, nextKey, nil
@@ -175,7 +175,7 @@ func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ct
 	}
 }
 
-func NewSavingUpdater(sm SavingsManager, pm PeriodManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
+func NewSavingUpdater(sm SavingsManager, pm PeriodManager, sgm SavingGoalManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
 	return func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
 		err := validateSavingPeriod(ctx, saving, username, pm)
 		if err != nil {
@@ -192,6 +192,11 @@ func NewSavingUpdater(sm SavingsManager, pm PeriodManager) func(ctx context.Cont
 		updatedSaving, err := sm.GetSaving(ctx, username, saving.SavingID)
 		if err != nil {
 			return nil, fmt.Errorf("getting updated saving failed: %w", err)
+		}
+
+		err = setSavingGoalName(ctx, sgm, updatedSaving)
+		if err != nil {
+			return updatedSaving, fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
 		return updatedSaving, nil

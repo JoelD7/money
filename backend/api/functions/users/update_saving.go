@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -15,11 +16,12 @@ import (
 )
 
 type updateSavingRequest struct {
-	log          logger.LogAPI
-	startingTime time.Time
-	err          error
-	savingsRepo  savings.Repository
-	periodRepo   period.Repository
+	log            logger.LogAPI
+	startingTime   time.Time
+	err            error
+	savingsRepo    savings.Repository
+	savingGoalRepo savingoal.Repository
+	periodRepo     period.Repository
 }
 
 func (request *updateSavingRequest) init() {
@@ -27,6 +29,7 @@ func (request *updateSavingRequest) init() {
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+	request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -59,7 +62,7 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	updateSaving := usecases.NewSavingUpdater(request.savingsRepo, request.periodRepo)
+	updateSaving := usecases.NewSavingUpdater(request.savingsRepo, request.periodRepo, request.savingGoalRepo)
 
 	saving, err := updateSaving(ctx, userSaving.Username, userSaving)
 	if err != nil {
