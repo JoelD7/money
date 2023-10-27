@@ -76,16 +76,14 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	updateExpense := usecases.NewExpenseUpdater(request.expensesRepo, request.periodRepo)
 
-	err = updateExpense(ctx, expenseID, username, expense)
+	updatedExpense, err := updateExpense(ctx, expenseID, username, expense)
 	if err != nil {
 		request.log.Error("update_expense_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-	}, nil
+	return apigateway.NewJSONResponse(http.StatusOK, updatedExpense), nil
 }
 
 func validateUpdateInput(req *apigateway.Request, username string) (*models.Expense, error) {

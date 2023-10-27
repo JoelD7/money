@@ -42,22 +42,27 @@ func NewExpenseCreator(em ExpenseManager, um UserManager, pm PeriodManager) func
 	}
 }
 
-func NewExpenseUpdater(em ExpenseManager, pm PeriodManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) error {
-	return func(ctx context.Context, expenseID, username string, expense *models.Expense) error {
+func NewExpenseUpdater(em ExpenseManager, pm PeriodManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
+	return func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
 		expense.Username = username
 		expense.ExpenseID = expenseID
 
 		err := validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		err = em.UpdateExpense(ctx, expense)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return nil
+		updatedExpense, err := em.GetExpense(ctx, username, expenseID)
+		if err != nil {
+			return nil, fmt.Errorf("getting updated expense failed: %w", err)
+		}
+
+		return updatedExpense, nil
 	}
 }
 
