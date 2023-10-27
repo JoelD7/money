@@ -38,7 +38,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 	entity := toExpenseEntity(expense)
 
 	entity.CreatedDate = time.Now()
-	entity.PeriodUser = buildPeriodUser(entity.Username, entity.Period)
+	entity.PeriodUser = buildPeriodUser(entity.Username, *entity.Period)
 
 	item, err := attributevalue.MarshalMap(entity)
 	if err != nil {
@@ -449,7 +449,7 @@ func getAttributeValuePK(item expenseEntity, input *dynamodb.QueryInput) (map[st
 		}{
 			ExpenseID:  item.ExpenseID,
 			Username:   item.Username,
-			PeriodUser: item.PeriodUser,
+			PeriodUser: *item.PeriodUser,
 		}
 
 		return attributevalue.MarshalMap(expenseKeys)
@@ -474,6 +474,7 @@ func getPageSize(pageSize int) *int32 {
 	return aws.Int32(int32(pageSize))
 }
 
-func buildPeriodUser(username, period string) string {
-	return fmt.Sprintf("%s:%s", period, username)
+func buildPeriodUser(username, period string) *string {
+	p := fmt.Sprintf("%s:%s", period, username)
+	return &p
 }
