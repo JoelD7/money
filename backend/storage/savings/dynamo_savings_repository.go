@@ -280,7 +280,8 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	savingEnt := toSavingEntity(saving)
 
-	savingEnt.PeriodUser = buildPeriodUser(savingEnt.Username, savingEnt.Period)
+	periodUser := buildPeriodUser(savingEnt.Username, *savingEnt.Period)
+	savingEnt.PeriodUser = &periodUser
 
 	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
@@ -302,6 +303,11 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	savingEnt := toSavingEntity(saving)
+
+	if savingEnt.Period != nil {
+		periodUser := buildPeriodUser(savingEnt.Username, *savingEnt.Period)
+		savingEnt.PeriodUser = &periodUser
+	}
 
 	username, err := attributevalue.Marshal(savingEnt.Username)
 	if err != nil {
@@ -361,12 +367,27 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 		return nil, err
 	}
 
+	period, err := attributevalue.Marshal(saving.Period)
+	if err != nil {
+		return nil, err
+	}
+
+	periodUser, err := attributevalue.Marshal(saving.PeriodUser)
+	if err != nil {
+		return nil, err
+	}
+
 	if saving.SavingGoalID != nil {
 		m[":saving_goal_id"] = savingGoalID
 	}
 
 	if saving.Amount != nil {
 		m[":amount"] = amount
+	}
+
+	if saving.Period != nil {
+		m[":period"] = period
+		m[":period_user"] = periodUser
 	}
 
 	m[":updated_date"] = updatedDate
