@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
 	"strings"
+	"time"
 )
 
 const (
@@ -53,6 +54,8 @@ func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Peri
 
 func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Period) error {
 	periodEnt := toPeriodEntity(*period)
+
+	periodEnt.UpdatedDate = time.Now()
 
 	periodAv, err := attributevalue.MarshalMap(periodEnt)
 	if err != nil {
