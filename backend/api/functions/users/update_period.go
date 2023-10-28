@@ -107,9 +107,5 @@ func validateUpdateRequestBody(req *apigateway.Request) (*models.Period, error) 
 		return nil, models.ErrMissingPeriodCreatedDate
 	}
 
-	if periodModel.UpdatedDate.IsZero() {
-		return nil, models.ErrMissingPeriodUpdatedDate
-	}
-
 	return periodModel, nil
 }

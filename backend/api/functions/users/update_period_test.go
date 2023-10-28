@@ -162,18 +162,6 @@ func TestUpdatePeriodHandlerFailed_InputValidation(t *testing.T) {
 		c.Contains(logMock.Output.String(), models.ErrMissingPeriodCreatedDate.Error())
 		logMock.Output.Reset()
 	})
-
-	t.Run("Missing updated date", func(t *testing.T) {
-		apigwRequest.Body = `{"period":"2023-1","created_date":"2023-10-21T17:53:21.908187368Z","end_date":"2023-01-29","name":"","start_date":"2023-01-01"}`
-		defer func() { apigwRequest = getUpdatePeriodRequest() }()
-
-		response, err := request.process(ctx, apigwRequest)
-		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "validate_request_body_failed")
-		c.Contains(logMock.Output.String(), models.ErrMissingPeriodUpdatedDate.Error())
-		logMock.Output.Reset()
-	})
 }
 
 func getUpdatePeriodRequest() *apigateway.Request {
