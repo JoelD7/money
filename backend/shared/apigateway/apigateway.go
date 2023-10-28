@@ -55,6 +55,13 @@ var (
 		models.ErrMissingPeriodDates:             {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodDates.Error()},
 		models.ErrStartDateShouldBeBeforeEndDate: {HTTPCode: http.StatusBadRequest, Message: models.ErrStartDateShouldBeBeforeEndDate.Error()},
 		models.ErrPeriodExists:                   {HTTPCode: http.StatusBadRequest, Message: models.ErrPeriodExists.Error()},
+		models.ErrUpdatePeriodNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrUpdatePeriodNotFound.Error()},
+		models.ErrInvalidPeriodDate:              {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPeriodDate.Error()},
+		models.ErrMissingPeriodID:                {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodID.Error()},
+		models.ErrMissingPeriodName:              {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodName.Error()},
+		models.ErrMissingPeriodStartDate:         {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodStartDate.Error()},
+		models.ErrMissingPeriodCreatedDate:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodCreatedDate.Error()},
+		models.ErrMissingPeriodUpdatedDate:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodUpdatedDate.Error()},
 	}
 )
 
@@ -167,7 +174,7 @@ func multiValueParamsToString(params map[string][]string) string {
 
 func GetUsernameFromContext(req *Request) (string, error) {
 	username, ok := req.RequestContext.Authorizer["username"].(string)
-	if !ok {
+	if !ok || username == "" {
 		return "", models.ErrNoUsernameInContext
 	}
 

@@ -8,7 +8,7 @@ import (
 type periodEntity struct {
 	Username    string    `json:"username,omitempty" dynamodbav:"username"`
 	ID          string    `json:"period,omitempty" dynamodbav:"period"`
-	Name        string    `json:"name,omitempty" dynamodbav:"name"`
+	Name        *string   `json:"name,omitempty" dynamodbav:"name"`
 	StartDate   time.Time `json:"start_date,omitempty" dynamodbav:"start_date"`
 	EndDate     time.Time `json:"end_date,omitempty" dynamodbav:"end_date"`
 	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
@@ -48,8 +48,8 @@ func toPeriodEntity(period models.Period) periodEntity {
 		Username:    period.Username,
 		ID:          period.ID,
 		Name:        period.Name,
-		StartDate:   *start,
-		EndDate:     *end,
+		StartDate:   start,
+		EndDate:     end,
 		CreatedDate: period.CreatedDate,
 		UpdatedDate: period.UpdatedDate,
 	}

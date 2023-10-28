@@ -9,10 +9,11 @@ import (
 var (
 	startDate     = models.ToPeriodTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))
 	endDate       = models.ToPeriodTime(time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC))
+	name          = "January 2020"
 	defaultPeriod = &models.Period{
 		ID:        "2020-01",
 		Username:  "test@gmail.com",
-		Name:      "January 2020",
+		Name:      &name,
 		StartDate: startDate,
 		EndDate:   endDate,
 	}
@@ -44,6 +45,14 @@ func (d *DynamoMock) CreatePeriod(ctx context.Context, period *models.Period) (*
 	}
 
 	return period, nil
+}
+
+func (d *DynamoMock) UpdatePeriod(ctx context.Context, period *models.Period) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
+	}
+
+	return nil
 }
 
 func (d *DynamoMock) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {

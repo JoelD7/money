@@ -8,6 +8,8 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/usecases"
+	"net/http"
 	"time"
 )
 
@@ -47,7 +49,7 @@ func updatePeriodHandler(ctx context.Context, req *apigateway.Request) (*apigate
 }
 
 func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	_, err := validateUpdateRequestBody(req)
+	periodBody, err := validateUpdateRequestBody(req)
 	if err != nil {
 		request.err = err
 		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
@@ -55,7 +57,17 @@ func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return nil, nil
+	updatePeriod := usecases.NewPeriodUpdater(request.periodRepo)
+
+	updatedPeriod, err := updatePeriod(ctx, periodBody.Username, periodBody.ID, periodBody)
+	if err != nil {
+		request.err = err
+		request.log.Error("update_period_failed", err, []models.LoggerObject{req})
+
+		return apigateway.NewErrorResponse(err), nil
+	}
+
+	return apigateway.NewJSONResponse(http.StatusOK, updatedPeriod), nil
 }
 
 func validateUpdateRequestBody(req *apigateway.Request) (*models.Period, error) {
@@ -99,5 +111,5 @@ func validateUpdateRequestBody(req *apigateway.Request) (*models.Period, error) 
 		return nil, models.ErrMissingPeriodUpdatedDate
 	}
 
-	return nil, nil
+	return periodModel, nil
 }

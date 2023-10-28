@@ -31,7 +31,33 @@ func Test(t *testing.T) {
 	c.Nil(err)
 }
 
-func TestUpdatePeriodHandlerFailed(t *testing.T) {
+func TestUpdatePeriodHandlerFailed_Database(t *testing.T) {
+	c := require.New(t)
+
+	logMock := logger.NewLoggerMock(nil)
+	periodMock := period.NewDynamoMock()
+	ctx := context.Background()
+
+	request := &updatePeriodRequest{
+		log:        logMock,
+		periodRepo: periodMock,
+	}
+
+	apigwRequest := getUpdatePeriodRequest()
+
+	t.Run("Period not found", func(t *testing.T) {
+		periodMock.ActivateForceFailure(models.ErrUpdatePeriodNotFound)
+		defer periodMock.DeactivateForceFailure()
+
+		response, err := request.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(http.StatusNotFound, response.StatusCode)
+		c.Contains(logMock.Output.String(), "update_period_failed")
+		c.Contains(logMock.Output.String(), models.ErrUpdatePeriodNotFound.Error())
+	})
+}
+
+func TestUpdatePeriodHandlerFailed_InputValidation(t *testing.T) {
 	c := require.New(t)
 
 	logMock := logger.NewLoggerMock(nil)

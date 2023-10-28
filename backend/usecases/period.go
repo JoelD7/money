@@ -17,16 +17,16 @@ const (
 
 type PeriodManager interface {
 	CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error)
+	UpdatePeriod(ctx context.Context, period *models.Period) error
 	GetPeriod(ctx context.Context, username, period string) (*models.Period, error)
 	GetLastPeriod(ctx context.Context, username string) (*models.Period, error)
-	GetPeriods(ctx context.Context, username string) ([]*models.Period, error)
+	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error)
 }
 
 func NewPeriodCreator(pm PeriodManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
-		err := validatePeriod(period)
-		if err != nil {
-			return nil, err
+		if period.StartDate.After(period.EndDate.Time) {
+			return nil, models.ErrStartDateShouldBeBeforeEndDate
 		}
 
 		periodID, err := generateNewPeriodID(ctx, pm, username)
@@ -39,6 +39,22 @@ func NewPeriodCreator(pm PeriodManager) func(ctx context.Context, username strin
 		period.CreatedDate = time.Now()
 
 		return pm.CreatePeriod(ctx, period)
+	}
+}
+
+func NewPeriodUpdater(pm PeriodManager) func(ctx context.Context, username, periodID string, period *models.Period) (*models.Period, error) {
+	return func(ctx context.Context, username, periodID string, period *models.Period) (*models.Period, error) {
+		err := pm.UpdatePeriod(ctx, period)
+		if err != nil {
+			return nil, err
+		}
+
+		updatedPeriod, err := pm.GetPeriod(ctx, username, periodID)
+		if err != nil {
+			return nil, fmt.Errorf("get updated period failed: %w", err)
+		}
+
+		return updatedPeriod, nil
 	}
 }
 
@@ -77,12 +93,4 @@ func generateNewPeriodID(ctx context.Context, pm PeriodManager, username string)
 	}
 
 	return fmt.Sprintf("%s-%s", strconv.Itoa(periodYear), strconv.Itoa(periodNumber)), nil
-}
-
-func validatePeriod(period *models.Period) error {
-	if period.StartDate.After(period.EndDate.Time) {
-		return models.ErrStartDateShouldBeBeforeEndDate
-	}
-
-	return nil
 }

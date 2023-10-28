@@ -7,13 +7,13 @@ import (
 )
 
 type Period struct {
-	Username    string      `json:"username,omitempty"`
-	ID          string      `json:"period,omitempty"`
-	Name        string      `json:"name,omitempty"`
-	StartDate   *PeriodTime `json:"start_date,omitempty"`
-	EndDate     *PeriodTime `json:"end_date,omitempty"`
-	CreatedDate time.Time   `json:"created_date,omitempty"`
-	UpdatedDate time.Time   `json:"updated_date,omitempty"`
+	Username    string     `json:"username,omitempty"`
+	ID          string     `json:"period,omitempty"`
+	Name        *string    `json:"name,omitempty"`
+	StartDate   PeriodTime `json:"start_date,omitempty"`
+	EndDate     PeriodTime `json:"end_date,omitempty"`
+	CreatedDate time.Time  `json:"created_date,omitempty"`
+	UpdatedDate time.Time  `json:"updated_date,omitempty"`
 }
 
 type PeriodTime struct {
@@ -22,12 +22,12 @@ type PeriodTime struct {
 
 const ctLayout = "2006-01-02"
 
-func ToTime(p *PeriodTime) *time.Time {
-	return &p.Time
+func ToTime(p PeriodTime) time.Time {
+	return p.Time
 }
 
-func ToPeriodTime(t time.Time) *PeriodTime {
-	return &PeriodTime{t}
+func ToPeriodTime(t time.Time) PeriodTime {
+	return PeriodTime{t}
 }
 
 func (ct *PeriodTime) UnmarshalJSON(b []byte) error {
