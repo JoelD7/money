@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"strings"
 )
 
 const (
@@ -33,11 +34,16 @@ func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Peri
 	}
 
 	input := &dynamodb.PutItemInput{
-		Item:      attrValue,
-		TableName: aws.String(tableName),
+		Item:                attrValue,
+		ConditionExpression: aws.String("attribute_not_exists(period)"),
+		TableName:           aws.String(tableName),
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return nil, fmt.Errorf("%v: %w", err, models.ErrPeriodExists)
+	}
+
 	if err != nil {
 		return nil, err
 	}

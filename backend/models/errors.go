@@ -57,4 +57,5 @@ var (
 	ErrInvalidPeriod                  = errors.New("invalid period")
 	ErrMissingPeriodDates             = errors.New("missing period dates. A period should have a start_date and end_date")
 	ErrStartDateShouldBeBeforeEndDate = errors.New("start_date should be before end_date")
+	ErrPeriodExists                   = errors.New("period already exists")
 )

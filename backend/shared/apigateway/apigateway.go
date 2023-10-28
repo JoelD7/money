@@ -54,6 +54,7 @@ var (
 		models.ErrInvalidPeriod:                  {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPeriod.Error()},
 		models.ErrMissingPeriodDates:             {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodDates.Error()},
 		models.ErrStartDateShouldBeBeforeEndDate: {HTTPCode: http.StatusBadRequest, Message: models.ErrStartDateShouldBeBeforeEndDate.Error()},
+		models.ErrPeriodExists:                   {HTTPCode: http.StatusBadRequest, Message: models.ErrPeriodExists.Error()},
 	}
 )
 
