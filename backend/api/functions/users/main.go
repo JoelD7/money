@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
@@ -31,7 +33,7 @@ func getRequestQueryParams(req *apigateway.Request) (string, int, error) {
 	if req.QueryStringParameters["page_size"] != "" {
 		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
 		if err != nil {
-			return "", 0, err
+			return "", 0, fmt.Errorf("%w: %v", models.ErrInvalidPageSize, err)
 		}
 	}
 
@@ -63,6 +65,7 @@ func main() {
 			r.Post("/", createPeriodHandler)
 			r.Put("/{periodID}", updatePeriodHandler)
 			r.Get("/{periodID}", getPeriodHandler)
+			r.Get("/", getPeriodsHandler)
 		})
 	})
 
