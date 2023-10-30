@@ -12,6 +12,25 @@ import (
 	"testing"
 )
 
+func TestGetPeriodHandlerSuccess(t *testing.T) {
+	c := require.New(t)
+
+	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
+	periodMock := period.NewDynamoMock()
+
+	request := &getPeriodRequest{
+		log:        logMock,
+		periodRepo: periodMock,
+	}
+
+	apigwRequest := getPeriodAPIGatewayRequest()
+
+	response, err := request.process(ctx, apigwRequest)
+	c.NoError(err)
+	c.Equal(http.StatusOK, response.StatusCode)
+}
+
 func TestGetPeriodHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
