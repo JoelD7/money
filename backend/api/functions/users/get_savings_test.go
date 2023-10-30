@@ -64,18 +64,15 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
-	//TODO: fix this test when input validation is on the controller
 	t.Run("Invalid email", func(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer = map[string]interface{}{
 			"username": "12",
 		}
 		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
 
-		response, err := req.getUserSavings(ctx, apigwRequest)
-		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "invalid_email_detected")
-		c.Contains(logMock.Output.String(), models.ErrInvalidEmail.Error())
+		err := req.prepareRequest(apigwRequest)
+		c.ErrorIs(err, models.ErrInvalidEmail)
+		c.Contains(logMock.Output.String(), "invalid_username")
 		logMock.Output.Reset()
 	})
 
@@ -83,11 +80,9 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer = map[string]interface{}{}
 		defer func() { apigwRequest = getDummyAPIGatewayRequest() }()
 
-		response, err := req.getUserSavings(ctx, apigwRequest)
-		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
+		err := req.prepareRequest(apigwRequest)
+		c.ErrorIs(err, models.ErrNoUsernameInContext)
 		c.Contains(logMock.Output.String(), "get_user_email_from_context_failed")
-		c.Contains(logMock.Output.String(), errNoUserEmailInContext.Error())
 		logMock.Output.Reset()
 	})
 }
