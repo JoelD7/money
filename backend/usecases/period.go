@@ -58,6 +58,12 @@ func NewPeriodUpdater(pm PeriodManager) func(ctx context.Context, username, peri
 	}
 }
 
+func NewPeriodGetter(pm PeriodManager) func(ctx context.Context, username, periodID string) (*models.Period, error) {
+	return func(ctx context.Context, username, periodID string) (*models.Period, error) {
+		return pm.GetPeriod(ctx, username, periodID)
+	}
+}
+
 func generateNewPeriodID(ctx context.Context, pm PeriodManager, username string) (string, error) {
 	lastPeriod, err := pm.GetLastPeriod(ctx, username)
 	if err != nil && !errors.Is(err, models.ErrPeriodsNotFound) {

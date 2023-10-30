@@ -46,6 +46,7 @@ func main() {
 		r.Route("/periods", func(r *router.Router) {
 			r.Post("/", createPeriodHandler)
 			r.Put("/{periodID}", updatePeriodHandler)
+			r.Get("/{periodID}", getPeriodHandler)
 		})
 	})
 
