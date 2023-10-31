@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+type getPeriodsResponse struct {
+	Periods []*models.Period `json:"periods"`
+	NextKey string           `json:"next_key"`
+}
+
 type getPeriodsRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
@@ -58,7 +63,7 @@ func (request *getPeriodsRequest) process(ctx context.Context, req *apigateway.R
 
 	getPeriods := usecases.NewPeriodsGetter(request.periodRepo)
 
-	userPeriods, err := getPeriods(ctx, request.username, request.startKey, request.pageSize)
+	userPeriods, nextKey, err := getPeriods(ctx, request.username, request.startKey, request.pageSize)
 	if err != nil {
 		request.err = err
 		request.log.Error("get_periods_failed", request.err, []models.LoggerObject{req})
@@ -66,7 +71,12 @@ func (request *getPeriodsRequest) process(ctx context.Context, req *apigateway.R
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, userPeriods), nil
+	res := &getPeriodsResponse{
+		Periods: userPeriods,
+		NextKey: nextKey,
+	}
+
+	return apigateway.NewJSONResponse(http.StatusOK, res), nil
 }
 
 func (request *getPeriodsRequest) prepareRequest(req *apigateway.Request) error {
