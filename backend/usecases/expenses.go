@@ -186,7 +186,7 @@ func validateExpensePeriod(ctx context.Context, expense *models.Expense, usernam
 	}
 
 	//TODO: get all periods
-	periods, err := p.GetPeriods(ctx, username, "", 0)
+	periods, _, err := p.GetPeriods(ctx, username, "", 0)
 	if err != nil {
 		return err
 	}

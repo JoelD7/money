@@ -292,7 +292,7 @@ func validateSavingPeriod(ctx context.Context, saving *models.Saving, username s
 	}
 
 	//TODO: get all periods
-	periods, err := p.GetPeriods(ctx, username, "", 0)
+	periods, _, err := p.GetPeriods(ctx, username, "", 0)
 	if err != nil {
 		return err
 	}
