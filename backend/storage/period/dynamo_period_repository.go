@@ -141,7 +141,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		return nil, "", err
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if (result.Items == nil || len(result.Items) == 0) && startKey == "" {
 		return nil, "", models.ErrPeriodsNotFound
 	}
 
