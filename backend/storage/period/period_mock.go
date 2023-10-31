@@ -71,10 +71,10 @@ func (d *DynamoMock) GetLastPeriod(ctx context.Context, username string) (*model
 	return defaultPeriod, nil
 }
 
-func (d *DynamoMock) GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error) {
+func (d *DynamoMock) GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
 	if d.mockedErr != nil {
-		return nil, d.mockedErr
+		return nil, "", d.mockedErr
 	}
 
-	return []*models.Period{defaultPeriod}, nil
+	return []*models.Period{defaultPeriod}, "next_key", nil
 }

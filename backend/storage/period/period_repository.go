@@ -10,5 +10,5 @@ type Repository interface {
 	UpdatePeriod(ctx context.Context, period *models.Period) error
 	GetPeriod(ctx context.Context, username, period string) (*models.Period, error)
 	GetLastPeriod(ctx context.Context, username string) (*models.Period, error)
-	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error)
+	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error)
 }

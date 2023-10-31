@@ -20,7 +20,7 @@ type PeriodManager interface {
 	UpdatePeriod(ctx context.Context, period *models.Period) error
 	GetPeriod(ctx context.Context, username, period string) (*models.Period, error)
 	GetLastPeriod(ctx context.Context, username string) (*models.Period, error)
-	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error)
+	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error)
 }
 
 func NewPeriodCreator(pm PeriodManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
@@ -64,8 +64,8 @@ func NewPeriodGetter(pm PeriodManager) func(ctx context.Context, username, perio
 	}
 }
 
-func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error) {
-	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error) {
+func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
+	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
 		return pm.GetPeriods(ctx, username, startKey, pageSize)
 	}
 }

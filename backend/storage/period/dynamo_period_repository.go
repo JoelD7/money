@@ -108,14 +108,14 @@ func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period strin
 	return toPeriodModel(periodStruct), nil
 }
 
-func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, error) {
+func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
 	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
 
 	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
 
 	expr, err := conditionBuilder.Build()
 	if err != nil {
-		return nil, fmt.Errorf("build expression failed: %v", err)
+		return nil, "", fmt.Errorf("build expression failed: %v", err)
 	}
 
 	var decodedStartKey map[string]types.AttributeValue
@@ -123,7 +123,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	if startKey != "" {
 		decodedStartKey, err = decodeStartKey(startKey)
 		if err != nil {
-			return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
 
@@ -138,21 +138,26 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 
 	result, err := d.dynamoClient.Query(ctx, input)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if result.Items == nil || len(result.Items) == 0 {
-		return nil, models.ErrPeriodsNotFound
+		return nil, "", models.ErrPeriodsNotFound
 	}
 
 	periods := make([]periodEntity, 0, len(result.Items))
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &periods)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal periods failed: %v", err)
+		return nil, "", fmt.Errorf("unmarshal periods failed: %v", err)
 	}
 
-	return toPeriodModels(periods), nil
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return toPeriodModels(periods), nextKey, nil
 }
 
 func (d *DynamoRepository) GetLastPeriod(ctx context.Context, username string) (*models.Period, error) {
