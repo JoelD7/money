@@ -60,3 +60,19 @@ func (ct *PeriodTime) MarshalJSON() ([]byte, error) {
 func (ct *PeriodTime) IsSet() bool {
 	return !ct.IsZero()
 }
+
+func (period *Period) LogName() string {
+	return "period"
+}
+
+func (period *Period) LogProperties() map[string]interface{} {
+	return map[string]interface{}{
+		"s_username":     period.Username,
+		"s_period":       period.ID,
+		"s_name":         period.Name,
+		"s_start_date":   period.StartDate,
+		"s_end_date":     period.EndDate,
+		"s_created_date": period.CreatedDate,
+		"s_updated_date": period.UpdatedDate,
+	}
+}
