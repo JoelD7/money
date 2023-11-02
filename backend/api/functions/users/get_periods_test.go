@@ -12,6 +12,25 @@ import (
 	"testing"
 )
 
+func TestGetPeriodsHandlerSuccess(t *testing.T) {
+	c := require.New(t)
+
+	logMock := logger.NewLoggerMock(nil)
+	ctx := context.Background()
+	periodMock := period.NewDynamoMock()
+
+	request := &getPeriodsRequest{
+		log:        logMock,
+		periodRepo: periodMock,
+	}
+
+	apigwRequest := getPeriodsAPIGatewayRequest()
+
+	response, err := request.process(ctx, apigwRequest)
+	c.NoError(err)
+	c.Equal(http.StatusOK, response.StatusCode)
+}
+
 func TestGetPeriodsHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
@@ -50,6 +69,17 @@ func TestGetPeriodsHandlerFailed(t *testing.T) {
 
 	t.Run("Invalid page size parameter", func(t *testing.T) {
 		apigwRequest.QueryStringParameters["page_size"] = "abc"
+		defer func() { apigwRequest = getPeriodsAPIGatewayRequest() }()
+
+		response, err := request.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "get_request_params_failed")
+		c.Contains(logMock.Output.String(), models.ErrInvalidPageSize.Error())
+	})
+
+	t.Run("Negative page size parameter", func(t *testing.T) {
+		apigwRequest.QueryStringParameters["page_size"] = "-1"
 		defer func() { apigwRequest = getPeriodsAPIGatewayRequest() }()
 
 		response, err := request.process(ctx, apigwRequest)

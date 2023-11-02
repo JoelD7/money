@@ -32,9 +32,10 @@ func getRequestQueryParams(req *apigateway.Request) (string, int, error) {
 
 	if req.QueryStringParameters["page_size"] != "" {
 		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
-		if err != nil {
-			return "", 0, fmt.Errorf("%w: %v", models.ErrInvalidPageSize, err)
-		}
+	}
+
+	if err != nil || pageSizeParam < 0 {
+		return "", 0, fmt.Errorf("%w: %v", models.ErrInvalidPageSize, err)
 	}
 
 	return req.QueryStringParameters["start_key"], pageSizeParam, nil
