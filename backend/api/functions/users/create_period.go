@@ -65,7 +65,7 @@ func (request *createPeriodRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	createPeriod := usecases.NewPeriodCreator(request.periodRepo)
+	createPeriod := usecases.NewPeriodCreator(request.periodRepo, request.log)
 
 	createdPeriod, err := createPeriod(ctx, username, periodModel)
 	if err != nil {

@@ -23,7 +23,7 @@ type PeriodManager interface {
 	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error)
 }
 
-func NewPeriodCreator(pm PeriodManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
+func NewPeriodCreator(pm PeriodManager, log Logger) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 		if period.StartDate.After(period.EndDate.Time) {
 			return nil, models.ErrStartDateShouldBeBeforeEndDate
@@ -38,7 +38,14 @@ func NewPeriodCreator(pm PeriodManager) func(ctx context.Context, username strin
 		period.Username = username
 		period.CreatedDate = time.Now()
 
-		return pm.CreatePeriod(ctx, period)
+		newPeriod, err := pm.CreatePeriod(ctx, period)
+		if err != nil {
+			log.Error("create_period_failed", err, []models.LoggerObject{period})
+
+			return nil, err
+		}
+
+		return newPeriod, nil
 	}
 }
 
