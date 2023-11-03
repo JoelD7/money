@@ -68,7 +68,7 @@ func (period *Period) LogName() string {
 func (period *Period) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
 		"s_username":     period.Username,
-		"s_period":       period.ID,
+		"s_period_id":    period.ID,
 		"s_name":         period.Name,
 		"s_start_date":   period.StartDate,
 		"s_end_date":     period.EndDate,
