@@ -17,16 +17,21 @@ type ExpenseManager interface {
 	DeleteExpense(ctx context.Context, expenseID, username string) error
 }
 
-func NewExpenseCreator(em ExpenseManager, um UserManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
+func NewExpenseCreator(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
 			return nil, err
 		}
 
+		err = validateExpensePeriod(ctx, expense, username, pm)
+		if err != nil {
+			return nil, err
+		}
+
 		expense.ExpenseID = generateDynamoID("EX")
 		expense.Username = username
-		expense.Period = user.CurrentPeriod
+		expense.Period = &user.CurrentPeriod
 
 		newExpense, err := em.CreateExpense(ctx, expense)
 		if err != nil {
@@ -37,17 +42,32 @@ func NewExpenseCreator(em ExpenseManager, um UserManager) func(ctx context.Conte
 	}
 }
 
-func NewExpenseUpdater(em ExpenseManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) error {
-	return func(ctx context.Context, expenseID, username string, expense *models.Expense) error {
+func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
+	return func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
 		expense.Username = username
 		expense.ExpenseID = expenseID
 
-		err := em.UpdateExpense(ctx, expense)
+		err := validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		return nil
+		err = em.UpdateExpense(ctx, expense)
+		if err != nil {
+			return nil, err
+		}
+
+		updatedExpense, err := em.GetExpense(ctx, username, expenseID)
+		if err != nil {
+			return nil, fmt.Errorf("getting updated expense failed: %w", err)
+		}
+
+		err = setExpensesCategoryNames(ctx, username, um, []*models.Expense{updatedExpense})
+		if err != nil {
+			return updatedExpense, err
+		}
+
+		return updatedExpense, nil
 	}
 }
 
@@ -158,4 +178,24 @@ func setExpensesCategoryNames(ctx context.Context, username string, um UserManag
 	}
 
 	return nil
+}
+
+func validateExpensePeriod(ctx context.Context, expense *models.Expense, username string, p PeriodManager) error {
+	if expense.Period == nil {
+		return nil
+	}
+
+	//TODO: get all periods
+	periods, _, err := p.GetPeriods(ctx, username, "", 0)
+	if err != nil {
+		return err
+	}
+
+	for _, period := range periods {
+		if period.ID == *expense.Period {
+			return nil
+		}
+	}
+
+	return models.ErrInvalidPeriod
 }

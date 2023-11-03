@@ -277,14 +277,15 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) error {
+func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	savingEnt := toSavingEntity(saving)
 
-	savingEnt.PeriodUser = buildPeriodUser(savingEnt.Username, savingEnt.Period)
+	periodUser := buildPeriodUser(savingEnt.Username, *savingEnt.Period)
+	savingEnt.PeriodUser = &periodUser
 
 	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -294,14 +295,19 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
-		return fmt.Errorf("put saving item failed: %v", err)
+		return nil, fmt.Errorf("put saving item failed: %v", err)
 	}
 
-	return nil
+	return toSavingModel(savingEnt), nil
 }
 
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {
 	savingEnt := toSavingEntity(saving)
+
+	if savingEnt.Period != nil {
+		periodUser := buildPeriodUser(savingEnt.Username, *savingEnt.Period)
+		savingEnt.PeriodUser = &periodUser
+	}
 
 	username, err := attributevalue.Marshal(savingEnt.Username)
 	if err != nil {
@@ -361,12 +367,27 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 		return nil, err
 	}
 
+	period, err := attributevalue.Marshal(saving.Period)
+	if err != nil {
+		return nil, err
+	}
+
+	periodUser, err := attributevalue.Marshal(saving.PeriodUser)
+	if err != nil {
+		return nil, err
+	}
+
 	if saving.SavingGoalID != nil {
 		m[":saving_goal_id"] = savingGoalID
 	}
 
 	if saving.Amount != nil {
 		m[":amount"] = amount
+	}
+
+	if saving.Period != nil {
+		m[":period"] = period
+		m[":period_user"] = periodUser
 	}
 
 	m[":updated_date"] = updatedDate
@@ -377,16 +398,11 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 func getUpdateExpression(attributeValues map[string]types.AttributeValue) *string {
 	attributes := make([]string, 0)
 
-	if _, ok := attributeValues[":saving_goal_id"]; ok {
-		attributes = append(attributes, "saving_goal_id = :saving_goal_id")
-	}
-
-	if _, ok := attributeValues[":amount"]; ok {
-		attributes = append(attributes, "amount = :amount")
-	}
-
-	if _, ok := attributeValues[":updated_date"]; ok {
-		attributes = append(attributes, "updated_date = :updated_date")
+	for key, _ := range attributeValues {
+		attributeName := strings.ReplaceAll(key, ":", "")
+		//The assumption here is that the attribute name is the same as the key without the colon
+		//Example: "amount(attribute)" -> ":amount(key)"
+		attributes = append(attributes, fmt.Sprintf("%s = %s", attributeName, key))
 	}
 
 	return aws.String("SET " + strings.Join(attributes, ", "))

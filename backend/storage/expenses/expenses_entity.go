@@ -13,8 +13,8 @@ type expenseEntity struct {
 	Name        string    `json:"name,omitempty" dynamodbav:"name"`
 	Notes       string    `json:"notes,omitempty" dynamodbav:"notes"`
 	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
-	Period      string    `json:"period,omitempty" dynamodbav:"period"`
-	PeriodUser  string    `json:"period_user,omitempty" dynamodbav:"period_user"`
+	Period      *string   `json:"period,omitempty" dynamodbav:"period"`
+	PeriodUser  *string   `json:"period_user,omitempty" dynamodbav:"period_user"`
 	UpdateDate  time.Time `json:"update_date,omitempty" dynamodbav:"update_date"`
 }
 

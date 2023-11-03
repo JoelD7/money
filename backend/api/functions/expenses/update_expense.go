@@ -9,6 +9,8 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"time"
@@ -19,12 +21,16 @@ type updateExpenseRequest struct {
 	startingTime time.Time
 	err          error
 	expensesRepo expenses.Repository
+	userRepo     users.Repository
+	periodRepo   period.Repository
 }
 
 func (request *updateExpenseRequest) init() {
 	dynamoClient := initDynamoClient()
 
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -71,18 +77,16 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	updateExpense := usecases.NewExpenseUpdater(request.expensesRepo)
+	updateExpense := usecases.NewExpenseUpdater(request.expensesRepo, request.periodRepo, request.userRepo)
 
-	err = updateExpense(ctx, expenseID, username, expense)
+	updatedExpense, err := updateExpense(ctx, expenseID, username, expense)
 	if err != nil {
 		request.log.Error("update_expense_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-	}, nil
+	return apigateway.NewJSONResponse(http.StatusOK, updatedExpense), nil
 }
 
 func validateUpdateInput(req *apigateway.Request, username string) (*models.Expense, error) {

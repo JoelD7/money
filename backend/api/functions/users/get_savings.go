@@ -11,7 +11,6 @@ import (
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -90,7 +89,7 @@ func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error 
 		return err
 	}
 
-	request.startKey, request.pageSize, err = getRequestParams(req)
+	request.startKey, request.pageSize, err = getRequestQueryParams(req)
 	if err != nil {
 		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
 
@@ -218,20 +217,6 @@ func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx contex
 		StatusCode: http.StatusOK,
 		Body:       responseJSON,
 	}, nil
-}
-
-func getRequestParams(req *apigateway.Request) (string, int, error) {
-	pageSizeParam := 0
-	var err error
-
-	if req.QueryStringParameters["page_size"] != "" {
-		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
-		if err != nil {
-			return "", 0, err
-		}
-	}
-
-	return req.QueryStringParameters["start_key"], pageSizeParam, nil
 }
 
 func (request *getSavingsRequest) getSavingsResponse(savings []*models.Saving, nextKey string) (string, error) {

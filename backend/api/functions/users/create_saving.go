@@ -7,15 +7,12 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"time"
-)
-
-var (
-	errRequestBodyParseFailure = apigateway.NewError("couldn't parse the request body. Please check it", http.StatusBadRequest)
 )
 
 type createSavingRequest struct {
@@ -24,6 +21,7 @@ type createSavingRequest struct {
 	err          error
 	savingsRepo  savings.Repository
 	userRepo     users.Repository
+	periodRepo   period.Repository
 }
 
 func (request *createSavingRequest) init() {
@@ -31,6 +29,7 @@ func (request *createSavingRequest) init() {
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
+	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -70,18 +69,16 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.userRepo)
+	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.userRepo, request.periodRepo)
 
-	err = createSaving(ctx, username, userSaving)
+	saving, err := createSaving(ctx, username, userSaving)
 	if err != nil {
 		request.log.Error("create_saving_failed", err, []models.LoggerObject{req})
 
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusCreated,
-	}, nil
+	return apigateway.NewJSONResponse(http.StatusCreated, saving), nil
 }
 
 func validateBody(req *apigateway.Request) (*models.Saving, error) {
@@ -89,7 +86,7 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 
 	err := json.Unmarshal([]byte(req.Body), userSaving)
 	if err != nil {
-		return nil, errRequestBodyParseFailure
+		return nil, models.ErrInvalidRequestBody
 	}
 
 	if userSaving.Amount != nil && *userSaving.Amount == 0 {

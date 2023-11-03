@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"strconv"
 )
 
 var (
@@ -20,6 +24,21 @@ func initDynamoClient() *dynamodb.Client {
 	}
 
 	return dynamodb.NewFromConfig(cfg)
+}
+
+func getRequestQueryParams(req *apigateway.Request) (string, int, error) {
+	pageSizeParam := 0
+	var err error
+
+	if req.QueryStringParameters["page_size"] != "" {
+		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
+	}
+
+	if err != nil || pageSizeParam < 0 {
+		return "", 0, fmt.Errorf("%w: %v", models.ErrInvalidPageSize, err)
+	}
+
+	return req.QueryStringParameters["start_key"], pageSizeParam, nil
 }
 
 func main() {
@@ -41,6 +60,13 @@ func main() {
 			r.Post("/", createSavingHandler)
 			r.Put("/{savingID}", updateSavingHandler)
 			r.Delete("/", deleteSavingHandler)
+		})
+
+		r.Route("/periods", func(r *router.Router) {
+			r.Post("/", createPeriodHandler)
+			r.Put("/{periodID}", updatePeriodHandler)
+			r.Get("/{periodID}", getPeriodHandler)
+			r.Get("/", getPeriodsHandler)
 		})
 	})
 

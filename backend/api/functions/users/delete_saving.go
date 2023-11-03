@@ -54,7 +54,7 @@ func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("request_body_unmarshal_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(errRequestBodyParseFailure), nil
+		return apigateway.NewErrorResponse(models.ErrInvalidRequestBody), nil
 	}
 
 	deleteSaving := usecases.NewSavingDeleter(request.savingsRepo)

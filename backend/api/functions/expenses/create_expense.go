@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -21,6 +22,7 @@ type createExpenseRequest struct {
 	err          error
 	expensesRepo expenses.Repository
 	userRepo     users.Repository
+	periodRepo   period.Repository
 }
 
 func (request *createExpenseRequest) init() {
@@ -28,6 +30,7 @@ func (request *createExpenseRequest) init() {
 
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
+	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
 }
@@ -67,7 +70,7 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.userRepo)
+	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.userRepo, request.periodRepo)
 
 	newExpense, err := createExpense(ctx, username, expense)
 	if err != nil {

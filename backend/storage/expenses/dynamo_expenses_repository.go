@@ -38,7 +38,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 	entity := toExpenseEntity(expense)
 
 	entity.CreatedDate = time.Now()
-	entity.PeriodUser = buildPeriodUser(entity.Username, entity.Period)
+	entity.PeriodUser = buildPeriodUser(entity.Username, *entity.Period)
 
 	item, err := attributevalue.MarshalMap(entity)
 	if err != nil {
@@ -62,6 +62,10 @@ func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Ex
 	entity := toExpenseEntity(expense)
 
 	entity.UpdateDate = time.Now()
+
+	if entity.Period != nil {
+		entity.PeriodUser = buildPeriodUser(entity.Username, *entity.Period)
+	}
 
 	username, err := attributevalue.Marshal(entity.Username)
 	if err != nil {
@@ -130,6 +134,16 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 		return nil, err
 	}
 
+	period, err := attributevalue.Marshal(expense.Period)
+	if err != nil {
+		return nil, err
+	}
+
+	periodUser, err := attributevalue.Marshal(expense.PeriodUser)
+	if err != nil {
+		return nil, err
+	}
+
 	updatedDate, err := attributevalue.Marshal(time.Now())
 	if err != nil {
 		return nil, err
@@ -151,6 +165,11 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 		attrValues[":notes"] = notes
 	}
 
+	if expense.Period != nil {
+		attrValues[":period"] = period
+		attrValues[":period_user"] = periodUser
+	}
+
 	attrValues[":update_date"] = updatedDate
 
 	return attrValues, nil
@@ -159,24 +178,16 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 func getUpdateExpression(attributeValues map[string]types.AttributeValue) *string {
 	attributes := make([]string, 0)
 
-	if _, ok := attributeValues[":category_id"]; ok {
-		attributes = append(attributes, "category_id = :category_id")
-	}
+	for key, _ := range attributeValues {
+		attributeName := strings.ReplaceAll(key, ":", "")
+		if key == ":name" {
+			attributes = append(attributes, fmt.Sprintf("%s = :name", nameAttributeName))
+			continue
+		}
 
-	if _, ok := attributeValues[":amount"]; ok {
-		attributes = append(attributes, "amount = :amount")
-	}
-
-	if _, ok := attributeValues[":name"]; ok {
-		attributes = append(attributes, fmt.Sprintf("%s = :name", nameAttributeName))
-	}
-
-	if _, ok := attributeValues[":notes"]; ok {
-		attributes = append(attributes, "notes = :notes")
-	}
-
-	if _, ok := attributeValues[":update_date"]; ok {
-		attributes = append(attributes, "update_date = :update_date")
+		//The assumption here is that the attribute name is the same as the key without the colon
+		//Example: "amount(attribute)" -> ":amount(key)"
+		attributes = append(attributes, fmt.Sprintf("%s = %s", attributeName, key))
 	}
 
 	return aws.String("SET " + strings.Join(attributes, ", "))
@@ -449,7 +460,7 @@ func getAttributeValuePK(item expenseEntity, input *dynamodb.QueryInput) (map[st
 		}{
 			ExpenseID:  item.ExpenseID,
 			Username:   item.Username,
-			PeriodUser: item.PeriodUser,
+			PeriodUser: *item.PeriodUser,
 		}
 
 		return attributevalue.MarshalMap(expenseKeys)
@@ -474,6 +485,7 @@ func getPageSize(pageSize int) *int32 {
 	return aws.Int32(int32(pageSize))
 }
 
-func buildPeriodUser(username, period string) string {
-	return fmt.Sprintf("%s:%s", period, username)
+func buildPeriodUser(username, period string) *string {
+	p := fmt.Sprintf("%s:%s", period, username)
+	return &p
 }
