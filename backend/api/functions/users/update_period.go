@@ -99,7 +99,7 @@ func validateUpdateRequestBody(req *apigateway.Request) (*models.Period, error) 
 		return nil, models.ErrMissingPeriodDates
 	}
 
-	if periodModel.StartDate.After(periodModel.EndDate.Time) {
+	if periodModel.StartDate.After(periodModel.EndDate) {
 		return nil, models.ErrStartDateShouldBeBeforeEndDate
 	}
 

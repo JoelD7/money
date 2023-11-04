@@ -14,8 +14,8 @@ var (
 		ID:        "2020-01",
 		Username:  "test@gmail.com",
 		Name:      &name,
-		StartDate: startDate,
-		EndDate:   endDate,
+		StartDate: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
 	}
 )
 

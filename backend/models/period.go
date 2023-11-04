@@ -7,13 +7,13 @@ import (
 )
 
 type Period struct {
-	Username    string     `json:"username,omitempty"`
-	ID          string     `json:"period,omitempty"`
-	Name        *string    `json:"name,omitempty"`
-	StartDate   PeriodTime `json:"start_date,omitempty"`
-	EndDate     PeriodTime `json:"end_date,omitempty"`
-	CreatedDate time.Time  `json:"created_date,omitempty"`
-	UpdatedDate time.Time  `json:"updated_date,omitempty"`
+	Username    string    `json:"username,omitempty"`
+	ID          string    `json:"period,omitempty"`
+	Name        *string   `json:"name,omitempty"`
+	StartDate   time.Time `json:"start_date,omitempty"`
+	EndDate     time.Time `json:"end_date,omitempty"`
+	CreatedDate time.Time `json:"created_date,omitempty"`
+	UpdatedDate time.Time `json:"updated_date,omitempty"`
 }
 
 type PeriodTime struct {
