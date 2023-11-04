@@ -91,7 +91,7 @@ func validateUpdateRequestBody(req *apigateway.Request) (*models.Period, error) 
 	periodModel.ID = periodID
 	periodModel.Username = username
 
-	if periodModel.Name == nil {
+	if periodModel.Name == nil || periodModel.Name != nil && *periodModel.Name == "" {
 		return nil, models.ErrMissingPeriodName
 	}
 
