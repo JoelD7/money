@@ -86,6 +86,10 @@ func (request *createPeriodRequest) validateCreateRequestBody(req *apigateway.Re
 		return nil, fmt.Errorf("%v:%w", err, models.ErrInvalidRequestBody)
 	}
 
+	if p.Name == nil || p.Name != nil && *p.Name == "" {
+		return nil, models.ErrMissingPeriodName
+	}
+
 	if p.StartDate.IsZero() || p.EndDate.IsZero() {
 		return nil, models.ErrMissingPeriodDates
 	}
