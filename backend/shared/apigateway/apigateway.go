@@ -54,7 +54,7 @@ var (
 		models.ErrInvalidPeriod:                  {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPeriod.Error()},
 		models.ErrMissingPeriodDates:             {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodDates.Error()},
 		models.ErrStartDateShouldBeBeforeEndDate: {HTTPCode: http.StatusBadRequest, Message: models.ErrStartDateShouldBeBeforeEndDate.Error()},
-		models.ErrPeriodExists:                   {HTTPCode: http.StatusBadRequest, Message: models.ErrPeriodExists.Error()},
+		models.ErrPeriodNameIsTaken:              {HTTPCode: http.StatusBadRequest, Message: models.ErrPeriodNameIsTaken.Error()},
 		models.ErrUpdatePeriodNotFound:           {HTTPCode: http.StatusNotFound, Message: models.ErrUpdatePeriodNotFound.Error()},
 		models.ErrInvalidPeriodDate:              {HTTPCode: http.StatusBadRequest, Message: models.ErrInvalidPeriodDate.Error()},
 		models.ErrMissingPeriodID:                {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodID.Error()},

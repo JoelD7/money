@@ -32,7 +32,7 @@ func TestCreatePeriodSuccess(t *testing.T) {
 
 func getCreatePeriodRequest() *apigateway.Request {
 	return &apigateway.Request{
-		Body: `{"start_date":"2023-10-28","end_date":"2023-10-29"}`,
+		Body: `{"start_date":"2023-12-01","end_date":"2023-12-05","name":"2023-2"}`,
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"username": "test@gmail.com",

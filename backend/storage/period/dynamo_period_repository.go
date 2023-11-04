@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	tableName       = "period"
-	defaultPageSize = 10
+	periodTableName           = "period"
+	uniquePeriodNameTableName = "unique-period-name"
+	defaultPageSize           = 10
 )
 
 type DynamoRepository struct {
@@ -28,21 +29,50 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error) {
 	periodStruct := toPeriodEntity(*period)
+	uPeriodName := &uniquePeriodNameEntity{
+		Name:     *period.Name,
+		Username: period.Username,
+	}
 
 	attrValue, err := attributevalue.MarshalMap(periodStruct)
 	if err != nil {
 		return nil, fmt.Errorf("marshal period item failed: %v", err)
 	}
 
-	input := &dynamodb.PutItemInput{
-		Item:                attrValue,
-		ConditionExpression: aws.String("attribute_not_exists(period)"),
-		TableName:           aws.String(tableName),
+	uPeriodNameAttrValue, err := attributevalue.MarshalMap(uPeriodName)
+	if err != nil {
+		return nil, fmt.Errorf("marshal unique period name item failed: %v", err)
 	}
 
-	_, err = d.dynamoClient.PutItem(ctx, input)
-	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
-		return nil, fmt.Errorf("%v: %w", err, models.ErrPeriodExists)
+	condExpr := expression.Name("name").AttributeNotExists().And(expression.Name("username").AttributeNotExists())
+
+	expr, err := expression.NewBuilder().WithCondition(condExpr).Build()
+	if err != nil {
+		return nil, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	input := &dynamodb.TransactWriteItemsInput{
+		TransactItems: []types.TransactWriteItem{
+			{
+				Put: &types.Put{
+					Item:      attrValue,
+					TableName: aws.String(periodTableName),
+				},
+			},
+			{
+				Put: &types.Put{
+					Item:                     uPeriodNameAttrValue,
+					TableName:                aws.String(uniquePeriodNameTableName),
+					ConditionExpression:      expr.Condition(),
+					ExpressionAttributeNames: expr.Names(),
+				},
+			},
+		},
+	}
+
+	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailed") {
+		return nil, fmt.Errorf("%v: %w", err, models.ErrPeriodNameIsTaken)
 	}
 
 	if err != nil {
@@ -63,7 +93,7 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 	}
 
 	input := &dynamodb.PutItemInput{
-		TableName:           aws.String(tableName),
+		TableName:           aws.String(periodTableName),
 		ConditionExpression: aws.String("attribute_exists(period)"),
 		Item:                periodAv,
 	}
@@ -82,7 +112,7 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 
 func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(periodTableName),
 		Key: map[string]types.AttributeValue{
 			"username": &types.AttributeValueMemberS{Value: username},
 			"period":   &types.AttributeValueMemberS{Value: period},
@@ -128,7 +158,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(periodTableName),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
@@ -171,7 +201,7 @@ func (d *DynamoRepository) GetLastPeriod(ctx context.Context, username string) (
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(periodTableName),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
