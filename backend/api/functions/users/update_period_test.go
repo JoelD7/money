@@ -12,6 +12,30 @@ import (
 	"testing"
 )
 
+func TestJoel(t *testing.T) {
+	c := require.New(t)
+
+	dynamoClient := initDynamoClient()
+
+	logMock := logger.NewLoggerMock(nil)
+	periodMock := period.NewDynamoRepository(dynamoClient)
+	ctx := context.Background()
+
+	request := &updatePeriodRequest{
+		log:        logMock,
+		periodRepo: periodMock,
+	}
+
+	apigwRequest := getUpdatePeriodRequest()
+	apigwRequest.PathParameters = map[string]string{
+		"periodID": "PRD2v6cW6J4tEQfm1Upneuq",
+	}
+	apigwRequest.Body = `{"created_date":"2023-10-21T17:53:21.908187368Z","end_date":"2023-01-29T00:00:00Z","name":"2023-6","start_date":"2023-01-01T00:00:00Z","updated_date":"2023-01-11T00:00:00Z"}`
+
+	_, err := request.process(ctx, apigwRequest)
+	c.NoError(err)
+}
+
 func TestUpdatePeriodHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 

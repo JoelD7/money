@@ -17,7 +17,7 @@ const (
 	periodTableName           = "period"
 	uniquePeriodNameTableName = "unique-period-name"
 	defaultPageSize           = 10
-	conditionalFailedKeyword  = "ConditionalCheckFailedException"
+	conditionalFailedKeyword  = "ConditionalCheckFailed"
 )
 
 type DynamoRepository struct {
@@ -138,15 +138,26 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 	}
 
 	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
-	if err != nil && strings.Contains(err.Error(), conditionalFailedKeyword) {
-		return fmt.Errorf("%v: %w", err, models.ErrUpdatePeriodNotFound)
-	}
-
 	if err != nil {
-		return fmt.Errorf("updating period item: %v", err)
+		return handleUpdatePeriodError(err)
 	}
 
 	return nil
+}
+
+func handleUpdatePeriodError(err error) error {
+	periodTableConditionFailed := fmt.Sprintf("[%s, None]", conditionalFailedKeyword)
+	uniquePeriodNameTableConditionFailed := fmt.Sprintf("[None, %s]", conditionalFailedKeyword)
+
+	if strings.Contains(err.Error(), periodTableConditionFailed) {
+		return fmt.Errorf("%v: %w", err, models.ErrUpdatePeriodNotFound)
+	}
+
+	if strings.Contains(err.Error(), uniquePeriodNameTableConditionFailed) {
+		return fmt.Errorf("%v: %w", err, models.ErrPeriodNameIsTaken)
+	}
+
+	return fmt.Errorf("updating period item: %v", err)
 }
 
 func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {

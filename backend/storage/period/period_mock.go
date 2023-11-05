@@ -7,8 +7,6 @@ import (
 )
 
 var (
-	startDate     = models.ToPeriodTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))
-	endDate       = models.ToPeriodTime(time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC))
 	name          = "January 2020"
 	defaultPeriod = &models.Period{
 		ID:        "2020-01",
