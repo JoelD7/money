@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/aws/aws-sdk-go/aws"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -18,6 +19,10 @@ const (
 	uniquePeriodNameTableName = "unique-period-name"
 	defaultPageSize           = 10
 	conditionalFailedKeyword  = "ConditionalCheckFailed"
+)
+
+var (
+	condReasonRegex = regexp.MustCompile("\\[[a-zA-Z,\\s]+\\]")
 )
 
 type DynamoRepository struct {
@@ -146,6 +151,10 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 }
 
 func handleUpdatePeriodError(err error) error {
+	if !strings.Contains(err.Error(), conditionalFailedKeyword) {
+		return err
+	}
+
 	periodTableConditionFailed := fmt.Sprintf("[%s, None]", conditionalFailedKeyword)
 	uniquePeriodNameTableConditionFailed := fmt.Sprintf("[None, %s]", conditionalFailedKeyword)
 
@@ -158,6 +167,10 @@ func handleUpdatePeriodError(err error) error {
 	}
 
 	return fmt.Errorf("updating period item: %v", err)
+}
+
+func extractConditionReason(err error) []string {
+	return condReasonRegex.FindAllString(err.Error(), -1)
 }
 
 func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {
