@@ -14,8 +14,7 @@ func TestExtractConditionReason(t *testing.T) {
 	c.Equal("[ConditionalCheckFailed, None]", actual[0])
 
 	actual = extractConditionReason(errors.New("dummy text alskjdf [something, None] asdf"))
-	c.Len(actual, 1)
-	c.Equal("[something, None]", actual[0])
+	c.Len(actual, 0)
 
 	actual = extractConditionReason(errors.New("dummy text alskjdf [ConditionalCheckFailed,None,ConditionalCheckFailed] asdf"))
 	c.Len(actual, 1)
@@ -27,4 +26,8 @@ func TestExtractConditionReason(t *testing.T) {
 	c.Len(actual, 2)
 	c.Equal("[ConditionalCheckFailed, None]", actual[0])
 	c.Equal("[ConditionalCheckFailed, None, ConditionalCheckFailed]", actual[1])
+
+	actual = extractConditionReason(errors.New("dummy text alskjdf [dummy, None] asdf [ConditionalCheckFailed, None, ConditionalCheckFailed]"))
+	c.Len(actual, 1)
+	c.Equal("[ConditionalCheckFailed, None, ConditionalCheckFailed]", actual[0])
 }

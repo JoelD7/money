@@ -155,6 +155,8 @@ func handleUpdatePeriodError(err error) error {
 		return err
 	}
 
+	//conditionReason := extractConditionReason(err)
+
 	periodTableConditionFailed := fmt.Sprintf("[%s, None]", conditionalFailedKeyword)
 	uniquePeriodNameTableConditionFailed := fmt.Sprintf("[None, %s]", conditionalFailedKeyword)
 
@@ -170,7 +172,16 @@ func handleUpdatePeriodError(err error) error {
 }
 
 func extractConditionReason(err error) []string {
-	return condReasonRegex.FindAllString(err.Error(), -1)
+	condReason := condReasonRegex.FindAllString(err.Error(), -1)
+	result := make([]string, 0)
+
+	for _, part := range condReason {
+		if strings.Contains(part, conditionalFailedKeyword) {
+			result = append(result, part)
+		}
+	}
+
+	return result
 }
 
 func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {
