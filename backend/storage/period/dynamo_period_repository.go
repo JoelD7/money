@@ -123,8 +123,8 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 	}
 
 	errByCondition := map[string]error{
-		*periodTableExpr.Condition():           fmt.Errorf("%v: %w", err, models.ErrUpdatePeriodNotFound),
-		*uniquePeriodNameTableExpr.Condition(): fmt.Errorf("%v: %w", err, models.ErrPeriodNameIsTaken),
+		*periodTableExpr.Condition():           models.ErrUpdatePeriodNotFound,
+		*uniquePeriodNameTableExpr.Condition(): models.ErrPeriodNameIsTaken,
 	}
 
 	transactItems := []types.TransactWriteItem{
@@ -192,7 +192,7 @@ func handleUpdatePeriodError(transactItems []types.TransactWriteItem, errByCondi
 		return defaultErr
 	}
 
-	return conditionErr
+	return fmt.Errorf("%v: %w", err, conditionErr)
 }
 
 // extractCancellationReason extracts the cancellation reason array from the error.
