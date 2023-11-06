@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 )
 
 const (
@@ -22,7 +23,7 @@ const (
 )
 
 var (
-	condReasonRegex = regexp.MustCompile("\\[[a-zA-Z,\\s]+\\]")
+	cancelReasonRegex = regexp.MustCompile("\\[[a-zA-Z,\\s]+\\]")
 )
 
 type DynamoRepository struct {
@@ -121,67 +122,116 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 		return fmt.Errorf("building unique period name table expression failed: %v", err)
 	}
 
-	input := &dynamodb.TransactWriteItemsInput{
-		TransactItems: []types.TransactWriteItem{
-			{
-				Put: &types.Put{
-					TableName:                aws.String(periodTableName),
-					ConditionExpression:      periodTableExpr.Condition(),
-					ExpressionAttributeNames: periodTableExpr.Names(),
-					Item:                     periodAv,
-				},
+	errByCondition := map[string]error{
+		*periodTableExpr.Condition():           fmt.Errorf("%v: %w", err, models.ErrUpdatePeriodNotFound),
+		*uniquePeriodNameTableExpr.Condition(): fmt.Errorf("%v: %w", err, models.ErrPeriodNameIsTaken),
+	}
+
+	transactItems := []types.TransactWriteItem{
+		{
+			Put: &types.Put{
+				TableName:                aws.String(periodTableName),
+				ConditionExpression:      periodTableExpr.Condition(),
+				ExpressionAttributeNames: periodTableExpr.Names(),
+				Item:                     periodAv,
 			},
-			{
-				Put: &types.Put{
-					TableName:                aws.String(uniquePeriodNameTableName),
-					ConditionExpression:      uniquePeriodNameTableExpr.Condition(),
-					ExpressionAttributeNames: uniquePeriodNameTableExpr.Names(),
-					Item:                     uPeriodNameAv,
-				},
+		},
+		{
+			Put: &types.Put{
+				TableName:                aws.String(uniquePeriodNameTableName),
+				ConditionExpression:      uniquePeriodNameTableExpr.Condition(),
+				ExpressionAttributeNames: uniquePeriodNameTableExpr.Names(),
+				Item:                     uPeriodNameAv,
 			},
 		},
 	}
 
+	input := &dynamodb.TransactWriteItemsInput{
+		TransactItems: transactItems,
+	}
+
 	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
 	if err != nil {
-		return handleUpdatePeriodError(err)
+		return handleUpdatePeriodError(transactItems, errByCondition, err)
 	}
 
 	return nil
 }
 
-func handleUpdatePeriodError(err error) error {
+func handleUpdatePeriodError(transactItems []types.TransactWriteItem, errByCondition map[string]error, err error) error {
+	defaultErr := fmt.Errorf("updating period item: %v", err)
+
 	if !strings.Contains(err.Error(), conditionalFailedKeyword) {
-		return err
+		return defaultErr
 	}
 
-	//conditionReason := extractConditionReason(err)
-
-	periodTableConditionFailed := fmt.Sprintf("[%s, None]", conditionalFailedKeyword)
-	uniquePeriodNameTableConditionFailed := fmt.Sprintf("[None, %s]", conditionalFailedKeyword)
-
-	if strings.Contains(err.Error(), periodTableConditionFailed) {
-		return fmt.Errorf("%v: %w", err, models.ErrUpdatePeriodNotFound)
+	cancelReasons := extractCancellationReason(err)
+	if len(cancelReasons) == 0 {
+		return defaultErr
 	}
 
-	if strings.Contains(err.Error(), uniquePeriodNameTableConditionFailed) {
-		return fmt.Errorf("%v: %w", err, models.ErrPeriodNameIsTaken)
+	conditionByPos := make(map[int]string)
+
+	for i, item := range transactItems {
+		conditionByPos[i] = getConditionExpression(item)
 	}
 
-	return fmt.Errorf("updating period item: %v", err)
-}
+	errPosition := -1
 
-func extractConditionReason(err error) []string {
-	condReason := condReasonRegex.FindAllString(err.Error(), -1)
-	result := make([]string, 0)
-
-	for _, part := range condReason {
-		if strings.Contains(part, conditionalFailedKeyword) {
-			result = append(result, part)
+	for i, reason := range cancelReasons {
+		if reason == conditionalFailedKeyword {
+			errPosition = i
+			break
 		}
 	}
 
-	return result
+	failedCondition := conditionByPos[errPosition]
+
+	conditionErr, ok := errByCondition[failedCondition]
+	if !ok {
+		return defaultErr
+	}
+
+	return conditionErr
+}
+
+// extractCancellationReason extracts the cancellation reason array from the error.
+//
+// When a transaction fails, the error message contains an ordered list of errors for each item in the request which
+// caused the transaction to get cancelled in the form of "[Reason, None, ...]". If a transact item did not fail, the
+// error in the list will contain "None" instead of a reason.
+// Read more about this here: https://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_CancellationReason.html
+func extractCancellationReason(err error) []string {
+	condReason := cancelReasonRegex.FindAllString(err.Error(), -1)
+
+	splitFunc := func(c rune) bool {
+		return unicode.IsSpace(c) || c == ','
+	}
+
+	for _, part := range condReason {
+		// part has the form "[Reason, None, ...]"
+		if strings.Contains(part, conditionalFailedKeyword) {
+			return strings.FieldsFunc(strings.Trim(part, "[]"), splitFunc)
+		}
+	}
+
+	return nil
+}
+
+func getConditionExpression(item types.TransactWriteItem) string {
+	if item.Put != nil {
+		return *item.Put.ConditionExpression
+	}
+
+	if item.Delete != nil {
+		return *item.Delete.ConditionExpression
+	}
+
+	if item.Update != nil {
+		return *item.Update.ConditionExpression
+	}
+
+	return ""
 }
 
 func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {
