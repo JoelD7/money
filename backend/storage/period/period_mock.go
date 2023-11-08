@@ -74,5 +74,9 @@ func (d *DynamoMock) GetPeriods(ctx context.Context, username, startKey string, 
 		return nil, "", d.mockedErr
 	}
 
-	return []*models.Period{defaultPeriod}, "next_key", nil
+	return []*models.Period{defaultPeriod}, "", nil
+}
+
+func (d *DynamoMock) GetDefaultPeriod() *models.Period {
+	return defaultPeriod
 }
