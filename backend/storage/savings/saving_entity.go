@@ -34,7 +34,7 @@ func toSavingEntity(s *models.Saving) *savingEntity {
 		Amount:       s.Amount,
 	}
 
-	if s.SavingGoalID != nil && *s.SavingGoalID == "" {
+	if s.SavingGoalID == nil || (s.SavingGoalID != nil && *s.SavingGoalID == "") {
 		savingEnt.SavingGoalID = &savingGoalIDNone
 	}
 
