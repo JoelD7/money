@@ -438,7 +438,7 @@ func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, username 
 
 	_, err = d.dynamoClient.DeleteItem(ctx, input)
 	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
-		return fmt.Errorf("%v: %w", err, models.ErrUpdateSavingNotFound)
+		return fmt.Errorf("%v: %w", err, models.ErrSavingsNotFound)
 	}
 
 	if err != nil {
