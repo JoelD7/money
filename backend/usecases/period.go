@@ -17,6 +17,7 @@ type PeriodManager interface {
 	GetPeriod(ctx context.Context, username, period string) (*models.Period, error)
 	GetLastPeriod(ctx context.Context, username string) (*models.Period, error)
 	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error)
+	DeletePeriod(ctx context.Context, periodID, username string) error
 }
 
 func NewPeriodCreator(pm PeriodManager, log Logger) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
@@ -67,5 +68,11 @@ func NewPeriodGetter(pm PeriodManager) func(ctx context.Context, username, perio
 func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
 	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
 		return pm.GetPeriods(ctx, username, startKey, pageSize)
+	}
+}
+
+func NewPeriodDeleter(pm PeriodManager) func(ctx context.Context, periodID, username string) error {
+	return func(ctx context.Context, periodID, username string) error {
+		return pm.DeletePeriod(ctx, periodID, username)
 	}
 }
