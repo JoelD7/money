@@ -291,10 +291,22 @@ func validateSavingPeriod(ctx context.Context, saving *models.Saving, username s
 		return nil
 	}
 
-	//TODO: get all periods
-	periods, _, err := p.GetPeriods(ctx, username, "", 0)
-	if err != nil {
-		return err
+	periods := make([]*models.Period, 0)
+	curPeriods := make([]*models.Period, 0)
+	nextKey := ""
+	var err error
+
+	for {
+		curPeriods, nextKey, err = p.GetPeriods(ctx, username, nextKey, 0)
+		if err != nil {
+			return fmt.Errorf("check if saving period is valid failed: %v", err)
+		}
+
+		periods = append(periods, curPeriods...)
+
+		if nextKey == "" {
+			break
+		}
 	}
 
 	for _, period := range periods {

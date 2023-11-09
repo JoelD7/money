@@ -7,15 +7,13 @@ import (
 )
 
 var (
-	startDate     = models.ToPeriodTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC))
-	endDate       = models.ToPeriodTime(time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC))
 	name          = "January 2020"
 	defaultPeriod = &models.Period{
 		ID:        "2020-01",
 		Username:  "test@gmail.com",
 		Name:      &name,
-		StartDate: startDate,
-		EndDate:   endDate,
+		StartDate: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
 	}
 )
 
@@ -76,5 +74,17 @@ func (d *DynamoMock) GetPeriods(ctx context.Context, username, startKey string, 
 		return nil, "", d.mockedErr
 	}
 
-	return []*models.Period{defaultPeriod}, "next_key", nil
+	return []*models.Period{defaultPeriod}, "", nil
+}
+
+func (d *DynamoMock) DeletePeriod(ctx context.Context, periodID, username string) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
+	}
+
+	return nil
+}
+
+func (d *DynamoMock) GetDefaultPeriod() *models.Period {
+	return defaultPeriod
 }

@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/storage/period"
 	"net/http"
 	"testing"
 
@@ -21,15 +23,18 @@ func TestHandlerSuccess(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
+	periodMock := period.NewDynamoMock()
+
 	ctx := context.Background()
 
 	request := &createExpenseRequest{
 		log:          logMock,
 		userRepo:     userMock,
 		expensesRepo: expensesMock,
+		periodRepo:   periodMock,
 	}
 
-	apigwRequest := getCreateExpenseRequest()
+	apigwRequest := getCreateExpenseRequest(periodMock)
 
 	response, err := request.process(ctx, apigwRequest)
 	c.NoError(err)
@@ -42,28 +47,30 @@ func TestHandlerFailure(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
+	periodMock := period.NewDynamoMock()
 	ctx := context.Background()
 
 	request := &createExpenseRequest{
 		log:          logMock,
 		userRepo:     userMock,
 		expensesRepo: expensesMock,
+		periodRepo:   periodMock,
 	}
 
-	apigwRequest := getCreateExpenseRequest()
+	apigwRequest := getCreateExpenseRequest(periodMock)
 
 	t.Run("Invalid request body", func(t *testing.T) {
 		apigwRequest.Body = "invalid"
-		defer func() { apigwRequest = getCreateExpenseRequest() }()
+		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
 	t.Run("Invalid email", func(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer["username"] = "invalid"
-		defer func() { apigwRequest = getCreateExpenseRequest() }()
+		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -74,7 +81,7 @@ func TestHandlerFailure(t *testing.T) {
 
 	t.Run("Missing name", func(t *testing.T) {
 		apigwRequest.Body = `{"amount":893,"period":"2023-5"}`
-		defer func() { apigwRequest = getCreateExpenseRequest() }()
+		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -86,7 +93,7 @@ func TestHandlerFailure(t *testing.T) {
 
 	t.Run("Missing amount", func(t *testing.T) {
 		apigwRequest.Body = `{"name":"Jordan shopping","period":"2023-5"}`
-		defer func() { apigwRequest = getCreateExpenseRequest() }()
+		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -98,7 +105,7 @@ func TestHandlerFailure(t *testing.T) {
 
 	t.Run("Invalid amount", func(t *testing.T) {
 		apigwRequest.Body = `{"amount":0,"name":"Jordan shopping","period":"2023-5"}`
-		defer func() { apigwRequest = getCreateExpenseRequest() }()
+		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -121,7 +128,7 @@ func TestHandlerFailure(t *testing.T) {
 
 	t.Run("Get username from context failed", func(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer = nil
-		defer func() { apigwRequest = getCreateExpenseRequest() }()
+		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
@@ -131,9 +138,11 @@ func TestHandlerFailure(t *testing.T) {
 	})
 }
 
-func getCreateExpenseRequest() *apigateway.Request {
+func getCreateExpenseRequest(periodMock *period.DynamoMock) *apigateway.Request {
+	body := fmt.Sprintf(`{"amount":893,"name":"Jordan shopping","period":"%s"}`, periodMock.GetDefaultPeriod().ID)
+
 	return &apigateway.Request{
-		Body: `{"amount":893,"name":"Jordan shopping","period":"2023-5"}`,
+		Body: body,
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"username": "test@gmail.com",
