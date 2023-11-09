@@ -77,6 +77,14 @@ func (d *DynamoMock) GetPeriods(ctx context.Context, username, startKey string, 
 	return []*models.Period{defaultPeriod}, "", nil
 }
 
+func (d *DynamoMock) DeletePeriod(ctx context.Context, periodID, username string) error {
+	if d.mockedErr != nil {
+		return d.mockedErr
+	}
+
+	return nil
+}
+
 func (d *DynamoMock) GetDefaultPeriod() *models.Period {
 	return defaultPeriod
 }

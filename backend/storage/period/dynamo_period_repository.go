@@ -358,3 +358,29 @@ func getPageSize(pageSize int) *int32 {
 
 	return aws.Int32(int32(pageSize))
 }
+
+func (d *DynamoRepository) DeletePeriod(ctx context.Context, periodID, username string) error {
+	existsCond := expression.Name("period").AttributeExists()
+
+	expr, err := expression.NewBuilder().WithCondition(existsCond).Build()
+	if err != nil {
+		return fmt.Errorf("build expression failed: %v", err)
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(periodTableName),
+		Key: map[string]types.AttributeValue{
+			"username": &types.AttributeValueMemberS{Value: username},
+			"period":   &types.AttributeValueMemberS{Value: periodID},
+		},
+		ConditionExpression:      expr.Condition(),
+		ExpressionAttributeNames: expr.Names(),
+	}
+
+	_, err = d.dynamoClient.DeleteItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return fmt.Errorf("%v: %w", err, models.ErrPeriodNotFound)
+	}
+
+	return err
+}
