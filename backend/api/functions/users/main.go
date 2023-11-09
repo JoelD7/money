@@ -67,6 +67,7 @@ func main() {
 			r.Put("/{periodID}", updatePeriodHandler)
 			r.Get("/{periodID}", getPeriodHandler)
 			r.Get("/", getPeriodsHandler)
+			r.Delete("/{periodID}", deletePeriodHandler)
 		})
 	})
 
