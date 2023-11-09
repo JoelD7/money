@@ -18,6 +18,10 @@ type deletePeriodRequest struct {
 	periodRepo   period.Repository
 }
 
+type deletePeriodResponse struct {
+	ID string `json:"id"`
+}
+
 func (request *deletePeriodRequest) init() {
 	dynamoClient := initDynamoClient()
 
@@ -71,7 +75,7 @@ func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, &models.Period{
+	return apigateway.NewJSONResponse(http.StatusOK, &deletePeriodResponse{
 		ID: periodID,
 	}), nil
 }
