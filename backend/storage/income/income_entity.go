@@ -10,6 +10,7 @@ type incomeEntity struct {
 	IncomeID string    `json:"income_id,omitempty" dynamodbav:"income_id"`
 	Amount   float64   `json:"amount" dynamodbav:"amount"`
 	Name     string    `json:"name,omitempty" dynamodbav:"name"`
+	Notes    string    `json:"notes,omitempty"`
 	Date     time.Time `json:"date,omitempty" dynamodbav:"date"`
 	Period   string    `json:"period,omitempty" dynamodbav:"period"`
 }
@@ -22,6 +23,7 @@ func toIncomeModel(i *incomeEntity) *models.Income {
 		Name:     i.Name,
 		Date:     i.Date,
 		Period:   i.Period,
+		Notes:    i.Notes,
 	}
 }
 

@@ -7,6 +7,7 @@ type Income struct {
 	IncomeID string    `json:"income_id,omitempty"`
 	Amount   float64   `json:"amount"`
 	Name     string    `json:"name,omitempty"`
+	Notes    string    `json:"notes,omitempty"`
 	Date     time.Time `json:"date,omitempty"`
 	Period   string    `json:"period,omitempty"`
 }
