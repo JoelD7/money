@@ -4,13 +4,11 @@ go 1.18
 
 require (
 	github.com/aws/aws-lambda-go v1.37.0
-	github.com/aws/aws-sdk-go v1.44.199
 	github.com/aws/aws-sdk-go-v2 v1.17.5
 	github.com/aws/aws-sdk-go-v2/config v1.18.12
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.10.15
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.4.42
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.18.5
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.18.3
 	github.com/aws/aws-secretsmanager-caching-go v1.1.0
 	github.com/gbrlsnchs/jwt/v3 v3.0.1
 	github.com/redis/go-redis/v9 v9.0.4
@@ -19,6 +17,7 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.44.199 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.12 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.22 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.29 // indirect

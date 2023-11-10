@@ -3,7 +3,7 @@ package users
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go-v2/aws"
 )
 
 const (
