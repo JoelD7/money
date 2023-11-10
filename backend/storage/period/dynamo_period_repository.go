@@ -360,27 +360,35 @@ func getPageSize(pageSize int) *int32 {
 }
 
 func (d *DynamoRepository) DeletePeriod(ctx context.Context, periodID, username string) error {
-	existsCond := expression.Name("period").AttributeExists()
-
-	expr, err := expression.NewBuilder().WithCondition(existsCond).Build()
+	period, err := d.GetPeriod(ctx, username, periodID)
 	if err != nil {
-		return fmt.Errorf("build expression failed: %v", err)
+		return fmt.Errorf("could not get period to delete: %w", err)
 	}
 
-	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String(periodTableName),
-		Key: map[string]types.AttributeValue{
-			"username": &types.AttributeValueMemberS{Value: username},
-			"period":   &types.AttributeValueMemberS{Value: periodID},
+	input := &dynamodb.TransactWriteItemsInput{
+		TransactItems: []types.TransactWriteItem{
+			{
+				Delete: &types.Delete{
+					TableName: aws.String(periodTableName),
+					Key: map[string]types.AttributeValue{
+						"username": &types.AttributeValueMemberS{Value: username},
+						"period":   &types.AttributeValueMemberS{Value: periodID},
+					},
+				},
+			},
+			{
+				Delete: &types.Delete{
+					TableName: aws.String(uniquePeriodNameTableName),
+					Key: map[string]types.AttributeValue{
+						"name":     &types.AttributeValueMemberS{Value: *period.Name},
+						"username": &types.AttributeValueMemberS{Value: username},
+					},
+				},
+			},
 		},
-		ConditionExpression:      expr.Condition(),
-		ExpressionAttributeNames: expr.Names(),
 	}
 
-	_, err = d.dynamoClient.DeleteItem(ctx, input)
-	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
-		return fmt.Errorf("%v: %w", err, models.ErrPeriodNotFound)
-	}
+	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
 
 	return err
 }
