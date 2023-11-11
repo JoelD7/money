@@ -33,7 +33,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
 	incomeEnt := toIncomeEntity(income)
-	incomeEnt.PeriodUser = *shared.BuildPeriodUser(income.Username, *income.Period)
+	incomeEnt.PeriodUser = shared.BuildPeriodUser(income.Username, *income.Period)
 
 	incomeAv, err := attributevalue.MarshalMap(incomeEnt)
 	if err != nil {
