@@ -65,4 +65,6 @@ var (
 	ErrMissingPeriodStartDate         = errors.New("missing period start date")
 	ErrMissingPeriodCreatedDate       = errors.New("missing period created date")
 	ErrMissingPeriodUpdatedDate       = errors.New("missing period updated date")
+
+	ErrExistingIncome = errors.New("this income already exists")
 )

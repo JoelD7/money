@@ -57,20 +57,28 @@ func (d *DynamoMock) DeactivateForceFailure() {
 func GetDummyIncome() []*models.Income {
 	return []*models.Income{
 		{
-			Username: "test@gmail.com",
-			IncomeID: "INC123",
-			Amount:   8700,
-			Name:     "Salary",
-			Date:     time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
-			Period:   "2023-5",
+			Username:    "test@gmail.com",
+			IncomeID:    "INC123",
+			Amount:      getFloatPtr(8700),
+			Name:        getStringPtr("Salary"),
+			CreatedDate: time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
+			Period:      getStringPtr("2023-5"),
 		},
 		{
-			Username: "test@gmail.com",
-			IncomeID: "INC12",
-			Amount:   1500,
-			Name:     "Debt collection",
-			Date:     time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
-			Period:   "2023-5",
+			Username:    "test@gmail.com",
+			IncomeID:    "INC12",
+			Amount:      getFloatPtr(1500),
+			Name:        getStringPtr("Debt collection"),
+			CreatedDate: time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
+			Period:      getStringPtr("2023-5"),
 		},
 	}
+}
+
+func getStringPtr(s string) *string {
+	return &s
+}
+
+func getFloatPtr(f float64) *float64 {
+	return &f
 }
