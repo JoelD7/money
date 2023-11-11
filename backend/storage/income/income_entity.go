@@ -6,24 +6,26 @@ import (
 )
 
 type incomeEntity struct {
-	Username string    `json:"username,omitempty" dynamodbav:"username"`
-	IncomeID string    `json:"income_id,omitempty" dynamodbav:"income_id"`
-	Amount   float64   `json:"amount" dynamodbav:"amount"`
-	Name     string    `json:"name,omitempty" dynamodbav:"name"`
-	Notes    string    `json:"notes,omitempty"`
-	Date     time.Time `json:"date,omitempty" dynamodbav:"date"`
-	Period   string    `json:"period,omitempty" dynamodbav:"period"`
+	Username    string    `json:"username,omitempty" dynamodbav:"username"`
+	IncomeID    string    `json:"income_id,omitempty" dynamodbav:"income_id"`
+	Amount      float64   `json:"amount" dynamodbav:"amount"`
+	Name        string    `json:"name,omitempty" dynamodbav:"name"`
+	Notes       string    `json:"notes,omitempty"`
+	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
+	UpdatedDate time.Time `json:"updated_date,omitempty"`
+	Period      string    `json:"period,omitempty" dynamodbav:"period"`
 }
 
 func toIncomeModel(i *incomeEntity) *models.Income {
 	return &models.Income{
-		Username: i.Username,
-		IncomeID: i.IncomeID,
-		Amount:   i.Amount,
-		Name:     i.Name,
-		Date:     i.Date,
-		Period:   i.Period,
-		Notes:    i.Notes,
+		Username:    i.Username,
+		IncomeID:    i.IncomeID,
+		Amount:      i.Amount,
+		Name:        i.Name,
+		CreatedDate: i.CreatedDate,
+		UpdatedDate: i.UpdatedDate,
+		Period:      i.Period,
+		Notes:       i.Notes,
 	}
 }
 
