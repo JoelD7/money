@@ -20,12 +20,12 @@ func toIncomeModel(i *incomeEntity) *models.Income {
 	return &models.Income{
 		Username:    i.Username,
 		IncomeID:    i.IncomeID,
-		Amount:      i.Amount,
-		Name:        i.Name,
+		Amount:      &i.Amount,
+		Name:        &i.Name,
 		CreatedDate: i.CreatedDate,
 		UpdatedDate: i.UpdatedDate,
-		Period:      i.Period,
-		Notes:       i.Notes,
+		Period:      &i.Period,
+		Notes:       &i.Notes,
 	}
 }
 
