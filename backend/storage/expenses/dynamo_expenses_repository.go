@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -37,8 +38,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error) {
 	entity := toExpenseEntity(expense)
 
-	entity.CreatedDate = time.Now()
-	entity.PeriodUser = buildPeriodUser(entity.Username, *entity.Period)
+	entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
 
 	item, err := attributevalue.MarshalMap(entity)
 	if err != nil {
@@ -64,7 +64,7 @@ func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Ex
 	entity.UpdateDate = time.Now()
 
 	if entity.Period != nil {
-		entity.PeriodUser = buildPeriodUser(entity.Username, *entity.Period)
+		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
 	}
 
 	username, err := attributevalue.Marshal(entity.Username)
@@ -297,7 +297,7 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 	if periodID != "" {
 		input.IndexName = aws.String(periodUserExpenseIDIndex)
 
-		periodUser := buildPeriodUser(username, periodID)
+		periodUser := shared.BuildPeriodUser(username, periodID)
 		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
 	}
 
@@ -483,9 +483,4 @@ func getPageSize(pageSize int) *int32 {
 	}
 
 	return aws.Int32(int32(pageSize))
-}
-
-func buildPeriodUser(username, period string) *string {
-	p := fmt.Sprintf("%s:%s", period, username)
-	return &p
 }
