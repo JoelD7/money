@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -32,7 +33,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
 	incomeEnt := toIncomeEntity(income)
-	incomeEnt.PeriodUser = shared.BuildPeriodUser(income.Period, income.Username)
+	incomeEnt.PeriodUser = *shared.BuildPeriodUser(income.Username, *income.Period)
 
 	incomeAv, err := attributevalue.MarshalMap(incomeEnt)
 	if err != nil {
