@@ -27,6 +27,10 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 	return &DynamoRepository{dynamoClient: dynamoClient}
 }
 
+func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
+
+}
+
 func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error) {
 	if username == "" {
 		return nil, models.ErrMissingUsername
@@ -71,5 +75,3 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 
 	return toIncomeModels(*incomeEntities), nil
 }
-
-//TODO: el create income debe requerir un period
