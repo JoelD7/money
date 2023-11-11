@@ -14,6 +14,7 @@ type incomeEntity struct {
 	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
 	UpdatedDate time.Time `json:"updated_date,omitempty"`
 	Period      string    `json:"period,omitempty" dynamodbav:"period"`
+	PeriodUser  string    `json:"period_user,omitempty"`
 }
 
 func toIncomeModel(i *incomeEntity) *models.Income {
@@ -26,6 +27,7 @@ func toIncomeModel(i *incomeEntity) *models.Income {
 		UpdatedDate: i.UpdatedDate,
 		Period:      &i.Period,
 		Notes:       &i.Notes,
+		PeriodUser:  &i.PeriodUser,
 	}
 }
 
@@ -36,4 +38,18 @@ func toIncomeModels(is []*incomeEntity) []*models.Income {
 	}
 
 	return incomes
+}
+
+func toIncomeEntity(i *models.Income) *incomeEntity {
+	return &incomeEntity{
+		Username:    i.Username,
+		IncomeID:    i.IncomeID,
+		Amount:      *i.Amount,
+		Name:        *i.Name,
+		CreatedDate: i.CreatedDate,
+		UpdatedDate: i.UpdatedDate,
+		Period:      *i.Period,
+		Notes:       *i.Notes,
+		PeriodUser:  *i.PeriodUser,
+	}
 }
