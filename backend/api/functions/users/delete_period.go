@@ -75,7 +75,7 @@ func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, &deletePeriodResponse{
-		ID: periodID,
-	}), nil
+	return &apigateway.Response{
+		StatusCode: http.StatusNoContent,
+	}, nil
 }

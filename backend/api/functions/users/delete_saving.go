@@ -67,6 +67,6 @@ func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway
 	}
 
 	return &apigateway.Response{
-		StatusCode: http.StatusOK,
+		StatusCode: http.StatusNoContent,
 	}, nil
 }

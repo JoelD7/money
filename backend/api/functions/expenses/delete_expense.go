@@ -79,6 +79,6 @@ func (request *deleteExpenseRequest) process(ctx context.Context, req *apigatewa
 	}
 
 	return &apigateway.Response{
-		StatusCode: http.StatusOK,
+		StatusCode: http.StatusNoContent,
 	}, nil
 }
