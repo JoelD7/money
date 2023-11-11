@@ -61,8 +61,6 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
 	entity := toExpenseEntity(expense)
 
-	entity.UpdateDate = time.Now()
-
 	if entity.Period != nil {
 		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
 	}

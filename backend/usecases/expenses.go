@@ -48,6 +48,7 @@ func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func
 	return func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
 		expense.Username = username
 		expense.ExpenseID = expenseID
+		expense.UpdateDate = time.Now()
 
 		err := validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {
