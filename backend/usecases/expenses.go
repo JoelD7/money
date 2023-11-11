@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"time"
 )
 
 type ExpenseManager interface {
@@ -32,6 +33,7 @@ func NewExpenseCreator(em ExpenseManager, um UserManager, pm PeriodManager) func
 		expense.ExpenseID = generateDynamoID("EX")
 		expense.Username = username
 		expense.Period = &user.CurrentPeriod
+		expense.CreatedDate = time.Now()
 
 		newExpense, err := em.CreateExpense(ctx, expense)
 		if err != nil {
@@ -46,6 +48,7 @@ func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func
 	return func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
 		expense.Username = username
 		expense.ExpenseID = expenseID
+		expense.UpdateDate = time.Now()
 
 		err := validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {
