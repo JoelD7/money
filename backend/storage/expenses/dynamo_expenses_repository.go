@@ -24,7 +24,6 @@ const (
 var (
 	tableName                = env.GetString("EXPENSES_TABLE_NAME", "expenses")
 	periodUserExpenseIDIndex = "period_user-expense_id-index"
-	categoryPeriodUserIndex  = "category_id-period_user-expense_id-index"
 )
 
 type DynamoRepository struct {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -128,7 +129,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		}
 	}
 
-	periodUser := buildPeriodUser(username, period)
+	periodUser := shared.BuildPeriodUser(username, period)
 
 	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
@@ -280,8 +281,8 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	savingEnt := toSavingEntity(saving)
 
-	periodUser := buildPeriodUser(savingEnt.Username, *savingEnt.Period)
-	savingEnt.PeriodUser = &periodUser
+	periodUser := shared.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
+	savingEnt.PeriodUser = periodUser
 
 	item, err := attributevalue.MarshalMap(savingEnt)
 	if err != nil {
@@ -305,8 +306,8 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 	savingEnt := toSavingEntity(saving)
 
 	if savingEnt.Period != nil {
-		periodUser := buildPeriodUser(savingEnt.Username, *savingEnt.Period)
-		savingEnt.PeriodUser = &periodUser
+		periodUser := shared.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
+		savingEnt.PeriodUser = periodUser
 	}
 
 	username, err := attributevalue.Marshal(savingEnt.Username)
@@ -446,8 +447,4 @@ func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, username 
 	}
 
 	return nil
-}
-
-func buildPeriodUser(username, period string) string {
-	return fmt.Sprintf("%s:%s", period, username)
 }
