@@ -8,3 +8,5 @@ echo "Deploying users"
 bash users-deploy.sh
 echo "Deploying expenses"
 bash expenses-deploy.sh
+echo "Deploying income"
+bash income-deploy.sh
