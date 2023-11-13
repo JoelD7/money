@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
@@ -20,6 +21,7 @@ func TestCreateSavingHandler(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
 	savingsMock := savings.NewMock()
+	periodMock := period.NewDynamoMock()
 	ctx := context.Background()
 
 	dummyUser := users.GetDummyUser()
@@ -32,6 +34,7 @@ func TestCreateSavingHandler(t *testing.T) {
 		log:         logMock,
 		savingsRepo: savingsMock,
 		userRepo:    userMock,
+		periodRepo:  periodMock,
 	}
 
 	apigwRequest := getDummyRequest(dummyUser.Username)
@@ -44,7 +47,6 @@ func TestCreateSavingHandler(t *testing.T) {
 	c.NoError(err)
 	c.Len(userSavings, 1)
 	c.Equal(dummyUser.Username, userSavings[0].Username)
-	c.Equal(dummyUser.CurrentPeriod, userSavings[0].Period)
 }
 
 func TestCreateSavingHandlerFailed(t *testing.T) {
@@ -52,6 +54,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
+	periodMock := period.NewDynamoMock()
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
@@ -59,6 +62,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		log:         logMock,
 		userRepo:    userMock,
 		savingsRepo: savingsMock,
+		periodRepo:  periodMock,
 	}
 
 	apigwRequest := getDummyRequest("")
@@ -88,7 +92,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 	t.Run("Saving without amount", func(t *testing.T) {
 		apigwRequest = getDummyRequest("")
-		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com"}`
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","period":"2020-01"}`
 		defer func() { apigwRequest = getDummyRequest("") }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -99,7 +103,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 	t.Run("Saving with invalid amount", func(t *testing.T) {
 		apigwRequest = getDummyRequest("")
-		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":-250}`
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":-250,"period":"2020-01"}`
 		defer func() { apigwRequest = getDummyRequest("") }()
 
 		response, err := req.process(ctx, apigwRequest)
@@ -107,7 +111,6 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		c.Equal(models.ErrInvalidSavingAmount.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
-
 }
 
 func getDummyRequest(username string) *apigateway.Request {
@@ -123,6 +126,6 @@ func getDummyRequest(username string) *apigateway.Request {
 				"username": defaultUsername,
 			},
 		},
-		Body: `{"saving_goal_id":"SVG123","amount":250}`,
+		Body: `{"saving_goal_id":"SVG123","amount":250,"period":"2020-01"}`,
 	}
 }
