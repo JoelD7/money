@@ -9,6 +9,7 @@ import (
 
 type IncomeManager interface {
 	CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error)
+	GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error)
 	GetIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error)
 }
 
@@ -29,6 +30,12 @@ func NewIncomeCreator(im IncomeManager, pm PeriodManager) func(ctx context.Conte
 		}
 
 		return newIncome, nil
+	}
+}
+
+func NewIncomeGetter(im IncomeManager) func(ctx context.Context, username, incomeID string) (*models.Income, error) {
+	return func(ctx context.Context, username, incomeID string) (*models.Income, error) {
+		return im.GetIncome(ctx, username, incomeID)
 	}
 }
 
