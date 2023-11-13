@@ -111,6 +111,16 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 		c.Equal(models.ErrInvalidSavingAmount.Error(), response.Body)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
+
+	t.Run("Missing period", func(t *testing.T) {
+		apigwRequest.Body = `{"saving_goal_id":"SVG123","username":"test@gmail.com","amount":250}`
+		defer func() { apigwRequest = getDummyRequest("") }()
+
+		response, err := req.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(models.ErrMissingPeriod.Error(), response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+	})
 }
 
 func getDummyRequest(username string) *apigateway.Request {
