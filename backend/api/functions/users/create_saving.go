@@ -28,7 +28,6 @@ func (request *createSavingRequest) init() {
 	dynamoClient := initDynamoClient()
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
@@ -69,7 +68,7 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.userRepo, request.periodRepo)
+	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.periodRepo)
 
 	saving, err := createSaving(ctx, username, userSaving)
 	if err != nil {

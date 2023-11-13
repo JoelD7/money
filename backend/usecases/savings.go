@@ -146,7 +146,7 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 	}
 }
 
-func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
+func NewSavingCreator(sm SavingsManager, p PeriodManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
 	return func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
 		err := validateSavingPeriod(ctx, saving, username, p)
 		if err != nil {
