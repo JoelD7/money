@@ -136,6 +136,18 @@ func TestHandlerFailure(t *testing.T) {
 		c.Contains(logMock.Output.String(), "get_username_from_context_failed")
 		logMock.Output.Reset()
 	})
+
+	t.Run("Missing period", func(t *testing.T) {
+		apigwRequest.Body = `{"amount":893,"name":"Jordan shopping"}`
+		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
+
+		response, err := request.process(ctx, apigwRequest)
+		c.NoError(err)
+		c.Contains(response.Body, models.ErrMissingPeriod.Error())
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(logMock.Output.String(), "validate_input_failed")
+		logMock.Output.Reset()
+	})
 }
 
 func getCreateExpenseRequest(periodMock *period.DynamoMock) *apigateway.Request {

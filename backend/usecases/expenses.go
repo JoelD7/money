@@ -20,19 +20,13 @@ type ExpenseManager interface {
 
 func NewExpenseCreator(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
-		user, err := um.GetUser(ctx, username)
-		if err != nil {
-			return nil, err
-		}
-
-		err = validateExpensePeriod(ctx, expense, username, pm)
+		err := validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {
 			return nil, err
 		}
 
 		expense.ExpenseID = generateDynamoID("EX")
 		expense.Username = username
-		expense.Period = &user.CurrentPeriod
 		expense.CreatedDate = time.Now()
 
 		newExpense, err := em.CreateExpense(ctx, expense)
