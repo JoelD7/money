@@ -110,5 +110,9 @@ func validateInput(req *apigateway.Request, username string) (*models.Expense, e
 		return nil, err
 	}
 
+	if expense.Period == nil || (expense.Period != nil && *expense.Period == "") {
+		return nil, models.ErrMissingPeriod
+	}
+
 	return expense, nil
 }
