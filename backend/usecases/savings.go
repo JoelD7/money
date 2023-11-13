@@ -148,18 +148,9 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 
 func NewSavingCreator(sm SavingsManager, u UserManager, p PeriodManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
 	return func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
-		user, err := u.GetUser(ctx, username)
-		if err != nil {
-			return nil, fmt.Errorf("user fetch failed: %w", err)
-		}
-
-		err = validateSavingPeriod(ctx, saving, username, p)
+		err := validateSavingPeriod(ctx, saving, username, p)
 		if err != nil {
 			return nil, err
-		}
-
-		if saving.Period == nil || *saving.Period == "" {
-			saving.Period = &user.CurrentPeriod
 		}
 
 		saving.SavingID = generateDynamoID("SV")
