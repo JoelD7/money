@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"strings"
 )
 
@@ -64,6 +65,34 @@ func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Inco
 	}
 
 	return income, nil
+}
+
+func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error) {
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(TableName),
+		Key: map[string]types.AttributeValue{
+			"income_id": &types.AttributeValueMemberS{Value: incomeID},
+			"username":  &types.AttributeValueMemberS{Value: username},
+		},
+	}
+
+	result, err := d.dynamoClient.GetItem(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	if result.Item == nil {
+		return nil, models.ErrIncomeNotFound
+	}
+
+	incomeEnt := new(incomeEntity)
+
+	err = attributevalue.UnmarshalMap(result.Item, incomeEnt)
+	if err != nil {
+		return nil, err
+	}
+
+	return toIncomeModel(incomeEnt), nil
 }
 
 func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error) {
