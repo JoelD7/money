@@ -188,7 +188,7 @@ func validateExpensePeriod(ctx context.Context, expense *models.Expense, usernam
 	var err error
 
 	for {
-		curPeriods, nextKey, err = p.GetPeriods(ctx, username, nextKey, 0)
+		curPeriods, nextKey, err = p.GetPeriods(ctx, username, nextKey, 50)
 		if err != nil {
 			return fmt.Errorf("check if expense period is valid failed: %v", err)
 		}

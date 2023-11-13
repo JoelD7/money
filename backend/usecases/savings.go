@@ -288,7 +288,7 @@ func validateSavingPeriod(ctx context.Context, saving *models.Saving, username s
 	var err error
 
 	for {
-		curPeriods, nextKey, err = p.GetPeriods(ctx, username, nextKey, 0)
+		curPeriods, nextKey, err = p.GetPeriods(ctx, username, nextKey, 50)
 		if err != nil {
 			return fmt.Errorf("check if saving period is valid failed: %v", err)
 		}
