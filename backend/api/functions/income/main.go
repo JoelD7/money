@@ -29,6 +29,7 @@ func main() {
 		r.Route("/income", func(r *router.Router) {
 			r.Post("/", createIncomeHandler)
 			r.Get("/{incomeID}", getIncomeHandler)
+			r.Get("/", getMultipleIncomeHandler)
 		})
 	})
 

@@ -100,7 +100,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKeyPeriodUserIndex(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -141,7 +141,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", err
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKeyPeriodUserIndex(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}
