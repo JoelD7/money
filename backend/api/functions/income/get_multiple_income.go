@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +18,8 @@ type getMultipleIncomeRequest struct {
 	startingTime time.Time
 	err          error
 	username     string
+	startKey     string
+	pageSize     int
 	incomeRepo   income.Repository
 }
 
@@ -68,7 +72,29 @@ func (request *getMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 
 	request.username = username
 
+	request.startKey, request.pageSize, err = getRequestQueryParams(req)
+	if err != nil {
+		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
+
+		return err
+	}
+
 	return nil
+}
+
+func getRequestQueryParams(req *apigateway.Request) (string, int, error) {
+	pageSizeParam := 0
+	var err error
+
+	if req.QueryStringParameters["page_size"] != "" {
+		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
+	}
+
+	if err != nil || pageSizeParam < 0 {
+		return "", 0, fmt.Errorf("%w: %v", models.ErrInvalidPageSize, err)
+	}
+
+	return req.QueryStringParameters["start_key"], pageSizeParam, nil
 }
 
 func (request *getMultipleIncomeRequest) routeToHandlers(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
@@ -106,5 +132,19 @@ func (request *getMultipleIncomeRequest) getIncomeByPeriod(ctx context.Context, 
 }
 
 func (request *getMultipleIncomeRequest) getAllIncome(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	getAllIncome := usecases.NewAllIncomeGetter(request.incomeRepo)
 
+	userIncome, nextKey, err := getAllIncome(ctx, request.username, request.startKey, request.pageSize)
+	if err != nil {
+		request.err = err
+		request.log.Error("get_all_income_failed", err, []models.LoggerObject{req})
+		return apigateway.NewErrorResponse(err), nil
+	}
+
+	response := &multipleIncomeResponse{
+		Income:  userIncome,
+		NextKey: nextKey,
+	}
+
+	return apigateway.NewJSONResponse(http.StatusOK, response), nil
 }

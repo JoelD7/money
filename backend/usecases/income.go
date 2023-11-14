@@ -10,6 +10,7 @@ import (
 type IncomeManager interface {
 	CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error)
 	GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error)
+	GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error)
 	GetIncomeByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error)
 }
 
@@ -42,6 +43,12 @@ func NewIncomeGetter(im IncomeManager) func(ctx context.Context, username, incom
 func NewIncomeByPeriodGetter(im IncomeManager) func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error) {
 	return func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error) {
 		return im.GetIncomeByPeriod(ctx, username, periodID, startKey, pageSize)
+	}
+}
+
+func NewAllIncomeGetter(im IncomeManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error) {
+	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error) {
+		return im.GetAllIncome(ctx, username, startKey, pageSize)
 	}
 }
 

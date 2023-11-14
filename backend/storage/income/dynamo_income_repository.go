@@ -149,6 +149,57 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	return toIncomeModels(*incomeEntities), nextKey, nil
 }
 
+func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error) {
+	var decodedStartKey map[string]types.AttributeValue
+	var err error
+
+	if startKey != "" {
+		decodedStartKey, err = decodeStartKey(startKey)
+		if err != nil {
+			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+		}
+	}
+
+	nameEx := expression.Name("username").Equal(expression.Value(username))
+
+	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	if err != nil {
+		return nil, "", err
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(TableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.Condition(),
+		Limit:                     getPageSize(pageSize),
+		ExclusiveStartKey:         decodedStartKey,
+	}
+
+	result, err := d.dynamoClient.Query(ctx, input)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrIncomeNotFound
+	}
+
+	incomeEntities := make([]*incomeEntity, 0, len(result.Items))
+
+	err = attributevalue.UnmarshalListOfMaps(result.Items, &incomeEntities)
+	if err != nil {
+		return nil, "", err
+	}
+
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return toIncomeModels(incomeEntities), nextKey, nil
+}
+
 func getPageSize(pageSize int) *int32 {
 	if pageSize == 0 {
 		return aws.Int32(defaultPageSize)

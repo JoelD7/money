@@ -46,6 +46,18 @@ func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, username, periodID, 
 	return d.mockedIncome, "", nil
 }
 
+func (d *DynamoMock) GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error) {
+	if d.mockedErr != nil {
+		return nil, "", d.mockedErr
+	}
+
+	if d.mockedIncome == nil {
+		return nil, "", models.ErrIncomeNotFound
+	}
+
+	return d.mockedIncome, "", nil
+}
+
 func (d *DynamoMock) SetMockedIncome(income []*models.Income) {
 	d.mockedIncome = income
 }
