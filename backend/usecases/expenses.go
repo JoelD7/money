@@ -18,7 +18,7 @@ type ExpenseManager interface {
 	DeleteExpense(ctx context.Context, expenseID, username string) error
 }
 
-func NewExpenseCreator(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
+func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 		err := validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {

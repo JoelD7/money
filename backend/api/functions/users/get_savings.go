@@ -14,10 +14,6 @@ import (
 	"time"
 )
 
-var (
-	errNoUserEmailInContext = apigateway.NewError("couldn't identify the user to get the savings from. Check if your Bearer token header is correct", http.StatusBadRequest)
-)
-
 type getSavingsRequest struct {
 	log            logger.LogAPI
 	startingTime   time.Time

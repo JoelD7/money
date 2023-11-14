@@ -29,7 +29,6 @@ func (request *createExpenseRequest) init() {
 	dynamoClient := initDynamoClient()
 
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
 	request.log = logger.NewLogger()
@@ -70,7 +69,7 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 		return apigateway.NewErrorResponse(err), nil
 	}
 
-	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.userRepo, request.periodRepo)
+	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.periodRepo)
 
 	newExpense, err := createExpense(ctx, username, expense)
 	if err != nil {
