@@ -68,4 +68,6 @@ var (
 
 	ErrExistingIncome  = errors.New("this income already exists")
 	ErrMissingIncomeID = errors.New("missing income id")
+
+	ErrNoMoreItemsToBeRetrieved = errors.New("no more items to be retrieved")
 )
