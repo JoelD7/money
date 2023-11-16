@@ -21,15 +21,11 @@ type UserManager interface {
 	UpdateUser(ctx context.Context, user *models.User) error
 }
 
-type IncomeGetter interface {
-	GetIncomeByPeriod(ctx context.Context, username string, periodID string) ([]*models.Income, error)
-}
-
 type IDGenerator interface {
 	GenerateID(prefix string) string
 }
 
-func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
+func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
 
 		user, err := u.GetUser(ctx, username)
@@ -47,7 +43,8 @@ func NewUserGetter(u UserManager, i IncomeGetter, e ExpenseManager) func(ctx con
 			return user, fmt.Errorf("the remainder for the user's current period couldn't be calculated: %w", err)
 		}
 
-		userIncome, err := i.GetIncomeByPeriod(ctx, user.Username, user.CurrentPeriod)
+		//TODO: handle when user has more income than 10
+		userIncome, _, err := i.GetIncomeByPeriod(ctx, user.Username, user.CurrentPeriod, "", 10)
 		if err != nil {
 			return user, fmt.Errorf("the remainder for the user's current period couldn't be calculated: %w", err)
 		}
