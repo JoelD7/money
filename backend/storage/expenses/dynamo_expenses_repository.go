@@ -224,7 +224,7 @@ func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey s
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input)
+	return d.performQuery(ctx, input, startKey)
 }
 
 func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
@@ -233,7 +233,7 @@ func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context,
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input)
+	return d.performQuery(ctx, input, startKey)
 }
 
 func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
@@ -242,7 +242,7 @@ func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, pe
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input)
+	return d.performQuery(ctx, input, startKey)
 }
 
 func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
@@ -251,7 +251,7 @@ func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, 
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input)
+	return d.performQuery(ctx, input, startKey)
 }
 
 func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, username string) error {
@@ -340,11 +340,11 @@ func buildCategoriesConditionFilter(categories []string) expression.ConditionBui
 	return expression.Or(conditions[0], conditions[1], conditions[2:]...)
 }
 
-func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
+func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.QueryInput, startKey string) ([]*models.Expense, string, error) {
 	// If the query has a filter expression it may not include all the items one intends to fetch.
 	// See more details here: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Query.FilterExpression.html
 	if input.FilterExpression != nil {
-		return d.performQueryWithFilter(ctx, input)
+		return d.performQueryWithFilter(ctx, input, startKey)
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -352,8 +352,12 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && input.ExclusiveStartKey == nil {
 		return nil, "", models.ErrExpensesNotFound
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	expensesEntities := make([]expenseEntity, 0)
@@ -371,7 +375,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 	return toExpenseModels(expensesEntities), nextKey, nil
 }
 
-func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
+func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dynamodb.QueryInput, startKey string) ([]*models.Expense, string, error) {
 	retrievedItems := 0
 	expensesEntities := make([]expenseEntity, 0)
 	var result *dynamodb.QueryOutput
@@ -394,6 +398,7 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 
 		retrievedItems += len(result.Items)
 
+		// should we implement custom pagination?
 		if retrievedItems >= int(*input.Limit) {
 			copyUpto := getCopyUpto(itemsInQuery, expensesEntities, input)
 
@@ -428,8 +433,12 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 		return nil, "", err
 	}
 
-	if len(expensesEntities) == 0 {
+	if len(expensesEntities) == 0 && startKey == "" {
 		return nil, "", models.ErrExpensesNotFound
+	}
+
+	if len(expensesEntities) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	return toExpenseModels(expensesEntities), nextKey, nil
