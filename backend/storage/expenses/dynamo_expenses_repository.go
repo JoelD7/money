@@ -374,18 +374,15 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
 	retrievedItems := 0
 	expensesEntities := make([]expenseEntity, 0)
-	itemsInQuery := make([]expenseEntity, 0)
 	var result *dynamodb.QueryOutput
 	var err error
 
 	for {
+		itemsInQuery := make([]expenseEntity, 0)
+
 		result, err = d.dynamoClient.Query(ctx, input)
 		if err != nil {
 			return nil, "", fmt.Errorf("query failed: %v", err)
-		}
-
-		if result.Items == nil || len(result.Items) == 0 {
-			break
 		}
 
 		input.ExclusiveStartKey = result.LastEvaluatedKey

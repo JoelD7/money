@@ -30,7 +30,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-88-202-68.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-18-209-65-173.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
