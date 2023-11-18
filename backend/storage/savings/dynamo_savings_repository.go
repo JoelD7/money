@@ -72,7 +72,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keys{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -114,7 +114,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey, &keys{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -127,7 +127,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keysPeriodIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -172,7 +172,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey, &keysPeriodIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -185,7 +185,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keysSavingGoalIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -228,7 +228,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey, &keysSavingGoalIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -241,7 +241,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keysSavingGoalIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -286,7 +286,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey, &keysSavingGoalIndex{})
 	if err != nil {
 		return nil, "", err
 	}
