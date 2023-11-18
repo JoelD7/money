@@ -99,8 +99,12 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	savings := new([]*savingEntity)
@@ -153,8 +157,12 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	savings := new([]*savingEntity)
@@ -205,8 +213,12 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	savings := new([]*savingEntity)
@@ -259,8 +271,12 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	savings := new([]*savingEntity)
