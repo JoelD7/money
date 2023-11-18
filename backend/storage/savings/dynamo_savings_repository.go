@@ -242,7 +242,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	var err error
 	var result *dynamodb.QueryOutput
 	retrievedItems := 0
-	savingEntities := make([]savingEntity, 0)
+	resultSet := make([]savingEntity, 0)
 
 	if startKey != "" {
 		decodedStartKey, err = decodeStartKey(startKey, &keysSavingGoalIndex{})
@@ -289,28 +289,10 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 
 		// should we implement custom pagination?
 		if retrievedItems >= int(*input.Limit) {
-			copyUpto := getCopyUpto(itemsInQuery, savingEntities, input)
-
-			savingEntities = append(savingEntities, itemsInQuery[0:copyUpto]...)
-
-			input.ExclusiveStartKey, err = getAttributeValuePK(savingEntities[len(savingEntities)-1])
-			if err != nil {
-				return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
-			}
-
-			nextKey, err := encodeLastKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
-			if err != nil {
-				return nil, "", err
-			}
-
-			if len(savingEntities) == 0 {
-				return nil, "", models.ErrExpensesNotFound
-			}
-
-			return toSavingModels(savingEntities), nextKey, nil
+			return getPaginatedSavings(resultSet, itemsInQuery, input)
 		}
 
-		savingEntities = append(savingEntities, itemsInQuery...)
+		resultSet = append(resultSet, itemsInQuery...)
 
 		if result.LastEvaluatedKey == nil {
 			break
@@ -322,18 +304,42 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", err
 	}
 
-	if len(savingEntities) == 0 && startKey == "" {
+	if len(resultSet) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	if len(savingEntities) == 0 {
+	if len(resultSet) == 0 {
 		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
-	return toSavingModels(savingEntities), nextKey, nil
+	return toSavingModels(resultSet), nextKey, nil
 }
 
-// getCopyUpto returns the index up to which we can copy the tmp slice to the savingEntities slice.
+func getPaginatedSavings(resultSet, itemsInQuery []savingEntity, input *dynamodb.QueryInput) ([]*models.Saving, string, error) {
+	var err error
+
+	copyUpto := getCopyUpto(itemsInQuery, resultSet, input)
+	resultSet = append(resultSet, itemsInQuery[0:copyUpto]...)
+
+	input.ExclusiveStartKey, err = getAttributeValuePK(resultSet[len(resultSet)-1])
+	if err != nil {
+		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
+	}
+
+	nextKey, err := encodeLastKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
+	if err != nil {
+		return nil, "", err
+	}
+
+	if len(resultSet) == 0 {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
+	return toSavingModels(resultSet), nextKey, nil
+}
+
+// getCopyUpto returns the index up to which we can copy the items from the current query result to the list of items to
+// return. This ensures that the total quantity of requested items, as indicated by the pageSize parameter, is satisfied.
 func getCopyUpto(itemsInQuery []savingEntity, savingsEntities []savingEntity, input *dynamodb.QueryInput) int {
 	limitAccumulatedDiff := int(math.Abs(float64(int(*input.Limit) - len(savingsEntities))))
 	if len(itemsInQuery) < limitAccumulatedDiff {
