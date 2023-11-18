@@ -41,7 +41,7 @@ func toSavingEntity(s *models.Saving) *savingEntity {
 	return savingEnt
 }
 
-func toSavingModel(s *savingEntity) *models.Saving {
+func toSavingModel(s savingEntity) *models.Saving {
 	savingModel := &models.Saving{
 		SavingID:     s.SavingID,
 		SavingGoalID: s.SavingGoalID,
@@ -60,7 +60,7 @@ func toSavingModel(s *savingEntity) *models.Saving {
 	return savingModel
 }
 
-func toSavingModels(savings []*savingEntity) []*models.Saving {
+func toSavingModels(savings []savingEntity) []*models.Saving {
 	modelSavings := make([]*models.Saving, 0, len(savings))
 
 	for _, v := range savings {
