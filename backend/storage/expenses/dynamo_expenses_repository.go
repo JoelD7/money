@@ -444,7 +444,8 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 	return toExpenseModels(expensesEntities), nextKey, nil
 }
 
-// getCopyUpto returns the index up to which we can copy the tmp slice to the expensesEntities slice.
+// getCopyUpto returns the index up to which we can copy the items from the current query result to the list of items to
+// return. This ensures that the total quantity of requested items, as indicated by the pageSize parameter, is satisfied.
 func getCopyUpto(itemsInQuery []expenseEntity, expensesEntities []expenseEntity, input *dynamodb.QueryInput) int {
 	limitAccumulatedDiff := int(math.Abs(float64(int(*input.Limit) - len(expensesEntities))))
 	if len(itemsInQuery) < limitAccumulatedDiff {
