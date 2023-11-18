@@ -65,6 +65,7 @@ var (
 		models.ErrMissingPeriodUpdatedDate:       {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingPeriodUpdatedDate.Error()},
 		models.ErrExistingIncome:                 {HTTPCode: http.StatusBadRequest, Message: models.ErrExistingIncome.Error()},
 		models.ErrMissingIncomeID:                {HTTPCode: http.StatusBadRequest, Message: models.ErrMissingIncomeID.Error()},
+		models.ErrNoMoreItemsToBeRetrieved:       {HTTPCode: http.StatusNoContent, Message: models.ErrNoMoreItemsToBeRetrieved.Error()},
 	}
 )
 

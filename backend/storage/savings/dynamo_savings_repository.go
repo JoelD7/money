@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"math"
 	"strings"
 	"time"
 )
@@ -64,7 +65,7 @@ func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID str
 		return nil, fmt.Errorf("unmarshal saving item failed: %v", err)
 	}
 
-	return toSavingModel(savingEnt), nil
+	return toSavingModel(*savingEnt), nil
 }
 
 func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
@@ -72,7 +73,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keys{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -99,18 +100,22 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*savingEntity)
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
+	}
+
+	savings := new([]savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey, &keys{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -123,7 +128,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keysPeriodIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -153,18 +158,22 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*savingEntity)
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
+	}
+
+	savings := new([]savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey, &keysPeriodIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -177,7 +186,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keysSavingGoalIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -205,18 +214,22 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 
-	savings := new([]*savingEntity)
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
+	}
+
+	savings := new([]savingEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
 	if err != nil {
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(result.LastEvaluatedKey, &keysSavingGoalIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -227,9 +240,12 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
+	var result *dynamodb.QueryOutput
+	retrievedItems := 0
+	resultSet := make([]savingEntity, 0)
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = decodeStartKey(startKey, &keysSavingGoalIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -254,28 +270,97 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		Limit:                     getPageSize(pageSize),
 	}
 
-	result, err := d.dynamoClient.Query(ctx, input)
-	if err != nil {
-		return nil, "", fmt.Errorf("query failed: %v", err)
+	for {
+		itemsInQuery := make([]savingEntity, 0)
+
+		result, err = d.dynamoClient.Query(ctx, input)
+		if err != nil {
+			return nil, "", fmt.Errorf("query failed: %v", err)
+		}
+
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &itemsInQuery)
+		if err != nil {
+			return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
+		}
+
+		retrievedItems += len(result.Items)
+
+		// should we implement custom pagination?
+		if retrievedItems >= int(*input.Limit) {
+			return getPaginatedSavings(resultSet, itemsInQuery, input)
+		}
+
+		resultSet = append(resultSet, itemsInQuery...)
+
+		if result.LastEvaluatedKey == nil {
+			break
+		}
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
-		return nil, "", models.ErrSavingsNotFound
-	}
-
-	savings := new([]*savingEntity)
-
-	err = attributevalue.UnmarshalListOfMaps(result.Items, savings)
-	if err != nil {
-		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
-	}
-
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := encodeLastKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
 	if err != nil {
 		return nil, "", err
 	}
 
-	return toSavingModels(*savings), nextKey, nil
+	if len(resultSet) == 0 && startKey == "" {
+		return nil, "", models.ErrSavingsNotFound
+	}
+
+	if len(resultSet) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
+	}
+
+	return toSavingModels(resultSet), nextKey, nil
+}
+
+func getPaginatedSavings(resultSet, itemsInQuery []savingEntity, input *dynamodb.QueryInput) ([]*models.Saving, string, error) {
+	var err error
+
+	copyUpto := getCopyUpto(itemsInQuery, resultSet, input)
+	resultSet = append(resultSet, itemsInQuery[0:copyUpto]...)
+
+	input.ExclusiveStartKey, err = getAttributeValuePK(resultSet[len(resultSet)-1])
+	if err != nil {
+		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
+	}
+
+	nextKey, err := encodeLastKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
+	if err != nil {
+		return nil, "", err
+	}
+
+	if len(resultSet) == 0 {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
+	return toSavingModels(resultSet), nextKey, nil
+}
+
+// getCopyUpto returns the index up to which we can copy the items from the current query result to the list of items to
+// return. This ensures that the total quantity of requested items, as indicated by the pageSize parameter, is satisfied.
+func getCopyUpto(itemsInQuery []savingEntity, savingsEntities []savingEntity, input *dynamodb.QueryInput) int {
+	limitAccumulatedDiff := int(math.Abs(float64(int(*input.Limit) - len(savingsEntities))))
+	if len(itemsInQuery) < limitAccumulatedDiff {
+		return len(itemsInQuery)
+	}
+
+	return limitAccumulatedDiff
+}
+
+func getAttributeValuePK(item savingEntity) (map[string]types.AttributeValue, error) {
+	expenseKeys := struct {
+		SavingID     string `json:"saving_id" dynamodbav:"saving_id"`
+		Username     string `json:"username,omitempty" dynamodbav:"username"`
+		SavingGoalID string `json:"saving_goal_id" dynamodbav:"saving_goal_id"`
+	}{
+		SavingID:     item.SavingID,
+		Username:     item.Username,
+		SavingGoalID: *item.SavingGoalID,
+	}
+
+	return attributevalue.MarshalMap(expenseKeys)
 }
 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
@@ -299,7 +384,7 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 		return nil, fmt.Errorf("put saving item failed: %v", err)
 	}
 
-	return toSavingModel(savingEnt), nil
+	return toSavingModel(*savingEnt), nil
 }
 
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {

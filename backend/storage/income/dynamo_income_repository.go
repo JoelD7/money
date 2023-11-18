@@ -130,8 +130,12 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", err
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if (result.Items == nil || len(result.Items) == 0) && startKey == "" {
 		return nil, "", models.ErrIncomeNotFound
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	incomeEntities := new([]*incomeEntity)
@@ -181,8 +185,12 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 		return nil, "", err
 	}
 
-	if result.Items == nil || len(result.Items) == 0 {
+	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
 		return nil, "", models.ErrIncomeNotFound
+	}
+
+	if result.Items == nil || len(result.Items) == 0 {
+		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
 	incomeEntities := make([]*incomeEntity, 0, len(result.Items))
