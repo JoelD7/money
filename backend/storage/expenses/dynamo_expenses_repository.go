@@ -405,7 +405,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}
