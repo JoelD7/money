@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -275,7 +276,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	var decodedStartKey map[string]types.AttributeValue
 
 	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
+		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keys{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -306,7 +307,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("unmarshal periods failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
 	if err != nil {
 		return nil, "", err
 	}
