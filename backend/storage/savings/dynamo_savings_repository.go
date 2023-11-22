@@ -287,7 +287,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 
 		retrievedItems += len(result.Items)
 
-		// should we implement custom pagination?
+		// should implement custom pagination?
 		if retrievedItems >= int(*input.Limit) {
 			return getPaginatedSavings(resultSet, itemsInQuery, input)
 		}
