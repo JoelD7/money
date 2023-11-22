@@ -26,6 +26,17 @@ var (
 	periodUserExpenseIDIndex = "period_user-expense_id-index"
 )
 
+type keys struct {
+	ExpenseID string `json:"expense_id" dynamodbav:"expense_id"`
+	Username  string `json:"username" dynamodbav:"username"`
+}
+
+type keysPeriodUserIndex struct {
+	ExpenseID  string `json:"expense_id" dynamodbav:"expense_id"`
+	Username   string `json:"username,omitempty" dynamodbav:"username"`
+	PeriodUser string `json:"period_user,omitempty" dynamodbav:"period_user"`
+}
+
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
 }
@@ -272,23 +283,14 @@ func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, usernam
 }
 
 func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
-	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
-
-	var decodedStartKey map[string]types.AttributeValue
 	var err error
 
-	if startKey != "" {
-		decodedStartKey, err = decodeStartKey(startKey)
-		if err != nil {
-			return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
-		}
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(tableName),
+		Limit:     getPageSize(pageSize),
 	}
 
-	input := &dynamodb.QueryInput{
-		TableName:         aws.String(tableName),
-		ExclusiveStartKey: decodedStartKey,
-		Limit:             getPageSize(pageSize),
-	}
+	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
 
 	// Query the period_user-expense_id-index
 	if periodID != "" {
@@ -296,6 +298,11 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 
 		periodUser := shared.BuildPeriodUser(username, periodID)
 		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
+	}
+
+	err = setExclusiveStartKey(startKey, input)
+	if err != nil {
+		return nil, err
 	}
 
 	conditionBuilder := expression.NewBuilder().WithCondition(keyConditionEx)
@@ -316,6 +323,37 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 	input.FilterExpression = expr.Filter()
 
 	return input, nil
+}
+
+func setExclusiveStartKey(startKey string, input *dynamodb.QueryInput) error {
+	if startKey == "" {
+		return nil
+	}
+
+	decodedStartKey, err := shared.DecodePaginationKey(startKey, getPaginationKeyType(input))
+	if err != nil {
+		return fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+	}
+
+	input.ExclusiveStartKey = decodedStartKey
+
+	return nil
+}
+
+// getPaginationKeyType returns the type of the key to be used in the pagination according to the index being queried.
+// If there isn't an index being queried, the key type corresponding to the main table is used.
+func getPaginationKeyType(input *dynamodb.QueryInput) interface{} {
+	indexName := ""
+	if input.IndexName != nil {
+		indexName = *input.IndexName
+	}
+
+	switch indexName {
+	case periodUserExpenseIDIndex:
+		return &keysPeriodUserIndex{}
+	default:
+		return &keys{}
+	}
 }
 
 func buildCategoriesConditionFilter(categories []string) expression.ConditionBuilder {
@@ -367,7 +405,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
 	}
 
-	nextKey, err := encodeLastKey(result.LastEvaluatedKey)
+	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}
@@ -377,7 +415,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 
 func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dynamodb.QueryInput, startKey string) ([]*models.Expense, string, error) {
 	retrievedItems := 0
-	expensesEntities := make([]expenseEntity, 0)
+	resultSet := make([]expenseEntity, 0)
 	var result *dynamodb.QueryOutput
 	var err error
 
@@ -400,48 +438,53 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 
 		// should we implement custom pagination?
 		if retrievedItems >= int(*input.Limit) {
-			copyUpto := getCopyUpto(itemsInQuery, expensesEntities, input)
-
-			expensesEntities = append(expensesEntities, itemsInQuery[0:copyUpto]...)
-
-			input.ExclusiveStartKey, err = getAttributeValuePK(expensesEntities[len(expensesEntities)-1], input)
-			if err != nil {
-				return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
-			}
-
-			nextKey, err := encodeLastKey(input.ExclusiveStartKey)
-			if err != nil {
-				return nil, "", err
-			}
-
-			if len(expensesEntities) == 0 {
-				return nil, "", models.ErrExpensesNotFound
-			}
-
-			return toExpenseModels(expensesEntities), nextKey, nil
+			return getPaginatedExpenses(resultSet, itemsInQuery, input)
 		}
 
-		expensesEntities = append(expensesEntities, itemsInQuery...)
+		resultSet = append(resultSet, itemsInQuery...)
 
 		if result.LastEvaluatedKey == nil {
 			break
 		}
 	}
 
-	nextKey, err := encodeLastKey(input.ExclusiveStartKey)
+	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}
 
-	if len(expensesEntities) == 0 && startKey == "" {
+	if len(resultSet) == 0 && startKey == "" {
 		return nil, "", models.ErrExpensesNotFound
 	}
 
-	if len(expensesEntities) == 0 {
+	if len(resultSet) == 0 {
 		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
-	return toExpenseModels(expensesEntities), nextKey, nil
+	return toExpenseModels(resultSet), nextKey, nil
+}
+
+func getPaginatedExpenses(resultSet, itemsInQuery []expenseEntity, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
+	var err error
+
+	copyUpto := getCopyUpto(itemsInQuery, resultSet, input)
+	resultSet = append(resultSet, itemsInQuery[0:copyUpto]...)
+
+	input.ExclusiveStartKey, err = getAttributeValuePK(resultSet[len(resultSet)-1], input)
+	if err != nil {
+		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
+	}
+
+	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
+	if err != nil {
+		return nil, "", err
+	}
+
+	if len(resultSet) == 0 {
+		return nil, "", models.ErrExpensesNotFound
+	}
+
+	return toExpenseModels(resultSet), nextKey, nil
 }
 
 // getCopyUpto returns the index up to which we can copy the items from the current query result to the list of items to
