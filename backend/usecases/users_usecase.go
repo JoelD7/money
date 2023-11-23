@@ -2,9 +2,11 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"regexp"
+	"time"
 )
 
 var (
@@ -37,17 +39,19 @@ func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx co
 			return user, nil
 		}
 
-		//TODO: handle when user has more expenses than 10
-		userExpenses, _, err := e.GetExpensesByPeriod(ctx, user.Username, user.CurrentPeriod, "", 10)
+		start := time.Now()
+
+		userExpenses, err := getAllExpensesForPeriod(ctx, user.Username, user.CurrentPeriod, e)
 		if err != nil {
 			return user, fmt.Errorf("the remainder for the user's current period couldn't be calculated: %w", err)
 		}
 
-		//TODO: handle when user has more income than 10
-		userIncome, _, err := i.GetIncomeByPeriod(ctx, user.Username, user.CurrentPeriod, "", 10)
+		userIncome, err := getAllIncomeForPeriod(ctx, user.Username, user.CurrentPeriod, i)
 		if err != nil {
 			return user, fmt.Errorf("the remainder for the user's current period couldn't be calculated: %w", err)
 		}
+
+		fmt.Println("Time: ", time.Since(start))
 
 		totalExpense := 0.0
 
@@ -64,6 +68,46 @@ func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx co
 
 		return user, nil
 	}
+}
+
+func getAllExpensesForPeriod(ctx context.Context, username string, period string, e ExpenseManager) ([]*models.Expense, error) {
+	expenses, nextKey, err := e.GetExpensesByPeriod(ctx, username, period, "", 10)
+	if err != nil {
+		return nil, err
+	}
+
+	expensesPage := make([]*models.Expense, 0)
+
+	for nextKey != "" {
+		expensesPage, nextKey, err = e.GetExpensesByPeriod(ctx, username, period, nextKey, 10)
+		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
+			return nil, err
+		}
+
+		expenses = append(expenses, expensesPage...)
+	}
+
+	return expenses, nil
+}
+
+func getAllIncomeForPeriod(ctx context.Context, username string, period string, i IncomeManager) ([]*models.Income, error) {
+	income, nextKey, err := i.GetIncomeByPeriod(ctx, username, period, "", 10)
+	if err != nil {
+		return nil, err
+	}
+
+	incomePage := make([]*models.Income, 0)
+
+	for nextKey != "" {
+		incomePage, nextKey, err = i.GetIncomeByPeriod(ctx, username, period, nextKey, 10)
+		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
+			return nil, err
+		}
+
+		income = append(income, incomePage...)
+	}
+
+	return income, nil
 }
 
 func NewCategoryCreator(u UserManager) func(ctx context.Context, username string, category *models.Category) error {
