@@ -7,7 +7,6 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"regexp"
 	"sync"
-	"time"
 )
 
 var (
@@ -40,33 +39,30 @@ func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx co
 			return user, nil
 		}
 
-		start := time.Now()
+		userIncome := make([]*models.Income, 0)
+		userExpenses := make([]*models.Expense, 0)
 
-		expensesChan := make(chan []*models.Expense)
-		incomeChan := make(chan []*models.Income)
-		var wg sync.WaitGroup
 		errorCh := make(chan error, 2) // Buffer size is set to the number of goroutines
 
+		var wg sync.WaitGroup
 		wg.Add(2)
 
 		go func() {
 			defer wg.Done()
-			if err = getAllIncomeForPeriod(ctx, user.Username, user.CurrentPeriod, i, incomeChan); err != nil {
+			if userIncome, err = getAllIncomeForPeriod(ctx, user.Username, user.CurrentPeriod, i); err != nil {
 				errorCh <- err
 			}
 		}()
 
 		go func() {
 			defer wg.Done()
-			if err = getAllExpensesForPeriod(ctx, user.Username, user.CurrentPeriod, e, expensesChan); err != nil {
+			if userExpenses, err = getAllExpensesForPeriod(ctx, user.Username, user.CurrentPeriod, e); err != nil {
 				errorCh <- err
 			}
 		}()
 
-		go func() {
-			wg.Wait()
-			close(errorCh)
-		}()
+		wg.Wait()
+		close(errorCh)
 
 		for err = range errorCh {
 			if err != nil {
@@ -75,9 +71,6 @@ func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx co
 		}
 
 		totalExpense := 0.0
-
-		userExpenses := <-expensesChan
-		userIncome := <-incomeChan
 
 		for _, expense := range userExpenses {
 			totalExpense += *expense.Amount
@@ -90,21 +83,14 @@ func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx co
 
 		user.Remainder = totalIncome - totalExpense
 
-		fmt.Println("Time: ", time.Since(start))
 		return user, nil
 	}
 }
 
-func getAllExpensesForPeriod(ctx context.Context, username string, period string, e ExpenseManager, expensesChan chan []*models.Expense) error {
-	defer func() {
-		fmt.Println("Closing expenses channel...")
-		close(expensesChan)
-
-	}()
-
+func getAllExpensesForPeriod(ctx context.Context, username string, period string, e ExpenseManager) ([]*models.Expense, error) {
 	expenses, nextKey, err := e.GetExpensesByPeriod(ctx, username, period, "", 10)
 	if err != nil {
-		return fmt.Errorf("get all user expenses failed: %w", err)
+		return nil, fmt.Errorf("get all user expenses failed: %w", err)
 	}
 
 	expensesPage := make([]*models.Expense, 0)
@@ -112,25 +98,19 @@ func getAllExpensesForPeriod(ctx context.Context, username string, period string
 	for nextKey != "" {
 		expensesPage, nextKey, err = e.GetExpensesByPeriod(ctx, username, period, nextKey, 10)
 		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
-			return fmt.Errorf("get all user expenses failed: %w", err)
+			return nil, fmt.Errorf("get all user expenses failed: %w", err)
 		}
 
 		expenses = append(expenses, expensesPage...)
 	}
 
-	expensesChan <- expenses
-	return nil
+	return expenses, nil
 }
 
-func getAllIncomeForPeriod(ctx context.Context, username string, period string, i IncomeManager, incomeChan chan []*models.Income) error {
-	defer func() {
-		fmt.Println("Closing income channel...")
-		close(incomeChan)
-	}()
-
+func getAllIncomeForPeriod(ctx context.Context, username string, period string, i IncomeManager) ([]*models.Income, error) {
 	income, nextKey, err := i.GetIncomeByPeriod(ctx, username, period, "", 10)
 	if err != nil {
-		return fmt.Errorf("get all user income failed: %w", err)
+		return nil, fmt.Errorf("get all user income failed: %w", err)
 	}
 
 	incomePage := make([]*models.Income, 0)
@@ -138,14 +118,13 @@ func getAllIncomeForPeriod(ctx context.Context, username string, period string, 
 	for nextKey != "" {
 		incomePage, nextKey, err = i.GetIncomeByPeriod(ctx, username, period, nextKey, 10)
 		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
-			return fmt.Errorf("get all user income failed: %w", err)
+			return nil, fmt.Errorf("get all user income failed: %w", err)
 		}
 
 		income = append(income, incomePage...)
 	}
 
-	incomeChan <- income
-	return nil
+	return income, nil
 }
 
 func NewCategoryCreator(u UserManager) func(ctx context.Context, username string, category *models.Category) error {
