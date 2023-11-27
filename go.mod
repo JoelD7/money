@@ -14,6 +14,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.4
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/crypto v0.6.0
+	golang.org/x/sync v0.5.0
 )
 
 require (

@@ -18,9 +18,13 @@ import (
 func TestHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
-	usersMock := users.NewDynamoMock()
-	expensesMock := expenses.NewDynamoMock()
-	incomeMock := income.NewDynamoMock()
+	dynamoClient := initDynamoClient()
+	usersMock := users.NewDynamoRepository(dynamoClient)
+	expensesMock := expenses.NewDynamoRepository(dynamoClient)
+	incomeMock := income.NewDynamoRepository(dynamoClient)
+	//usersMock := users.NewDynamoMock()
+	//expensesMock := expenses.NewDynamoMock()
+	//incomeMock := income.NewDynamoMock()
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
