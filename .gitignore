@@ -4,3 +4,4 @@
 vendor
 backend/api/draft
 bin/
+frontend/node_modules
