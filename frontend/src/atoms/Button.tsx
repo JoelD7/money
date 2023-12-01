@@ -1,10 +1,13 @@
-import "tailwindcss/tailwind.css";
+type ButtonProps = {
+    color: string;
+    text: string;
+};
 
-export function Button() {
+export function Button({color, text}: ButtonProps) {
     return (
         <>
-            <button className="bg-red-500">
-                Test buttons
+            <button>
+                {text}
             </button>
         </>
     );
