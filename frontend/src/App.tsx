@@ -5,7 +5,7 @@ import "tailwindcss/tailwind.css";
 function App() {
     return (
         <>
-            <Button color={ButtonColor.White}></Button>
+            <Button text={"Button"} color={ButtonColor.White}></Button>
         </>
     )
 }
