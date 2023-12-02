@@ -1,11 +1,12 @@
 import './App.css'
 import {Button, ButtonColor} from "./components/atoms/Button.tsx";
 import "tailwindcss/tailwind.css";
+import {Textfield} from "./components/atoms/Textfield.tsx";
 
 function App() {
     return (
         <>
-            <Button text={"Button"} color={ButtonColor.White}></Button>
+            <Textfield name={"textfield"} label={"Label"}></Textfield>
         </>
     )
 }
