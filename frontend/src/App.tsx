@@ -1,12 +1,14 @@
-import './App.css'
-import {Button, ButtonColor} from "./components/atoms/Button.tsx";
 import "tailwindcss/tailwind.css";
-import {Textfield} from "./components/atoms/Textfield.tsx";
+import {Tag} from "./components/atoms/Tag.tsx";
 
 function App() {
     return (
         <>
-            <Textfield name={"textfield"} label={"Label"}></Textfield>
+            <div style={{width: "1290px"}}>
+                <div style={{margin: "auto", width: "fit-content"}}>
+                    <Tag color="blue-100" label="Label"/>
+                </div>
+            </div>
         </>
     )
 }
