@@ -1,15 +1,25 @@
 import "tailwindcss/tailwind.css";
-import {Tag} from "./components/atoms/Tag.tsx";
-import {Textarea} from "./components/atoms/Textarea.tsx";
+import {createTheme, ThemeProvider} from "@mui/material";
 
 function App() {
+    const theme = createTheme({
+        typography: {
+            fontFamily: [
+                'Outfit',
+                'sans-serif',
+            ].join(','),
+        }
+    })
     return (
         <>
-            <div style={{width: "1290px"}}>
-                <div style={{margin: "auto", width: "fit-content"}}>
-                    <Textarea name="textarea"></Textarea>
+            <ThemeProvider theme={theme}>
+                <div style={{width: "1290px"}}>
+                    <div className="ml-2" style={{width: "fit-content"}}>
+
+                    </div>
                 </div>
-            </div>
+            </ThemeProvider>
+
         </>
     )
 }
