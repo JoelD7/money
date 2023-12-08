@@ -1,4 +1,5 @@
-import {MenuItem, Select} from "@mui/material";
+import {InputLabel, MenuItem, Select} from "@mui/material";
+import {CSSProperties} from "react";
 
 type InputSelectProps = {
     name: string;
@@ -9,8 +10,11 @@ type InputSelectProps = {
 export function SelectCustom({label = "", name, values}: InputSelectProps) {
     return (
         <>
-            <Select name={name} id={name} className="border-2 border-gray-100 rounded-lg p-2"
-            >
+            {
+                label !== "" &&
+                <InputLabel id="demo-simple-select-label">{label}</InputLabel>
+            }
+            <Select name={name} id={name} style={{width: "50px"}} labelId="demo-simple-select-label">
                 {values.map((value, index) => {
                     return (
                         <MenuItem inputMode="text" key={index} value={value}>{value}</MenuItem>

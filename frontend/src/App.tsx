@@ -18,7 +18,7 @@ function App() {
         <>
             <ThemeProvider theme={theme}>
                 <div style={{width: "1290px"}}>
-                    <div style={{margin: "auto", width: "fit-content"}}>
+                    <div className="ml-2" style={{width: "fit-content"}}>
                         <SelectCustom name="select" label="Currency" values={values}></SelectCustom>
                     </div>
                 </div>
