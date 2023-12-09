@@ -1,6 +1,6 @@
 import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container} from "@mui/material";
-import {ChipSelect} from "./components/molecules";
+import {ChipSelect} from "./components";
 
 declare module '@mui/material/styles' {
     interface Palette {
