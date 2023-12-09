@@ -1,5 +1,6 @@
 import "tailwindcss/tailwind.css";
-import {createTheme, ThemeProvider, Theme} from "@mui/material";
+import {createTheme, ThemeProvider, Theme, Container} from "@mui/material";
+import {ChipSelect} from "./components/molecules";
 
 declare module '@mui/material/styles' {
     interface Palette {
@@ -61,14 +62,27 @@ function App() {
             }
         },
     })
+
+    const options = [
+        {
+            label: "Option 1",
+            color: "#D90707",
+        },
+        {
+            label: "Option 2",
+            color: "#0088FE",
+        },
+        {
+            label: "Option 3",
+            color: "#009821",
+        },
+    ]
     return (
         <>
             <ThemeProvider theme={theme}>
-                <div style={{width: "1290px"}}>
-                    <div className="ml-2" style={{width: "fit-content"}}>
-
-                    </div>
-                </div>
+                <Container>
+                    <ChipSelect label="Currency" options={options}></ChipSelect>
+                </Container>
             </ThemeProvider>
 
         </>

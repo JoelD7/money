@@ -6,7 +6,7 @@ type Tag = {
     style: CSSProperties | undefined
 };
 
-export function Tag({label, color = "blue-100", style}: Tag) {
+export function Tag({label, color = "blue-100"}: Tag) {
     const backgroundColor = `bg-${color}`;
 
     return (
