@@ -1,5 +1,2 @@
-import {ChipSelect} from './ChipSelect';
-
-export {
-    ChipSelect,
-}
+export { ChipSelect } from './ChipSelect';
+export { Navbar } from './Navbar';
