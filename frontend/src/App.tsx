@@ -62,20 +62,7 @@ const theme: Theme = createTheme({
 })
 
 function App() {
-    const options = [
-        {
-            label: "Option 1",
-            color: "#D90707",
-        },
-        {
-            label: "Option 2",
-            color: "#0088FE",
-        },
-        {
-            label: "Option 3",
-            color: "#009821",
-        },
-    ]
+    
     return (
         <>
             <ThemeProvider theme={theme}>
