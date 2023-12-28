@@ -1,4 +1,4 @@
-import {Button, Divider, Drawer, IconButton} from "@mui/material";
+import {Button, Divider, Drawer, IconButton, Typography} from "@mui/material";
 import HomeIcon from '@mui/icons-material/Home';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
@@ -8,6 +8,7 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import {useState} from "react";
+import {Logo} from "../atoms";
 
 export function Navbar() {
     const customWidth = {
@@ -19,7 +20,13 @@ export function Navbar() {
     }
 
     const buttonStyle = {
-        margin: "5px 0px", color: "gray.dark", textTransform: "capitalize"
+        margin: "5px 0px",
+        color: "gray.dark",
+        textTransform: "capitalize",
+        '&.MuiButton-root': {
+            justifyContent: "flex-start",
+            width: "100%"
+        },
     }
 
     const [open, setOpen] = useState<boolean>(false)
@@ -27,17 +34,11 @@ export function Navbar() {
     return (
         <>
             <div className="flex p-2 flex-row justify-items-center">
-                <img className="w-14"
-                     src="https://money-static-files.s3.amazonaws.com/images/dollar.png"
-                     alt="dollar_logo"/>
+                <Logo/>
 
-                <div className="ml-auto">
+                <div className="ml-auto mr-3">
                     <IconButton title="Home" sx={{margin: "5px 0px"}}>
                         <HomeIcon sx={customWidth}/>
-                    </IconButton>
-
-                    <IconButton sx={{margin: "5px 0px"}}>
-                        <AccessTimeFilledIcon sx={customWidth}/>
                     </IconButton>
 
                     <IconButton sx={{marginLeft: "15px"}} onClick={() => setOpen(true)}>
@@ -48,7 +49,11 @@ export function Navbar() {
 
             <Drawer anchor="left" open={open} onClose={() => setOpen(false)}>
                 <nav style={{backgroundColor: "white"}}
-                     className="flex flex-col items-start h-screen w-36">
+                     className="flex flex-col h-screen w-44">
+
+                    <div className="flex items-center p-4 justify-center w-full">
+                        <Logo variant="h5"/>
+                    </div>
 
                     <div className="pl-3">
                         <Button sx={buttonStyle} startIcon={<HomeIcon sx={customWidth}/>}>
@@ -75,17 +80,13 @@ export function Navbar() {
                     <Divider sx={{width: "60%", margin: "20px auto"}}/>
 
                     <div className="pl-3 h-full">
-                        <Button sx={{color: "gray.dark", textTransform: "capitalize"}}
+                        <Button sx={{...buttonStyle, margin: "0px"}}
                                 startIcon={<SettingsIcon sx={customWidth}/>}>
                             Settings
                         </Button>
 
-                        <Button sx={{
-                            marginTop: "auto",
-                            marginBottom: "20px",
-                            color: "gray.dark",
-                            textTransform: "capitalize"
-                        }} startIcon={<LogoutIcon sx={customWidth}/>}>
+                        <Button sx={{...buttonStyle, marginTop: "auto", marginBottom: "20px"}}
+                                startIcon={<LogoutIcon sx={customWidth}/>}>
                             Logout
                         </Button>
                     </div>

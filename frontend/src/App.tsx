@@ -62,12 +62,13 @@ const theme: Theme = createTheme({
 })
 
 function App() {
-    
+
     return (
         <>
             <ThemeProvider theme={theme}>
+                <Navbar/>
                 <Container maxWidth={false} sx={{backgroundColor: "#f1f1f1"}}>
-                    <Navbar/>
+
                 </Container>
             </ThemeProvider>
 
