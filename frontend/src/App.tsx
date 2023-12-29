@@ -1,6 +1,7 @@
 import "tailwindcss/tailwind.css";
-import {createTheme, ThemeProvider, Theme, Container, Typography} from "@mui/material";
-import {Navbar} from "./components";
+import {createTheme, ThemeProvider, Theme, Container} from "@mui/material";
+import {Home} from "./pages";
+import shadows from "@mui/material/styles/shadows";
 
 declare module '@mui/material/styles' {
     interface Palette {
@@ -12,6 +13,7 @@ declare module '@mui/material/styles' {
         red?: PaletteOptions['primary'];
         blue?: PaletteOptions['primary'];
         gray?: PaletteOptions['primary'];
+        darkGreen?: PaletteOptions['primary'];
     }
 
     interface PaletteColor {
@@ -54,9 +56,13 @@ const theme: Theme = createTheme({
             darker: '#004d99',
         },
         gray: {
-            main: '#D9D9D9',
+            // Use this color as it is the same as the "bg-zinc-100" Tailwind class
+            main: '#F4F4F5',
             dark: '#6F6F6F',
             darker: '#4D4D4D',
+        },
+        darkGreen: {
+            main: `#024511`,
         }
     },
 })
@@ -66,13 +72,8 @@ function App() {
     return (
         <>
             <ThemeProvider theme={theme}>
-                <Navbar>
-                    <Typography lineHeight="unset" variant="h4">
-                        Overview
-                    </Typography>
-                </Navbar>
-                <Container maxWidth={false} sx={{backgroundColor: "#f1f1f1"}}>
-
+                <Container maxWidth={false}>
+                    <Home/>
                 </Container>
             </ThemeProvider>
 
