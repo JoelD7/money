@@ -1,4 +1,4 @@
-import {Button, Divider, Drawer, IconButton, Typography} from "@mui/material";
+import {Button, Divider, Drawer, IconButton} from "@mui/material";
 import HomeIcon from '@mui/icons-material/Home';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
@@ -33,7 +33,7 @@ export function Navbar() {
 
     return (
         <>
-            <div className="flex p-2 flex-row justify-items-center">
+            <div className="flex p-2 pl-4 flex-row justify-items-center">
                 <Logo/>
 
                 <div className="ml-auto mr-3">
@@ -47,7 +47,7 @@ export function Navbar() {
                 </div>
             </div>
 
-            <Drawer anchor="left" open={open} onClose={() => setOpen(false)}>
+            <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
                 <nav style={{backgroundColor: "white"}}
                      className="flex flex-col h-screen w-44">
 
