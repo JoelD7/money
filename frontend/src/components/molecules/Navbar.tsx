@@ -7,10 +7,14 @@ import LabelIcon from '@mui/icons-material/Label';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
-import {useState} from "react";
+import {useState, ReactNode} from "react";
 import {Logo} from "../atoms";
 
-export function Navbar() {
+type NavbarProps = {
+    children: ReactNode
+}
+
+export function Navbar({children}: NavbarProps) {
     const customWidth = {
         '&.MuiSvgIcon-root': {
             width: "28px",
@@ -33,8 +37,10 @@ export function Navbar() {
 
     return (
         <>
-            <div className="flex p-2 pl-4 flex-row justify-items-center">
-                <Logo/>
+            <div className="flex p-4 flex-row justify-items-center">
+                {
+                    children ? children : <Logo/>
+                }
 
                 <div className="ml-auto mr-3">
                     <IconButton title="Home" sx={{margin: "5px 0px"}}>
@@ -50,7 +56,6 @@ export function Navbar() {
             <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
                 <nav style={{backgroundColor: "white"}}
                      className="flex flex-col h-screen w-44">
-
                     <div className="flex items-center p-4 justify-center w-full">
                         <Logo variant="h5"/>
                     </div>

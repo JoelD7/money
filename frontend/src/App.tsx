@@ -1,5 +1,5 @@
 import "tailwindcss/tailwind.css";
-import {createTheme, ThemeProvider, Theme, Container} from "@mui/material";
+import {createTheme, ThemeProvider, Theme, Container, Typography} from "@mui/material";
 import {Navbar} from "./components";
 
 declare module '@mui/material/styles' {
@@ -66,7 +66,11 @@ function App() {
     return (
         <>
             <ThemeProvider theme={theme}>
-                <Navbar/>
+                <Navbar>
+                    <Typography lineHeight="unset" variant="h4">
+                        Overview
+                    </Typography>
+                </Navbar>
                 <Container maxWidth={false} sx={{backgroundColor: "#f1f1f1"}}>
 
                 </Container>
