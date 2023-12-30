@@ -57,6 +57,9 @@ export function Home() {
                 </Grid>
             </Grid>
 
+            {/*Chart section*/}
+            <div></div>
+
         </>
     );
 }
