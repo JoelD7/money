@@ -15,8 +15,46 @@ export function Home() {
     const md = useMediaQuery(theme.breakpoints.up('md'));
 
     const user = {
+        "full_name": "Joel",
+        "username": "test@gmail.com",
         "remainder": 14456.21,
         "expenses": 8563.05,
+        "categories": [
+            {
+                "id": "CTGzJeEzCNz6HMTiPKwgPmj",
+                "name": "Entertainment",
+                "color": "#ff8733"
+            },
+            {
+                "id": "CTGtClGT160UteOl02jIH4F",
+                "name": "Health",
+                "color": "#00b85e"
+            },
+            {
+                "id": "CTGrR7fO4ndmI0IthJ7Wg8f",
+                "name": "Utilities",
+                "color": "#009eb8"
+            }
+        ],
+        "current_period": "2023-5"
+    }
+
+    const period = {
+        "username": "test@gmail.com",
+        "period": "asdf",
+        "name": "December",
+        "start_date": "2023-11-26T00:00:00Z",
+        "end_date": "2023-12-24T00:00:00Z",
+    }
+
+    function getPeriodDates(): string {
+        return `${new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: '2-digit',
+        }).format(new Date(period.start_date))} - ${new Intl.DateTimeFormat('default', {
+            month: 'short',
+            day: '2-digit',
+        }).format(new Date(period.end_date))}`
     }
 
     return (
@@ -27,9 +65,10 @@ export function Home() {
                 </Typography>
             </Navbar>
 
-            <Grid container borderRadius="10px" p="0.5rem" bgcolor="gray.main">
+            <Grid container borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
                 <Grid xs={3}>
                     <Grid height="100%" container alignContent="center" justifyContent="center">
+                        {/*@ts-ignore*/}
                         <ArrowCircleUpRoundedIcon sx={customWidth} color="darkGreen"/>
                     </Grid>
                 </Grid>
@@ -42,9 +81,10 @@ export function Home() {
                 </Grid>
             </Grid>
 
-            <Grid container mt="1rem" borderRadius="10px" p="0.5rem" bgcolor="gray.main">
+            <Grid container mt="0.5rem" borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
                 <Grid xs={3}>
                     <Grid height="100%" container alignContent="center" justifyContent="center">
+                        {/*@ts-ignore*/}
                         <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
                     </Grid>
                 </Grid>
@@ -58,7 +98,16 @@ export function Home() {
             </Grid>
 
             {/*Chart section*/}
-            <div></div>
+            <Grid container borderRadius="1rem" p="1rem" boxShadow="3" mt="1rem">
+                <Grid xs={12}>
+                    <Typography variant="h4">
+                        {period.name}
+                    </Typography>
+                    <Typography color="gray.light">
+                        {getPeriodDates()}
+                    </Typography>
+                </Grid>
+            </Grid>
 
         </>
     );

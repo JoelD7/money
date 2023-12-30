@@ -1,7 +1,6 @@
 import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container} from "@mui/material";
 import {Home} from "./pages";
-import shadows from "@mui/material/styles/shadows";
 
 declare module '@mui/material/styles' {
     interface Palette {
@@ -22,6 +21,7 @@ declare module '@mui/material/styles' {
 
     interface SimplePaletteColorOptions {
         darker?: string;
+
     }
 }
 
@@ -60,6 +60,7 @@ const theme: Theme = createTheme({
             main: '#F4F4F5',
             dark: '#6F6F6F',
             darker: '#4D4D4D',
+            light: '#a3a3a3',
         },
         darkGreen: {
             main: `#024511`,
