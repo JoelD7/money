@@ -39,6 +39,7 @@ const theme: Theme = createTheme({
         },
         secondary: {
             main: "#FF8042",
+            contrastText: "#ffffff"
         },
         white: {
             main: "#FFFFFF",
