@@ -1,8 +1,9 @@
 import {Typography, useMediaQuery, useTheme} from "@mui/material";
 import Grid from '@mui/material/Unstable_Grid2';
+import AddIcon from '@mui/icons-material/Add';
 import ArrowCircleUpRoundedIcon from '@mui/icons-material/ArrowCircleUpRounded';
 import ArrowCircleDownRoundedIcon from '@mui/icons-material/ArrowCircleDownRounded';
-import {Navbar} from "../components";
+import {Button, Navbar} from "../components";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 
 type RechartsLabelProps = {
@@ -19,8 +20,8 @@ export function Home() {
     const theme = useTheme();
     const customWidth = {
         '&.MuiSvgIcon-root': {
-            width: "38px",
-            height: "38px",
+            width: "14px",
+            height: "14px",
         },
     }
     const md = useMediaQuery(theme.breakpoints.up('md'));
@@ -61,7 +62,8 @@ export function Home() {
         "end_date": "2023-12-24T00:00:00Z",
     }
 
-    const RADIAN = Math.PI / 180;
+    const chartHeight: number = 250
+    const RADIAN: number = Math.PI / 180;
 
     function getCustomLabel({cx, cy, midAngle, innerRadius, outerRadius, percent}: RechartsLabelProps) {
         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -137,9 +139,10 @@ export function Home() {
                         {getPeriodDates()}
                     </Typography>
                 </Grid>
-                <Grid xs={12}>
+                {/*Chart*/}
+                <Grid xs={12} height={chartHeight}>
                     <ResponsiveContainer width="100%" height="100%">
-                        <PieChart width={350} height={250}>
+                        <PieChart width={350} height={chartHeight}>
                             <Pie data={user.categories} label={getCustomLabel} dataKey="value" nameKey="name" cx="50%"
                                  cy="50%"
                                  labelLine={false}
@@ -151,6 +154,48 @@ export function Home() {
                             <Tooltip/>
                         </PieChart>
                     </ResponsiveContainer>
+                </Grid>
+
+                {/*Chart legend*/}
+                <Grid xs={12}>
+                    <Grid container width="100%" className="justify-around">
+                        {/*Categories*/}
+                        <Grid xs={6}>
+                            {user.categories.map((category) => (
+                                <div key={category.id} className="flex gap-1 items-center">
+                                    <div className="rounded-full w-3 h-3" style={{backgroundColor: category.color}}/>
+                                    <Typography color="gray.light">
+                                        {category.name}
+                                    </Typography>
+                                </div>
+                            ))}
+
+                        </Grid>
+                        {/*Details button*/}
+                        <Grid xs={6}>
+                            <Grid container className="items-end h-full">
+                                <Button variant="outlined"
+                                        sx={{textTransform: "capitalize", borderRadius: "1rem", height: "fit-content"}}>
+                                    View details
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            {/*New expense/income buttons*/}
+            <Grid container mt={"1rem"}>
+                <Grid xs={6}>
+                    <Button color={"secondary"} variant={"contained"}
+                            startIcon={<AddIcon/>}>
+                        New expense
+                    </Button>
+                </Grid>
+                <Grid xs={6}>
+                    <Button variant={"contained"} startIcon={<AddIcon/>}>
+                        New income
+                    </Button>
                 </Grid>
             </Grid>
 
