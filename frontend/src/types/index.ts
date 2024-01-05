@@ -5,6 +5,7 @@ export type Expense = {
     categoryName?: string
     amount: number
     name: string
+    notes?: string
     createdDate: Date
     period: string
     updateDate: Date

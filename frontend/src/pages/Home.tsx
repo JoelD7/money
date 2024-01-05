@@ -1,10 +1,13 @@
-import {Typography, useMediaQuery, useTheme} from "@mui/material";
+import {Box, Typography, useMediaQuery, useTheme} from "@mui/material";
 import Grid from '@mui/material/Unstable_Grid2';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowCircleUpRoundedIcon from '@mui/icons-material/ArrowCircleUpRounded';
 import ArrowCircleDownRoundedIcon from '@mui/icons-material/ArrowCircleDownRounded';
 import {Button, Navbar} from "../components";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
+import {Expense} from "../types";
+import {DataGrid, GridColDef, GridRowsProp} from "@mui/x-data-grid";
+import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
 
 type RechartsLabelProps = {
     cx: number
@@ -20,10 +23,17 @@ export function Home() {
     const theme = useTheme();
     const customWidth = {
         '&.MuiSvgIcon-root': {
-            width: "14px",
-            height: "14px",
+            width: "38px",
+            height: "38px",
         },
     }
+
+    const gridStyle = {
+        '&.MuiDataGrid-root': {
+            borderRadius: "1rem",
+        }
+    }
+
     const md = useMediaQuery(theme.breakpoints.up('md'));
 
     const user = {
@@ -62,6 +72,115 @@ export function Home() {
         "end_date": "2023-12-24T00:00:00Z",
     }
 
+    const expenses: Expense[] = [
+        {
+            expenseID: "EX5DK8d8LTywTKC8r87vdS",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 12.99,
+            name: "Blue pair of socks",
+            notes: "Lorem ipsum note to fill space",
+            createdDate: new Date("2023-10-27T23:42:54.980596532Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXBLsynfE2QSAX8awfWptn",
+            username: "test@gmail.com",
+            categoryID: "CTGcSuhjzVmu3WrHLKD5fhS",
+            categoryName: "Health",
+            amount: 1000,
+            name: "Protector solar",
+            createdDate: new Date("2023-10-14T19:55:45.261990038Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXD5G8OdwlKC81tH9ZE3eO",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 1898.11,
+            name: "Vacuum Cleaner",
+            createdDate: new Date("2023-10-18T22:41:56.024322091Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXF5Mg3fpxct3v0BI91XYB",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 1202.17,
+            name: "Microwave",
+            createdDate: new Date("2023-10-18T22:41:46.946640398Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXHrwzQezXK6nXyclUHbVH",
+            username: "test@gmail.com",
+            categoryID: "CTGGyouAaIPPWKzxpyxHACS",
+            categoryName: "Entertainment",
+            amount: 955,
+            name: "Plza Juan Baron",
+            notes: "Lorem ipsum note to fill space",
+            createdDate: new Date("2023-10-14T19:52:11.552327532Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXIGBwc0sBWeyL9hy8jVuI",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 620,
+            name: "Correa amarilla",
+            createdDate: new Date("2023-10-18T22:37:04.230522146Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXIfxidmlBJtq97xjQZfNh",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 123,
+            name: "Correa azul",
+            createdDate: new Date("2023-10-18T22:37:15.57296052Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXP123",
+            username: "test@gmail.com",
+            amount: 893,
+            name: "Jordan shopping",
+            createdDate: new Date("0001-01-01T00:00:00Z"),
+            period: "2023-5",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXP456",
+            username: "test@gmail.com",
+            amount: 112,
+            name: "Uber drive",
+            createdDate: new Date("0001-01-01T00:00:00Z"),
+            period: "2023-5",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXP789",
+            username: "test@gmail.com",
+            amount: 525,
+            name: "Lunch",
+            createdDate: new Date("0001-01-01T00:00:00Z"),
+            period: "2023-5",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        }
+    ]
+
     const chartHeight: number = 250
     const RADIAN: number = Math.PI / 180;
 
@@ -85,6 +204,34 @@ export function Home() {
             month: 'short',
             day: '2-digit',
         }).format(new Date(period.end_date))}`
+    }
+
+    const columns: GridColDef[] = [
+        {field: 'amount', headerName: 'Amount', width: 150},
+        {field: 'categoryName', headerName: 'Category', width: 150},
+        {field: 'notes', headerName: 'Notes', width: 150},
+        {field: 'createdDate', headerName: 'Date', width: 150},
+    ];
+
+    function getTableRows(expenses: Expense[]): GridRowsProp {
+        return expenses.map((expense): GridValidRowModel => {
+            return {
+                id: expense.expenseID,
+                amount: new Intl.NumberFormat('en-US', {
+                    style: 'currency', currency: 'USD'
+                }).format(expense.amount),
+                categoryName: expense.categoryName ? expense.categoryName : "-",
+                notes: expense.notes ? expense.notes : "-",
+                date: new Intl.DateTimeFormat('default', {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: 'numeric',
+                    minute: 'numeric',
+                }).format(expense.createdDate),
+            }
+        })
     }
 
     return (
@@ -197,6 +344,17 @@ export function Home() {
                         New income
                     </Button>
                 </Grid>
+            </Grid>
+
+            {/*Latest table*/}
+            <Grid container mt={"2rem"}>
+                <Typography variant={"h4"}>
+                    Latest
+                </Typography>
+
+                <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
+                    <DataGrid sx={gridStyle} rows={getTableRows(expenses)} columns={columns}/>
+                </Box>
             </Grid>
 
         </>
