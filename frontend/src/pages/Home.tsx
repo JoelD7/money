@@ -31,6 +31,13 @@ export function Home() {
     const gridStyle = {
         '&.MuiDataGrid-root': {
             borderRadius: "1rem",
+        },
+        '&.MuiDataGrid-root .MuiDataGrid-cellContent': {
+            textWrap: "pretty",
+            maxHeight: "38px",
+        },
+        '&.MuiDataGrid-columnHeaderTitle': {
+            fontSize: "large",
         }
     }
 
@@ -80,7 +87,7 @@ export function Home() {
             categoryName: "Shopping",
             amount: 12.99,
             name: "Blue pair of socks",
-            notes: "Lorem ipsum note to fill space",
+            notes: "Ipsum mollit est pariatur esse ex. Aliqua laborum laboris laboris laboris. Laboris pectum",
             createdDate: new Date("2023-10-27T23:42:54.980596532Z"),
             period: "2023-7",
             updateDate: new Date("0001-01-01T00:00:00Z")
