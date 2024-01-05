@@ -10,3 +10,10 @@ export type Expense = {
     period: string
     updateDate: Date
 }
+
+export type Category = {
+    categoryID: string
+    name: string
+    budget: number
+    color: string
+}
