@@ -210,7 +210,7 @@ export function Home() {
         {field: 'amount', headerName: 'Amount', width: 150},
         {field: 'categoryName', headerName: 'Category', width: 150},
         {field: 'notes', headerName: 'Notes', width: 150},
-        {field: 'createdDate', headerName: 'Date', width: 150},
+        {field: 'createdDate', headerName: 'Date', width: 200},
     ];
 
     function getTableRows(expenses: Expense[]): GridRowsProp {
@@ -222,10 +222,10 @@ export function Home() {
                 }).format(expense.amount),
                 categoryName: expense.categoryName ? expense.categoryName : "-",
                 notes: expense.notes ? expense.notes : "-",
-                date: new Intl.DateTimeFormat('default', {
+                createdDate: new Intl.DateTimeFormat('en-GB', {
                     weekday: "short",
                     year: "numeric",
-                    month: "short",
+                    month: "numeric",
                     day: "numeric",
                     hour: 'numeric',
                     minute: 'numeric',
