@@ -37,7 +37,7 @@ export function Home() {
             textWrap: "pretty",
             maxHeight: "38px",
         },
-        '&.MuiDataGrid-columnHeaderTitle': {
+        '& .MuiDataGrid-columnHeaderTitle': {
             fontSize: "large",
         }
     }
@@ -256,11 +256,11 @@ export function Home() {
                 <GridCell {...props}>
                     <Box sx={{
                         backgroundColor: getCellBackgroundColor(String(props.rowId)),
-                        padding: "0.25rem",
+                        padding: "0.25rem 0.5rem",
                         borderRadius: "9999px",
                     }}>
-                        <Typography color={"white.main"}>
-                            {field}
+                        <Typography fontSize={"14px"} color={"white.main"}>
+                            {props.value}
                         </Typography>
                     </Box>
                 </GridCell> :
@@ -409,7 +409,7 @@ export function Home() {
                     Latest
                 </Typography>
 
-                <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
+                <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"} mt={"0.5rem"}>
                     <DataGrid sx={gridStyle}
                               rows={getTableRows(expenses)}
                               columns={columns}
