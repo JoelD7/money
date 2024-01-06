@@ -226,7 +226,7 @@ export function Home() {
     const columns: GridColDef[] = [
         {field: 'amount', headerName: 'Amount', width: 150},
         {field: 'categoryName', headerName: 'Category', width: 150},
-        {field: 'notes', headerName: 'Notes', width: 150},
+        {field: 'notes', headerName: 'Notes', flex: 1, minWidth: 150},
         {field: 'createdDate', headerName: 'Date', width: 200},
     ];
 
@@ -351,9 +351,10 @@ export function Home() {
                     <div>
                         <Grid container spacing={1}>
                             {/*Chart section*/}
-                            <Grid xs={12} md={6}>
+                            <Grid xs={12} md={6} maxWidth={"430px"}>
                                 <div>
-                                    <Grid container bgcolor={"white.main"} borderRadius="1rem" p="1rem" boxShadow="3"
+                                    <Grid container bgcolor={"white.main"} borderRadius="1rem"
+                                          p="1rem" boxShadow="3"
                                           mt="1rem">
                                         <Grid xs={12}>
                                             <Typography variant="h4">
@@ -418,7 +419,7 @@ export function Home() {
                             </Grid>
 
                             {/*New expense/income buttons, Current balance and expenses*/}
-                            <Grid xs={12} md={6}>
+                            <Grid xs={12} md={6} maxWidth={"430px"}>
                                 <div>
                                     <Grid container mt={"1rem"} spacing={1}>
                                         {/*Balance*/}
