@@ -6,9 +6,10 @@ type CustomButtonProps = {
 } & ButtonProps
 
 export function Button(props: CustomButtonProps) {
+    const {sx, ...other} = props
     return (
         <>
-            <MuiButton sx={{textTransform: "capitalize", borderRadius: "1rem"}} {...props}>
+            <MuiButton sx={{textTransform: "capitalize", borderRadius: "1rem", ...sx}} {...other}>
                 {props.children}
             </MuiButton>
         </>
