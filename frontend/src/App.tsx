@@ -1,6 +1,7 @@
 import "tailwindcss/tailwind.css";
-import {createTheme, ThemeProvider, Theme, Container} from "@mui/material";
+import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
 import {Home} from "./pages";
+import {Navbar} from "./components";
 
 declare module '@mui/material/styles' {
     interface Palette {
@@ -70,11 +71,15 @@ const theme: Theme = createTheme({
 })
 
 function App() {
+    const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
 
     return (
         <>
             <ThemeProvider theme={theme}>
-                <Container maxWidth={false}>
+                <Navbar/>
+                <Container
+                    sx={mdUp ? {marginLeft: "11rem", backgroundColor: "#fafafa"} : {backgroundColor: "#fafafa"}}
+                    maxWidth={false}>
                     <Home/>
                 </Container>
             </ThemeProvider>

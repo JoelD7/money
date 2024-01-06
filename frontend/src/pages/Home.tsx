@@ -32,6 +32,7 @@ export function Home() {
     const gridStyle = {
         '&.MuiDataGrid-root': {
             borderRadius: "1rem",
+            backgroundColor: "#ffffff"
         },
         '&.MuiDataGrid-root .MuiDataGrid-cellContent': {
             textWrap: "pretty",
@@ -42,7 +43,6 @@ export function Home() {
         }
     }
 
-    const xs: boolean = useMediaQuery(theme.breakpoints.up('xs'));
     const xsOnly: boolean = useMediaQuery(theme.breakpoints.only('xs'));
     const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
 
@@ -296,17 +296,11 @@ export function Home() {
 
     return (
         <>
-            <Navbar>
-                <Typography lineHeight="unset" variant="h4">
-                    Overview
-                </Typography>
-            </Navbar>
-
             <Grid container spacing={1}>
                 {/*Balance*/}
                 <Grid xs={12} sm={6} hidden={mdUp}>
                     <div>
-                        <Grid container borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
+                        <Grid container borderRadius="1rem" p="0.5rem" bgcolor="white.main" boxShadow={"2"}>
                             <Grid xs={3}>
                                 <Grid height="100%" container alignContent="center" justifyContent="center">
                                     {/*@ts-ignore*/}
@@ -330,7 +324,8 @@ export function Home() {
                 {/*Expenses*/}
                 <Grid xs={12} sm={6} hidden={mdUp}>
                     <div>
-                        <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
+                        <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem" p="0.5rem" bgcolor="white.main"
+                              boxShadow={"2"}>
                             <Grid xs={3}>
                                 <Grid height="100%" container alignContent="center" justifyContent="center">
                                     {/*@ts-ignore*/}
@@ -358,7 +353,8 @@ export function Home() {
                             {/*Chart section*/}
                             <Grid xs={12} md={6}>
                                 <div>
-                                    <Grid container borderRadius="1rem" p="1rem" boxShadow="3" mt="1rem">
+                                    <Grid container bgcolor={"white.main"} borderRadius="1rem" p="1rem" boxShadow="3"
+                                          mt="1rem">
                                         <Grid xs={12}>
                                             <Typography variant="h4">
                                                 {period.name}
@@ -428,7 +424,8 @@ export function Home() {
                                         {/*Balance*/}
                                         <Grid xs={12} hidden={!mdUp}>
                                             <div>
-                                                <Grid container borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
+                                                <Grid container borderRadius="1rem" p="0.5rem" bgcolor="white.main"
+                                                      boxShadow={"2"}>
                                                     <Grid xs={3}>
                                                         <Grid height="100%" container alignContent="center"
                                                               justifyContent="center">
@@ -456,7 +453,7 @@ export function Home() {
                                         <Grid xs={12} hidden={!mdUp}>
                                             <div>
                                                 <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem"
-                                                      p="0.5rem" bgcolor="gray.main">
+                                                      p="0.5rem" bgcolor="white.main" boxShadow={"2"}>
                                                     <Grid xs={3}>
                                                         <Grid height="100%" container alignContent="center"
                                                               justifyContent="center">
