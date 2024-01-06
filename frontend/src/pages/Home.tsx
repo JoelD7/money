@@ -6,8 +6,9 @@ import ArrowCircleDownRoundedIcon from '@mui/icons-material/ArrowCircleDownRound
 import {Button, Navbar} from "../components";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import {Expense} from "../types";
-import {DataGrid, GridColDef, GridRowsProp} from "@mui/x-data-grid";
+import {DataGrid, GridCell, GridColDef, GridRowsProp} from "@mui/x-data-grid";
 import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
+import {GridCellProps} from "@mui/x-data-grid/components/cell/GridCell";
 
 type RechartsLabelProps = {
     cx: number
@@ -64,6 +65,12 @@ export function Home() {
             {
                 id: "CTGrR7fO4ndmI0IthJ7Wg8f",
                 name: "Utilities",
+                color: "#009eb8",
+                value: 30
+            },
+            {
+                id: "CTGrR7fO4ndmI0IthJ7Wg8fs",
+                name: "Shopping",
                 color: "#009eb8",
                 value: 30
             }
@@ -241,6 +248,49 @@ export function Home() {
         })
     }
 
+    function customCellComponent(props: GridCellProps) {
+        const {field, children} = props;
+
+        return (
+            field === "categoryName" ?
+                <GridCell {...props}>
+                    <Box sx={{
+                        backgroundColor: getCellBackgroundColor(String(props.rowId)),
+                        padding: "0.25rem",
+                        borderRadius: "9999px",
+                    }}>
+                        <Typography color={"white.main"}>
+                            {field}
+                        </Typography>
+                    </Box>
+                </GridCell> :
+                <GridCell {...props}>
+                    {children}
+                </GridCell>
+        )
+    }
+
+    function getCellBackgroundColor(rowID: string): string {
+        let categoryName: string = ""
+        let categoryColor: string = ""
+
+        expenses.forEach((expense) => {
+            if (expense.expenseID === rowID) {
+                categoryName = expense.categoryName ? expense.categoryName : ""
+                return
+            }
+        })
+
+        user.categories.forEach((category) => {
+            if (category.name === categoryName) {
+                categoryColor = category.color
+                return
+            }
+        })
+
+        return categoryColor
+    }
+
     return (
         <>
             <Navbar>
@@ -360,7 +410,13 @@ export function Home() {
                 </Typography>
 
                 <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
-                    <DataGrid sx={gridStyle} rows={getTableRows(expenses)} columns={columns}/>
+                    <DataGrid sx={gridStyle}
+                              rows={getTableRows(expenses)}
+                              columns={columns}
+                              slots={{
+                                  cell: customCellComponent,
+                              }}
+                    />
                 </Box>
             </Grid>
 
