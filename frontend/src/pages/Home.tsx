@@ -42,7 +42,10 @@ export function Home() {
         }
     }
 
-    const md = useMediaQuery(theme.breakpoints.up('md'));
+    const xs: boolean = useMediaQuery(theme.breakpoints.up('xs'));
+    const xsOnly: boolean = useMediaQuery(theme.breakpoints.only('xs'));
+    const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
+
 
     const user = {
         full_name: "Joel",
@@ -299,125 +302,221 @@ export function Home() {
                 </Typography>
             </Navbar>
 
-            {/*Balance*/}
-            <Grid container borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
-                <Grid xs={3}>
-                    <Grid height="100%" container alignContent="center" justifyContent="center">
-                        {/*@ts-ignore*/}
-                        <ArrowCircleUpRoundedIcon sx={customWidth} color="darkGreen"/>
-                    </Grid>
-                </Grid>
+            <Grid container spacing={1}>
+                {/*Balance*/}
+                <Grid xs={12} sm={6} hidden={mdUp}>
+                    <div>
+                        <Grid container borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
+                            <Grid xs={3}>
+                                <Grid height="100%" container alignContent="center" justifyContent="center">
+                                    {/*@ts-ignore*/}
+                                    <ArrowCircleUpRoundedIcon sx={customWidth} color="darkGreen"/>
+                                </Grid>
+                            </Grid>
 
-                <Grid xs={9}>
-                    <Typography variant="h6" fontWeight="bold">Balance</Typography>
-                    <Typography lineHeight="unset" variant="h4" color="darkGreen.main">
-                        {new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(user.remainder)}
-                    </Typography>
-                </Grid>
-            </Grid>
-
-            {/*Expenses*/}
-            <Grid container mt="0.5rem" borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
-                <Grid xs={3}>
-                    <Grid height="100%" container alignContent="center" justifyContent="center">
-                        {/*@ts-ignore*/}
-                        <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
-                    </Grid>
-                </Grid>
-
-                <Grid xs={9}>
-                    <Typography variant="h6" fontWeight="bold">Expenses</Typography>
-                    <Typography lineHeight="unset" variant="h4" color="red.main">
-                        {new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(user.expenses)}
-                    </Typography>
-                </Grid>
-            </Grid>
-
-            {/*Chart section*/}
-            <Grid container borderRadius="1rem" p="1rem" boxShadow="3" mt="1rem">
-                <Grid xs={12}>
-                    <Typography variant="h4">
-                        {period.name}
-                    </Typography>
-                    <Typography color="gray.light">
-                        {getPeriodDates()}
-                    </Typography>
-                </Grid>
-                {/*Chart*/}
-                <Grid xs={12} height={chartHeight}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart width={350} height={chartHeight}>
-                            <Pie data={user.categories} label={getCustomLabel} dataKey="value" nameKey="name" cx="50%"
-                                 cy="50%"
-                                 labelLine={false}
-                                 fill="#8884d8">
-                                {user.categories.map((category, index) => (
-                                    <Cell key={`cell-${index}`} fill={category.color}/>
-                                ))}
-                            </Pie>
-                            <Tooltip/>
-                        </PieChart>
-                    </ResponsiveContainer>
-                </Grid>
-
-                {/*Chart legend*/}
-                <Grid xs={12}>
-                    <Grid container width="100%" className="justify-around">
-                        {/*Categories*/}
-                        <Grid xs={6}>
-                            {user.categories.map((category) => (
-                                <div key={category.id} className="flex gap-1 items-center">
-                                    <div className="rounded-full w-3 h-3" style={{backgroundColor: category.color}}/>
-                                    <Typography color="gray.light">
-                                        {category.name}
-                                    </Typography>
-                                </div>
-                            ))}
-
-                        </Grid>
-                        {/*Details button*/}
-                        <Grid xs={6}>
-                            <Grid container className="items-end h-full">
-                                <Button variant="outlined"
-                                        sx={{textTransform: "capitalize", borderRadius: "1rem", height: "fit-content"}}>
-                                    View details
-                                </Button>
+                            <Grid xs={9}>
+                                <Typography variant="h6" fontWeight="bold">Balance</Typography>
+                                <Typography lineHeight="unset" variant="h4" color="darkGreen.main">
+                                    {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }).format(user.remainder)}
+                                </Typography>
                             </Grid>
                         </Grid>
-                    </Grid>
+                    </div>
                 </Grid>
-            </Grid>
 
-            {/*New expense/income buttons*/}
-            <Grid container mt={"1rem"}>
-                <Grid xs={6}>
-                    <Button color={"secondary"} variant={"contained"}
-                            startIcon={<AddIcon/>}>
-                        New expense
-                    </Button>
+                {/*Expenses*/}
+                <Grid xs={12} sm={6} hidden={mdUp}>
+                    <div>
+                        <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
+                            <Grid xs={3}>
+                                <Grid height="100%" container alignContent="center" justifyContent="center">
+                                    {/*@ts-ignore*/}
+                                    <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
+                                </Grid>
+                            </Grid>
+
+                            <Grid xs={9}>
+                                <Typography variant="h6" fontWeight="bold">Expenses</Typography>
+                                <Typography lineHeight="unset" variant="h4" color="red.main">
+                                    {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: 'USD'
+                                    }).format(user.expenses)}
+                                </Typography>
+                            </Grid>
+                        </Grid>
+                    </div>
                 </Grid>
-                <Grid xs={6}>
-                    <Button variant={"contained"} startIcon={<AddIcon/>}>
-                        New income
-                    </Button>
+
+                {/*Chart, Current balance and expenses*/}
+                <Grid xs={12}>
+                    <div>
+                        <Grid container spacing={1}>
+                            {/*Chart section*/}
+                            <Grid xs={12} md={6}>
+                                <div>
+                                    <Grid container borderRadius="1rem" p="1rem" boxShadow="3" mt="1rem">
+                                        <Grid xs={12}>
+                                            <Typography variant="h4">
+                                                {period.name}
+                                            </Typography>
+                                            <Typography color="gray.light">
+                                                {getPeriodDates()}
+                                            </Typography>
+                                        </Grid>
+                                        {/*Chart*/}
+                                        <Grid xs={12} height={chartHeight}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart width={350} height={chartHeight}>
+                                                    <Pie data={user.categories} label={getCustomLabel} dataKey="value"
+                                                         nameKey="name"
+                                                         cx="50%"
+                                                         cy="50%"
+                                                         labelLine={false}
+                                                         fill="#8884d8">
+                                                        {user.categories.map((category, index) => (
+                                                            <Cell key={`cell-${index}`} fill={category.color}/>
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip/>
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </Grid>
+
+                                        {/*Chart legend*/}
+                                        <Grid xs={12}>
+                                            <Grid container width="100%" className="justify-between">
+                                                {/*Categories*/}
+                                                <Grid xs={6}>
+                                                    {user.categories.map((category) => (
+                                                        <div key={category.id} className="flex gap-1 items-center">
+                                                            <div className="rounded-full w-3 h-3"
+                                                                 style={{backgroundColor: category.color}}/>
+                                                            <Typography color="gray.light">
+                                                                {category.name}
+                                                            </Typography>
+                                                        </div>
+                                                    ))}
+
+                                                </Grid>
+                                                {/*Details button*/}
+                                                <Grid xs={6}>
+                                                    <Grid container className="items-end h-full">
+                                                        <Button variant="outlined"
+                                                                sx={{
+                                                                    textTransform: "capitalize",
+                                                                    borderRadius: "1rem",
+                                                                    height: "fit-content"
+                                                                }}>
+                                                            View details
+                                                        </Button>
+                                                    </Grid>
+                                                </Grid>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </div>
+                            </Grid>
+
+                            {/*New expense/income buttons, Current balance and expenses*/}
+                            <Grid xs={12} md={6}>
+                                <div>
+                                    <Grid container mt={"1rem"} spacing={1}>
+                                        {/*Balance*/}
+                                        <Grid xs={12} hidden={!mdUp}>
+                                            <div>
+                                                <Grid container borderRadius="1rem" p="0.5rem" bgcolor="gray.main">
+                                                    <Grid xs={3}>
+                                                        <Grid height="100%" container alignContent="center"
+                                                              justifyContent="center">
+                                                            <ArrowCircleUpRoundedIcon sx={customWidth}
+                                                                //@ts-ignore
+                                                                                      color="darkGreen"/>
+                                                        </Grid>
+                                                    </Grid>
+
+                                                    <Grid xs={9}>
+                                                        <Typography variant="h6" fontWeight="bold">Balance</Typography>
+                                                        <Typography lineHeight="unset" variant="h4"
+                                                                    color="darkGreen.main">
+                                                            {new Intl.NumberFormat('en-US', {
+                                                                style: 'currency',
+                                                                currency: 'USD'
+                                                            }).format(user.remainder)}
+                                                        </Typography>
+                                                    </Grid>
+                                                </Grid>
+                                            </div>
+                                        </Grid>
+
+                                        {/*Expenses*/}
+                                        <Grid xs={12} hidden={!mdUp}>
+                                            <div>
+                                                <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem"
+                                                      p="0.5rem" bgcolor="gray.main">
+                                                    <Grid xs={3}>
+                                                        <Grid height="100%" container alignContent="center"
+                                                              justifyContent="center">
+                                                            {/*@ts-ignore*/}
+                                                            <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
+                                                        </Grid>
+                                                    </Grid>
+
+                                                    <Grid xs={9}>
+                                                        <Typography variant="h6" fontWeight="bold">Expenses</Typography>
+                                                        <Typography lineHeight="unset" variant="h4" color="red.main">
+                                                            {new Intl.NumberFormat('en-US', {
+                                                                style: 'currency',
+                                                                currency: 'USD'
+                                                            }).format(user.expenses)}
+                                                        </Typography>
+                                                    </Grid>
+                                                </Grid>
+                                            </div>
+                                        </Grid>
+
+                                        {/**New expense/income buttons*/}
+                                        <Grid xs={12}>
+                                            <Button color={"secondary"} variant={"contained"}
+                                                    startIcon={<AddIcon/>}>
+                                                New expense
+                                            </Button>
+
+                                            <Button sx={{marginLeft: "1rem"}} variant={"contained"}
+                                                    startIcon={<AddIcon/>}>
+                                                New income
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+                                </div>
+                            </Grid>
+                        </Grid>
+                    </div>
                 </Grid>
-            </Grid>
 
-            {/*Latest table*/}
-            <Grid container mt={"2rem"}>
-                <Typography variant={"h4"}>
-                    Latest
-                </Typography>
+                {/*Latest table*/}
+                <Grid xs={12}>
+                    <div>
+                        <Grid container mt={"2rem"}>
+                            <Typography variant={"h4"}>
+                                Latest
+                            </Typography>
 
-                <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"} mt={"0.5rem"}>
-                    <DataGrid sx={gridStyle}
-                              rows={getTableRows(expenses)}
-                              columns={columns}
-                              slots={{
-                                  cell: customCellComponent,
-                              }}
-                    />
-                </Box>
+                            <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"} mt={"0.5rem"}>
+                                <DataGrid sx={gridStyle}
+                                          rows={getTableRows(expenses)}
+                                          columns={columns}
+                                          slots={{
+                                              cell: customCellComponent,
+                                          }}
+                                />
+                            </Box>
+                        </Grid>
+                    </div>
+                </Grid>
             </Grid>
 
         </>
