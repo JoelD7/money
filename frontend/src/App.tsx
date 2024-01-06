@@ -72,13 +72,16 @@ const theme: Theme = createTheme({
 
 function App() {
     const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
-
+    const containerStyles = {
+        backgroundColor: "#fafafa",
+        width: "auto",
+    }
     return (
         <>
             <ThemeProvider theme={theme}>
                 <Navbar/>
                 <Container
-                    sx={mdUp ? {marginLeft: "11rem", backgroundColor: "#fafafa"} : {backgroundColor: "#fafafa"}}
+                    sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
                     maxWidth={false}>
                     <Home/>
                 </Container>
