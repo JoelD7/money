@@ -1,5 +1,6 @@
 import "tailwindcss/tailwind.css";
-import {createTheme, ThemeProvider, Theme, Container} from "@mui/material";
+import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
+import {Home} from "./pages";
 import {Navbar} from "./components";
 
 declare module '@mui/material/styles' {
@@ -12,6 +13,7 @@ declare module '@mui/material/styles' {
         red?: PaletteOptions['primary'];
         blue?: PaletteOptions['primary'];
         gray?: PaletteOptions['primary'];
+        darkGreen?: PaletteOptions['primary'];
     }
 
     interface PaletteColor {
@@ -20,6 +22,7 @@ declare module '@mui/material/styles' {
 
     interface SimplePaletteColorOptions {
         darker?: string;
+
     }
 }
 
@@ -37,6 +40,7 @@ const theme: Theme = createTheme({
         },
         secondary: {
             main: "#FF8042",
+            contrastText: "#ffffff"
         },
         white: {
             main: "#FFFFFF",
@@ -54,33 +58,32 @@ const theme: Theme = createTheme({
             darker: '#004d99',
         },
         gray: {
-            main: '#D9D9D9',
+            // Use this color as it is the same as the "bg-zinc-100" Tailwind class
+            main: '#F4F4F5',
             dark: '#6F6F6F',
             darker: '#4D4D4D',
+            light: '#a3a3a3',
+        },
+        darkGreen: {
+            main: `#024511`,
         }
     },
 })
 
 function App() {
-    const options = [
-        {
-            label: "Option 1",
-            color: "#D90707",
-        },
-        {
-            label: "Option 2",
-            color: "#0088FE",
-        },
-        {
-            label: "Option 3",
-            color: "#009821",
-        },
-    ]
+    const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
+    const containerStyles = {
+        backgroundColor: "#fafafa",
+        width: "auto",
+    }
     return (
         <>
             <ThemeProvider theme={theme}>
-                <Container>
-                    <Navbar/>
+                <Navbar/>
+                <Container
+                    sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
+                    maxWidth={false}>
+                    <Home/>
                 </Container>
             </ThemeProvider>
 
