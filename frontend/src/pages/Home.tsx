@@ -296,7 +296,7 @@ export function Home() {
 
     return (
         <>
-            <Grid container spacing={1}>
+            <Grid container spacing={1} justifyContent={"center"}>
                 {/*Balance*/}
                 <Grid xs={12} sm={6} hidden={mdUp}>
                     <div>
@@ -347,7 +347,7 @@ export function Home() {
                 </Grid>
 
                 {/*Chart, Current balance and expenses*/}
-                <Grid xs={12}>
+                <Grid xs={12} maxWidth={"880px"}>
                     <div>
                         <Grid container spacing={1}>
                             {/*Chart section*/}
@@ -496,22 +496,27 @@ export function Home() {
                 </Grid>
 
                 {/*Latest table*/}
-                <Grid xs={12}>
+                <Grid xs={12} maxWidth={"1200px"}>
                     <div>
                         <Grid container mt={"2rem"}>
-                            <Typography variant={"h4"}>
-                                Latest
-                            </Typography>
+                            <Grid xs={12}>
+                                <Typography variant={"h4"}>
+                                    Latest
+                                </Typography>
+                            </Grid>
 
-                            <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"} mt={"0.5rem"}>
-                                <DataGrid sx={gridStyle}
-                                          rows={getTableRows(expenses)}
-                                          columns={columns}
-                                          slots={{
-                                              cell: customCellComponent,
-                                          }}
-                                />
-                            </Box>
+                            <Grid xs={12}>
+                                <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
+                                     mt={"0.5rem"}>
+                                    <DataGrid sx={gridStyle}
+                                              rows={getTableRows(expenses)}
+                                              columns={columns}
+                                              slots={{
+                                                  cell: customCellComponent,
+                                              }}
+                                    />
+                                </Box>
+                            </Grid>
                         </Grid>
                     </div>
                 </Grid>
