@@ -7,6 +7,7 @@ import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import {Button, ExpensesTable} from "../components";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
+import json2mq from "json2mq";
 
 export function PeriodDetail() {
     const theme = useTheme();
@@ -26,6 +27,11 @@ export function PeriodDetail() {
 
     const xsOnly: boolean = useMediaQuery(theme.breakpoints.only('xs'));
     const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
+    const xlCustom = useMediaQuery(
+        json2mq({
+            maxWidth: 2300,
+        }),
+    );
 
     const user = {
         full_name: "Joel",
@@ -304,7 +310,7 @@ export function PeriodDetail() {
                 </Grid>
 
                 {/*Latest table*/}
-                <Grid xs={12} maxWidth={"1200px"}>
+                <Grid xs={12} maxWidth={xlCustom ? "1200px" : "none"}>
                     <ExpensesTable/>
                 </Grid>
             </Grid>

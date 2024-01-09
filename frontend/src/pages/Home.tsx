@@ -6,6 +6,7 @@ import ArrowCircleDownRoundedIcon from '@mui/icons-material/ArrowCircleDownRound
 import {Button, ExpensesTable} from "../components";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import {RechartsLabelProps} from "../types";
+import json2mq from "json2mq";
 
 export function Home() {
     const theme = useTheme();
@@ -60,6 +61,12 @@ export function Home() {
         "start_date": "2023-11-26T00:00:00Z",
         "end_date": "2023-12-24T00:00:00Z",
     }
+
+    const xlCustom = useMediaQuery(
+        json2mq({
+            maxWidth: 2300,
+        }),
+    );
 
     const chartHeight: number = 250
     const RADIAN: number = Math.PI / 180;
@@ -288,7 +295,7 @@ export function Home() {
                 </Grid>
 
                 {/*Latest table*/}
-                <Grid xs={12} maxWidth={"1200px"}>
+                <Grid xs={12} maxWidth={xlCustom ? "1200px" : "none"}>
                     <ExpensesTable/>
                 </Grid>
             </Grid>
