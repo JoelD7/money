@@ -1,6 +1,6 @@
 import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
-import {Home} from "./pages";
+import {Home, PeriodDetail} from "./pages";
 import {Navbar} from "./components";
 
 declare module '@mui/material/styles' {
@@ -83,7 +83,7 @@ function App() {
                 <Container
                     sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
                     maxWidth={false}>
-                    <Home/>
+                    <PeriodDetail/>
                 </Container>
             </ThemeProvider>
 
