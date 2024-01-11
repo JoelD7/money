@@ -102,15 +102,33 @@ export function PeriodDetail() {
 
     return (
         <>
-            <Grid container spacing={1} justifyContent={"center"}>
-                {/*Title and go back*/}
-                <Grid xs={12}>
-                    <IconButton>
+            {/*Page title*/}
+            <Grid container>
+                <Grid xs={2}>
+                    <div className={"flex justify-center items-center h-full"}>
                         {/*@ts-ignore*/}
-                        <ArrowCircleLeftIcon sx={backButtonStyle} color={"darkGreen"}/>
-                    </IconButton>
+                        <ArrowCircleLeftIcon sx={customWidth} color="darkGreen"/>
+                    </div>
                 </Grid>
+                <Grid xs={10}>
+                    <div>
+                        <Grid container>
+                            <Grid xs={12}>
+                                <Typography variant={"h3"}>
+                                    {period.name}
+                                </Typography>
+                            </Grid>
+                            <Grid xs={12}>
+                                <Typography color="gray.light">
+                                    {getPeriodDates()}
+                                </Typography>
+                            </Grid>
+                        </Grid>
+                    </div>
+                </Grid>
+            </Grid>
 
+            <Grid container spacing={1} justifyContent={"center"}>
                 {/*Balance*/}
                 <Grid xs={12} sm={6} hidden={mdUp}>
                     <div>

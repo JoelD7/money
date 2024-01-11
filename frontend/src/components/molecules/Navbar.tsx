@@ -55,6 +55,15 @@ export function Navbar({children}: NavbarProps) {
                 </div>
             </div>
 
+            {/*TODO: add back button when route isn't Home*/}
+            {/*Title and go back*/}
+            {/*<Grid xs={12}>*/}
+            {/*    <IconButton>*/}
+            {/*        /!*@ts-ignore*!/*/}
+            {/*        <ArrowCircleLeftIcon sx={backButtonStyle} color={"darkGreen"}/>*/}
+            {/*    </IconButton>*/}
+            {/*</Grid>*/}
+
             <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
                 <nav hidden={mdUp} style={{backgroundColor: "white"}}
                      className="flex flex-col h-screen w-44">
