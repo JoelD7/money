@@ -11,10 +11,10 @@ import json2mq from "json2mq";
 
 export function PeriodDetail() {
     const theme = useTheme();
-    const customWidth = {
+    const cashFlowIconStyles = {
         '&.MuiSvgIcon-root': {
-            width: "38px",
-            height: "38px",
+            width: "28px",
+            height: "28px",
         },
     }
 
@@ -102,86 +102,73 @@ export function PeriodDetail() {
 
     return (
         <>
-            {/*Page title*/}
-            <Grid container>
-                <Grid xs={2}>
-                    <div className={"flex justify-center items-center h-full"}>
-                        {/*@ts-ignore*/}
-                        <ArrowCircleLeftIcon sx={customWidth} color="darkGreen"/>
-                    </div>
-                </Grid>
-                <Grid xs={10}>
+            <Grid container spacing={1} justifyContent={"center"}>
+                {/*Page title*/}
+                <Grid xs={12} mt={"1rem"}>
                     <div>
                         <Grid container>
-                            <Grid xs={12}>
-                                <Typography variant={"h3"}>
-                                    {period.name}
-                                </Typography>
-                            </Grid>
-                            <Grid xs={12}>
-                                <Typography color="gray.light">
-                                    {getPeriodDates()}
-                                </Typography>
-                            </Grid>
-                        </Grid>
-                    </div>
-                </Grid>
-            </Grid>
-
-            <Grid container spacing={1} justifyContent={"center"}>
-                {/*Balance*/}
-                <Grid xs={12} sm={6} hidden={mdUp}>
-                    <div>
-                        <Grid container borderRadius="1rem" p="0.5rem" bgcolor="white.main" boxShadow={"2"}>
-                            <Grid xs={3}>
-                                <Grid height="100%" container alignContent="center" justifyContent="center">
+                            <Grid xs={2}>
+                                <div className={"flex justify-center items-center h-full"}>
                                     {/*@ts-ignore*/}
-                                    <ArrowCircleUpRoundedIcon sx={customWidth} color="darkGreen"/>
-                                </Grid>
+                                    <ArrowCircleLeftIcon sx={backButtonStyle} color="darkGreen"/>
+                                </div>
                             </Grid>
-
-                            <Grid xs={9}>
-                                <Typography variant="h6" fontWeight="bold">Balance</Typography>
-                                <Typography lineHeight="unset" variant="h4" color="darkGreen.main">
-                                    {new Intl.NumberFormat('en-US', {
-                                        style: 'currency',
-                                        currency: 'USD'
-                                    }).format(user.remainder)}
-                                </Typography>
+                            <Grid xs={10}>
+                                <div>
+                                    <Grid container>
+                                        <Grid xs={12}>
+                                            <Typography variant={"h3"}>
+                                                {period.name}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid xs={12}>
+                                            <Typography color="gray.light">
+                                                {getPeriodDates()}
+                                            </Typography>
+                                        </Grid>
+                                    </Grid>
+                                </div>
                             </Grid>
                         </Grid>
                     </div>
                 </Grid>
 
-                {/*Expenses*/}
-                <Grid xs={12} sm={6} hidden={mdUp}>
-                    <div>
-                        <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem" p="0.5rem" bgcolor="white.main"
-                              boxShadow={"2"}>
-                            <Grid xs={3}>
-                                <Grid height="100%" container alignContent="center" justifyContent="center">
-                                    {/*@ts-ignore*/}
-                                    <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
-                                </Grid>
-                            </Grid>
+                {/*Balance and expenses*/}
+                <Grid xs={12} borderRadius="1rem" mt={"1rem"} p="1rem" bgcolor="white.main" boxShadow={"2"}>
+                    <div className={"flex w-11/12 m-auto items-center"}>
+                        {/*@ts-ignore*/}
+                        <ArrowCircleUpRoundedIcon sx={cashFlowIconStyles} color="darkGreen"/>
+                        <Typography variant={"h6"} fontWeight={"bold"}>
+                            You have:
+                        </Typography>
 
-                            <Grid xs={9}>
-                                <Typography variant="h6" fontWeight="bold">Expenses</Typography>
-                                <Typography lineHeight="unset" variant="h4" color="red.main">
-                                    {new Intl.NumberFormat('en-US', {
-                                        style: 'currency',
-                                        currency: 'USD'
-                                    }).format(user.expenses)}
-                                </Typography>
-                            </Grid>
-                        </Grid>
+                        <Typography variant={"h6"} color={"primary.darker"} marginLeft={"auto"}>
+                            {new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD'
+                            }).format(user.remainder)}
+                        </Typography>
+                    </div>
+                    <div className={"flex w-11/12 m-auto items-center"}>
+                        {/*@ts-ignore*/}
+                        <ArrowCircleDownRoundedIcon sx={cashFlowIconStyles} color="red"/>
+                        <Typography variant={"h6"} fontWeight={"bold"}>
+                            You have spent:
+                        </Typography>
+
+                        <Typography variant={"h6"} color={"red.main"} marginLeft={"auto"}>
+                            {new Intl.NumberFormat('en-US', {
+                                style: 'currency',
+                                currency: 'USD'
+                            }).format(user.expenses)}
+                        </Typography>
                     </div>
                 </Grid>
 
                 {/*Chart, Current balance and expenses*/}
                 <Grid xs={12} maxWidth={"880px"}>
                     <div>
-                        <Grid container spacing={1}>
+                        <Grid container>
                             {/*Chart section*/}
                             <Grid xs={12} md={6} maxWidth={"430px"}>
                                 <div>
@@ -262,7 +249,7 @@ export function PeriodDetail() {
                                                     <Grid xs={3}>
                                                         <Grid height="100%" container alignContent="center"
                                                               justifyContent="center">
-                                                            <ArrowCircleUpRoundedIcon sx={customWidth}
+                                                            <ArrowCircleUpRoundedIcon sx={cashFlowIconStyles}
                                                                 //@ts-ignore
                                                                                       color="darkGreen"/>
                                                         </Grid>
@@ -291,7 +278,8 @@ export function PeriodDetail() {
                                                         <Grid height="100%" container alignContent="center"
                                                               justifyContent="center">
                                                             {/*@ts-ignore*/}
-                                                            <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
+                                                            <ArrowCircleDownRoundedIcon sx={cashFlowIconStyles}
+                                                                                        color="red"/>
                                                         </Grid>
                                                     </Grid>
 
