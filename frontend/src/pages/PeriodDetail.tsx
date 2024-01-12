@@ -1,5 +1,5 @@
 import {IconButton, Typography, useMediaQuery, useTheme} from "@mui/material";
-import {RechartsLabelProps} from "../types";
+import {Expense, RechartsLabelProps} from "../types";
 import Grid from "@mui/material/Unstable_Grid2";
 import ArrowCircleUpRoundedIcon from "@mui/icons-material/ArrowCircleUpRounded";
 import ArrowCircleDownRoundedIcon from "@mui/icons-material/ArrowCircleDownRounded";
@@ -8,6 +8,11 @@ import {Button, ExpensesTable} from "../components";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import json2mq from "json2mq";
+
+type CategoryData = {
+    percentage: number
+    total: number
+}
 
 export function PeriodDetail() {
     const theme = useTheme();
@@ -40,13 +45,13 @@ export function PeriodDetail() {
         expenses: 8563.05,
         categories: [
             {
-                id: "CTGzJeEzCNz6HMTiPKwgPmj",
+                id: "CTGGyouAaIPPWKzxpyxHACS",
                 name: "Entertainment",
                 color: "#ff8733",
                 value: 55
             },
             {
-                id: "CTGtClGT160UteOl02jIH4F",
+                id: "CTGcSuhjzVmu3WrHLKD5fhS",
                 name: "Health",
                 color: "#00b85e",
                 value: 15
@@ -58,7 +63,7 @@ export function PeriodDetail() {
                 value: 30
             },
             {
-                id: "CTGrR7fO4ndmI0IthJ7Wg8fs",
+                id: "CTGiBScOP3V16LYBjdIStP9",
                 name: "Shopping",
                 color: "#8c34eb",
                 value: 30
@@ -75,6 +80,149 @@ export function PeriodDetail() {
         "end_date": "2023-12-24T00:00:00Z",
     }
 
+    const expenses: Expense[] = [
+        {
+            expenseID: "EX5DK8d8LTywTKC8r87vdS",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 12.99,
+            name: "Blue pair of socks",
+            notes: "Ipsum mollit est pariatur esse ex. Aliqua laborum laboris laboris laboris. Laboris pectum",
+            createdDate: new Date("2023-10-27T23:42:54.980596532Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXBLsynfE2QSAX8awfWptn",
+            username: "test@gmail.com",
+            categoryID: "CTGcSuhjzVmu3WrHLKD5fhS",
+            categoryName: "Health",
+            amount: 1000,
+            name: "Protector solar",
+            createdDate: new Date("2023-10-14T19:55:45.261990038Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXD5G8OdwlKC81tH9ZE3eO",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 1898.11,
+            name: "Vacuum Cleaner",
+            createdDate: new Date("2023-10-18T22:41:56.024322091Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXF5Mg3fpxct3v0BI91XYB",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 1202.17,
+            name: "Microwave",
+            createdDate: new Date("2023-10-18T22:41:46.946640398Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXHrwzQezXK6nXyclUHbVH",
+            username: "test@gmail.com",
+            categoryID: "CTGGyouAaIPPWKzxpyxHACS",
+            categoryName: "Entertainment",
+            amount: 955,
+            name: "Plza Juan Baron",
+            notes: "Lorem ipsum note to fill space",
+            createdDate: new Date("2023-10-14T19:52:11.552327532Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXIGBwc0sBWeyL9hy8jVuI",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 620,
+            name: "Correa amarilla",
+            createdDate: new Date("2023-10-18T22:37:04.230522146Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXIfxidmlBJtq97xjQZfNh",
+            username: "test@gmail.com",
+            categoryID: "CTGiBScOP3V16LYBjdIStP9",
+            categoryName: "Shopping",
+            amount: 123,
+            name: "Correa azul",
+            createdDate: new Date("2023-10-18T22:37:15.57296052Z"),
+            period: "2023-7",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXP123",
+            username: "test@gmail.com",
+            amount: 893,
+            name: "Jordan shopping",
+            createdDate: new Date("0001-01-01T00:00:00Z"),
+            period: "2023-5",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXP456",
+            username: "test@gmail.com",
+            amount: 112,
+            name: "Uber drive",
+            createdDate: new Date("0001-01-01T00:00:00Z"),
+            period: "2023-5",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        },
+        {
+            expenseID: "EXP789",
+            username: "test@gmail.com",
+            amount: 525,
+            name: "Lunch",
+            createdDate: new Date("0001-01-01T00:00:00Z"),
+            period: "2023-5",
+            updateDate: new Date("0001-01-01T00:00:00Z")
+        }
+    ]
+
+    const expensesByCategory: Map<string, CategoryData> = getExpensesByCategory()
+
+    function getExpensesByCategory(): Map<string, CategoryData> {
+        let m: Map<string, CategoryData> = new Map<string, CategoryData>()
+        let categoryData: CategoryData | undefined
+
+        expenses.forEach((expense) => {
+            if (!expense.categoryID) {
+                return
+            }
+
+            categoryData = m.get(expense.categoryID)
+
+            if (categoryData) {
+                categoryData.total += expense.amount
+                categoryData.percentage = getPercentageFromExpenses(categoryData.total)
+                m.set(expense.categoryID, categoryData)
+                return
+            }
+
+            m.set(expense.categoryID, {
+                percentage: getPercentageFromExpenses(expense.amount),
+                total: expense.amount
+            })
+        })
+
+        console.log(m)
+        return m
+    }
+
+    function getPercentageFromExpenses(total: number): number {
+        return (total / user.expenses) * 100
+    }
+
     const chartHeight: number = 250
     const RADIAN: number = Math.PI / 180;
 
@@ -88,7 +236,7 @@ export function PeriodDetail() {
                 {`${(percent * 100).toFixed(0)}%`}
             </text>
         );
-    };
+    }
 
     function getPeriodDates(): string {
         return `${new Intl.DateTimeFormat('en-US', {
@@ -165,9 +313,25 @@ export function PeriodDetail() {
                     </div>
                 </Grid>
 
+                {/**New expense/income buttons*/}
+                <Grid xs={12}>
+                    <div className={"flex mt-3"}>
+                        <Button color={"secondary"} variant={"contained"}
+                                startIcon={<AddIcon/>}>
+                            New expense
+                        </Button>
+
+                        <Button sx={{marginLeft: "1rem"}} variant={"contained"}
+                                startIcon={<AddIcon/>}>
+                            New income
+                        </Button>
+                    </div>
+                </Grid>
+
                 {/*Chart, Current balance and expenses*/}
                 <Grid xs={12} maxWidth={"880px"}>
-                    <div>
+                    <div className={"mt-4"}>
+                        <Typography variant={"h4"}>Breakdown</Typography>
                         <Grid container>
                             {/*Chart section*/}
                             <Grid xs={12} md={6} maxWidth={"430px"}>
@@ -175,14 +339,6 @@ export function PeriodDetail() {
                                     <Grid container bgcolor={"white.main"} borderRadius="1rem"
                                           p="1rem" boxShadow="3"
                                           mt="1rem">
-                                        <Grid xs={12}>
-                                            <Typography variant="h4">
-                                                {period.name}
-                                            </Typography>
-                                            <Typography color="gray.light">
-                                                {getPeriodDates()}
-                                            </Typography>
-                                        </Grid>
                                         {/*Chart*/}
                                         <Grid xs={12} height={chartHeight}>
                                             <ResponsiveContainer width="100%" height="100%">
@@ -202,115 +358,25 @@ export function PeriodDetail() {
                                             </ResponsiveContainer>
                                         </Grid>
 
-                                        {/*Chart legend*/}
+                                        {/*Total by category*/}
                                         <Grid xs={12}>
-                                            <Grid container width="100%" className="justify-between">
-                                                {/*Categories*/}
-                                                <Grid xs={6}>
-                                                    {user.categories.map((category) => (
-                                                        <div key={category.id} className="flex gap-1 items-center">
-                                                            <div className="rounded-full w-3 h-3"
-                                                                 style={{backgroundColor: category.color}}/>
-                                                            <Typography color="gray.light">
-                                                                {category.name}
-                                                            </Typography>
-                                                        </div>
-                                                    ))}
-
-                                                </Grid>
-                                                {/*Details button*/}
-                                                <Grid xs={6}>
-                                                    <Grid container className="items-end h-full">
-                                                        <Button variant="outlined"
-                                                                sx={{
-                                                                    textTransform: "capitalize",
-                                                                    borderRadius: "1rem",
-                                                                    height: "fit-content"
-                                                                }}>
-                                                            View details
-                                                        </Button>
-                                                    </Grid>
-                                                </Grid>
-                                            </Grid>
+                                            {user.categories.map((category) => (
+                                                <div key={category.id} className="flex gap-1 items-center">
+                                                    <div className="rounded-full w-3 h-3"
+                                                         style={{backgroundColor: category.color}}/>
+                                                    <Typography sx={{color: category.color}}>
+                                                        {expensesByCategory.get(category.id)?.percentage.toFixed(2)}%
+                                                    </Typography>
+                                                    <Typography color="gray.light">
+                                                        {category.name}
+                                                    </Typography>
+                                                </div>
+                                            ))}
                                         </Grid>
                                     </Grid>
                                 </div>
                             </Grid>
 
-                            {/*New expense/income buttons, Current balance and expenses*/}
-                            <Grid xs={12} md={6} maxWidth={"430px"}>
-                                <div>
-                                    <Grid container mt={"1rem"} spacing={1}>
-                                        {/*Balance*/}
-                                        <Grid xs={12} hidden={!mdUp}>
-                                            <div>
-                                                <Grid container borderRadius="1rem" p="0.5rem" bgcolor="white.main"
-                                                      boxShadow={"2"}>
-                                                    <Grid xs={3}>
-                                                        <Grid height="100%" container alignContent="center"
-                                                              justifyContent="center">
-                                                            <ArrowCircleUpRoundedIcon sx={cashFlowIconStyles}
-                                                                //@ts-ignore
-                                                                                      color="darkGreen"/>
-                                                        </Grid>
-                                                    </Grid>
-
-                                                    <Grid xs={9}>
-                                                        <Typography variant="h6" fontWeight="bold">Balance</Typography>
-                                                        <Typography lineHeight="unset" variant="h4"
-                                                                    color="darkGreen.main">
-                                                            {new Intl.NumberFormat('en-US', {
-                                                                style: 'currency',
-                                                                currency: 'USD'
-                                                            }).format(user.remainder)}
-                                                        </Typography>
-                                                    </Grid>
-                                                </Grid>
-                                            </div>
-                                        </Grid>
-
-                                        {/*Expenses*/}
-                                        <Grid xs={12} hidden={!mdUp}>
-                                            <div>
-                                                <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem"
-                                                      p="0.5rem" bgcolor="white.main" boxShadow={"2"}>
-                                                    <Grid xs={3}>
-                                                        <Grid height="100%" container alignContent="center"
-                                                              justifyContent="center">
-                                                            {/*@ts-ignore*/}
-                                                            <ArrowCircleDownRoundedIcon sx={cashFlowIconStyles}
-                                                                                        color="red"/>
-                                                        </Grid>
-                                                    </Grid>
-
-                                                    <Grid xs={9}>
-                                                        <Typography variant="h6" fontWeight="bold">Expenses</Typography>
-                                                        <Typography lineHeight="unset" variant="h4" color="red.main">
-                                                            {new Intl.NumberFormat('en-US', {
-                                                                style: 'currency',
-                                                                currency: 'USD'
-                                                            }).format(user.expenses)}
-                                                        </Typography>
-                                                    </Grid>
-                                                </Grid>
-                                            </div>
-                                        </Grid>
-
-                                        {/**New expense/income buttons*/}
-                                        <Grid xs={12}>
-                                            <Button color={"secondary"} variant={"contained"}
-                                                    startIcon={<AddIcon/>}>
-                                                New expense
-                                            </Button>
-
-                                            <Button sx={{marginLeft: "1rem"}} variant={"contained"}
-                                                    startIcon={<AddIcon/>}>
-                                                New income
-                                            </Button>
-                                        </Grid>
-                                    </Grid>
-                                </div>
-                            </Grid>
                         </Grid>
                     </div>
                 </Grid>
