@@ -1,4 +1,4 @@
-import {IconButton, Typography, useMediaQuery, useTheme} from "@mui/material";
+import {Typography, useMediaQuery} from "@mui/material";
 import {Expense, RechartsLabelProps} from "../types";
 import Grid from "@mui/material/Unstable_Grid2";
 import ArrowCircleUpRoundedIcon from "@mui/icons-material/ArrowCircleUpRounded";
@@ -10,12 +10,13 @@ import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import json2mq from "json2mq";
 
 type CategoryData = {
+    categoryName: string
     percentage: number
     total: number
 }
 
 export function PeriodDetail() {
-    const theme = useTheme();
+    // const theme = useTheme();
     const cashFlowIconStyles = {
         '&.MuiSvgIcon-root': {
             width: "28px",
@@ -30,8 +31,8 @@ export function PeriodDetail() {
         },
     }
 
-    const xsOnly: boolean = useMediaQuery(theme.breakpoints.only('xs'));
-    const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
+    // const xsOnly: boolean = useMediaQuery(theme.breakpoints.only('xs'));
+    // const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
     const xlCustom = useMediaQuery(
         json2mq({
             maxWidth: 2300,
@@ -190,13 +191,28 @@ export function PeriodDetail() {
     ]
 
     const expensesByCategory: Map<string, CategoryData> = getExpensesByCategory()
+    const colorByCateoory: Map<string, string> = getColorByCategory()
 
     function getExpensesByCategory(): Map<string, CategoryData> {
         let m: Map<string, CategoryData> = new Map<string, CategoryData>()
+        m.set("Other", {
+            total: 0,
+            percentage: 0,
+            categoryName: "Other",
+        })
+
         let categoryData: CategoryData | undefined
 
         expenses.forEach((expense) => {
             if (!expense.categoryID) {
+                categoryData = m.get("Other")
+
+                if (categoryData) {
+                    categoryData.total += expense.amount
+                    categoryData.percentage = getPercentageFromExpenses(categoryData.total)
+                    m.set("Other", categoryData)
+                }
+
                 return
             }
 
@@ -211,11 +227,23 @@ export function PeriodDetail() {
 
             m.set(expense.categoryID, {
                 percentage: getPercentageFromExpenses(expense.amount),
-                total: expense.amount
+                total: expense.amount,
+                categoryName: expense.categoryName ? expense.categoryName : ""
             })
         })
 
         console.log(m)
+        return m
+    }
+
+    function getColorByCategory(): Map<string, string> {
+        let m: Map<string, string> = new Map<string, string>()
+        m.set("Other", "#6F6F6F")
+
+        user.categories.forEach((category) => {
+            m.set(category.id, category.color)
+        })
+
         return m
     }
 
@@ -360,15 +388,15 @@ export function PeriodDetail() {
 
                                         {/*Total by category*/}
                                         <Grid xs={12}>
-                                            {user.categories.map((category) => (
-                                                <div key={category.id} className="flex gap-1 items-center">
+                                            {Array.from(expensesByCategory.keys()).map((category) => (
+                                                <div key={category} className="flex gap-1 items-center">
                                                     <div className="rounded-full w-3 h-3"
-                                                         style={{backgroundColor: category.color}}/>
-                                                    <Typography sx={{color: category.color}}>
-                                                        {expensesByCategory.get(category.id)?.percentage.toFixed(2)}%
+                                                         style={{backgroundColor: colorByCateoory.get(category)}}/>
+                                                    <Typography sx={{color: colorByCateoory.get(category)}}>
+                                                        {expensesByCategory.get(category)?.percentage.toFixed(2)}%
                                                     </Typography>
                                                     <Typography color="gray.light">
-                                                        {category.name}
+                                                        {expensesByCategory.get(category)?.categoryName}
                                                     </Typography>
                                                 </div>
                                             ))}
