@@ -9,7 +9,8 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import json2mq from "json2mq";
 
-type CategoryData = {
+type ExpenseCategorySummary = {
+    categoryID: string
     categoryName: string
     percentage: number
     total: number
@@ -43,7 +44,7 @@ export function PeriodDetail() {
         full_name: "Joel",
         username: "test@gmail.com",
         remainder: 14456.21,
-        expenses: 8563.05,
+        expenses: 7381.27,
         categories: [
             {
                 id: "CTGGyouAaIPPWKzxpyxHACS",
@@ -190,50 +191,51 @@ export function PeriodDetail() {
         }
     ]
 
-    const expensesByCategory: Map<string, CategoryData> = getExpensesByCategory()
-    const colorByCateoory: Map<string, string> = getColorByCategory()
+    const expenseSummaryByCategory: ExpenseCategorySummary[] = getExpenseSummaryByCategory()
+    const colorByCategory: Map<string, string> = getColorByCategory()
 
-    function getExpensesByCategory(): Map<string, CategoryData> {
-        let m: Map<string, CategoryData> = new Map<string, CategoryData>()
-        m.set("Other", {
+    function getExpenseSummaryByCategory(): ExpenseCategorySummary[] {
+        let summaryByCategory: Map<string, ExpenseCategorySummary> = new Map<string, ExpenseCategorySummary>()
+        summaryByCategory.set("Other", {
             total: 0,
             percentage: 0,
+            categoryID: "Other",
             categoryName: "Other",
         })
 
-        let categoryData: CategoryData | undefined
+        let categoryData: ExpenseCategorySummary | undefined
 
         expenses.forEach((expense) => {
             if (!expense.categoryID) {
-                categoryData = m.get("Other")
+                categoryData = summaryByCategory.get("Other")
 
                 if (categoryData) {
                     categoryData.total += expense.amount
                     categoryData.percentage = getPercentageFromExpenses(categoryData.total)
-                    m.set("Other", categoryData)
+                    summaryByCategory.set("Other", categoryData)
                 }
 
                 return
             }
 
-            categoryData = m.get(expense.categoryID)
+            categoryData = summaryByCategory.get(expense.categoryID)
 
             if (categoryData) {
                 categoryData.total += expense.amount
                 categoryData.percentage = getPercentageFromExpenses(categoryData.total)
-                m.set(expense.categoryID, categoryData)
+                summaryByCategory.set(expense.categoryID, categoryData)
                 return
             }
 
-            m.set(expense.categoryID, {
+            summaryByCategory.set(expense.categoryID, {
                 percentage: getPercentageFromExpenses(expense.amount),
                 total: expense.amount,
-                categoryName: expense.categoryName ? expense.categoryName : ""
+                categoryID: expense.categoryID ? expense.categoryID : "",
+                categoryName: expense.categoryName ? expense.categoryName : "",
             })
         })
 
-        console.log(m)
-        return m
+        return Array.from(summaryByCategory.values())
     }
 
     function getColorByCategory(): Map<string, string> {
@@ -371,14 +373,17 @@ export function PeriodDetail() {
                                         <Grid xs={12} height={chartHeight}>
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart width={350} height={chartHeight}>
-                                                    <Pie data={user.categories} label={getCustomLabel} dataKey="value"
-                                                         nameKey="name"
+                                                    <Pie data={expenseSummaryByCategory}
+                                                         label={getCustomLabel}
+                                                         dataKey="total"
+                                                         nameKey="categoryName"
                                                          cx="50%"
                                                          cy="50%"
                                                          labelLine={false}
                                                          fill="#8884d8">
-                                                        {user.categories.map((category, index) => (
-                                                            <Cell key={`cell-${index}`} fill={category.color}/>
+                                                        {expenseSummaryByCategory.map((summary, index) => (
+                                                            <Cell key={`cell-${index}`}
+                                                                  fill={colorByCategory.get(summary.categoryID)}/>
                                                         ))}
                                                     </Pie>
                                                     <Tooltip/>
@@ -388,15 +393,15 @@ export function PeriodDetail() {
 
                                         {/*Total by category*/}
                                         <Grid xs={12}>
-                                            {Array.from(expensesByCategory.keys()).map((category) => (
-                                                <div key={category} className="flex gap-1 items-center">
+                                            {expenseSummaryByCategory.map((summary) => (
+                                                <div key={summary.categoryID} className="flex gap-1 items-center">
                                                     <div className="rounded-full w-3 h-3"
-                                                         style={{backgroundColor: colorByCateoory.get(category)}}/>
-                                                    <Typography sx={{color: colorByCateoory.get(category)}}>
-                                                        {expensesByCategory.get(category)?.percentage.toFixed(2)}%
+                                                         style={{backgroundColor: colorByCategory.get(summary.categoryID)}}/>
+                                                    <Typography sx={{color: colorByCategory.get(summary.categoryID)}}>
+                                                        {summary?.percentage.toFixed(2)}%
                                                     </Typography>
                                                     <Typography color="gray.light">
-                                                        {expensesByCategory.get(category)?.categoryName}
+                                                        {summary?.categoryName}
                                                     </Typography>
                                                 </div>
                                             ))}
