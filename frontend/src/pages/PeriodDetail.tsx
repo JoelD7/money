@@ -379,8 +379,7 @@ export function PeriodDetail() {
                                                          nameKey="categoryName"
                                                          cx="50%"
                                                          cy="50%"
-                                                         labelLine={false}
-                                                         fill="#8884d8">
+                                                         labelLine={false}>
                                                         {expenseSummaryByCategory.map((summary, index) => (
                                                             <Cell key={`cell-${index}`}
                                                                   fill={colorByCategory.get(summary.categoryID)}/>
@@ -393,18 +392,37 @@ export function PeriodDetail() {
 
                                         {/*Total by category*/}
                                         <Grid xs={12}>
-                                            {expenseSummaryByCategory.map((summary) => (
-                                                <div key={summary.categoryID} className="flex gap-1 items-center">
-                                                    <div className="rounded-full w-3 h-3"
-                                                         style={{backgroundColor: colorByCategory.get(summary.categoryID)}}/>
-                                                    <Typography sx={{color: colorByCategory.get(summary.categoryID)}}>
-                                                        {summary?.percentage.toFixed(2)}%
-                                                    </Typography>
-                                                    <Typography color="gray.light">
-                                                        {summary?.categoryName}
-                                                    </Typography>
-                                                </div>
-                                            ))}
+                                            <div className={"w-4/5 m-auto"}>
+                                                <Grid container>
+                                                    <Grid xs={8}>
+                                                        {expenseSummaryByCategory.map((summary) => (
+                                                            <div key={summary.categoryID}
+                                                                 className="flex gap-1 items-center">
+                                                                <div className="rounded-full w-3 h-3"
+                                                                     style={{backgroundColor: colorByCategory.get(summary.categoryID)}}/>
+                                                                <Typography
+                                                                    sx={{color: colorByCategory.get(summary.categoryID)}}>
+                                                                    {Math.ceil(summary?.percentage)}%
+                                                                </Typography>
+                                                                <Typography color="gray.light">
+                                                                    {summary?.categoryName}
+                                                                </Typography>
+                                                            </div>
+                                                        ))}
+                                                    </Grid>
+
+                                                    <Grid xs={4}>
+                                                        {expenseSummaryByCategory.map((summary) => (
+                                                            <Typography key={summary.categoryID} color="gray.light">
+                                                                {new Intl.NumberFormat('en-US', {
+                                                                    style: 'currency',
+                                                                    currency: 'USD'
+                                                                }).format(summary?.total)}
+                                                            </Typography>
+                                                        ))}
+                                                    </Grid>
+                                                </Grid>
+                                            </div>
                                         </Grid>
                                     </Grid>
                                 </div>
