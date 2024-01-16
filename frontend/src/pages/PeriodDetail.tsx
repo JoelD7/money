@@ -32,8 +32,6 @@ export function PeriodDetail() {
         },
     }
 
-    // const xsOnly: boolean = useMediaQuery(theme.breakpoints.only('xs'));
-    // const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
     const xlCustom = useMediaQuery(
         json2mq({
             maxWidth: 2300,
