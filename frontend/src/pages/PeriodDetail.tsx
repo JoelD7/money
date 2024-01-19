@@ -17,7 +17,6 @@ type ExpenseCategorySummary = {
 }
 
 export function PeriodDetail() {
-    // const theme = useTheme();
     const cashFlowIconStyles = {
         '&.MuiSvgIcon-root': {
             width: "28px",
