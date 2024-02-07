@@ -235,27 +235,15 @@ export function ExpensesTable() {
     }
 
     return (
-        <div>
-            <Grid container mt={"2rem"}>
-                <Grid xs={12}>
-                    <Typography variant={"h4"}>
-                        Latest
-                    </Typography>
-                </Grid>
-
-                <Grid xs={12}>
-                    <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
-                         mt={"0.5rem"}>
-                        <DataGrid sx={gridStyle}
-                                  rows={getTableRows(expenses)}
-                                  columns={columns}
-                                  slots={{
-                                      cell: customCellComponent,
-                                  }}
-                        />
-                    </Box>
-                </Grid>
-            </Grid>
-        </div>
+        <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
+             mt={"0.5rem"}>
+            <DataGrid sx={gridStyle}
+                      rows={getTableRows(expenses)}
+                      columns={columns}
+                      slots={{
+                          cell: customCellComponent,
+                      }}
+            />
+        </Box>
     )
 }

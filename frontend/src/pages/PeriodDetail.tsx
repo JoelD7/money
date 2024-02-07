@@ -431,6 +431,10 @@ export function PeriodDetail() {
 
                 {/*Latest table*/}
                 <Grid xs={12} maxWidth={xlCustom ? "1200px" : "none"}>
+                    <Typography mt={"2rem"} variant={"h4"}>
+                        Latest
+                    </Typography>
+
                     <ExpensesTable/>
                 </Grid>
             </Grid>
