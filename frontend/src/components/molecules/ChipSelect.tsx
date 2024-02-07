@@ -2,13 +2,13 @@ import {Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent} from 
 import {v4 as uuidv4} from 'uuid';
 import {useState} from "react";
 
-type option = {
+export type ChipSelectOption = {
     label: string;
     color: string;
 }
 
 type ChipSelectProps = {
-    options: option[];
+    options: ChipSelectOption[];
     label: string;
 }
 
@@ -40,7 +40,7 @@ export function ChipSelect({options, label}: ChipSelectProps) {
     return (
         <>
             <FormControl fullWidth>
-                <InputLabel id={labelId}>Age</InputLabel>
+                <InputLabel id={labelId}>{label}</InputLabel>
                 <Select
                     labelId={labelId}
                     id={label}
