@@ -1,9 +1,10 @@
-import Grid from "@mui/material/Unstable_Grid2";
 import {Box, Typography} from "@mui/material";
 import {DataGrid, GridCell, GridColDef, GridRowsProp} from "@mui/x-data-grid";
 import {Expense} from "../../types";
 import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
 import {GridCellProps} from "@mui/x-data-grid/components/cell/GridCell";
+import {useState} from "react";
+import {Colors} from "../../assets";
 
 export function ExpensesTable() {
     const gridStyle = {
@@ -163,6 +164,8 @@ export function ExpensesTable() {
         }
     ]
 
+    const [colorsByExpense, setColorsByExpense] = useState<Map<string, string>>(getColorsByExpense())
+
     const columns: GridColDef[] = [
         {field: 'amount', headerName: 'Amount', width: 150},
         {field: 'categoryName', headerName: 'Category', width: 150},
@@ -214,24 +217,25 @@ export function ExpensesTable() {
     }
 
     function getCellBackgroundColor(rowID: string): string {
-        let categoryName: string = ""
-        let categoryColor: string = ""
+        let color: string | undefined = colorsByExpense.get(rowID)
+        if (color) {
+            return color
+        }
 
+        return Colors.WHITE
+    }
+
+    function getColorsByExpense(): Map<string, string> {
+        const colorsByExpense: Map<string, string> = new Map<string, string>()
         expenses.forEach((expense) => {
-            if (expense.expenseID === rowID) {
-                categoryName = expense.categoryName ? expense.categoryName : ""
-                return
-            }
+            user.categories.forEach((category) => {
+                if (category.name === expense.categoryName) {
+                    colorsByExpense.set(expense.expenseID, category.color)
+                }
+            })
         })
 
-        user.categories.forEach((category) => {
-            if (category.name === categoryName) {
-                categoryColor = category.color
-                return
-            }
-        })
-
-        return categoryColor
+        return colorsByExpense
     }
 
     return (

@@ -8,6 +8,8 @@ import {Button, ExpensesTable} from "../components";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import json2mq from "json2mq";
+import {Colors} from "../assets";
+import {GRAY_DARK} from "../assets/colors";
 
 type ExpenseCategorySummary = {
     categoryID: string
@@ -237,7 +239,7 @@ export function PeriodDetail() {
 
     function getColorByCategory(): Map<string, string> {
         let m: Map<string, string> = new Map<string, string>()
-        m.set("Other", "#6F6F6F")
+        m.set("Other", Colors.GRAY_DARK)
 
         user.categories.forEach((category) => {
             m.set(category.id, category.color)
@@ -432,10 +434,12 @@ export function PeriodDetail() {
                 {/*Latest table*/}
                 <Grid xs={12} maxWidth={xlCustom ? "1200px" : "none"}>
                     <Typography mt={"2rem"} variant={"h4"}>
-                        Latest
+                        Expenses
                     </Typography>
 
-                    <ExpensesTable/>
+                    <div className="pt-3">
+                        <ExpensesTable/>
+                    </div>
                 </Grid>
             </Grid>
 
