@@ -39,7 +39,7 @@ export function ChipSelect({options, label}: ChipSelectProps) {
 
     return (
         <>
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={{background: "white"}}>
                 <InputLabel id={labelId}>{label}</InputLabel>
                 <Select
                     labelId={labelId}
