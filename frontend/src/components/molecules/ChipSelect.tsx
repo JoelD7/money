@@ -10,18 +10,19 @@ export type ChipSelectOption = {
 type ChipSelectProps = {
     options: ChipSelectOption[];
     label: string;
+    onSelectedUpdate: (selected: string[]) => void;
 }
 
-export function ChipSelect({options, label}: ChipSelectProps) {
+export function ChipSelect({options, label, onSelectedUpdate}: ChipSelectProps) {
     const labelId: string = uuidv4();
     const [selected, setSelected] = useState<string[]>([]);
     const colorMap: Map<string, string> = buildColorMap();
 
     function onSelectedChange(event: SelectChangeEvent<typeof selected>) {
         const {target: {value}} = event;
-        setSelected(
-            typeof value === 'string' ? value.split(' ') : value,
-        );
+        let newValue = typeof value === 'string' ? value.split(' ') : value
+        onSelectedUpdate(newValue)
+        setSelected(newValue)
     }
 
     function buildColorMap(): Map<string, string> {
@@ -52,7 +53,7 @@ export function ChipSelect({options, label}: ChipSelectProps) {
                         // This is how items will appear on the select input
                         <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
                             {selected.map((value) => (
-                                <Box className="p-1 w-fit text-sm rounded-xl" style={{color: "white"}}
+                                <Box key={value} className="p-1 w-fit text-sm rounded-xl" style={{color: "white"}}
                                      sx={{backgroundColor: getOptionColor(value)}}>
                                     {value}
                                 </Box>
@@ -62,16 +63,14 @@ export function ChipSelect({options, label}: ChipSelectProps) {
                 >
                     {
                         // This is how items will appear on the menu
-                        options.map((option) => {
-                            return (
-                                <MenuItem id={option.label} value={option.label}>
-                                    <Box className="p-1 w-fit text-sm rounded-xl" style={{color: "white"}}
-                                         sx={{backgroundColor: option.color}}>
-                                        {option.label}
-                                    </Box>
-                                </MenuItem>
-                            );
-                        })
+                        options.map((option) => (
+                            <MenuItem key={option.label} id={option.label} value={option.label}>
+                                <Box className="p-1 w-fit text-sm rounded-xl" style={{color: "white"}}
+                                     sx={{backgroundColor: option.color}}>
+                                    {option.label}
+                                </Box>
+                            </MenuItem>
+                        ))
 
                     }
                 </Select>

@@ -438,7 +438,7 @@ export function PeriodDetail() {
                     </Typography>
 
                     <div className="pt-3">
-                        <ExpensesTable/>
+                        <ExpensesTable expenses={expenses}/>
                     </div>
                 </Grid>
             </Grid>

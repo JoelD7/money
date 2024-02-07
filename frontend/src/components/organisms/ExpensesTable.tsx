@@ -1,12 +1,17 @@
 import {Box, Typography} from "@mui/material";
 import {DataGrid, GridCell, GridColDef, GridRowsProp} from "@mui/x-data-grid";
-import {Expense} from "../../types";
+import {Category, Expense} from "../../types";
 import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
 import {GridCellProps} from "@mui/x-data-grid/components/cell/GridCell";
 import {useState} from "react";
 import {Colors} from "../../assets";
+import {ChipSelect, ChipSelectOption} from "../molecules";
 
-export function ExpensesTable() {
+type ExpensesTableProps = {
+    expenses: Expense[];
+}
+
+export function ExpensesTable({expenses}: ExpensesTableProps) {
     const gridStyle = {
         '&.MuiDataGrid-root': {
             borderRadius: "1rem",
@@ -55,116 +60,8 @@ export function ExpensesTable() {
         current_period: "2023-5"
     }
 
-    const expenses: Expense[] = [
-        {
-            expenseID: "EX5DK8d8LTywTKC8r87vdS",
-            username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
-            amount: 12.99,
-            name: "Blue pair of socks",
-            notes: "Ipsum mollit est pariatur esse ex. Aliqua laborum laboris laboris laboris. Laboris pectum",
-            createdDate: new Date("2023-10-27T23:42:54.980596532Z"),
-            period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXBLsynfE2QSAX8awfWptn",
-            username: "test@gmail.com",
-            categoryID: "CTGcSuhjzVmu3WrHLKD5fhS",
-            categoryName: "Health",
-            amount: 1000,
-            name: "Protector solar",
-            createdDate: new Date("2023-10-14T19:55:45.261990038Z"),
-            period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXD5G8OdwlKC81tH9ZE3eO",
-            username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
-            amount: 1898.11,
-            name: "Vacuum Cleaner",
-            createdDate: new Date("2023-10-18T22:41:56.024322091Z"),
-            period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXF5Mg3fpxct3v0BI91XYB",
-            username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
-            amount: 1202.17,
-            name: "Microwave",
-            createdDate: new Date("2023-10-18T22:41:46.946640398Z"),
-            period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXHrwzQezXK6nXyclUHbVH",
-            username: "test@gmail.com",
-            categoryID: "CTGGyouAaIPPWKzxpyxHACS",
-            categoryName: "Entertainment",
-            amount: 955,
-            name: "Plza Juan Baron",
-            notes: "Lorem ipsum note to fill space",
-            createdDate: new Date("2023-10-14T19:52:11.552327532Z"),
-            period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXIGBwc0sBWeyL9hy8jVuI",
-            username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
-            amount: 620,
-            name: "Correa amarilla",
-            createdDate: new Date("2023-10-18T22:37:04.230522146Z"),
-            period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXIfxidmlBJtq97xjQZfNh",
-            username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
-            amount: 123,
-            name: "Correa azul",
-            createdDate: new Date("2023-10-18T22:37:15.57296052Z"),
-            period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXP123",
-            username: "test@gmail.com",
-            amount: 893,
-            name: "Jordan shopping",
-            createdDate: new Date("0001-01-01T00:00:00Z"),
-            period: "2023-5",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXP456",
-            username: "test@gmail.com",
-            amount: 112,
-            name: "Uber drive",
-            createdDate: new Date("0001-01-01T00:00:00Z"),
-            period: "2023-5",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        },
-        {
-            expenseID: "EXP789",
-            username: "test@gmail.com",
-            amount: 525,
-            name: "Lunch",
-            createdDate: new Date("0001-01-01T00:00:00Z"),
-            period: "2023-5",
-            updateDate: new Date("0001-01-01T00:00:00Z")
-        }
-    ]
-
     const [colorsByExpense, setColorsByExpense] = useState<Map<string, string>>(getColorsByExpense())
+    const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>(expenses)
 
     const columns: GridColDef[] = [
         {field: 'amount', headerName: 'Amount', width: 150},
@@ -238,16 +135,52 @@ export function ExpensesTable() {
         return colorsByExpense
     }
 
+    function getCategoryOptions(): ChipSelectOption[] {
+        let addedCategories = new Set<String>()
+        let options: ChipSelectOption[] = []
+
+        expenses.forEach((expense) => {
+            if (expense.categoryName && !addedCategories.has(expense.categoryName)) {
+                options.push({
+                    label: expense.categoryName,
+                    color: colorsByExpense.get(expense.expenseID) || "gray.main"
+                })
+
+                addedCategories.add(expense.categoryName)
+            }
+        })
+
+        return options
+    }
+
+    function onCategorySelectedChange(selected: string[]) {
+        if (selected.length === 0) {
+            setFilteredExpenses(expenses)
+            return
+        }
+
+        let newFilteredExpenses: Expense[] = expenses.filter((expense) => {
+            return selected.includes(expense.categoryName || "")
+        })
+
+        setFilteredExpenses(newFilteredExpenses)
+    }
+
     return (
-        <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
-             mt={"0.5rem"}>
-            <DataGrid sx={gridStyle}
-                      rows={getTableRows(expenses)}
-                      columns={columns}
-                      slots={{
-                          cell: customCellComponent,
-                      }}
-            />
-        </Box>
+        <div>
+            <ChipSelect onSelectedUpdate={onCategorySelectedChange} options={getCategoryOptions()}
+                        label={"Filter by categories"}/>
+            <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
+                 mt={"0.5rem"}>
+
+                <DataGrid sx={gridStyle}
+                          rows={getTableRows(filteredExpenses)}
+                          columns={columns}
+                          slots={{
+                              cell: customCellComponent,
+                          }}
+                />
+            </Box>
+        </div>
     )
 }
