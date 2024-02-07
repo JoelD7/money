@@ -2,6 +2,7 @@ import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
 import {Home, PeriodDetail} from "./pages";
 import {Navbar} from "./components";
+import {Colors} from "./assets";
 
 declare module '@mui/material/styles' {
     interface Palette {
@@ -35,37 +36,37 @@ const theme: Theme = createTheme({
     },
     palette: {
         primary: {
-            main: "#009821",
-            darker: "#024511",
+            main: Colors.GREEN,
+            darker: Colors.GREEN_DARK,
         },
         secondary: {
-            main: "#FF8042",
-            contrastText: "#ffffff"
+            main: Colors.ORANGE,
+            contrastText: Colors.WHITE,
         },
         white: {
-            main: "#FFFFFF",
-            dark: "#e6e6e6",
-            darker: "#cccccc"
+            main: Colors.WHITE,
+            dark: Colors.WHITE_DARK,
+            darker: Colors.WHITE_DARKER,
         },
         red: {
-            main: '#D90707',
-            dark: '#ad0101',
-            darker: '#7a0101',
+            main: Colors.RED,
+            dark: Colors.RED_DARK,
+            darker: Colors.RED_DARKER,
         },
         blue: {
-            main: '#0088FE',
-            dark: '#006dcc',
-            darker: '#004d99',
+            main: Colors.BLUE,
+            dark: Colors.BLUE_DARK,
+            darker: Colors.BLUE_DARKER,
         },
         gray: {
             // Use this color as it is the same as the "bg-zinc-100" Tailwind class
-            main: '#F4F4F5',
-            dark: '#6F6F6F',
-            darker: '#4D4D4D',
-            light: '#a3a3a3',
+            main: Colors.GRAY,
+            dark: Colors.GRAY_DARK,
+            darker: Colors.GRAY_DARKER,
+            light: Colors.GRAY_LIGHT,
         },
         darkGreen: {
-            main: `#024511`,
+            main: Colors.GREEN_DARK,
         }
     },
 })

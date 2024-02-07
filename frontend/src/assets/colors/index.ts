@@ -1,0 +1,16 @@
+export const GREEN = "#009821"
+export const GREEN_DARK = "#024511"
+export const ORANGE = "#FF8042"
+export const WHITE = "#ffffff"
+export const WHITE_DARK = "#e6e6e6"
+export const WHITE_DARKER = "#cccccc"
+export const RED = '#D90707'
+export const RED_DARK = '#ad0101'
+export const RED_DARKER = '#7a0101'
+export const BLUE = '#0088FE'
+export const BLUE_DARK = '#006dcc'
+export const BLUE_DARKER = '#004d99'
+export const GRAY = '#F4F4F5';
+export const GRAY_DARK = '#6F6F6F';
+export const GRAY_DARKER = '#4D4D4D';
+export const GRAY_LIGHT = '#A3A3A3';
