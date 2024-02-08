@@ -135,9 +135,9 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
         return colorsByExpense
     }
 
-    function getCategoryOptions(): ChipSelectOption[] {
+    function getCategoryOptions(): CategorySelectorOption[] {
         let addedCategories = new Set<String>()
-        let options: ChipSelectOption[] = []
+        let options: CategorySelectorOption[] = []
 
         expenses.forEach((expense) => {
             if (expense.categoryName && !addedCategories.has(expense.categoryName)) {
@@ -168,8 +168,8 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
 
     return (
         <div>
-            <ChipSelect onSelectedUpdate={onCategorySelectedChange} options={getCategoryOptions()}
-                        label={"Filter by categories"}/>
+            <CategorySelector onSelectedUpdate={onCategorySelectedChange} options={getCategoryOptions()}
+                              label={"Filter by categories"}/>
             <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
                  mt={"0.5rem"}>
 
@@ -185,18 +185,18 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
     )
 }
 
-type ChipSelectOption = {
+type CategorySelectorOption = {
     label: string;
     color: string;
 }
 
-type ChipSelectProps = {
-    options: ChipSelectOption[];
+type CategorySelectorProps = {
+    options: CategorySelectorOption[];
     label: string;
     onSelectedUpdate: (selected: string[]) => void;
 }
 
-function ChipSelect({options, label, onSelectedUpdate}: ChipSelectProps) {
+function CategorySelector({options, label, onSelectedUpdate}: CategorySelectorProps) {
     const labelId: string = uuidv4();
     const [selected, setSelected] = useState<string[]>([]);
     const colorMap: Map<string, string> = buildColorMap();
