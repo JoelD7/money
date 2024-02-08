@@ -6,6 +6,7 @@ import {GridCellProps} from "@mui/x-data-grid/components/cell/GridCell";
 import {useState} from "react";
 import {Colors} from "../../assets";
 import {v4 as uuidv4} from "uuid";
+import {Button} from "../atoms";
 
 type ExpensesTableProps = {
     expenses: Expense[];
@@ -170,17 +171,18 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
         <div>
             <CategorySelector onSelectedUpdate={onCategorySelectedChange} options={getCategoryOptions()}
                               label={"Filter by categories"}/>
-            <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
-                 mt={"0.5rem"}>
+            <div className={"pt-4"}>
+                <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
 
-                <DataGrid sx={gridStyle}
-                          rows={getTableRows(filteredExpenses)}
-                          columns={columns}
-                          slots={{
-                              cell: customCellComponent,
-                          }}
-                />
-            </Box>
+                    <DataGrid sx={gridStyle}
+                              rows={getTableRows(filteredExpenses)}
+                              columns={columns}
+                              slots={{
+                                  cell: customCellComponent,
+                              }}
+                    />
+                </Box>
+            </div>
         </div>
     )
 }
@@ -204,7 +206,6 @@ function CategorySelector({options, label, onSelectedUpdate}: CategorySelectorPr
     function onSelectedChange(event: SelectChangeEvent<typeof selected>) {
         const {target: {value}} = event;
         let newValue = typeof value === 'string' ? value.split(' ') : value
-        onSelectedUpdate(newValue)
         setSelected(newValue)
     }
 
@@ -219,6 +220,11 @@ function CategorySelector({options, label, onSelectedUpdate}: CategorySelectorPr
 
     function getOptionColor(value: string): string {
         return colorMap.get(value) || "gray.main";
+    }
+
+    function clearFilter(): void {
+        setSelected([])
+        onSelectedUpdate([])
     }
 
     return (
@@ -258,6 +264,15 @@ function CategorySelector({options, label, onSelectedUpdate}: CategorySelectorPr
                     }
                 </Select>
             </FormControl>
+
+            <div className="flex mt-2">
+                <Button variant="outlined" onClick={() => onSelectedUpdate(selected)}>
+                    Apply filter
+                </Button>
+                <Button sx={{marginLeft: "1rem"}} onClick={clearFilter} color={"darkerGray"} variant={"outlined"}>
+                    Clear filter
+                </Button>
+            </div>
         </>
     );
 }
