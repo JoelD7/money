@@ -1,12 +1,17 @@
 import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
-import {Home, PeriodDetail} from "./pages";
+import {PeriodDetail} from "./pages";
 import {Navbar} from "./components";
 import {Colors} from "./assets";
 
 declare module '@mui/material/styles' {
     interface Palette {
-        custom: Palette['primary'];
+        white: Palette['primary'];
+        red: Palette['primary'];
+        blue: Palette['primary'];
+        gray: Palette['primary'];
+        darkGreen: Palette['primary'];
+        darkerGray: Palette['primary'];
     }
 
     interface PaletteOptions {
@@ -15,6 +20,7 @@ declare module '@mui/material/styles' {
         blue?: PaletteOptions['primary'];
         gray?: PaletteOptions['primary'];
         darkGreen?: PaletteOptions['primary'];
+        darkerGray: PaletteOptions['primary'];
     }
 
     interface PaletteColor {
@@ -23,7 +29,17 @@ declare module '@mui/material/styles' {
 
     interface SimplePaletteColorOptions {
         darker?: string;
+    }
+}
 
+declare module '@mui/material/Button' {
+    interface ButtonPropsColorOverrides {
+        white: true;
+        red: true;
+        blue: true;
+        gray: true;
+        darkGreen: true;
+        darkerGray: true;
     }
 }
 
@@ -67,6 +83,9 @@ const theme: Theme = createTheme({
         },
         darkGreen: {
             main: Colors.GREEN_DARK,
+        },
+        darkerGray: {
+            main: Colors.GRAY_DARKER,
         }
     },
 })
