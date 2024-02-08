@@ -1,11 +1,11 @@
-import {Box, Typography} from "@mui/material";
+import {Box, FormControl, InputLabel, MenuItem, Select, SelectChangeEvent, Typography} from "@mui/material";
 import {DataGrid, GridCell, GridColDef, GridRowsProp} from "@mui/x-data-grid";
-import {Category, Expense} from "../../types";
+import {Expense} from "../../types";
 import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
 import {GridCellProps} from "@mui/x-data-grid/components/cell/GridCell";
 import {useState} from "react";
 import {Colors} from "../../assets";
-import {ChipSelect, ChipSelectOption} from "../molecules";
+import {v4 as uuidv4} from "uuid";
 
 type ExpensesTableProps = {
     expenses: Expense[];
@@ -183,4 +183,81 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
             </Box>
         </div>
     )
+}
+
+type ChipSelectOption = {
+    label: string;
+    color: string;
+}
+
+type ChipSelectProps = {
+    options: ChipSelectOption[];
+    label: string;
+    onSelectedUpdate: (selected: string[]) => void;
+}
+
+function ChipSelect({options, label, onSelectedUpdate}: ChipSelectProps) {
+    const labelId: string = uuidv4();
+    const [selected, setSelected] = useState<string[]>([]);
+    const colorMap: Map<string, string> = buildColorMap();
+
+    function onSelectedChange(event: SelectChangeEvent<typeof selected>) {
+        const {target: {value}} = event;
+        let newValue = typeof value === 'string' ? value.split(' ') : value
+        onSelectedUpdate(newValue)
+        setSelected(newValue)
+    }
+
+    function buildColorMap(): Map<string, string> {
+        const colorMap = new Map<string, string>();
+        options.forEach((option) => {
+            colorMap.set(option.label, option.color);
+        });
+
+        return colorMap;
+    }
+
+    function getOptionColor(value: string): string {
+        return colorMap.get(value) || "gray.main";
+    }
+
+    return (
+        <>
+            <FormControl fullWidth sx={{background: "white"}}>
+                <InputLabel id={labelId}>{label}</InputLabel>
+                <Select
+                    labelId={labelId}
+                    id={label}
+                    label={label}
+                    value={selected}
+                    onChange={onSelectedChange}
+                    multiple
+                    renderValue={(selected) => (
+                        // This is how items will appear on the select input
+                        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 0.5}}>
+                            {selected.map((value) => (
+                                <Box key={value} className="p-1 w-fit text-sm rounded-xl" style={{color: "white"}}
+                                     sx={{backgroundColor: getOptionColor(value)}}>
+                                    {value}
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+                >
+                    {
+                        // This is how items will appear on the menu
+                        options.map((option) => (
+                            <MenuItem key={option.label} id={option.label} value={option.label}>
+                                <Box className="p-1 w-fit text-sm rounded-xl" style={{color: "white"}}
+                                     sx={{backgroundColor: option.color}}>
+                                    {option.label}
+                                </Box>
+                            </MenuItem>
+                        ))
+
+                    }
+                </Select>
+            </FormControl>
+        </>
+    );
 }
