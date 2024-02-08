@@ -229,7 +229,7 @@ function CategorySelector({options, label, onSelectedUpdate}: CategorySelectorPr
 
     return (
         <>
-            <FormControl fullWidth sx={{background: "white"}}>
+            <FormControl fullWidth sx={{background: "white", maxWidth: "460px"}}>
                 <InputLabel id={labelId}>{label}</InputLabel>
                 <Select
                     labelId={labelId}

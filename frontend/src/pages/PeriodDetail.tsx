@@ -1,4 +1,4 @@
-import {Typography, useMediaQuery} from "@mui/material";
+import {Box, Typography, useMediaQuery} from "@mui/material";
 import {Expense, RechartsLabelProps} from "../types";
 import Grid from "@mui/material/Unstable_Grid2";
 import ArrowCircleUpRoundedIcon from "@mui/icons-material/ArrowCircleUpRounded";
@@ -9,7 +9,6 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import json2mq from "json2mq";
 import {Colors} from "../assets";
-import {GRAY_DARK} from "../assets/colors";
 
 type ExpenseCategorySummary = {
     categoryID: string
@@ -311,35 +310,38 @@ export function PeriodDetail() {
                 </Grid>
 
                 {/*Balance and expenses*/}
-                <Grid xs={12} borderRadius="1rem" mt={"1rem"} p="1rem" bgcolor="white.main" boxShadow={"2"}>
-                    <div className={"flex w-11/12 m-auto items-center"}>
-                        {/*@ts-ignore*/}
-                        <ArrowCircleUpRoundedIcon sx={cashFlowIconStyles} color="darkGreen"/>
-                        <Typography variant={"h6"} fontWeight={"bold"}>
-                            You have:
-                        </Typography>
+                <Grid xs={12}>
+                    <Box maxWidth={"435px"} borderRadius="1rem" mt={"1rem"} p="1rem" bgcolor="white.main"
+                         boxShadow={"2"}>
+                        <div className={"flex w-11/12 m-auto items-center"}>
+                            {/*@ts-ignore*/}
+                            <ArrowCircleUpRoundedIcon sx={cashFlowIconStyles} color="darkGreen"/>
+                            <Typography variant={"h6"} fontWeight={"bold"}>
+                                You have:
+                            </Typography>
 
-                        <Typography variant={"h6"} color={"primary.darker"} marginLeft={"auto"}>
-                            {new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'USD'
-                            }).format(user.remainder)}
-                        </Typography>
-                    </div>
-                    <div className={"flex w-11/12 m-auto items-center"}>
-                        {/*@ts-ignore*/}
-                        <ArrowCircleDownRoundedIcon sx={cashFlowIconStyles} color="red"/>
-                        <Typography variant={"h6"} fontWeight={"bold"}>
-                            You have spent:
-                        </Typography>
+                            <Typography variant={"h6"} color={"primary.darker"} marginLeft={"auto"}>
+                                {new Intl.NumberFormat('en-US', {
+                                    style: 'currency',
+                                    currency: 'USD'
+                                }).format(user.remainder)}
+                            </Typography>
+                        </div>
+                        <div className={"flex w-11/12 m-auto items-center"}>
+                            {/*@ts-ignore*/}
+                            <ArrowCircleDownRoundedIcon sx={cashFlowIconStyles} color="red"/>
+                            <Typography variant={"h6"} fontWeight={"bold"}>
+                                You have spent:
+                            </Typography>
 
-                        <Typography variant={"h6"} color={"red.main"} marginLeft={"auto"}>
-                            {new Intl.NumberFormat('en-US', {
-                                style: 'currency',
-                                currency: 'USD'
-                            }).format(user.expenses)}
-                        </Typography>
-                    </div>
+                            <Typography variant={"h6"} color={"red.main"} marginLeft={"auto"}>
+                                {new Intl.NumberFormat('en-US', {
+                                    style: 'currency',
+                                    currency: 'USD'
+                                }).format(user.expenses)}
+                            </Typography>
+                        </div>
+                    </Box>
                 </Grid>
 
                 {/**New expense/income buttons*/}
