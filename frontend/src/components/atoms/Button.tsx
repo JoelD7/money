@@ -1,4 +1,4 @@
-import {Button as MuiButton, ButtonProps} from "@mui/material";
+import {Button as MuiButton, ButtonProps, SxProps, Theme} from "@mui/material";
 import {ReactNode} from "react";
 
 type CustomButtonProps = {
@@ -6,10 +6,29 @@ type CustomButtonProps = {
 } & ButtonProps
 
 export function Button(props: CustomButtonProps) {
-    const {sx, ...other} = props
+    const {sx, variant, ...other} = props
+    let styles: SxProps<Theme> | undefined = {
+        textTransform: "capitalize",
+        borderRadius: "1rem",
+        ...sx
+    }
+
+    if (variant === "outlined") {
+        styles = {
+            ...styles,
+            '&.MuiButton-root': {
+                backgroundColor: "#ffffff",
+            },
+        }
+    }
+
     return (
         <>
-            <MuiButton sx={{textTransform: "capitalize", borderRadius: "1rem", ...sx}} {...other}>
+            <MuiButton
+                sx={styles}
+                /*@ts-ignore*/
+                variant={variant}
+                {...other}>
                 {props.children}
             </MuiButton>
         </>
