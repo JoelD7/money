@@ -1,6 +1,6 @@
 import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
-import {PeriodDetail} from "./pages";
+import {Home, PeriodDetail} from "./pages";
 import {Navbar} from "./components";
 import {Colors} from "./assets";
 
@@ -103,7 +103,10 @@ function App() {
                 <Container
                     sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
                     maxWidth={false}>
-                    <PeriodDetail/>
+                    <div className={"flex max-w-[1200px] m-auto"}>
+                        <PeriodDetail/>
+                    </div>
+                    {/*<Home></Home>*/}
                 </Container>
             </ThemeProvider>
 
