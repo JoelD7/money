@@ -1,10 +1,10 @@
-import {Box, Typography, useMediaQuery} from "@mui/material";
+import {Box, Typography, useMediaQuery, useTheme} from "@mui/material";
 import {Expense, RechartsLabelProps} from "../types";
 import Grid from "@mui/material/Unstable_Grid2";
 import ArrowCircleUpRoundedIcon from "@mui/icons-material/ArrowCircleUpRounded";
 import ArrowCircleDownRoundedIcon from "@mui/icons-material/ArrowCircleDownRounded";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
-import {Button, ExpensesTable} from "../components";
+import {BalanceCard, Button, ExpenseCard, ExpensesTable} from "../components";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
 import json2mq from "json2mq";
@@ -32,11 +32,9 @@ export function PeriodDetail() {
         },
     }
 
-    const xlCustom = useMediaQuery(
-        json2mq({
-            maxWidth: 2300,
-        }),
-    );
+    const theme = useTheme()
+    const smUp: boolean = useMediaQuery(theme.breakpoints.up('sm'));
+    const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
 
     const user = {
         full_name: "Joel",
@@ -251,7 +249,6 @@ export function PeriodDetail() {
         return (total / user.expenses) * 100
     }
 
-    const chartHeight: number = 250
     const RADIAN: number = Math.PI / 180;
 
     function getCustomLabel({cx, cy, midAngle, innerRadius, outerRadius, percent}: RechartsLabelProps) {
@@ -264,6 +261,22 @@ export function PeriodDetail() {
                 {`${(percent * 100).toFixed(0)}%`}
             </text>
         );
+    }
+
+    function getChartHeight(): number {
+        if (smUp) {
+            return 350
+        }
+
+        return 250
+    }
+
+    function getChartWidth(): number {
+        if (smUp) {
+            return 450
+        }
+
+        return 350
     }
 
     function getPeriodDates(): string {
@@ -310,8 +323,8 @@ export function PeriodDetail() {
                 </Grid>
 
                 {/*Balance and expenses*/}
-                <Grid xs={12}>
-                    <Box maxWidth={"435px"} borderRadius="1rem" mt={"1rem"} p="1rem" bgcolor="white.main"
+                <Grid xs={12} hidden={mdUp}>
+                    <Box hidden={smUp} maxWidth={"435px"} borderRadius="1rem" mt={"1rem"} p="1rem" bgcolor="white.main"
                          boxShadow={"2"}>
                         <div className={"flex w-11/12 m-auto items-center"}>
                             {/*@ts-ignore*/}
@@ -342,10 +355,20 @@ export function PeriodDetail() {
                             </Typography>
                         </div>
                     </Box>
+                    <div hidden={!smUp}>
+                        <Grid container spacing={1}>
+                            <Grid xs={6}>
+                                <BalanceCard remainder={user.remainder}/>
+                            </Grid>
+                            <Grid xs={6}>
+                                <ExpenseCard expenses={user.expenses}/>
+                            </Grid>
+                        </Grid>
+                    </div>
                 </Grid>
 
                 {/**New expense/income buttons*/}
-                <Grid xs={12}>
+                <Grid xs={12} hidden={mdUp}>
                     <div className={"flex mt-3"}>
                         <Button color={"secondary"} variant={"contained"}
                                 startIcon={<AddIcon/>}>
@@ -360,20 +383,19 @@ export function PeriodDetail() {
                 </Grid>
 
                 {/*Chart, Current balance and expenses*/}
-                <Grid xs={12} maxWidth={"880px"}>
+                <Grid xs={12} maxWidth={"1200px"}>
                     <div className={"mt-4"}>
                         <Typography variant={"h4"}>Breakdown</Typography>
-                        <Grid container>
+                        <Grid container spacing={1} mt="1rem">
                             {/*Chart section*/}
-                            <Grid xs={12} md={6} maxWidth={"430px"}>
+                            <Grid xs={12} md={6} lg={7}>
                                 <div>
                                     <Grid container bgcolor={"white.main"} borderRadius="1rem"
-                                          p="1rem" boxShadow="3"
-                                          mt="1rem">
+                                          p="1rem" boxShadow="3" alignItems={"center"}>
                                         {/*Chart*/}
-                                        <Grid xs={12} height={chartHeight}>
+                                        <Grid xs={12} sm={5} md={12} lg={5} height={getChartHeight()}>
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart width={350} height={chartHeight}>
+                                                <PieChart width={getChartWidth()} height={getChartHeight()}>
                                                     <Pie data={expenseSummaryByCategory}
                                                          label={getCustomLabel}
                                                          dataKey="total"
@@ -392,7 +414,7 @@ export function PeriodDetail() {
                                         </Grid>
 
                                         {/*Total by category*/}
-                                        <Grid xs={12}>
+                                        <Grid xs={12} sm={7} md={12} lg={7}>
                                             <div className={"w-4/5 m-auto"}>
                                                 <Grid container>
                                                     <Grid xs={8}>
@@ -429,12 +451,42 @@ export function PeriodDetail() {
                                 </div>
                             </Grid>
 
+                            {/*Balance, expenses, creation buttons*/}
+                            <Grid xs={12} md={6} hidden={!mdUp} lg={5}>
+                                <div>
+                                    <Grid container>
+                                        {/*Balance and expenses*/}
+                                        <Grid xs={12}>
+                                            <BalanceCard remainder={user.remainder}/>
+                                            <div className={"pt-2"}>
+                                                <ExpenseCard expenses={user.expenses}/>
+                                            </div>
+                                        </Grid>
+
+                                        {/**New expense/income buttons*/}
+                                        <Grid xs={12}>
+                                            <div className={"flex mt-3"}>
+                                                <Button color={"secondary"} variant={"contained"}
+                                                        startIcon={<AddIcon/>}>
+                                                    New expense
+                                                </Button>
+
+                                                <Button sx={{marginLeft: "1rem"}} variant={"contained"}
+                                                        startIcon={<AddIcon/>}>
+                                                    New income
+                                                </Button>
+                                            </div>
+                                        </Grid>
+                                    </Grid>
+                                </div>
+                            </Grid>
+
                         </Grid>
                     </div>
                 </Grid>
 
                 {/*Latest table*/}
-                <Grid xs={12} maxWidth={xlCustom ? "1200px" : "none"}>
+                <Grid xs={12} maxWidth={"1200px"}>
                     <Typography mt={"2rem"} variant={"h4"}>
                         Expenses
                     </Typography>
