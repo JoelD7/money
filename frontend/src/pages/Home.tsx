@@ -1,51 +1,15 @@
-import {Box, Typography, useMediaQuery, useTheme} from "@mui/material";
+import {Typography, useMediaQuery, useTheme} from "@mui/material";
 import Grid from '@mui/material/Unstable_Grid2';
 import AddIcon from '@mui/icons-material/Add';
-import ArrowCircleUpRoundedIcon from '@mui/icons-material/ArrowCircleUpRounded';
-import ArrowCircleDownRoundedIcon from '@mui/icons-material/ArrowCircleDownRounded';
-import {Button, Navbar} from "../components";
+import {BalanceCard, Button, ExpenseCard, ExpensesTable} from "../components";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
-import {Expense} from "../types";
-import {DataGrid, GridCell, GridColDef, GridRowsProp} from "@mui/x-data-grid";
-import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
-import {GridCellProps} from "@mui/x-data-grid/components/cell/GridCell";
-
-type RechartsLabelProps = {
-    cx: number
-    cy: number
-    midAngle: number
-    innerRadius: number
-    outerRadius: number
-    percent: number
-    index: number
-}
+import {Expense, RechartsLabelProps} from "../types";
+import json2mq from "json2mq";
 
 export function Home() {
     const theme = useTheme();
-    const customWidth = {
-        '&.MuiSvgIcon-root': {
-            width: "38px",
-            height: "38px",
-        },
-    }
 
-    const gridStyle = {
-        '&.MuiDataGrid-root': {
-            borderRadius: "1rem",
-            backgroundColor: "#ffffff"
-        },
-        '&.MuiDataGrid-root .MuiDataGrid-cellContent': {
-            textWrap: "pretty",
-            maxHeight: "38px",
-        },
-        '& .MuiDataGrid-columnHeaderTitle': {
-            fontSize: "large",
-        }
-    }
-
-    const xsOnly: boolean = useMediaQuery(theme.breakpoints.only('xs'));
     const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
-
 
     const user = {
         full_name: "Joel",
@@ -74,7 +38,7 @@ export function Home() {
             {
                 id: "CTGrR7fO4ndmI0IthJ7Wg8fs",
                 name: "Shopping",
-                color: "#009eb8",
+                color: "#8c34eb",
                 value: 30
             }
         ],
@@ -198,6 +162,12 @@ export function Home() {
         }
     ]
 
+    const xlCustom = useMediaQuery(
+        json2mq({
+            maxWidth: 2300,
+        }),
+    );
+
     const chartHeight: number = 250
     const RADIAN: number = Math.PI / 180;
 
@@ -223,127 +193,17 @@ export function Home() {
         }).format(new Date(period.end_date))}`
     }
 
-    const columns: GridColDef[] = [
-        {field: 'amount', headerName: 'Amount', width: 150},
-        {field: 'categoryName', headerName: 'Category', width: 150},
-        {field: 'notes', headerName: 'Notes', flex: 1, minWidth: 150},
-        {field: 'createdDate', headerName: 'Date', width: 200},
-    ];
-
-    function getTableRows(expenses: Expense[]): GridRowsProp {
-        return expenses.map((expense): GridValidRowModel => {
-            return {
-                id: expense.expenseID,
-                amount: new Intl.NumberFormat('en-US', {
-                    style: 'currency', currency: 'USD'
-                }).format(expense.amount),
-                categoryName: expense.categoryName ? expense.categoryName : "-",
-                notes: expense.notes ? expense.notes : "-",
-                createdDate: new Intl.DateTimeFormat('en-GB', {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: 'numeric',
-                    minute: 'numeric',
-                }).format(expense.createdDate),
-            }
-        })
-    }
-
-    function customCellComponent(props: GridCellProps) {
-        const {field, children} = props;
-
-        return (
-            field === "categoryName" ?
-                <GridCell {...props}>
-                    <Box sx={{
-                        backgroundColor: getCellBackgroundColor(String(props.rowId)),
-                        padding: "0.25rem 0.5rem",
-                        borderRadius: "9999px",
-                    }}>
-                        <Typography fontSize={"14px"} color={"white.main"}>
-                            {props.value}
-                        </Typography>
-                    </Box>
-                </GridCell> :
-                <GridCell {...props}>
-                    {children}
-                </GridCell>
-        )
-    }
-
-    function getCellBackgroundColor(rowID: string): string {
-        let categoryName: string = ""
-        let categoryColor: string = ""
-
-        expenses.forEach((expense) => {
-            if (expense.expenseID === rowID) {
-                categoryName = expense.categoryName ? expense.categoryName : ""
-                return
-            }
-        })
-
-        user.categories.forEach((category) => {
-            if (category.name === categoryName) {
-                categoryColor = category.color
-                return
-            }
-        })
-
-        return categoryColor
-    }
-
     return (
         <>
             <Grid container spacing={1} justifyContent={"center"}>
                 {/*Balance*/}
                 <Grid xs={12} sm={6} hidden={mdUp}>
-                    <div>
-                        <Grid container borderRadius="1rem" p="0.5rem" bgcolor="white.main" boxShadow={"2"}>
-                            <Grid xs={3}>
-                                <Grid height="100%" container alignContent="center" justifyContent="center">
-                                    {/*@ts-ignore*/}
-                                    <ArrowCircleUpRoundedIcon sx={customWidth} color="darkGreen"/>
-                                </Grid>
-                            </Grid>
-
-                            <Grid xs={9}>
-                                <Typography variant="h6" fontWeight="bold">Balance</Typography>
-                                <Typography lineHeight="unset" variant="h4" color="darkGreen.main">
-                                    {new Intl.NumberFormat('en-US', {
-                                        style: 'currency',
-                                        currency: 'USD'
-                                    }).format(user.remainder)}
-                                </Typography>
-                            </Grid>
-                        </Grid>
-                    </div>
+                    <BalanceCard remainder={user.remainder}/>
                 </Grid>
 
                 {/*Expenses*/}
                 <Grid xs={12} sm={6} hidden={mdUp}>
-                    <div>
-                        <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem" p="0.5rem" bgcolor="white.main"
-                              boxShadow={"2"}>
-                            <Grid xs={3}>
-                                <Grid height="100%" container alignContent="center" justifyContent="center">
-                                    {/*@ts-ignore*/}
-                                    <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
-                                </Grid>
-                            </Grid>
-
-                            <Grid xs={9}>
-                                <Typography variant="h6" fontWeight="bold">Expenses</Typography>
-                                <Typography lineHeight="unset" variant="h4" color="red.main">
-                                    {new Intl.NumberFormat('en-US', {
-                                        style: 'currency',
-                                        currency: 'USD'
-                                    }).format(user.expenses)}
-                                </Typography>
-                            </Grid>
-                        </Grid>
-                    </div>
+                    <ExpenseCard expenses={user.expenses}/>
                 </Grid>
 
                 {/*Chart, Current balance and expenses*/}
@@ -424,56 +284,12 @@ export function Home() {
                                     <Grid container mt={"1rem"} spacing={1}>
                                         {/*Balance*/}
                                         <Grid xs={12} hidden={!mdUp}>
-                                            <div>
-                                                <Grid container borderRadius="1rem" p="0.5rem" bgcolor="white.main"
-                                                      boxShadow={"2"}>
-                                                    <Grid xs={3}>
-                                                        <Grid height="100%" container alignContent="center"
-                                                              justifyContent="center">
-                                                            <ArrowCircleUpRoundedIcon sx={customWidth}
-                                                                //@ts-ignore
-                                                                                      color="darkGreen"/>
-                                                        </Grid>
-                                                    </Grid>
-
-                                                    <Grid xs={9}>
-                                                        <Typography variant="h6" fontWeight="bold">Balance</Typography>
-                                                        <Typography lineHeight="unset" variant="h4"
-                                                                    color="darkGreen.main">
-                                                            {new Intl.NumberFormat('en-US', {
-                                                                style: 'currency',
-                                                                currency: 'USD'
-                                                            }).format(user.remainder)}
-                                                        </Typography>
-                                                    </Grid>
-                                                </Grid>
-                                            </div>
+                                            <BalanceCard remainder={user.remainder}/>
                                         </Grid>
 
                                         {/*Expenses*/}
                                         <Grid xs={12} hidden={!mdUp}>
-                                            <div>
-                                                <Grid container mt={xsOnly ? "0.5rem" : ""} borderRadius="1rem"
-                                                      p="0.5rem" bgcolor="white.main" boxShadow={"2"}>
-                                                    <Grid xs={3}>
-                                                        <Grid height="100%" container alignContent="center"
-                                                              justifyContent="center">
-                                                            {/*@ts-ignore*/}
-                                                            <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
-                                                        </Grid>
-                                                    </Grid>
-
-                                                    <Grid xs={9}>
-                                                        <Typography variant="h6" fontWeight="bold">Expenses</Typography>
-                                                        <Typography lineHeight="unset" variant="h4" color="red.main">
-                                                            {new Intl.NumberFormat('en-US', {
-                                                                style: 'currency',
-                                                                currency: 'USD'
-                                                            }).format(user.expenses)}
-                                                        </Typography>
-                                                    </Grid>
-                                                </Grid>
-                                            </div>
+                                            <ExpenseCard expenses={user.expenses}/>
                                         </Grid>
 
                                         {/**New expense/income buttons*/}
@@ -496,29 +312,12 @@ export function Home() {
                 </Grid>
 
                 {/*Latest table*/}
-                <Grid xs={12} maxWidth={"1200px"}>
-                    <div>
-                        <Grid container mt={"2rem"}>
-                            <Grid xs={12}>
-                                <Typography variant={"h4"}>
-                                    Latest
-                                </Typography>
-                            </Grid>
+                <Grid xs={12} maxWidth={xlCustom ? "1200px" : "none"}>
+                    <Typography mt={"2rem"} variant={"h4"}>
+                        Latest
+                    </Typography>
 
-                            <Grid xs={12}>
-                                <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}
-                                     mt={"0.5rem"}>
-                                    <DataGrid sx={gridStyle}
-                                              rows={getTableRows(expenses)}
-                                              columns={columns}
-                                              slots={{
-                                                  cell: customCellComponent,
-                                              }}
-                                    />
-                                </Box>
-                            </Grid>
-                        </Grid>
-                    </div>
+                    <ExpensesTable expenses={expenses}/>
                 </Grid>
             </Grid>
 
