@@ -1,2 +1,2 @@
-export type {Expense, Category} from "./domain.ts"
+export type {Expense, Category, SignUpUser} from "./domain.ts"
 export type {RechartsLabelProps} from "./other.ts"

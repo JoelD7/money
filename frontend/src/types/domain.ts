@@ -17,3 +17,9 @@ export type Category = {
     budget: number
     color: string
 }
+
+export type SignUpUser = {
+    username: string
+    password: string
+    fullname: string
+}
