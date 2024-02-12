@@ -1,0 +1,1 @@
+export const BASE_URL = "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging"
