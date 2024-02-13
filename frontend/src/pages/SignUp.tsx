@@ -7,9 +7,8 @@ import { ChangeEvent, useState } from "react";
 import { SignUpUser } from "../types";
 
 type SignUpError = {
-  username: string;
-  password: string;
-  fullname: string;
+  username?: string;
+  password?: string;
 };
 
 export function SignUp() {
@@ -17,45 +16,36 @@ export function SignUp() {
     mutationFn: api.signUp,
   });
 
-  const [signUpUser, setSignUpUser] = useState<SignUpUser | undefined>();
-  const [error, setError] = useState<SignUpError | undefined>();
+  const [signUpUser, setSignUpUser] = useState<SignUpUser>({
+    username: "",
+    password: "",
+    fullname: "",
+  });
+  const [error, setError] = useState<SignUpError>({
+    username: "",
+    password: "",
+  });
 
   function onInputChange(
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) {
-    if (!signUpUser) {
-      setSignUpUser({
-        [e.target.name]: e.target.value,
-      } as SignUpUser);
-
-      return;
-    }
-
+    resetError(e);
     setSignUpUser({
       ...signUpUser,
       [e.target.name]: e.target.value,
     });
   }
 
+  function resetError(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setError({
+      ...error,
+      [e.target.name]: "",
+    });
+  }
+
   function signUp() {
-    if (!signUpUser) {
-      setError({
-        username: "Email is required",
-        password: "Password is required",
-        fullname: "",
-      });
-
+    if (!validateInput()) {
       return;
-    }
-
-    if (signUpUser.username === "" || signUpUser.password === "") {
-      setError({
-        username: signUpUser.username === "" ? "Email is required" : "",
-        password: signUpUser.password === "" ? "Password is required" : "",
-        fullname: "",
-      });
-
-      return false;
     }
 
     mutation.mutate({
@@ -63,6 +53,26 @@ export function SignUp() {
       password: signUpUser.password,
       fullname: signUpUser.fullname,
     });
+  }
+
+  function validateInput(): boolean {
+    let isValid = true;
+    const errObj: SignUpError = { ...error };
+
+    if (signUpUser.username === "") {
+      errObj.username = "Username is required";
+
+      isValid = false;
+    }
+
+    if (signUpUser.password === "") {
+      errObj.password = "Password is required";
+
+      isValid = false;
+    }
+
+    setError(errObj);
+    return isValid;
   }
 
   return (
@@ -97,7 +107,7 @@ export function SignUp() {
         <TextField
           margin={"normal"}
           name={"fullname"}
-          value={signUpUser ? signUpUser.fullname : ""}
+          value={signUpUser.fullname}
           fullWidth={true}
           label={"Full name"}
           variant={"outlined"}
@@ -107,13 +117,13 @@ export function SignUp() {
           autoComplete={"on"}
           margin={"normal"}
           name={"username"}
-          value={signUpUser ? signUpUser.username : ""}
+          value={signUpUser.username}
           fullWidth={true}
           type={"email"}
           label={"Email"}
           variant={"outlined"}
-          error={error ? error.username === "" : false}
-          helperText={error ? error.username : ""}
+          error={error.username !== ""}
+          helperText={error.username}
           required
           onChange={onInputChange}
         />
@@ -121,13 +131,13 @@ export function SignUp() {
           autoComplete={"on"}
           margin={"normal"}
           name={"password"}
-          value={signUpUser ? signUpUser.password : ""}
+          value={signUpUser.password}
           fullWidth={true}
           type={"password"}
           label={"Password"}
           variant={"outlined"}
-          error={error ? error.password === "" : false}
-          helperText={error ? error.password : ""}
+          error={error.password !== ""}
+          helperText={error.password}
           required={true}
           onChange={onInputChange}
         />
