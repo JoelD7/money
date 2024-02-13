@@ -139,6 +139,7 @@ func (req *Request) LogProperties() map[string]interface{} {
 
 	return map[string]interface{}{
 		"s_query_parameters":             paramsToString(req.QueryStringParameters),
+		"s_headers":                      paramsToString(req.Headers),
 		"s_multi_value_query_parameters": multiValueParamsToString(req.MultiValueQueryStringParameters),
 		"s_path_parameters":              paramsToString(req.PathParameters),
 		"o_authorizer":                   authorizer,
