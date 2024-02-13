@@ -1,4 +1,11 @@
-import { Box, Link, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  Link,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { Button } from "../components";
 import { Colors } from "../assets";
 import { useMutation } from "@tanstack/react-query";
@@ -6,7 +13,7 @@ import { api } from "../api";
 import { ChangeEvent, useState } from "react";
 import { SignUpUser } from "../types";
 
-type SignUpError = {
+type InputError = {
   username?: string;
   password?: string;
 };
@@ -21,7 +28,7 @@ export function SignUp() {
     password: "",
     fullname: "",
   });
-  const [error, setError] = useState<SignUpError>({
+  const [inputErr, setInputErr] = useState<InputError>({
     username: "",
     password: "",
   });
@@ -37,8 +44,8 @@ export function SignUp() {
   }
 
   function resetError(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    setError({
-      ...error,
+    setInputErr({
+      ...inputErr,
       [e.target.name]: "",
     });
   }
@@ -57,7 +64,7 @@ export function SignUp() {
 
   function validateInput(): boolean {
     let isValid = true;
-    const errObj: SignUpError = { ...error };
+    const errObj: InputError = { ...inputErr };
 
     if (signUpUser.username === "") {
       errObj.username = "Username is required";
@@ -71,7 +78,7 @@ export function SignUp() {
       isValid = false;
     }
 
-    setError(errObj);
+    setInputErr(errObj);
     return isValid;
   }
 
@@ -122,8 +129,8 @@ export function SignUp() {
           type={"email"}
           label={"Email"}
           variant={"outlined"}
-          error={error.username !== ""}
-          helperText={error.username}
+          error={inputErr.username !== ""}
+          helperText={inputErr.username}
           required
           onChange={onInputChange}
         />
@@ -136,8 +143,8 @@ export function SignUp() {
           type={"password"}
           label={"Password"}
           variant={"outlined"}
-          error={error.password !== ""}
-          helperText={error.password}
+          error={inputErr.password !== ""}
+          helperText={inputErr.password}
           required={true}
           onChange={onInputChange}
         />
@@ -148,6 +155,16 @@ export function SignUp() {
         <Button variant={"contained"} fullWidth={true} onClick={signUp}>
           Sign up
         </Button>
+
+        {mutation.isError && (
+          <div className={"p-2"}>
+            <Alert severity="error">
+              <AlertTitle>Error</AlertTitle>
+              {mutation.error.message}
+            </Alert>
+          </div>
+        )}
+
         <Typography textAlign={"center"}>
           Already signed up?{" "}
           <Link color={Colors.BLUE_DARK} target={"_blank"} href={"/login"}>
