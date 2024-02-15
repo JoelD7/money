@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 const (
@@ -26,10 +27,15 @@ func TestHandleRequest(t *testing.T) {
 	c := require.New(t)
 
 	mockRestClient := restclient.NewMockRestClient()
-	cacheMock := cache.NewRedisCacheMock()
+	//cacheMock := cache.NewRedisCacheMock()
+	cacheMock := cache.NewRedisCache()
 	secretMock := secrets.NewSecretMock()
 	logMock := logger.NewLoggerMock(nil)
-	ctx := context.Background()
+	//ctx := context.Background()
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(5*time.Second))
+	defer cancel()
+
+	go doAnother(ctx)
 
 	req := &request{
 		cacheRepo:      cacheMock,

@@ -10,7 +10,8 @@ import (
 // https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html#configuration-timeout-console
 var lambdaTimeout = env.GetString("LAMBDA_TIMEOUT", "10s")
 
-// GetContextWithLambdaTimeout returns a context with a timeout based on the invoking lambda function's timeout.
+// GetContextWithLambdaTimeout returns a context with a timeout based on the invoking lambda function's timeout and a
+// cancel function to cancel the context(https://pkg.go.dev/context#WithTimeout).
 func GetContextWithLambdaTimeout(parentCtx context.Context) (context.Context, context.CancelFunc) {
 	duration, err := time.ParseDuration(lambdaTimeout)
 	if err != nil {

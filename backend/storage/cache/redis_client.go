@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/redis/go-redis/v9"
@@ -36,10 +37,13 @@ func init() {
 		panic(err)
 	}
 
+	opt.ContextTimeoutEnabled = true
+
 	redisClient = &RedisClient{redis.NewClient(opt)}
 }
 
 func (rc *RedisClient) Get(ctx context.Context, key string) (string, error) {
+	start := time.Now()
 	value, err := rc.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
 		return "", models.ErrInvalidTokensNotFound
@@ -54,6 +58,7 @@ func (rc *RedisClient) Get(ctx context.Context, key string) (string, error) {
 		backoff *= backoffFactor
 	}
 
+	fmt.Println("Redis Get Duration: ", time.Since(start))
 	return value, err
 }
 

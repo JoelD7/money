@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/storage/cache"
+	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
 	"strings"
 	"time"
@@ -57,8 +59,6 @@ const (
 var (
 	kidSecretName = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 	awsRegion     = env.GetString("REGION", "us-east-1")
-
-	errUserNotAuthorized = errors.New("access to this user's data is forbidden")
 )
 
 type request struct {
@@ -93,10 +93,28 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 		log: logger.NewLogger(),
 	}
 
+	ctx, cancel := shared.GetContextWithLambdaTimeout(ctx)
+	defer cancel()
+
+	go doAnother(ctx)
+
 	req.init()
 	defer req.finish()
 
 	return req.process(ctx, event)
+}
+
+func doAnother(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			if err := ctx.Err(); err != nil {
+				fmt.Printf("doAnother err: %s\n", err)
+			}
+			fmt.Printf("doAnother: finished\n")
+			return
+		}
+	}
 }
 
 func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
