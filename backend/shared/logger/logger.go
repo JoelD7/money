@@ -93,14 +93,14 @@ func (l *Log) Error(eventName string, err error, objects []models.LoggerObject) 
 	go l.sendLog(errLevel, eventName, err, objects)
 }
 
-func (l *Log) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
+func (l *Log) LogLambdaTime(startingTime time.Time, err error, panicErr interface{}) {
 	duration := time.Since(startingTime).Seconds()
 	durationData := l.MapToLoggerObject("duration_data", map[string]interface{}{
 		"f_duration": duration,
 	})
 
-	if panic != nil {
-		panicObject := getPanicObject(panic)
+	if panicErr != nil {
+		panicObject := getPanicObject(panicErr)
 
 		l.Critical("lambda_panicked", []models.LoggerObject{durationData, panicObject})
 		return

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
@@ -88,36 +87,48 @@ func (req *request) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
 	req := &request{
 		log: logger.NewLogger(),
 	}
 
-	ctx, cancel := shared.GetContextWithLambdaTimeout(ctx)
-	defer cancel()
-
-	go doAnother(ctx)
-
 	req.init()
 	defer req.finish()
 
-	return req.process(ctx, event)
-}
+	errChan := make(chan error)
+	doneChan := make(chan struct{})
 
-func doAnother(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			if err := ctx.Err(); err != nil {
-				fmt.Printf("doAnother err: %s\n", err)
-			}
-			fmt.Printf("doAnother: finished\n")
+	ctx, cancel := shared.GetContextWithLambdaTimeout(ctx, errChan)
+	defer cancel()
+
+	go func() {
+		res, err = req.process(ctx, event, doneChan)
+	}()
+
+	select {
+	case err = <-errChan:
+		req.err = err
+
+		if err != nil {
+			req.log.Error("request_timeout", req.err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
+			res = defaultDenyAllPolicy(event.MethodArn, req.err)
+			err = nil
 			return
 		}
+
+	case <-doneChan:
+		return
 	}
+
+	return
 }
 
-func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest, doneChan chan struct{}) (events.APIGatewayCustomAuthorizerResponse, error) {
+	defer func() {
+		doneChan <- struct{}{}
+	}()
+
 	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
 	verifyToken := usecases.NewTokenVerifier(req.client, req.log, req.secretsManager, req.cacheRepo)
