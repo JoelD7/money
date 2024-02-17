@@ -95,29 +95,17 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	req.init()
 	defer req.finish()
 
-	doneChan := make(chan struct{})
+	stackTrace, ctxError := shared.ExecuteLambda(ctx, func(ctx context.Context) {
+		res, err = req.process(ctx, event)
+	})
 
-	ctx, cancel := shared.GetContextWithLambdaTimeout(ctx)
-	defer cancel()
-
-	go func() {
-		res, err = req.process(ctx, event, doneChan)
-	}()
-
-	select {
-	case <-ctx.Done():
-		req.err = ctx.Err()
-
-		if ctx.Err() != nil {
-			req.log.Error("request_timeout", req.err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
-
-			res = defaultDenyAllPolicy(event.MethodArn, nil)
-			err = nil
-			return
-		}
-
-	case <-doneChan:
-		return
+	if ctxError != nil {
+		req.log.Error("request_timeout", ctxError, []models.LoggerObject{
+			req.getEventAsLoggerObject(event),
+			req.log.MapToLoggerObject("stack", map[string]interface{}{
+				"s_trace": stackTrace,
+			}),
+		})
 	}
 
 	return
