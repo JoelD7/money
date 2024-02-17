@@ -139,10 +139,16 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
-	if err != nil {
+	if errors.Is(err, models.ErrInvalidToken) {
 		req.log.Error("request_denied", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
 
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
+	}
+
+	if err != nil {
+		req.log.Error("token_verification_failed", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
+		return events.APIGatewayCustomAuthorizerResponse{}, err
 	}
 
 	principalID := subject
@@ -165,8 +171,10 @@ func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAu
 	resp := NewAuthorizerResponse(methodArn, "user")
 	resp.DenyAllMethods()
 
-	resp.APIGatewayCustomAuthorizerResponse.Context = map[string]interface{}{
-		"stringKey": err.Error(),
+	if err != nil {
+		resp.APIGatewayCustomAuthorizerResponse.Context = map[string]interface{}{
+			"stringKey": err.Error(),
+		}
 	}
 
 	return resp.APIGatewayCustomAuthorizerResponse
