@@ -19,25 +19,25 @@ var (
 )
 
 // ExecuteLambda executes a lambda function's code and returns the stack trace and error in case of a timeout.
+// Takes the context from inside lambda.Start and creates a new context with the timeout of the lambda.
 // For example: you would put something like this in the handler of the lambda:
-/*
-   stackTrace, ctxError := shared.ExecuteLambda(func(ctx context.Context) {
-		res, err = req.process(ctx, event) this runs the lambda's code
-	})
-
-	if ctxError != nil {
-		req.log.Error("request_timeout", ctxError, []models.LoggerObject{
-			req.getEventAsLoggerObject(event),
-			req.log.MapToLoggerObject("stack", map[string]interface{}{
-				"s_trace": stackTrace,
-			}),
-		})
-	}
-*/
-func ExecuteLambda(handler func(ctx context.Context)) (string, error) {
+//
+//	  stackTrace, ctxError := shared.ExecuteLambda(func(ctx context.Context) {
+//			res, err = req.process(ctx, event) this runs the lambda's code
+//		})
+//
+//		if ctxError != nil {
+//			req.log.Error("request_timeout", ctxError, []models.LoggerObject{
+//				req.getEventAsLoggerObject(event),
+//				req.log.MapToLoggerObject("stack", map[string]interface{}{
+//					"s_trace": stackTrace,
+//				}),
+//			})
+//		}
+func ExecuteLambda(parentCtx context.Context, handler func(ctx context.Context)) (string, error) {
 	doneChan := make(chan struct{})
 
-	ctx, cancel := getContextWithLambdaTimeout(context.Background())
+	ctx, cancel := getContextWithLambdaTimeout(parentCtx)
 	defer cancel()
 
 	go func(ctx context.Context) {
