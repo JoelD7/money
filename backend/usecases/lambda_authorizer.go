@@ -154,7 +154,7 @@ func validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.
 	}
 
 	if err != nil {
-		return fmt.Errorf("jwt validation failed: %v", err)
+		return fmt.Errorf("%v: %w", err, models.ErrUnauthorized)
 	}
 
 	return nil
