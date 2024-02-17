@@ -60,7 +60,7 @@ var (
 	awsRegion     = env.GetString("REGION", "us-east-1")
 )
 
-type request struct {
+type requestInfo struct {
 	log            logger.LogAPI
 	secretsManager secrets.SecretManager
 	cacheRepo      cache.InvalidTokenManager
@@ -69,14 +69,14 @@ type request struct {
 	err            error
 }
 
-func (req *request) init() {
+func (req *requestInfo) init() {
 	req.startingTime = time.Now()
 	req.cacheRepo = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.client = restclient.New()
 }
 
-func (req *request) finish() {
+func (req *requestInfo) finish() {
 	defer func() {
 		err := req.log.Close()
 		if err != nil {
@@ -88,7 +88,7 @@ func (req *request) finish() {
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
-	req := &request{
+	req := &requestInfo{
 		log: logger.NewLogger(),
 	}
 
@@ -123,11 +123,7 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	return
 }
 
-func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest, doneChan chan struct{}) (events.APIGatewayCustomAuthorizerResponse, error) {
-	defer func() {
-		doneChan <- struct{}{}
-	}()
-
+func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
 	verifyToken := usecases.NewTokenVerifier(req.client, req.log, req.secretsManager, req.cacheRepo)
@@ -160,7 +156,7 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }
 
-func (req *request) getEventAsLoggerObject(event events.APIGatewayCustomAuthorizerRequest) models.LoggerObject {
+func (req *requestInfo) getEventAsLoggerObject(event events.APIGatewayCustomAuthorizerRequest) models.LoggerObject {
 	return req.log.MapToLoggerObject("authorizer_request", map[string]interface{}{
 		"s_type":       event.Type,
 		"s_method_arn": event.MethodArn,
