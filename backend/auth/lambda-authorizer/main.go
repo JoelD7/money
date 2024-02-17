@@ -95,10 +95,9 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	req.init()
 	defer req.finish()
 
-	errChan := make(chan error)
 	doneChan := make(chan struct{})
 
-	ctx, cancel := shared.GetContextWithLambdaTimeout(ctx, errChan)
+	ctx, cancel := shared.GetContextWithLambdaTimeout(ctx)
 	defer cancel()
 
 	go func() {
@@ -106,13 +105,13 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	}()
 
 	select {
-	case err = <-errChan:
-		req.err = err
+	case <-ctx.Done():
+		req.err = ctx.Err()
 
-		if err != nil {
+		if ctx.Err() != nil {
 			req.log.Error("request_timeout", req.err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
 
-			res = defaultDenyAllPolicy(event.MethodArn, req.err)
+			res = defaultDenyAllPolicy(event.MethodArn, nil)
 			err = nil
 			return
 		}
