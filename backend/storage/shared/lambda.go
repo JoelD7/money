@@ -5,21 +5,23 @@ import (
 	"context"
 	"regexp"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/JoelD7/money/backend/shared/env"
 )
 
 var (
-	// LAMBDA_TIMEOUT is the environment variable that indicates the timeout for the lambda function.
+	// LAMBDA_TIMEOUT is the environment variable that indicates the timeout for the lambda function in seconds.
 	// https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html#configuration-timeout-console
-	lambdaTimeout = env.GetString("LAMBDA_TIMEOUT", "10s")
+	lambdaTimeout = env.GetString("LAMBDA_TIMEOUT", "10")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 )
 
 // ExecuteLambda executes a lambda function's code and returns the stack trace and error in case of a timeout.
-// Takes the context from inside lambda.Start and creates a new context with the timeout of the lambda.
+// Takes the context(parentCtx) from inside lambda.Start and creates a new context with the timeout of the lambda.
+// The handler function represents the lambda's code.
 // For example: you would put something like this in the handler of the lambda:
 //
 //	  stackTrace, ctxError := shared.ExecuteLambda(func(ctx context.Context) {
@@ -65,14 +67,15 @@ func ExecuteLambda(parentCtx context.Context, handler func(ctx context.Context))
 // getContextWithLambdaTimeout returns a context with a timeout based on the invoking lambda function's timeout and a
 // cancel function to cancel the context(https://pkg.go.dev/context#WithTimeout).
 func getContextWithLambdaTimeout(parentCtx context.Context) (context.Context, context.CancelFunc) {
-	duration, err := time.ParseDuration(lambdaTimeout)
+	durationInt, err := strconv.Atoi(lambdaTimeout)
 	if err != nil {
-		duration = 10 * time.Second
+		return context.WithTimeout(parentCtx, 10*time.Second)
 	}
 
-	ctx, cancel := context.WithTimeout(parentCtx, duration)
+	//Context timeout should be 1 second less than the lambda timeout to avoid the lambda being killed by AWS.
+	durationInt--
 
-	return ctx, cancel
+	return context.WithTimeout(parentCtx, time.Duration(durationInt)*time.Second)
 }
 
 // getStackTrace returns a formatted stack trace of all the goroutines executing in the program.
