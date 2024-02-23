@@ -29,7 +29,6 @@ type IDGenerator interface {
 
 func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
-
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return nil, err
