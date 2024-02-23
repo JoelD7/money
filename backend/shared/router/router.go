@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/shared"
 	"net/http"
 )
 
@@ -39,7 +40,29 @@ func NewRouter() *Router {
 	}
 }
 
-func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (res *apigateway.Response, err error) {
+	stackTrace, ctxErr := shared.ExecuteLambda(ctx, func(ctx context.Context) {
+		res, err = router.executeHandle(ctx, request)
+	})
+
+	if ctxErr != nil {
+		router.log.Error("request_timeout", ctxErr, []models.LoggerObject{
+			router.log.MapToLoggerObject("stack", map[string]interface{}{
+				"s_trace": stackTrace,
+			}),
+		})
+
+		res = &apigateway.Response{
+			StatusCode: http.StatusInternalServerError,
+		}
+
+		err = nil
+	}
+
+	return
+}
+
+func (router *Router) executeHandle(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	if !router.isRoot() {
 		router.log.Error("router_handle_failed", errRouterIsNotRoot, nil)
 

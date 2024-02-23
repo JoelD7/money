@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/JoelD7/money/backend/storage/cache"
+	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
 	"strings"
 	"time"
@@ -57,11 +58,9 @@ const (
 var (
 	kidSecretName = env.GetString("KID_SECRET", "staging/money/rsa/kid")
 	awsRegion     = env.GetString("REGION", "us-east-1")
-
-	errUserNotAuthorized = errors.New("access to this user's data is forbidden")
 )
 
-type request struct {
+type requestInfo struct {
 	log            logger.LogAPI
 	secretsManager secrets.SecretManager
 	cacheRepo      cache.InvalidTokenManager
@@ -70,14 +69,14 @@ type request struct {
 	err            error
 }
 
-func (req *request) init() {
+func (req *requestInfo) init() {
 	req.startingTime = time.Now()
 	req.cacheRepo = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.client = restclient.New()
 }
 
-func (req *request) finish() {
+func (req *requestInfo) finish() {
 	defer func() {
 		err := req.log.Close()
 		if err != nil {
@@ -88,18 +87,31 @@ func (req *request) finish() {
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
-	req := &request{
+func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
+	req := &requestInfo{
 		log: logger.NewLogger(),
 	}
 
 	req.init()
 	defer req.finish()
 
-	return req.process(ctx, event)
+	stackTrace, ctxError := shared.ExecuteLambda(ctx, func(ctx context.Context) {
+		res, err = req.process(ctx, event)
+	})
+
+	if ctxError != nil {
+		req.log.Error("request_timeout", ctxError, []models.LoggerObject{
+			req.getEventAsLoggerObject(event),
+			req.log.MapToLoggerObject("stack", map[string]interface{}{
+				"s_trace": stackTrace,
+			}),
+		})
+	}
+
+	return
 }
 
-func (req *request) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
+func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
 	verifyToken := usecases.NewTokenVerifier(req.client, req.log, req.secretsManager, req.cacheRepo)
@@ -111,10 +123,16 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
-	if err != nil {
+	if errors.Is(err, models.ErrInvalidToken) {
 		req.log.Error("request_denied", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
 
 		return defaultDenyAllPolicy(event.MethodArn, err), nil
+	}
+
+	if err != nil {
+		req.log.Error("token_verification_failed", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+
+		return events.APIGatewayCustomAuthorizerResponse{}, err
 	}
 
 	principalID := subject
@@ -126,7 +144,7 @@ func (req *request) process(ctx context.Context, event events.APIGatewayCustomAu
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }
 
-func (req *request) getEventAsLoggerObject(event events.APIGatewayCustomAuthorizerRequest) models.LoggerObject {
+func (req *requestInfo) getEventAsLoggerObject(event events.APIGatewayCustomAuthorizerRequest) models.LoggerObject {
 	return req.log.MapToLoggerObject("authorizer_request", map[string]interface{}{
 		"s_type":       event.Type,
 		"s_method_arn": event.MethodArn,
@@ -137,8 +155,10 @@ func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAu
 	resp := NewAuthorizerResponse(methodArn, "user")
 	resp.DenyAllMethods()
 
-	resp.APIGatewayCustomAuthorizerResponse.Context = map[string]interface{}{
-		"stringKey": err.Error(),
+	if err != nil {
+		resp.APIGatewayCustomAuthorizerResponse.Context = map[string]interface{}{
+			"stringKey": err.Error(),
+		}
 	}
 
 	return resp.APIGatewayCustomAuthorizerResponse

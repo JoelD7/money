@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"time"
 )
@@ -51,6 +52,8 @@ func (l *LogMock) Error(eventName string, err error, objects []models.LoggerObje
 func (l *LogMock) Critical(eventName string, objects []models.LoggerObject) {
 	_, _ = l.Output.Write([]byte(eventName))
 }
-func (*LogMock) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {}
+func (*LogMock) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
+	fmt.Println("panic: ", panic)
+}
 
 func (l *LogMock) Close() error { return nil }

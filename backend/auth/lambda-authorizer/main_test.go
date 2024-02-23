@@ -31,7 +31,7 @@ func TestHandleRequest(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
-	req := &request{
+	req := &requestInfo{
 		cacheRepo:      cacheMock,
 		secretsManager: secretMock,
 		client:         mockRestClient,
@@ -63,7 +63,7 @@ func TestHandlerError(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
-	req := &request{
+	req := &requestInfo{
 		cacheRepo:      cacheMock,
 		secretsManager: secretMock,
 		client:         mockRestClient,
@@ -101,10 +101,9 @@ func TestHandlerError(t *testing.T) {
 
 		event.AuthorizationToken = ogToken
 		response, err := req.process(ctx, event)
-		c.Nil(err)
-		c.NotNil(response.Context["stringKey"])
-		c.Equal(models.ErrSigningKeyNotFound.Error(), response.Context["stringKey"])
-		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
+		c.ErrorIs(err, models.ErrSigningKeyNotFound)
+		c.Nil(response.Context["stringKey"])
+		c.Empty(response)
 		c.Contains(logMock.Output.String(), "getting_public_key_failed")
 		logMock.Output.Reset()
 	})
@@ -121,9 +120,8 @@ func TestHandlerError(t *testing.T) {
 		c.Nil(err)
 
 		response, err := req.process(ctx, event)
-		c.Nil(err)
-		c.Equal(secrets.ErrForceFailure.Error(), response.Context["stringKey"])
-		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
+		c.ErrorIs(err, secrets.ErrForceFailure)
+		c.Empty(response)
 		c.Contains(logMock.Output.String(), "getting_public_key_failed")
 		logMock.Output.Reset()
 	})
@@ -145,6 +143,10 @@ func TestHandlerError(t *testing.T) {
 	})
 
 	t.Run("JWT verification failed", func(t *testing.T) {
+		secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
+			return "123", nil
+		})
+
 		_ = invalidtoken.InitDynamoMock()
 
 		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
@@ -153,8 +155,8 @@ func TestHandlerError(t *testing.T) {
 		event.AuthorizationToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMiwiZXhwIjoxNTE2MjM5MDIyLCJpc3MiOiJodHRwczovLzM4cXNscGU4ZDkuZXhlY3V0ZS1hcGkudXMtZWFzdC0xLmFtYXpvbmF3cy5jb20vc3RhZ2luZyJ9.uOmHNc9EwOQvu6qfeksVaDuqy4t8TmIGgoECUpPONnennzeDP-DgfH__kwwazENCRtjy75lbI7wbOdQjFL7qrcjopvF9NR4Ygf1S3nqPeCs4Db_i2XqD8KMzNEm8JxJ6iwJRZ26NrZEgrXIvJapBJ-JTaWKjKZdKYi5jjvVmrMNbvvDP-ZjUuOfFYrKWXZeyIhYT2YK3tdx48-dZn7JwWoGWZPAei99Fw-QzbGk9gaGOjv119-4JLVUfRDGOwibD4eGgoRQn3VZHgFwW-8cJod6XoQcmTuq_jHDRa28jwMIob6XGtMyMGqW5SNvhO6JigtmeaPY9jqLVdbXY_oGWbA"
 
 		response, err := req.process(ctx, event)
-		c.Nil(err)
-		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
+		c.ErrorIs(err, models.ErrUnauthorized)
+		c.Empty(response)
 		c.Contains(logMock.Output.String(), "jwt_validation_failed")
 		logMock.Output.Reset()
 	})
