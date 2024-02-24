@@ -37,7 +37,7 @@ var (
 	ErrInvalidStartKey             = errors.New("invalid start key")
 	ErrCategoriesNotFound          = errors.New("categories not found")
 	ErrCategoryNotFound            = errors.New("category not found")
-	ErrMissingCategoryName         = errors.New("name should not be empty")
+	ErrMissingCategoryName         = errors.New("missing category name")
 	ErrMissingCategoryColor        = errors.New("missing color")
 	ErrInvalidHexColor             = errors.New("invalid hex color")
 	ErrInvalidBudget               = errors.New("budget must be greater than or equal to 0")

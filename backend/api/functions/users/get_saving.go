@@ -26,30 +26,24 @@ type getSavingRequest struct {
 	savingGoalRepo savingoal.Repository
 }
 
-func (request *getSavingRequest) init() {
+func (request *getSavingRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 	request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
+	request.log.SetHandler("get-saving")
 }
 
 func (request *getSavingRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getSavingHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getSavingRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

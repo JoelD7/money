@@ -30,7 +30,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-165-24-229.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-87-238-170.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -44,6 +44,7 @@ type LogAPI interface {
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
 	Close() error
 	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
+	SetHandler(handler string)
 }
 
 type Log struct {
@@ -76,6 +77,12 @@ func NewLoggerWithHandler(handler string) LogAPI {
 	}
 
 	return l
+}
+
+func (l *Log) SetHandler(handler string) {
+	if handler != "" && l.Service != "unknown" {
+		l.Service += "-" + handler
+	}
 }
 
 func (l *Log) Info(eventName string, objects []models.LoggerObject) {

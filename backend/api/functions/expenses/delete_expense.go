@@ -19,29 +19,22 @@ type deleteExpenseRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *deleteExpenseRequest) init() {
+func (request *deleteExpenseRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
 }
 
 func (request *deleteExpenseRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func deleteExpenseHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func deleteExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(deleteExpenseRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

@@ -30,30 +30,24 @@ type savingsResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *getSavingsRequest) init() {
+func (request *getSavingsRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 	request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
+	request.log.SetHandler("get-savings")
 }
 
 func (request *getSavingsRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getSavingsHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getSavingsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getSavingsRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	err := request.prepareRequest(req)

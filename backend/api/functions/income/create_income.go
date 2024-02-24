@@ -23,30 +23,23 @@ type createIncomeRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createIncomeRequest) init() {
+func (request *createIncomeRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
 }
 
 func (request *createIncomeRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func createIncomeHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func createIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(createIncomeRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

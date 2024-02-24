@@ -25,31 +25,24 @@ type updateExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *updateExpenseRequest) init() {
+func (request *updateExpenseRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
 }
 
 func (request *updateExpenseRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func updateExpenseHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func updateExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(updateExpenseRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

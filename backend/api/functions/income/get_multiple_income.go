@@ -28,29 +28,22 @@ type multipleIncomeResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *getMultipleIncomeRequest) init() {
+func (request *getMultipleIncomeRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
 }
 
 func (request *getMultipleIncomeRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getMultipleIncomeHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getMultipleIncomeRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	err := request.prepareRequest(req)

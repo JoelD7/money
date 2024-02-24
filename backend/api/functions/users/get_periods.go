@@ -27,29 +27,23 @@ type getPeriodsRequest struct {
 	pageSize     int
 }
 
-func (request *getPeriodsRequest) init() {
+func (request *getPeriodsRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
+	request.log.SetHandler("get-periods")
 }
 
 func (request *getPeriodsRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getPeriodsHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getPeriodsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getPeriodsRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

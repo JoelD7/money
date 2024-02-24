@@ -19,29 +19,23 @@ type getCategoriesRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *getCategoriesRequest) init() {
+func (request *getCategoriesRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLoggerWithHandler("get-categories")
+	request.log = log
+	request.log.SetHandler("get-categories")
 }
 
 func (request *getCategoriesRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getCategoriesHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getCategoriesHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getCategoriesRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

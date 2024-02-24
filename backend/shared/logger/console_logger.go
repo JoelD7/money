@@ -46,6 +46,8 @@ func (c *ConsoleLogger) Close() error {
 	return nil
 }
 
+func (c *ConsoleLogger) SetHandler(handler string) {}
+
 // MapToLoggerObject not implemented
 func (c *ConsoleLogger) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject {
 	return &ObjectWrapper{
