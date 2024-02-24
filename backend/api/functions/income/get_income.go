@@ -11,14 +11,14 @@ import (
 	"time"
 )
 
-type getIncomeRequest struct {
+type incomeGetRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	incomeRepo   income.Repository
 }
 
-func (request *getIncomeRequest) init(log logger.LogAPI) {
+func (request *incomeGetRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
@@ -26,12 +26,12 @@ func (request *getIncomeRequest) init(log logger.LogAPI) {
 	request.log = log
 }
 
-func (request *getIncomeRequest) finish() {
+func (request *incomeGetRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
 func getIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getIncomeRequest)
+	request := new(incomeGetRequest)
 
 	request.init(log)
 	defer request.finish()
@@ -39,7 +39,7 @@ func getIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Re
 	return request.process(ctx, req)
 }
 
-func (request *getIncomeRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	incomeID, ok := req.PathParameters["incomeID"]
 	if !ok || incomeID == "" {
 		request.err = models.ErrMissingIncomeID
