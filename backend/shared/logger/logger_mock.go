@@ -56,4 +56,6 @@ func (*LogMock) LogLambdaTime(startingTime time.Time, err error, panic interface
 	fmt.Println("panic: ", panic)
 }
 
+func (l *LogMock) SetHandler(handler string) {}
+
 func (l *LogMock) Close() error { return nil }

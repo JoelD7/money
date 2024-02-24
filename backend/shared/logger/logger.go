@@ -44,6 +44,7 @@ type LogAPI interface {
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
 	Close() error
 	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
+	SetHandler(handler string)
 }
 
 type Log struct {
@@ -76,6 +77,12 @@ func NewLoggerWithHandler(handler string) LogAPI {
 	}
 
 	return l
+}
+
+func (l *Log) SetHandler(handler string) {
+	if handler != "" && l.Service != "unknown" {
+		l.Service += "-" + handler
+	}
 }
 
 func (l *Log) Info(eventName string, objects []models.LoggerObject) {
