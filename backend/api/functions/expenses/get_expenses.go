@@ -31,30 +31,23 @@ type getExpensesRequest struct {
 	pageSize     int
 }
 
-func (request *getExpensesRequest) init() {
+func (request *getExpensesRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
 }
 
 func (request *getExpensesRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getExpensesHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getExpensesHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getExpensesRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	err := request.prepareRequest(req)
