@@ -18,33 +18,23 @@ type deletePeriodRequest struct {
 	periodRepo   period.Repository
 }
 
-type deletePeriodResponse struct {
-	ID string `json:"id"`
-}
-
-func (request *deletePeriodRequest) init() {
+func (request *deletePeriodRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
+	request.log.SetHandler("delete-period")
 }
 
 func (request *deletePeriodRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func deletePeriodHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func deletePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(deletePeriodRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

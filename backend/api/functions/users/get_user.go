@@ -24,31 +24,25 @@ type getUserRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *getUserRequest) init() {
+func (request *getUserRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
 	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLoggerWithHandler("get-user")
+	request.log = log
+	request.log.SetHandler("get-user")
 }
 
 func (request *getUserRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getUserHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getUserHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getUserRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

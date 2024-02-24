@@ -22,29 +22,23 @@ type createCategoryRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *createCategoryRequest) init() {
+func (request *createCategoryRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.userRepo = users.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLoggerWithHandler("update-category")
+	request.log = log
+	request.log.SetHandler("create-category")
 }
 
 func (request *createCategoryRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func createCategoryHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func createCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(createCategoryRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

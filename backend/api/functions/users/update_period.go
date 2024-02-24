@@ -20,29 +20,23 @@ type updatePeriodRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *updatePeriodRequest) init() {
+func (request *updatePeriodRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
+	request.log.SetHandler("update-period")
 }
 
 func (request *updatePeriodRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func updatePeriodHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func updatePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(updatePeriodRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)

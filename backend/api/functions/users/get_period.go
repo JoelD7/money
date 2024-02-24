@@ -18,29 +18,23 @@ type getPeriodRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *getPeriodRequest) init() {
+func (request *getPeriodRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	request.periodRepo = period.NewDynamoRepository(dynamoClient)
 	request.startingTime = time.Now()
-	request.log = logger.NewLogger()
+	request.log = log
+	request.log.SetHandler("get-period")
 }
 
 func (request *getPeriodRequest) finish() {
-	defer func() {
-		err := request.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getPeriodHandler(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func getPeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	request := new(getPeriodRequest)
 
-	request.init()
+	request.init(log)
 	defer request.finish()
 
 	return request.process(ctx, req)
