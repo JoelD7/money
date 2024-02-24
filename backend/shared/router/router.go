@@ -16,7 +16,12 @@ var (
 	errPathNotDefined  = errors.New("this path does not have a handler")
 )
 
-type Handler func(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error)
+// Handler type, defines the function signature for an APIGateway lambda handler.
+// Takes the following arguments:
+//  1. context provided by the AWS Lambda runtime,
+//  2. a logger instance, provided by the router so that both the router and the lambda function use the same logger connection,
+//  3. and the request object provided by APIGateway.
+type Handler func(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error)
 
 type Router struct {
 	path           string
@@ -28,7 +33,7 @@ type Router struct {
 
 func NewRouter() *Router {
 	return &Router{
-		log: logger.NewConsoleLogger("router"),
+		log: logger.NewLogger(),
 		methodHandlers: map[string]map[string]Handler{
 			http.MethodGet:    make(map[string]Handler),
 			http.MethodHead:   make(map[string]Handler),
@@ -41,6 +46,13 @@ func NewRouter() *Router {
 }
 
 func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (res *apigateway.Response, err error) {
+	defer func() {
+		closeErr := router.log.Close()
+		if closeErr != nil {
+			panic(closeErr)
+		}
+	}()
+
 	stackTrace, ctxErr := shared.ExecuteLambda(ctx, func(ctx context.Context) {
 		res, err = router.executeHandle(ctx, request)
 	})
@@ -93,13 +105,10 @@ func (router *Router) executeHandle(ctx context.Context, request *apigateway.Req
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
-			//In a regular, public API this error shouldn't be returned. I do it here because it wasn't possible
-			//to use the logger here in the router. Look notes for explanation.
-			Body: errPathNotDefined.Error(),
 		}, nil
 	}
 
-	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, request)
+	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, router.log, request)
 }
 
 func (router *Router) Route(path string, fn func(r *Router)) {
