@@ -53,7 +53,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	saveNewUser := usecases.NewUserCreator(req.userRepo, req.log)
@@ -63,7 +63,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("save_new_user_failed", err, []models.LoggerObject{request})
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

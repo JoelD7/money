@@ -48,7 +48,7 @@ func (request *createPeriodRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
@@ -56,7 +56,7 @@ func (request *createPeriodRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	createPeriod := usecases.NewPeriodCreator(request.periodRepo, request.log)
@@ -66,10 +66,10 @@ func (request *createPeriodRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("create_period_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusCreated, createdPeriod), nil
+	return req.NewJSONResponse(http.StatusCreated, createdPeriod), nil
 }
 
 func (request *createPeriodRequest) validateCreateRequestBody(req *apigateway.Request) (*models.Period, error) {

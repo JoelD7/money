@@ -53,7 +53,7 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("update_input_validation_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	updateSaving := usecases.NewSavingUpdater(request.savingsRepo, request.periodRepo, request.savingGoalRepo)
@@ -62,10 +62,10 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("update_saving_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, saving), nil
+	return req.NewJSONResponse(http.StatusOK, saving), nil
 }
 
 func (request *updateSavingRequest) validateUpdateInputs(req *apigateway.Request) (*models.Saving, error) {

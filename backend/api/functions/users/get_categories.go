@@ -47,14 +47,14 @@ func (request *getCategoriesRequest) process(ctx context.Context, req *apigatewa
 		request.err = err
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
 		request.log.Error("invalid_username", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	getCategories := usecases.NewCategoriesGetter(request.userRepo)
@@ -64,8 +64,8 @@ func (request *getCategoriesRequest) process(ctx context.Context, req *apigatewa
 		request.err = err
 		request.log.Error("get_categories_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, categories), nil
+	return req.NewJSONResponse(http.StatusOK, categories), nil
 }

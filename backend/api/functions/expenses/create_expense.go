@@ -52,14 +52,14 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 	if err != nil {
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	expense, err := validateInput(req, username)
 	if err != nil {
 		request.log.Error("validate_input_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.periodRepo)
@@ -68,10 +68,10 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 	if err != nil {
 		request.log.Error("create_expense_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusCreated, newExpense), nil
+	return req.NewJSONResponse(http.StatusCreated, newExpense), nil
 }
 
 func validateInput(req *apigateway.Request, username string) (*models.Expense, error) {

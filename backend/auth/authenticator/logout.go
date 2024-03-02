@@ -61,7 +61,7 @@ func (req *requestLogoutHandler) processLogout(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("getting_refresh_token_cookie_failed", err, nil)
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	logout := usecases.NewUserLogout(req.userRepo, req.invalidTokenManager, req.log)
@@ -71,14 +71,14 @@ func (req *requestLogoutHandler) processLogout(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("logout_failed", err, nil)
 
-		return apigateway.NewErrorResponse(errUserNotFound), nil
+		return request.NewErrorResponse(errUserNotFound), nil
 	}
 
 	if err != nil {
 		req.err = err
 		req.log.Error("logout_failed", err, nil)
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	setCookieHeader := map[string]string{

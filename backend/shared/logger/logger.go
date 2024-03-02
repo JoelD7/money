@@ -24,14 +24,14 @@ const (
 
 	retries           = 3
 	backoffFactor     = 2
-	connectionTimeout = time.Second * 4
+	connectionTimeout = time.Second * 3
 	//leave this here just in case you decide to add custom log timestamps
 	timestampLayout = "2006-01-02T15:04:05.999999999Z"
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-100-24-38-40.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-23-22-49-129.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)

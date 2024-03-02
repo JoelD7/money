@@ -46,7 +46,7 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 		request.err = models.ErrMissingPeriodID
 		request.log.Error("missing_period_id", request.err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(models.ErrMissingPeriodID), nil
+		return req.NewErrorResponse(models.ErrMissingPeriodID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
@@ -54,7 +54,7 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 		request.err = err
 		request.log.Error("get_username_from_context_failed", request.err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	getPeriod := usecases.NewPeriodGetter(request.periodRepo)
@@ -64,8 +64,8 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 		request.err = err
 		request.log.Error("get_period_failed", request.err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, userPeriod), nil
+	return req.NewJSONResponse(http.StatusOK, userPeriod), nil
 }

@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	origin = env.GetString("CORS_ORIGIN", "*")
+	allowedOrigins    = env.GetString("CORS_ORIGIN", "https://localhost")
+	allowedOriginsMap = map[string]struct{}{}
 
 	responseByErrors = map[error]Error{
 		models.ErrUserNotFound:                   {HTTPCode: http.StatusNotFound, Message: models.ErrUserNotFound.Error()},
@@ -72,37 +73,51 @@ var (
 type Response events.APIGatewayProxyResponse
 type Request events.APIGatewayProxyRequest
 
+func init() {
+	origins := strings.Split(allowedOrigins, ";")
+	for _, origin := range origins {
+		allowedOriginsMap[origin] = struct{}{}
+	}
+}
+
 // NewErrorResponse returns an error response
-func NewErrorResponse(err error) *Response {
+func (req *Request) NewErrorResponse(err error) *Response {
 	var knownError *Error
 	if errors.As(err, &knownError) {
-		return NewJSONResponse(knownError.HTTPCode, knownError.Message)
+		return req.NewJSONResponse(knownError.HTTPCode, knownError.Message)
 	}
 
 	for mappedErr, responseErr := range responseByErrors {
 		if errors.Is(err, mappedErr) {
-			return NewJSONResponse(responseErr.HTTPCode, responseErr.Message)
+			return req.NewJSONResponse(responseErr.HTTPCode, responseErr.Message)
 		}
 	}
 
-	return NewJSONResponse(ErrInternalError.HTTPCode, ErrInternalError.Message)
+	return req.NewJSONResponse(ErrInternalError.HTTPCode, ErrInternalError.Message)
 }
 
-// NewJSONResponse creates a new JSON response given a serializable `v`
-func NewJSONResponse(statusCode int, v interface{}) *Response {
+// NewJSONResponse creates a new JSON response given a serializable `body`
+func (req *Request) NewJSONResponse(statusCode int, body interface{}) *Response {
+	origin := req.Headers["Origin"]
+
+	allowOriginHeader := ""
+	if _, ok := allowedOriginsMap[origin]; ok {
+		allowOriginHeader = origin
+	}
+
 	headers := map[string]string{
 		"Content-Type":                "application/json",
-		"Access-Control-Allow-Origin": origin,
+		"Access-Control-Allow-Origin": allowOriginHeader,
 		"Cache-Control":               "no-store",
 		"Pragma":                      "no-cache",
 		"Strict-Transport-Security":   "max-age=63072000; includeSubdomains; preload",
 	}
 
-	if origin != "*" {
+	if allowedOrigins != "*" {
 		headers["Access-Control-Allow-Credentials"] = "true"
 	}
 
-	strData, ok := v.(string)
+	strData, ok := body.(string)
 	if ok {
 		return &Response{
 			StatusCode: statusCode,
@@ -111,9 +126,9 @@ func NewJSONResponse(statusCode int, v interface{}) *Response {
 		}
 	}
 
-	data, err := json.Marshal(v)
+	data, err := json.Marshal(body)
 	if err != nil {
-		return NewErrorResponse(errors.New("failed to marshal response"))
+		return req.NewErrorResponse(errors.New("failed to marshal response"))
 	}
 
 	return &Response{

@@ -65,7 +65,7 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 		req.err = err
 		req.log.Error("getting_refresh_token_cookie_failed", err, nil)
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	validateRefreshToken := usecases.NewRefreshTokenValidator(req.userRepo, req.log)
@@ -75,31 +75,31 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 	if err != nil && errors.Is(err, models.ErrInvalidToken) {
 		req.err = err
 
-		return req.handleValidationError(ctx, user)
+		return req.handleValidationError(ctx, user, request)
 	}
 
 	if errors.Is(err, models.ErrUserNotFound) {
-		return apigateway.NewErrorResponse(errUserNotFound), nil
+		return request.NewErrorResponse(errUserNotFound), nil
 	}
 
 	if err != nil {
 		req.err = err
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
 
 	accessToken, refreshToken, err := generateTokens(ctx, user)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	response := &accessTokenResponse{accessToken.Value}
 
 	data, err := json.Marshal(response)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	setCookieHeader := map[string]string{
@@ -117,12 +117,12 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 	}, nil
 }
 
-func (req *requestTokenHandler) handleValidationError(ctx context.Context, user *models.User) (*apigateway.Response, error) {
+func (req *requestTokenHandler) handleValidationError(ctx context.Context, user *models.User, request *apigateway.Request) (*apigateway.Response, error) {
 	invalidateTokens := usecases.NewTokenInvalidator(req.invalidTokenManager, req.log)
 
 	err := invalidateTokens(ctx, user)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

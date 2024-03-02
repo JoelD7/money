@@ -53,14 +53,14 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
 		request.log.Error("invalid_username", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)
@@ -74,15 +74,15 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 		request.err = err
 		request.log.Warning("user_remainder_could_not_be_calculated", err, []models.LoggerObject{req})
 
-		return apigateway.NewJSONResponse(http.StatusOK, user), nil
+		return req.NewJSONResponse(http.StatusOK, user), nil
 	}
 
 	if err != nil {
 		request.err = err
 		request.log.Error("user_fetching_failed", err, nil)
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, user), nil
+	return req.NewJSONResponse(http.StatusOK, user), nil
 }

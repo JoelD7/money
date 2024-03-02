@@ -45,7 +45,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 		request.err = models.ErrMissingIncomeID
 
 		request.log.Error("missing_income_id", nil, []models.LoggerObject{req})
-		return apigateway.NewErrorResponse(models.ErrMissingIncomeID), nil
+		return req.NewErrorResponse(models.ErrMissingIncomeID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
@@ -53,7 +53,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 		request.err = err
 
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	getIncome := usecases.NewIncomeGetter(request.incomeRepo)
@@ -63,8 +63,8 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 		request.err = err
 
 		request.log.Error("get_income_failed", err, []models.LoggerObject{req})
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, userIncome), nil
+	return req.NewJSONResponse(http.StatusOK, userIncome), nil
 }

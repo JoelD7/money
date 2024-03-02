@@ -55,14 +55,14 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		request.err = errNoCategoryIDInPath
 		request.log.Error("get_category_id_from_path_failed", errNoCategoryIDInPath, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(errNoCategoryIDInPath), nil
+		return req.NewErrorResponse(errNoCategoryIDInPath), nil
 	}
 
 	requestCategory, err := validateRequestBody(req)
 	if err != nil {
 		request.log.Error("request_body_validation_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
@@ -70,14 +70,14 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		request.err = err
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
 		request.log.Error("invalid_username", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	updateCategory := usecases.NewCategoryUpdater(request.userRepo)
@@ -87,7 +87,7 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 		request.err = err
 		request.log.Error("update_category_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

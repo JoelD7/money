@@ -62,7 +62,7 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 		req.err = err
 		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	authenticate := usecases.NewUserAuthenticator(req.userRepo, req.log)
@@ -70,23 +70,23 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 
 	user, err := authenticate(ctx, reqBody.Username, reqBody.Password)
 	if errors.Is(err, models.ErrUserNotFound) {
-		return apigateway.NewErrorResponse(errUserNotFound), nil
+		return request.NewErrorResponse(errUserNotFound), nil
 	}
 
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	accessToken, refreshToken, err := generateTokens(ctx, user)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	response := &accessTokenResponse{accessToken.Value}
 
 	data, err := json.Marshal(response)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	setCookieHeader := map[string]string{

@@ -54,14 +54,14 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 	if !ok {
 		request.log.Error("missing_saving_id", errMissingSavingID, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(errMissingSavingID), nil
+		return req.NewErrorResponse(errMissingSavingID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
@@ -72,7 +72,7 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 			}),
 		})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.savingGoalRepo, request.log)
@@ -81,14 +81,14 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 	if errors.Is(err, models.ErrSavingGoalNameSettingFailed) {
 		request.log.Error("get_saving_goal_name_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewJSONResponse(http.StatusOK, saving), nil
+		return req.NewJSONResponse(http.StatusOK, saving), nil
 	}
 
 	if err != nil {
 		request.log.Error("get_saving_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, saving), nil
+	return req.NewJSONResponse(http.StatusOK, saving), nil
 }
