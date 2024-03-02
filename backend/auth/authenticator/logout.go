@@ -39,7 +39,8 @@ func (req *requestLogoutHandler) initLogoutHandler(log logger.LogAPI) {
 	req.userRepo = users.NewDynamoRepository(dynamoClient)
 	req.invalidTokenManager = cache.NewRedisCache()
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("logout")
+	req.log = log
+	req.log.SetHandler("logout")
 }
 
 func (req *requestLogoutHandler) finish() {
