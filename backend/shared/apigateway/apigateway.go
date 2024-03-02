@@ -115,6 +115,7 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}) *Response 
 
 	if allowedOrigins != "*" {
 		headers["Access-Control-Allow-Credentials"] = "true"
+		headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE"
 	}
 
 	strData, ok := body.(string)
