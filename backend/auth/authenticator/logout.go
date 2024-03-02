@@ -24,16 +24,16 @@ type requestLogoutHandler struct {
 	invalidTokenManager cache.InvalidTokenManager
 }
 
-func logoutHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func logoutHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestLogoutHandler{}
 
-	req.initLogoutHandler()
+	req.initLogoutHandler(log)
 	defer req.finish()
 
 	return req.processLogout(ctx, request)
 }
 
-func (req *requestLogoutHandler) initLogoutHandler() {
+func (req *requestLogoutHandler) initLogoutHandler(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	req.userRepo = users.NewDynamoRepository(dynamoClient)

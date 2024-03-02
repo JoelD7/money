@@ -19,21 +19,22 @@ type requestSignUpHandler struct {
 	userRepo     users.Repository
 }
 
-func signUpHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestSignUpHandler{}
 
-	req.initSignUpHandler()
+	req.initSignUpHandler(log)
 	defer req.finish()
 
 	return req.processSignUp(ctx, request)
 }
 
-func (req *requestSignUpHandler) initSignUpHandler() {
+func (req *requestSignUpHandler) initSignUpHandler(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	req.userRepo = users.NewDynamoRepository(dynamoClient)
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("sign-up")
+	req.log = log
+	req.log.SetHandler("sign-up")
 }
 
 func (req *requestSignUpHandler) finish() {

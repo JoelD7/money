@@ -19,16 +19,16 @@ type requestJwksHandler struct {
 	secretsManager secrets.SecretManager
 }
 
-func jwksHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func jwksHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestJwksHandler{}
 
-	req.initJwksHandler()
+	req.initJwksHandler(log)
 	defer req.finish()
 
 	return req.processJWKS(ctx, request)
 }
 
-func (req *requestJwksHandler) initJwksHandler() {
+func (req *requestJwksHandler) initJwksHandler(log logger.LogAPI) {
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = logger.NewLoggerWithHandler("jwks")

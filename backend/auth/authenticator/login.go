@@ -27,22 +27,23 @@ type accessTokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func logInHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestLoginHandler{}
 
-	req.initLoginHandler()
+	req.initLoginHandler(log)
 	defer req.finish()
 
 	return req.processLogin(ctx, request)
 }
 
-func (req *requestLoginHandler) initLoginHandler() {
+func (req *requestLoginHandler) initLoginHandler(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	req.userRepo = users.NewDynamoRepository(dynamoClient)
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("log-in")
+	req.log = log
+	req.log.SetHandler("login")
 }
 
 func (req *requestLoginHandler) finish() {

@@ -27,16 +27,16 @@ type requestTokenHandler struct {
 	secretsManager      secrets.SecretManager
 }
 
-func tokenHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func tokenHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestTokenHandler{}
 
-	req.initTokenHandler()
+	req.initTokenHandler(log)
 	defer req.finish()
 
 	return req.processToken(ctx, request)
 }
 
-func (req *requestTokenHandler) initTokenHandler() {
+func (req *requestTokenHandler) initTokenHandler(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	req.userRepo = users.NewDynamoRepository(dynamoClient)
