@@ -67,9 +67,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		return request.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusCreated,
-	}, nil
+	return request.NewJSONResponse(http.StatusCreated, nil), nil
 }
 
 func validateSingUpInput(request *apigateway.Request) (*signUpBody, error) {
