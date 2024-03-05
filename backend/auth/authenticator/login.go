@@ -47,13 +47,6 @@ func (req *requestLoginHandler) initLoginHandler(log logger.LogAPI) {
 }
 
 func (req *requestLoginHandler) finish() {
-	defer func() {
-		err := req.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 

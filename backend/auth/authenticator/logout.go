@@ -44,13 +44,6 @@ func (req *requestLogoutHandler) initLogoutHandler(log logger.LogAPI) {
 }
 
 func (req *requestLogoutHandler) finish() {
-	defer func() {
-		err := req.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 

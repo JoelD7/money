@@ -19,6 +19,10 @@ type requestSignUpHandler struct {
 	userRepo     users.Repository
 }
 
+func optionsHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+	return request.NewJSONResponse(http.StatusOK, nil), nil
+}
+
 func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestSignUpHandler{}
 
@@ -38,13 +42,6 @@ func (req *requestSignUpHandler) initSignUpHandler(log logger.LogAPI) {
 }
 
 func (req *requestSignUpHandler) finish() {
-	defer func() {
-		err := req.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
