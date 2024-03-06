@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	allowedOrigins    = env.GetString("CORS_ORIGIN", "https://localhost")
+	allowedOrigins    = env.GetString("CORS_ORIGIN", "http://localhost:5173")
 	allowedOriginsMap = map[string]struct{}{}
 
 	responseByErrors = map[error]Error{
@@ -98,25 +98,24 @@ func (req *Request) NewErrorResponse(err error) *Response {
 
 // NewJSONResponse creates a new JSON response given a serializable `body`
 func (req *Request) NewJSONResponse(statusCode int, body interface{}) *Response {
-	origin := req.Headers["Origin"]
-
-	allowOriginHeader := ""
-	if _, ok := allowedOriginsMap[origin]; ok {
-		allowOriginHeader = origin
+	headers := map[string]string{
+		"Content-Type":              "application/json",
+		"Cache-Control":             "no-store",
+		"Pragma":                    "no-cache",
+		"Strict-Transport-Security": "max-age=63072000; includeSubdomains; preload",
 	}
 
-	headers := map[string]string{
-		"Content-Type":                "application/json",
-		"Access-Control-Allow-Origin": allowOriginHeader,
-		"Cache-Control":               "no-store",
-		"Pragma":                      "no-cache",
-		"Strict-Transport-Security":   "max-age=63072000; includeSubdomains; preload",
+	origin := req.Headers["origin"]
+
+	_, ok := allowedOriginsMap[origin]
+	if ok {
+		headers["Access-Control-Allow-Origin"] = origin
 	}
 
 	if allowedOrigins != "*" {
 		headers["Access-Control-Allow-Credentials"] = "true"
-		headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS, PUT, DELETE"
-		headers["Access-Control-Allow-Headers"] = "Content-Type"
+		headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS,PUT,DELETE"
+		headers["Access-Control-Allow-Headers"] = "Content-Type,Origin"
 	}
 
 	strData, ok := body.(string)

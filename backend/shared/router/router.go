@@ -35,12 +35,13 @@ func NewRouter() *Router {
 	return &Router{
 		log: logger.NewLogger(),
 		methodHandlers: map[string]map[string]Handler{
-			http.MethodGet:    make(map[string]Handler),
-			http.MethodHead:   make(map[string]Handler),
-			http.MethodPost:   make(map[string]Handler),
-			http.MethodPatch:  make(map[string]Handler),
-			http.MethodPut:    make(map[string]Handler),
-			http.MethodDelete: make(map[string]Handler),
+			http.MethodGet:     make(map[string]Handler),
+			http.MethodHead:    make(map[string]Handler),
+			http.MethodPost:    make(map[string]Handler),
+			http.MethodPatch:   make(map[string]Handler),
+			http.MethodPut:     make(map[string]Handler),
+			http.MethodDelete:  make(map[string]Handler),
+			http.MethodOptions: make(map[string]Handler),
 		},
 	}
 }
@@ -151,6 +152,10 @@ func (router *Router) Delete(pattern string, handler Handler) {
 	router.handlerAssigner(pattern, http.MethodDelete, handler)
 }
 
+func (router *Router) Options(pattern string, handler Handler) {
+	router.handlerAssigner(pattern, http.MethodOptions, handler)
+}
+
 func (router *Router) handlerAssigner(pattern string, method string, handler Handler) {
 	if router.isRoot() && pattern != "/" {
 		panic(fmt.Sprintf("This router is a root router. The pattern of a root routers should be '/', but is '%s'", pattern))
@@ -189,6 +194,11 @@ func (router *Router) getEndpoint(pattern string) string {
 	var endpoint string
 	for i := len(endpointParts) - 1; i >= 0; i-- {
 		endpoint += endpointParts[i]
+	}
+
+	//If the endpoint parts are empty, then the endpoint is the root
+	if endpoint == "" {
+		return "/"
 	}
 
 	return endpoint

@@ -103,7 +103,10 @@ func main() {
 
 	route.Route("/auth", func(r *router.Router) {
 		r.Post("/login", logInHandler)
+
 		r.Post("/signup", signUpHandler)
+		r.Options("/signup", optionsHandler)
+
 		r.Post("/token", tokenHandler)
 		r.Get("/jwks", jwksHandler)
 		r.Post("/logout", logoutHandler)

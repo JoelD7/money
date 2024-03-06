@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -18,6 +19,7 @@ func TestHandle(t *testing.T) {
 	ctx := context.Background()
 
 	rootRouter.Route("/", func(r *Router) {
+		r.Options("/", dummyHandler())
 		r.Route("/users", func(r *Router) {
 			r.Route("/{userID}", func(r *Router) {
 				r.Get("/", dummyHandler())
@@ -27,6 +29,14 @@ func TestHandle(t *testing.T) {
 
 				r.Get("/categories", dummyHandler())
 			})
+		})
+
+		r.Route("/savings", func(r *Router) {
+			r.Get("/{savingID}", dummyHandler())
+			r.Get("/", dummyHandler())
+			r.Post("/", dummyHandler())
+			r.Put("/{savingID}", dummyHandler())
+			r.Delete("/", dummyHandler())
 		})
 	})
 
@@ -50,6 +60,15 @@ func TestHandle(t *testing.T) {
 	response, err = rootRouter.Handle(ctx, request)
 	c.Nil(err)
 	c.Equal("Method: POST, Endpoint: /users/{userID}", response.Body)
+
+	request = &apigateway.Request{
+		HTTPMethod: http.MethodOptions,
+		Resource:   "/",
+	}
+
+	response, err = rootRouter.Handle(ctx, request)
+	c.Nil(err)
+	c.Equal(http.StatusOK, response.StatusCode)
 }
 
 func TestHandleError(t *testing.T) {
@@ -187,7 +206,7 @@ func dummyRouter() *Router {
 }
 
 func dummyHandler() Handler {
-	return func(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+	return func(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 		return &apigateway.Response{
 			Body: fmt.Sprintf("Method: %s, Endpoint: %s", request.HTTPMethod, request.Resource),
 		}, nil
