@@ -53,21 +53,21 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 	if !ok || expenseID == "" {
 		request.log.Error("missing_expense_id", nil, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(models.ErrMissingExpenseID), nil
+		return req.NewErrorResponse(models.ErrMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	expense, err := validateUpdateInput(req, username)
 	if err != nil {
 		request.log.Error("validate_input_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	updateExpense := usecases.NewExpenseUpdater(request.expensesRepo, request.periodRepo, request.userRepo)
@@ -76,10 +76,10 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 	if err != nil {
 		request.log.Error("update_expense_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, updatedExpense), nil
+	return req.NewJSONResponse(http.StatusOK, updatedExpense), nil
 }
 
 func validateUpdateInput(req *apigateway.Request, username string) (*models.Expense, error) {

@@ -48,7 +48,7 @@ func getMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, req *apiga
 
 	err := request.prepareRequest(req)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return request.routeToHandlers(ctx, req)
@@ -104,7 +104,7 @@ func (request *getMultipleIncomeRequest) getIncomeByPeriod(ctx context.Context, 
 		request.err = models.ErrMissingPeriod
 
 		request.log.Error("missing_period", nil, []models.LoggerObject{req})
-		return apigateway.NewErrorResponse(models.ErrMissingPeriod), nil
+		return req.NewErrorResponse(models.ErrMissingPeriod), nil
 	}
 
 	getIncomeByPeriod := usecases.NewIncomeByPeriodGetter(request.incomeRepo)
@@ -113,7 +113,7 @@ func (request *getMultipleIncomeRequest) getIncomeByPeriod(ctx context.Context, 
 	if err != nil {
 		request.err = err
 		request.log.Error("get_income_by_period_failed", err, []models.LoggerObject{req})
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	response := &multipleIncomeResponse{
@@ -121,7 +121,7 @@ func (request *getMultipleIncomeRequest) getIncomeByPeriod(ctx context.Context, 
 		NextKey: nextKey,
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, response), nil
+	return req.NewJSONResponse(http.StatusOK, response), nil
 }
 
 func (request *getMultipleIncomeRequest) getAllIncome(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
@@ -131,7 +131,7 @@ func (request *getMultipleIncomeRequest) getAllIncome(ctx context.Context, req *
 	if err != nil {
 		request.err = err
 		request.log.Error("get_all_income_failed", err, []models.LoggerObject{req})
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	response := &multipleIncomeResponse{
@@ -139,5 +139,5 @@ func (request *getMultipleIncomeRequest) getAllIncome(ctx context.Context, req *
 		NextKey: nextKey,
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, response), nil
+	return req.NewJSONResponse(http.StatusOK, response), nil
 }

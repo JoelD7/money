@@ -19,36 +19,29 @@ type requestJwksHandler struct {
 	secretsManager secrets.SecretManager
 }
 
-func jwksHandler(ctx context.Context, _ *apigateway.Request) (*apigateway.Response, error) {
+func jwksHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestJwksHandler{}
 
-	req.initJwksHandler()
+	req.initJwksHandler(log)
 	defer req.finish()
 
-	return req.processJWKS(ctx)
+	return req.processJWKS(ctx, request)
 }
 
-func (req *requestJwksHandler) initJwksHandler() {
+func (req *requestJwksHandler) initJwksHandler(log logger.LogAPI) {
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = logger.NewLoggerWithHandler("jwks")
 }
 
 func (req *requestJwksHandler) finish() {
-	defer func() {
-		err := req.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestJwksHandler) processJWKS(ctx context.Context) (*apigateway.Response, error) {
+func (req *requestJwksHandler) processJWKS(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	jsonWebKeySet, err := usecases.GetJsonWebKeySet(ctx, req.secretsManager, req.log)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	jsonResponse, err := json.Marshal(jsonWebKeySet)
@@ -56,7 +49,7 @@ func (req *requestJwksHandler) processJWKS(ctx context.Context) (*apigateway.Res
 		req.err = err
 		req.log.Error("jwks_response_marshall_failed", err, nil)
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

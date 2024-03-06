@@ -1,8 +1,9 @@
 import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
-import {Home, PeriodDetail} from "./pages";
+import {Home, PeriodDetail, SignUp} from "./pages";
 import {Navbar} from "./components";
 import {Colors} from "./assets";
+import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
 declare module '@mui/material/styles' {
     interface Palette {
@@ -91,6 +92,7 @@ const theme: Theme = createTheme({
 })
 
 function App() {
+    const queryClient = new QueryClient()
     const mdUp: boolean = useMediaQuery(theme.breakpoints.up('md'));
     const containerStyles = {
         backgroundColor: "#fafafa",
@@ -99,15 +101,17 @@ function App() {
     return (
         <>
             <ThemeProvider theme={theme}>
-                <Navbar/>
-                <Container
-                    sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
-                    maxWidth={false}>
-                    <div className={"flex max-w-[1200px] m-auto"}>
-                        <PeriodDetail/>
-                    </div>
-                    {/*<Home></Home>*/}
-                </Container>
+                <QueryClientProvider client={queryClient}>
+                    {/*<Navbar/>*/}
+                    <SignUp/>
+                    <Container
+                        sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
+                        maxWidth={false}>
+                        <div className={"flex max-w-[1200px] m-auto"}>
+
+                        </div>
+                    </Container>
+                </QueryClientProvider>
             </ThemeProvider>
 
         </>

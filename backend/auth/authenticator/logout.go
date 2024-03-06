@@ -24,32 +24,26 @@ type requestLogoutHandler struct {
 	invalidTokenManager cache.InvalidTokenManager
 }
 
-func logoutHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func logoutHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestLogoutHandler{}
 
-	req.initLogoutHandler()
+	req.initLogoutHandler(log)
 	defer req.finish()
 
 	return req.processLogout(ctx, request)
 }
 
-func (req *requestLogoutHandler) initLogoutHandler() {
+func (req *requestLogoutHandler) initLogoutHandler(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	req.userRepo = users.NewDynamoRepository(dynamoClient)
 	req.invalidTokenManager = cache.NewRedisCache()
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("logout")
+	req.log = log
+	req.log.SetHandler("logout")
 }
 
 func (req *requestLogoutHandler) finish() {
-	defer func() {
-		err := req.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
@@ -61,7 +55,7 @@ func (req *requestLogoutHandler) processLogout(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("getting_refresh_token_cookie_failed", err, nil)
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	logout := usecases.NewUserLogout(req.userRepo, req.invalidTokenManager, req.log)
@@ -71,14 +65,14 @@ func (req *requestLogoutHandler) processLogout(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("logout_failed", err, nil)
 
-		return apigateway.NewErrorResponse(errUserNotFound), nil
+		return request.NewErrorResponse(errUserNotFound), nil
 	}
 
 	if err != nil {
 		req.err = err
 		req.log.Error("logout_failed", err, nil)
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	setCookieHeader := map[string]string{

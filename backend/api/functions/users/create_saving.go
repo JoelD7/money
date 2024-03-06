@@ -52,14 +52,14 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.periodRepo)
@@ -68,10 +68,10 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 	if err != nil {
 		request.log.Error("create_saving_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusCreated, saving), nil
+	return req.NewJSONResponse(http.StatusCreated, saving), nil
 }
 
 func validateBody(req *apigateway.Request) (*models.Saving, error) {

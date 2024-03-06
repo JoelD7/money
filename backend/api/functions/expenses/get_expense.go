@@ -53,14 +53,14 @@ func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.R
 	if !ok || expenseID == "" {
 		request.log.Error("missing_expense_id", errMissingExpenseID, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(errMissingExpenseID), nil
+		return req.NewErrorResponse(errMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
@@ -71,7 +71,7 @@ func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.R
 			}),
 		})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	getExpense := usecases.NewExpenseGetter(request.expensesRepo, request.userRepo)
@@ -80,14 +80,14 @@ func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.R
 	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
 		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewJSONResponse(http.StatusOK, expense), nil
+		return req.NewJSONResponse(http.StatusOK, expense), nil
 	}
 
 	if err != nil {
 		request.log.Error("get_expense_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, expense), nil
+	return req.NewJSONResponse(http.StatusOK, expense), nil
 }

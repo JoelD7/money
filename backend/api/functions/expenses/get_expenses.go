@@ -52,7 +52,7 @@ func getExpensesHandler(ctx context.Context, log logger.LogAPI, req *apigateway.
 
 	err := request.prepareRequest(req)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return request.routeToHandlers(ctx, req)
@@ -131,7 +131,7 @@ func (request *getExpensesRequest) getByCategories(ctx context.Context, req *api
 	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
 		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 			Expenses: userExpenses,
 			NextKey:  nextKey,
 		}), nil
@@ -140,10 +140,10 @@ func (request *getExpensesRequest) getByCategories(ctx context.Context, req *api
 	if err != nil {
 		request.log.Error("get_expenses_by_category_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil
@@ -158,7 +158,7 @@ func (request *getExpensesRequest) getByPeriod(ctx context.Context, req *apigate
 	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
 		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 			Expenses: userExpenses,
 			NextKey:  nextKey,
 		}), nil
@@ -167,10 +167,10 @@ func (request *getExpensesRequest) getByPeriod(ctx context.Context, req *apigate
 	if err != nil {
 		request.log.Error("get_expenses_by_period_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil
@@ -186,7 +186,7 @@ func (request *getExpensesRequest) getByCategoriesAndPeriod(ctx context.Context,
 	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
 		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 			Expenses: userExpenses,
 			NextKey:  nextKey,
 		}), nil
@@ -195,10 +195,10 @@ func (request *getExpensesRequest) getByCategoriesAndPeriod(ctx context.Context,
 	if err != nil {
 		request.log.Error("get_expenses_by_period_and_categories_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil
@@ -211,7 +211,7 @@ func (request *getExpensesRequest) getAll(ctx context.Context, req *apigateway.R
 	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
 		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 			Expenses: userExpenses,
 			NextKey:  nextKey,
 		}), nil
@@ -220,10 +220,10 @@ func (request *getExpensesRequest) getAll(ctx context.Context, req *apigateway.R
 	if err != nil {
 		request.log.Error("get_expenses_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil

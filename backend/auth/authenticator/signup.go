@@ -19,31 +19,29 @@ type requestSignUpHandler struct {
 	userRepo     users.Repository
 }
 
-func signUpHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func optionsHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+	return request.NewJSONResponse(http.StatusOK, nil), nil
+}
+
+func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestSignUpHandler{}
 
-	req.initSignUpHandler()
+	req.initSignUpHandler(log)
 	defer req.finish()
 
 	return req.processSignUp(ctx, request)
 }
 
-func (req *requestSignUpHandler) initSignUpHandler() {
+func (req *requestSignUpHandler) initSignUpHandler(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	req.userRepo = users.NewDynamoRepository(dynamoClient)
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("sign-up")
+	req.log = log
+	req.log.SetHandler("sign-up")
 }
 
 func (req *requestSignUpHandler) finish() {
-	defer func() {
-		err := req.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
@@ -53,7 +51,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	saveNewUser := usecases.NewUserCreator(req.userRepo, req.log)
@@ -63,12 +61,10 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		req.err = err
 		req.log.Error("save_new_user_failed", err, []models.LoggerObject{request})
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusCreated,
-	}, nil
+	return request.NewJSONResponse(http.StatusCreated, nil), nil
 }
 
 func validateSingUpInput(request *apigateway.Request) (*signUpBody, error) {

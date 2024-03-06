@@ -52,7 +52,7 @@ func getSavingsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.R
 
 	err := request.prepareRequest(req)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return request.routeToHandlers(ctx, req)
@@ -117,14 +117,14 @@ func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apiga
 			req,
 		})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
 		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{
@@ -142,14 +142,14 @@ func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, re
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
 		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{
@@ -167,14 +167,14 @@ func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
 		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{
@@ -193,14 +193,14 @@ func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx contex
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
 		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

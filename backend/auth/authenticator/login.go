@@ -27,32 +27,26 @@ type accessTokenResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func logInHandler(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
 	req := &requestLoginHandler{}
 
-	req.initLoginHandler()
+	req.initLoginHandler(log)
 	defer req.finish()
 
 	return req.processLogin(ctx, request)
 }
 
-func (req *requestLoginHandler) initLoginHandler() {
+func (req *requestLoginHandler) initLoginHandler(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
 
 	req.userRepo = users.NewDynamoRepository(dynamoClient)
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("log-in")
+	req.log = log
+	req.log.SetHandler("login")
 }
 
 func (req *requestLoginHandler) finish() {
-	defer func() {
-		err := req.log.Close()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
 	req.log.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
@@ -62,7 +56,7 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 		req.err = err
 		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
 
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	authenticate := usecases.NewUserAuthenticator(req.userRepo, req.log)
@@ -70,23 +64,23 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 
 	user, err := authenticate(ctx, reqBody.Username, reqBody.Password)
 	if errors.Is(err, models.ErrUserNotFound) {
-		return apigateway.NewErrorResponse(errUserNotFound), nil
+		return request.NewErrorResponse(errUserNotFound), nil
 	}
 
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	accessToken, refreshToken, err := generateTokens(ctx, user)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	response := &accessTokenResponse{accessToken.Value}
 
 	data, err := json.Marshal(response)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return request.NewErrorResponse(err), nil
 	}
 
 	setCookieHeader := map[string]string{

@@ -48,7 +48,7 @@ func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	updatePeriod := usecases.NewPeriodUpdater(request.periodRepo)
@@ -58,10 +58,10 @@ func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("update_period_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, updatedPeriod), nil
+	return req.NewJSONResponse(http.StatusOK, updatedPeriod), nil
 }
 
 func validateUpdateRequestBody(req *apigateway.Request) (*models.Period, error) {

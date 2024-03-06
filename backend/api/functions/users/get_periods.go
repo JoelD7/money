@@ -52,7 +52,7 @@ func getPeriodsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.R
 func (request *getPeriodsRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	err := request.prepareRequest(req)
 	if err != nil {
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	getPeriods := usecases.NewPeriodsGetter(request.periodRepo)
@@ -62,7 +62,7 @@ func (request *getPeriodsRequest) process(ctx context.Context, req *apigateway.R
 		request.err = err
 		request.log.Error("get_periods_failed", request.err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	res := &getPeriodsResponse{
@@ -70,7 +70,7 @@ func (request *getPeriodsRequest) process(ctx context.Context, req *apigateway.R
 		NextKey: nextKey,
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, res), nil
+	return req.NewJSONResponse(http.StatusOK, res), nil
 }
 
 func (request *getPeriodsRequest) prepareRequest(req *apigateway.Request) error {

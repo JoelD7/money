@@ -45,21 +45,21 @@ func (request *deleteExpenseRequest) process(ctx context.Context, req *apigatewa
 	if !ok || expenseID == "" {
 		request.log.Error("missing_expense_id", nil, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(models.ErrMissingExpenseID), nil
+		return req.NewErrorResponse(models.ErrMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
 		request.log.Error("invalid_username", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	deleteExpense := usecases.NewExpensesDeleter(request.expensesRepo)
@@ -68,7 +68,7 @@ func (request *deleteExpenseRequest) process(ctx context.Context, req *apigatewa
 	if err != nil {
 		request.log.Error("delete_expense_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{

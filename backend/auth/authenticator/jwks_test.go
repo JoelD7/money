@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/stretchr/testify/require"
@@ -37,7 +38,7 @@ func TestJWKSHandler(t *testing.T) {
 
 	ctx := context.Background()
 
-	response, err := request.processJWKS(ctx)
+	response, err := request.processJWKS(ctx, &apigateway.Request{})
 	c.Nil(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.Equal(expectedJWKS, response.Body)
@@ -64,7 +65,7 @@ func TestJWKSHandlerFailed(t *testing.T) {
 
 		defer secretMock.UnregisterResponder(publicSecretName)
 
-		response, err := request.processJWKS(ctx)
+		response, err := request.processJWKS(ctx, &apigateway.Request{})
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.NoError(err)
 		c.Contains(logMock.Output.String(), "public_key_fetching_failed")
@@ -86,7 +87,7 @@ func TestJWKSHandlerFailed(t *testing.T) {
 			secretMock.UnregisterResponder(kidSecretName)
 		}()
 
-		response, err := request.processJWKS(ctx)
+		response, err := request.processJWKS(ctx, &apigateway.Request{})
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.NoError(err)
 		c.Contains(logMock.Output.String(), "kid_fetching_failed")

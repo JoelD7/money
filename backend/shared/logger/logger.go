@@ -3,6 +3,7 @@ package logger
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -23,14 +24,14 @@ const (
 
 	retries           = 3
 	backoffFactor     = 2
-	connectionTimeout = time.Second * 4
+	connectionTimeout = time.Second * 3
 	//leave this here just in case you decide to add custom log timestamps
 	timestampLayout = "2006-01-02T15:04:05.999999999Z"
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-87-238-170.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-80-56-135.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -166,7 +167,7 @@ func (l *Log) writeToLogstash(data []byte) {
 }
 
 func (l *Log) connect() error {
-	if l.connection != nil {
+	if !isConnectionClosed(l.connection) {
 		return nil
 	}
 
@@ -175,6 +176,17 @@ func (l *Log) connect() error {
 	l.connection = conn
 
 	return err
+}
+
+func isConnectionClosed(conn net.Conn) bool {
+	if conn == nil {
+		return true
+	}
+
+	one := make([]byte, 1)
+	_, err := conn.Read(one)
+
+	return errors.Is(err, net.ErrClosed)
 }
 
 func (l *Log) write(data []byte) error {

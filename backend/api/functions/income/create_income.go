@@ -51,7 +51,7 @@ func (request *createIncomeRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("validate_create_income_body_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
@@ -59,7 +59,7 @@ func (request *createIncomeRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	createIncome := usecases.NewIncomeCreator(request.incomeRepo, request.periodRepo)
@@ -69,10 +69,10 @@ func (request *createIncomeRequest) process(ctx context.Context, req *apigateway
 		request.err = err
 		request.log.Error("create_income_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
-	return apigateway.NewJSONResponse(http.StatusOK, newIncome), nil
+	return req.NewJSONResponse(http.StatusOK, newIncome), nil
 }
 
 func validateCreateIncomeBody(req *apigateway.Request) (*models.Income, error) {

@@ -49,7 +49,7 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 	if err != nil {
 		request.log.Error("request_body_validation_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
@@ -57,14 +57,14 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 		request.err = err
 		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
 		request.log.Error("invalid_username", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	createCategory := usecases.NewCategoryCreator(request.userRepo)
@@ -74,7 +74,7 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 		request.err = err
 		request.log.Error("create_category_failed", err, []models.LoggerObject{req})
 
-		return apigateway.NewErrorResponse(err), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	return &apigateway.Response{
