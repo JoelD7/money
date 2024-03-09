@@ -12,6 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { api } from "../api";
 import { ChangeEvent, useState } from "react";
 import { SignUpUser } from "../types";
+import { AxiosError } from "axios";
 
 type InputError = {
   username?: string;
@@ -21,6 +22,15 @@ type InputError = {
 export function SignUp() {
   const mutation = useMutation({
     mutationFn: api.signUp,
+    onSuccess: () => {
+      setErrResponse("");
+    },
+    onError: (error) => {
+      if (error) {
+        const err = error as AxiosError;
+        setErrResponse(err.response?.data as string);
+      }
+    },
   });
 
   const [signUpUser, setSignUpUser] = useState<SignUpUser>({
@@ -32,6 +42,8 @@ export function SignUp() {
     username: "",
     password: "",
   });
+
+  const [errResponse, setErrResponse] = useState<string>("");
 
   function onInputChange(
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -152,7 +164,12 @@ export function SignUp() {
 
       {/*Button*/}
       <div className={"w-11/12 m-auto pt-10"}>
-        <Button variant={"contained"} fullWidth={true} onClick={signUp}>
+        <Button
+          variant={"contained"}
+          loading={mutation.isPending}
+          fullWidth={true}
+          onClick={signUp}
+        >
           Sign up
         </Button>
 
@@ -160,7 +177,16 @@ export function SignUp() {
           <div className={"p-2"}>
             <Alert severity="error">
               <AlertTitle>Error</AlertTitle>
-              {mutation.error.message}
+              {errResponse ? errResponse : mutation.error.message}
+            </Alert>
+          </div>
+        )}
+
+        {mutation.isSuccess && (
+          <div className={"p-2"}>
+            <Alert severity="success">
+              <AlertTitle>Success</AlertTitle>
+              {"Account successfully created."}
             </Alert>
           </div>
         )}
