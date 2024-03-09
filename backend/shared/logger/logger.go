@@ -51,6 +51,7 @@ type LogAPI interface {
 type Log struct {
 	Service    string `json:"service,omitempty"`
 	connection net.Conn
+	mu         sync.Mutex
 	wg         sync.WaitGroup
 }
 
@@ -157,17 +158,11 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 	l.writeToLogstash(dataAsBytes.Bytes())
 }
 
-func (l *Log) writeToLogstash(data []byte) {
-	err := l.write(data)
-	if err != nil {
-		//The lambda function shouldn't terminate because logs weren't sent. A future way of handling this
-		//could be setting Cloudwatch alarms to monitor this kind of failures.
-		errorLogger.Println(fmt.Errorf("logger: error writing data to logstash: %w", err))
-	}
-}
-
 func (l *Log) connect() error {
-	if !isConnectionClosed(l.connection) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.connection != nil {
 		return nil
 	}
 
@@ -178,18 +173,30 @@ func (l *Log) connect() error {
 	return err
 }
 
-func isConnectionClosed(conn net.Conn) bool {
-	if conn == nil {
+func (l *Log) writeToLogstash(data []byte) {
+	err := l.write(data)
+	if err != nil {
+		//The lambda function shouldn't terminate because logs weren't sent. A future way of handling this
+		//could be setting Cloudwatch alarms to monitor this kind of failures.
+		errorLogger.Println(fmt.Errorf("logger: error writing data to logstash: %w", err))
+	}
+}
+
+func (l *Log) isConnectionClosed() bool {
+	if l.connection == nil {
 		return true
 	}
 
 	one := make([]byte, 1)
-	_, err := conn.Read(one)
+	_, err := l.connection.Read(one)
 
 	return errors.Is(err, net.ErrClosed)
 }
 
 func (l *Log) write(data []byte) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	_, err := l.connection.Write(data)
 	backoff := time.Second * 1
 
