@@ -31,7 +31,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-80-56-135.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-93-48-0.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -216,6 +216,8 @@ func (l *Log) Close() error {
 	if err != nil {
 		return fmt.Errorf("error closing connection to Logstash server: %w", err)
 	}
+
+	l.connection = nil
 
 	return nil
 }
