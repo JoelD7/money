@@ -6,10 +6,8 @@ import {
   Link,
   TextField,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
-import { Button, MoneyBanner } from "../components";
+import {Button, MoneyBanner, MoneyBannerMobile} from "../components";
 import { Colors } from "../assets";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api";
@@ -47,8 +45,6 @@ export function SignUp() {
   });
 
   const [errResponse, setErrResponse] = useState<string>("");
-  const theme = useTheme();
-  const lgUp: boolean = useMediaQuery(theme.breakpoints.up("lg"));
 
   function onInputChange(
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -109,25 +105,7 @@ export function SignUp() {
       {/*Form and title*/}
       <Grid xs={12} lg={6}>
         {/*Title*/}
-        <div className={lgUp ? "hidden": "h-[12rem] flex items-center justify-center"}>
-          <div>
-            <div className="flex items-center justify-center">
-              <img
-                  className="w-1/6"
-                  src="https://money-static-files.s3.amazonaws.com/images/dollar.png"
-                  alt="dollar_logo"
-              />
-              <Typography color={"darkGreen.main"} variant={"h2"} ml="5px">
-                Money
-              </Typography>
-            </div>
-            <div className={"flex justify-center"}>
-              <Typography variant={"h6"} color={"darkGreen.main"}>
-                Finance tracker
-              </Typography>
-            </div>
-          </div>
-        </div>
+        <MoneyBannerMobile/>
 
         {/*Form*/}
         <Box component="form" height={"100vh"} autoComplete="on">
