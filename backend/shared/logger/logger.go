@@ -31,7 +31,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-80-56-135.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-3-93-48-0.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -51,6 +51,7 @@ type LogAPI interface {
 type Log struct {
 	Service    string `json:"service,omitempty"`
 	connection net.Conn
+	mu         sync.Mutex
 	wg         sync.WaitGroup
 }
 
@@ -157,17 +158,11 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 	l.writeToLogstash(dataAsBytes.Bytes())
 }
 
-func (l *Log) writeToLogstash(data []byte) {
-	err := l.write(data)
-	if err != nil {
-		//The lambda function shouldn't terminate because logs weren't sent. A future way of handling this
-		//could be setting Cloudwatch alarms to monitor this kind of failures.
-		errorLogger.Println(fmt.Errorf("logger: error writing data to logstash: %w", err))
-	}
-}
-
 func (l *Log) connect() error {
-	if !isConnectionClosed(l.connection) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	if l.connection != nil {
 		return nil
 	}
 
@@ -178,18 +173,30 @@ func (l *Log) connect() error {
 	return err
 }
 
-func isConnectionClosed(conn net.Conn) bool {
-	if conn == nil {
+func (l *Log) writeToLogstash(data []byte) {
+	err := l.write(data)
+	if err != nil {
+		//The lambda function shouldn't terminate because logs weren't sent. A future way of handling this
+		//could be setting Cloudwatch alarms to monitor this kind of failures.
+		errorLogger.Println(fmt.Errorf("logger: error writing data to logstash: %w", err))
+	}
+}
+
+func (l *Log) isConnectionClosed() bool {
+	if l.connection == nil {
 		return true
 	}
 
 	one := make([]byte, 1)
-	_, err := conn.Read(one)
+	_, err := l.connection.Read(one)
 
 	return errors.Is(err, net.ErrClosed)
 }
 
 func (l *Log) write(data []byte) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	_, err := l.connection.Write(data)
 	backoff := time.Second * 1
 
@@ -216,6 +223,8 @@ func (l *Log) Close() error {
 	if err != nil {
 		return fmt.Errorf("error closing connection to Logstash server: %w", err)
 	}
+
+	l.connection = nil
 
 	return nil
 }
