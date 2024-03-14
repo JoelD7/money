@@ -1,10 +1,11 @@
-import {Alert, AlertTitle, Box, Grid, TextField, Typography} from "@mui/material";
+import {Alert, AlertTitle, Box, Grid, Link, TextField, Typography} from "@mui/material";
 import {Button, MoneyBanner, MoneyBannerMobile} from "../components";
 import {useMutation} from "@tanstack/react-query";
 import {AxiosError} from "axios";
 import {useState} from "react";
 import {InputError} from "../types";
 import { api } from "../api";
+import {Colors} from "../assets";
 
 export function Login() {
   const mutation = useMutation({
@@ -82,7 +83,7 @@ export function Login() {
 
           {/*Form*/}
           <Box component="form" height={"100vh"} autoComplete="on">
-            <Grid container marginTop={10} justifyContent={"center"}>
+            <Grid container marginTop={20} justifyContent={"center"}>
               {/*Input fields*/}
               <Grid xs={12} md={9}>
                 <div className={"w-11/12 m-auto max-w-[645px]"}>
@@ -152,6 +153,13 @@ export function Login() {
                         </Alert>
                       </div>
                   )}
+
+                  <Typography textAlign={"center"}>
+                    Don't have an account?{" "}
+                    <Link color={Colors.BLUE_DARK} target={"_blank"} href={"/signup"}>
+                      Sign up
+                    </Link>
+                  </Typography>
                 </div>
               </Grid>
             </Grid>
