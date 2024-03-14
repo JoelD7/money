@@ -73,6 +73,11 @@ var (
 type Response events.APIGatewayProxyResponse
 type Request events.APIGatewayProxyRequest
 
+type Header struct {
+	Key   string
+	Value string
+}
+
 func init() {
 	origins := strings.Split(allowedOrigins, ";")
 	for _, origin := range origins {
@@ -97,8 +102,8 @@ func (req *Request) NewErrorResponse(err error) *Response {
 }
 
 // NewJSONResponse creates a new JSON response given a serializable `body`
-func (req *Request) NewJSONResponse(statusCode int, body interface{}) *Response {
-	headers := map[string]string{
+func (req *Request) NewJSONResponse(statusCode int, body interface{}, headers ...Header) *Response {
+	stdHeaders := map[string]string{
 		"Content-Type":              "application/json",
 		"Cache-Control":             "no-store",
 		"Pragma":                    "no-cache",
@@ -109,13 +114,17 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}) *Response 
 
 	_, ok := allowedOriginsMap[origin]
 	if ok {
-		headers["Access-Control-Allow-Origin"] = origin
+		stdHeaders["Access-Control-Allow-Origin"] = origin
 	}
 
 	if allowedOrigins != "*" {
-		headers["Access-Control-Allow-Credentials"] = "true"
-		headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS,PUT,DELETE"
-		headers["Access-Control-Allow-Headers"] = "Content-Type,Origin"
+		stdHeaders["Access-Control-Allow-Credentials"] = "true"
+		stdHeaders["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS,PUT,DELETE"
+		stdHeaders["Access-Control-Allow-Headers"] = "Content-Type,Origin"
+	}
+
+	for _, header := range headers {
+		stdHeaders[header.Key] = header.Value
 	}
 
 	strData, ok := body.(string)
@@ -123,7 +132,7 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}) *Response 
 		return &Response{
 			StatusCode: statusCode,
 			Body:       strData,
-			Headers:    headers,
+			Headers:    stdHeaders,
 		}
 	}
 
@@ -135,7 +144,7 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}) *Response 
 	return &Response{
 		StatusCode: statusCode,
 		Body:       string(data),
-		Headers:    headers,
+		Headers:    stdHeaders,
 	}
 }
 
