@@ -1,7 +1,6 @@
 import "tailwindcss/tailwind.css";
 import {createTheme, ThemeProvider, Theme, Container, useMediaQuery} from "@mui/material";
-import {Home, PeriodDetail, SignUp} from "./pages";
-import {Navbar} from "./components";
+import {Home, Login, PeriodDetail, SignUp} from "./pages";
 import {Colors} from "./assets";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 
@@ -103,7 +102,8 @@ function App() {
             <ThemeProvider theme={theme}>
                 <QueryClientProvider client={queryClient}>
                     {/*<Navbar/>*/}
-                    <SignUp/>
+                    <Login/>
+                    {/*<SignUp></SignUp>*/}
                     <Container
                         sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
                         maxWidth={false}>

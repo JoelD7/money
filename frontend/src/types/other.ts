@@ -7,3 +7,8 @@ export type RechartsLabelProps = {
     percent: number
     index: number
 }
+
+export type InputError = {
+    username?: string;
+    password?: string;
+};

@@ -1,23 +1,14 @@
-import {
-  Alert,
-  AlertTitle,
-  Box,
-  Grid,
-  Link,
-  TextField,
-  Typography,
-} from "@mui/material";
+import {Alert, AlertTitle, Box, Grid, TextField, Typography} from "@mui/material";
 import {Button, MoneyBanner, MoneyBannerMobile} from "../components";
-import { Colors } from "../assets";
-import { useMutation } from "@tanstack/react-query";
+import {useMutation} from "@tanstack/react-query";
+import {AxiosError} from "axios";
+import {useState} from "react";
+import {InputError} from "../types";
 import { api } from "../api";
-import { ChangeEvent, useState } from "react";
-import {InputError, SignUpUser} from "../types";
-import { AxiosError } from "axios";
 
-export function SignUp() {
+export function Login() {
   const mutation = useMutation({
-    mutationFn: api.signUp,
+    mutationFn: api.login,
     onSuccess: () => {
       setErrResponse("");
     },
@@ -29,11 +20,9 @@ export function SignUp() {
     },
   });
 
-  const [signUpUser, setSignUpUser] = useState<SignUpUser>({
-    username: "",
-    password: "",
-    fullname: "",
-  });
+  const[username, setUsername] = useState<string>("");
+  const[password, setPassword] = useState<string>("");
+
   const [inputErr, setInputErr] = useState<InputError>({
     username: "",
     password: "",
@@ -41,46 +30,35 @@ export function SignUp() {
 
   const [errResponse, setErrResponse] = useState<string>("");
 
-  function onInputChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) {
-    resetError(e);
-    setSignUpUser({
-      ...signUpUser,
-      [e.target.name]: e.target.value,
-    });
-  }
-
-  function resetError(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    setInputErr({
-      ...inputErr,
-      [e.target.name]: "",
-    });
-  }
-
-  function signUp() {
+  function login() {
     if (!validateInput()) {
       return;
     }
 
     mutation.mutate({
-      username: signUpUser.username,
-      password: signUpUser.password,
-      fullname: signUpUser.fullname,
+      username: username,
+      password: password,
     });
   }
 
   function validateInput(): boolean {
-    let isValid = true;
-    const errObj: InputError = { ...inputErr };
+    if (inputErr.username !== "" && inputErr.password !== "") {
+      return true
+    }
 
-    if (signUpUser.username === "") {
+    let isValid = true;
+    const errObj: InputError = {
+      username: "",
+      password: "",
+    };
+
+    if (username === "") {
       errObj.username = "Username is required";
 
       isValid = false;
     }
 
-    if (signUpUser.password === "") {
+    if (password === "") {
       errObj.password = "Password is required";
 
       isValid = false;
@@ -91,41 +69,32 @@ export function SignUp() {
   }
 
   return (
-    <Grid container>
-      {/*Green background logo*/}
-      <Grid lg={6}>
+      <Grid container>
+        {/*Green background logo*/}
+        <Grid lg={6}>
           <MoneyBanner/>
-      </Grid>
+        </Grid>
 
-      {/*Form and title*/}
-      <Grid xs={12} lg={6}>
-        {/*Title*/}
-        <MoneyBannerMobile/>
+        {/*Form and title*/}
+        <Grid xs={12} lg={6}>
+          {/*Title*/}
+          <MoneyBannerMobile/>
 
-        {/*Form*/}
-        <Box component="form" height={"100vh"} autoComplete="on">
+          {/*Form*/}
+          <Box component="form" height={"100vh"} autoComplete="on">
             <Grid container marginTop={10} justifyContent={"center"}>
               {/*Input fields*/}
               <Grid xs={12} md={9}>
                 <div className={"w-11/12 m-auto max-w-[645px]"}>
                   <Typography textAlign={"center"} variant={"h4"}>
-                    Sign up
+                    Login
                   </Typography>
 
-                  <TextField
-                      margin={"normal"}
-                      name={"fullname"}
-                      value={signUpUser.fullname}
-                      fullWidth={true}
-                      label={"Full name"}
-                      variant={"outlined"}
-                      onChange={onInputChange}
-                  />
                   <TextField
                       autoComplete={"on"}
                       margin={"normal"}
                       name={"username"}
-                      value={signUpUser.username}
+                      value={username}
                       fullWidth={true}
                       type={"email"}
                       label={"Email"}
@@ -133,13 +102,14 @@ export function SignUp() {
                       error={inputErr.username !== ""}
                       helperText={inputErr.username}
                       required
-                      onChange={onInputChange}
+                      onChange={(e)=> setUsername(e.target.value)}
+                      onBlur={validateInput}
                   />
                   <TextField
                       autoComplete={"on"}
                       margin={"normal"}
                       name={"password"}
-                      value={signUpUser.password}
+                      value={password}
                       fullWidth={true}
                       type={"password"}
                       label={"Password"}
@@ -147,7 +117,8 @@ export function SignUp() {
                       error={inputErr.password !== ""}
                       helperText={inputErr.password}
                       required={true}
-                      onChange={onInputChange}
+                      onChange={(e)=> setPassword(e.target.value)}
+                      onBlur={validateInput}
                   />
                 </div>
               </Grid>
@@ -159,9 +130,9 @@ export function SignUp() {
                       variant={"contained"}
                       loading={mutation.isPending}
                       fullWidth={true}
-                      onClick={signUp}
+                      onClick={login}
                   >
-                    Sign up
+                    Login
                   </Button>
 
                   {mutation.isError && (
@@ -181,20 +152,13 @@ export function SignUp() {
                         </Alert>
                       </div>
                   )}
-
-                  <Typography textAlign={"center"}>
-                    Already signed up?{" "}
-                    <Link color={Colors.BLUE_DARK} target={"_blank"} href={"/login"}>
-                      Login
-                    </Link>
-                  </Typography>
                 </div>
               </Grid>
             </Grid>
-        </Box>
+          </Box>
+        </Grid>
+
+
       </Grid>
-
-
-    </Grid>
-  );
+  )
 }
