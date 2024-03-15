@@ -40,6 +40,8 @@ export function Login() {
   const [errResponse, setErrResponse] = useState<string>("");
 
   function login() {
+    mutation.reset()
+
     if (!validateInput()) {
       return;
     }
@@ -62,7 +64,7 @@ export function Login() {
 
   function validateInput(): boolean {
     if (inputErr.username !== "" && inputErr.password !== "") {
-      return true;
+      return false;
     }
 
     let isValid = true;
@@ -84,6 +86,7 @@ export function Login() {
     }
 
     setInputErr(errObj);
+    setErrResponse("");
     return isValid;
   }
 

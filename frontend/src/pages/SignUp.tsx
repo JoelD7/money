@@ -104,7 +104,7 @@ export function SignUp() {
 
         {/*Form*/}
         <Box component="form" height={"100vh"} autoComplete="on">
-            <Grid container marginTop={10} justifyContent={"center"}>
+            <Grid container marginTop={20} justifyContent={"center"}>
               {/*Input fields*/}
               <Grid xs={12} md={9}>
                 <div className={"w-11/12 m-auto max-w-[645px]"}>
