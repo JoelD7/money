@@ -182,7 +182,7 @@ export function SignUp() {
                       </div>
                   )}
 
-                  <Typography textAlign={"center"}>
+                  <Typography textAlign={"center"} marginTop={"5px"}>
                     Already signed up?{" "}
                     <Link color={Colors.BLUE_DARK} target={"_blank"} href={"/login"}>
                       Login

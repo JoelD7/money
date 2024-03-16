@@ -173,7 +173,7 @@ export function Login() {
                   </div>
                 )}
 
-                <Typography textAlign={"center"}>
+                <Typography textAlign={"center"} marginTop={"5px"}>
                   Don't have an account?{" "}
                   <Link
                     color={Colors.BLUE_DARK}
