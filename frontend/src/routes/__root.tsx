@@ -118,7 +118,6 @@ function Root() {
       <ThemeProvider theme={theme}>
         {renderNavbar() ? (
           <>
-            {" "}
             <Navbar />
             <Container
               sx={
@@ -134,9 +133,7 @@ function Root() {
             </Container>
           </>
         ) : (
-          <div className={"flex max-w-[1200px]"}>
             <Outlet />
-          </div>
         )}
       </ThemeProvider>
 

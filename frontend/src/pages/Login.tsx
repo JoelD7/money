@@ -2,7 +2,6 @@ import {
   Alert,
   AlertTitle,
   Box,
-  Grid,
   Link,
   TextField,
   Typography,
@@ -14,6 +13,7 @@ import { ChangeEvent, useState } from "react";
 import { InputError } from "../types";
 import { api } from "../api";
 import { Colors } from "../assets";
+import Grid from "@mui/material/Unstable_Grid2";
 
 export function Login() {
   const mutation = useMutation({
@@ -91,7 +91,7 @@ export function Login() {
   }
 
   return (
-    <Grid container>
+    <Grid container >
       {/*Green background logo*/}
       <Grid lg={6}>
         <MoneyBanner />

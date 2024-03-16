@@ -2,7 +2,6 @@ import {
   Alert,
   AlertTitle,
   Box,
-  Grid,
   Link,
   TextField,
   Typography,
@@ -14,6 +13,7 @@ import { api } from "../api";
 import { ChangeEvent, useState } from "react";
 import {InputError, SignUpUser} from "../types";
 import { AxiosError } from "axios";
+import Grid from "@mui/material/Unstable_Grid2";
 
 export function SignUp() {
   const mutation = useMutation({
