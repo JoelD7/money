@@ -107,6 +107,9 @@ function Root() {
   return (
     <>
       <ThemeProvider theme={theme}>
+        <div className={"flex max-w-[1200px]"}>
+          <Outlet />
+        </div>
         <Container
           sx={
             mdUp
@@ -115,9 +118,7 @@ function Root() {
           }
           maxWidth={false}
         >
-          <div className={"flex max-w-[1200px] m-auto"}>
-            <Outlet />
-          </div>
+
         </Container>
       </ThemeProvider>
 
