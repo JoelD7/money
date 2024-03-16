@@ -1,4 +1,4 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import {
   Container,
@@ -8,24 +8,25 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { Colors } from "../assets";
+import { Navbar } from "../components";
 
-declare module '@mui/material/styles' {
+declare module "@mui/material/styles" {
   interface Palette {
-    white: Palette['primary'];
-    red: Palette['primary'];
-    blue: Palette['primary'];
-    gray: Palette['primary'];
-    darkGreen: Palette['primary'];
-    darkerGray: Palette['primary'];
+    white: Palette["primary"];
+    red: Palette["primary"];
+    blue: Palette["primary"];
+    gray: Palette["primary"];
+    darkGreen: Palette["primary"];
+    darkerGray: Palette["primary"];
   }
 
   interface PaletteOptions {
-    white?: PaletteOptions['primary'];
-    red?: PaletteOptions['primary'];
-    blue?: PaletteOptions['primary'];
-    gray?: PaletteOptions['primary'];
-    darkGreen?: PaletteOptions['primary'];
-    darkerGray: PaletteOptions['primary'];
+    white?: PaletteOptions["primary"];
+    red?: PaletteOptions["primary"];
+    blue?: PaletteOptions["primary"];
+    gray?: PaletteOptions["primary"];
+    darkGreen?: PaletteOptions["primary"];
+    darkerGray: PaletteOptions["primary"];
   }
 
   interface PaletteColor {
@@ -37,7 +38,7 @@ declare module '@mui/material/styles' {
   }
 }
 
-declare module '@mui/material/Button' {
+declare module "@mui/material/Button" {
   interface ButtonPropsColorOverrides {
     white: true;
     red: true;
@@ -92,7 +93,6 @@ const theme: Theme = createTheme({
   },
 });
 
-
 export const Route = createRootRoute({
   component: () => <Root />,
 });
@@ -104,22 +104,40 @@ function Root() {
     width: "auto",
   };
 
+  const router = useRouter();
+
+  function renderNavbar(): boolean {
+    return (
+      router.state.location.pathname !== "/login" &&
+      router.state.location.pathname !== "/signup"
+    );
+  }
+
   return (
     <>
       <ThemeProvider theme={theme}>
-        <div className={"flex max-w-[1200px]"}>
-          <Outlet />
-        </div>
-        <Container
-          sx={
-            mdUp
-              ? { marginLeft: "11rem", ...containerStyles }
-              : { ...containerStyles }
-          }
-          maxWidth={false}
-        >
-
-        </Container>
+        {renderNavbar() ? (
+          <>
+            {" "}
+            <Navbar />
+            <Container
+              sx={
+                mdUp
+                  ? { marginLeft: "11rem", ...containerStyles }
+                  : { ...containerStyles }
+              }
+              maxWidth={false}
+            >
+              <div className={"flex max-w-[1200px]"}>
+                <Outlet />
+              </div>
+            </Container>
+          </>
+        ) : (
+          <div className={"flex max-w-[1200px]"}>
+            <Outlet />
+          </div>
+        )}
       </ThemeProvider>
 
       <TanStackRouterDevtools />
