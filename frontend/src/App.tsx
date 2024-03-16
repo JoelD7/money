@@ -100,10 +100,6 @@ function App() {
     return (
         <>
             <ThemeProvider theme={theme}>
-                <QueryClientProvider client={queryClient}>
-                    {/*<Navbar/>*/}
-                    <Login/>
-                    {/*<SignUp></SignUp>*/}
                     <Container
                         sx={mdUp ? {marginLeft: "11rem", ...containerStyles} : {...containerStyles}}
                         maxWidth={false}>
@@ -111,7 +107,6 @@ function App() {
 
                         </div>
                     </Container>
-                </QueryClientProvider>
             </ThemeProvider>
 
         </>
