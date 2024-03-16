@@ -177,7 +177,6 @@ export function Login() {
                   Don't have an account?{" "}
                   <Link
                     color={Colors.BLUE_DARK}
-                    target={"_blank"}
                     href={"/signup"}
                   >
                     Sign up

@@ -1,6 +1,5 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
-import { App } from "../App.tsx";
 import {
   Container,
   createTheme,
@@ -9,6 +8,45 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { Colors } from "../assets";
+
+declare module '@mui/material/styles' {
+  interface Palette {
+    white: Palette['primary'];
+    red: Palette['primary'];
+    blue: Palette['primary'];
+    gray: Palette['primary'];
+    darkGreen: Palette['primary'];
+    darkerGray: Palette['primary'];
+  }
+
+  interface PaletteOptions {
+    white?: PaletteOptions['primary'];
+    red?: PaletteOptions['primary'];
+    blue?: PaletteOptions['primary'];
+    gray?: PaletteOptions['primary'];
+    darkGreen?: PaletteOptions['primary'];
+    darkerGray: PaletteOptions['primary'];
+  }
+
+  interface PaletteColor {
+    darker?: string;
+  }
+
+  interface SimplePaletteColorOptions {
+    darker?: string;
+  }
+}
+
+declare module '@mui/material/Button' {
+  interface ButtonPropsColorOverrides {
+    white: true;
+    red: true;
+    blue: true;
+    gray: true;
+    darkGreen: true;
+    darkerGray: true;
+  }
+}
 
 const theme: Theme = createTheme({
   typography: {
@@ -54,21 +92,20 @@ const theme: Theme = createTheme({
   },
 });
 
-const containerStyles = {
-  backgroundColor: "#fafafa",
-  width: "auto",
-};
 
 export const Route = createRootRoute({
-  component: () => <Component />,
+  component: () => <Root />,
 });
 
-function Component() {
+function Root() {
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
+  const containerStyles = {
+    backgroundColor: "#fafafa",
+    width: "auto",
+  };
 
   return (
     <>
-      <hr />
       <ThemeProvider theme={theme}>
         <Container
           sx={

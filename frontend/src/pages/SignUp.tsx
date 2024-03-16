@@ -184,7 +184,7 @@ export function SignUp() {
 
                   <Typography textAlign={"center"} marginTop={"5px"}>
                     Already signed up?{" "}
-                    <Link color={Colors.BLUE_DARK} target={"_blank"} href={"/login"}>
+                    <Link color={Colors.BLUE_DARK} href={"/login"}>
                       Login
                     </Link>
                   </Typography>
