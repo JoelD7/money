@@ -83,18 +83,12 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 		return request.NewErrorResponse(err), nil
 	}
 
-	setCookieHeader := map[string]string{
-		"Set-Cookie": fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
-			refreshToken.Expiration.Format(time.RFC1123)),
-	}
+	cookieStr := fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
+		refreshToken.Expiration.Format(time.RFC1123))
 
 	req.log.Info("login_succeeded", nil)
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       string(data),
-		Headers:    setCookieHeader,
-	}, nil
+	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }
 
 func validateLoginInput(request *apigateway.Request) (*Credentials, error) {

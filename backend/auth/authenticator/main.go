@@ -105,7 +105,6 @@ func main() {
 		r.Post("/login", logInHandler)
 
 		r.Post("/signup", signUpHandler)
-		r.Options("/signup", optionsHandler)
 
 		r.Post("/token", tokenHandler)
 		r.Get("/jwks", jwksHandler)

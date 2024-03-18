@@ -1,7 +1,12 @@
 import {Typography, useMediaQuery, useTheme} from "@mui/material";
 import Grid from '@mui/material/Unstable_Grid2';
 import AddIcon from '@mui/icons-material/Add';
-import {BalanceCard, Button, ExpenseCard, ExpensesTable} from "../components";
+import {
+  BalanceCard,
+  Button,
+  ExpenseCard,
+  ExpensesTable,
+} from "../components";
 import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import {Expense, RechartsLabelProps} from "../types";
 import json2mq from "json2mq";

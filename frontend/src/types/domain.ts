@@ -23,3 +23,8 @@ export type SignUpUser = {
     password: string
     fullname: string
 }
+
+export type LoginCredentials = {
+    username: string
+    password: string
+}

@@ -2,25 +2,18 @@ import {
   Alert,
   AlertTitle,
   Box,
-  Grid,
   Link,
   TextField,
   Typography,
-  useMediaQuery,
-  useTheme,
 } from "@mui/material";
-import { Button } from "../components";
+import {Button, MoneyBanner, MoneyBannerMobile} from "../components";
 import { Colors } from "../assets";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api";
 import { ChangeEvent, useState } from "react";
-import { SignUpUser } from "../types";
+import {InputError, SignUpUser} from "../types";
 import { AxiosError } from "axios";
-
-type InputError = {
-  username?: string;
-  password?: string;
-};
+import Grid from "@mui/material/Unstable_Grid2";
 
 export function SignUp() {
   const mutation = useMutation({
@@ -47,8 +40,6 @@ export function SignUp() {
   });
 
   const [errResponse, setErrResponse] = useState<string>("");
-  const theme = useTheme();
-  const lgUp: boolean = useMediaQuery(theme.breakpoints.up("lg"));
 
   function onInputChange(
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -103,53 +94,17 @@ export function SignUp() {
     <Grid container>
       {/*Green background logo*/}
       <Grid lg={6}>
-        <div className={lgUp ? "flex items-center justify-center h-lvh bg-[#024511] rounded-e-3xl" : "hidden"}>
-          <div>
-            <div className="flex items-center justify-center">
-              <img
-                  className="w-1/6"
-                  src="https://money-static-files.s3.amazonaws.com/images/dollar.png"
-                  alt="dollar_logo"
-              />
-              <Typography color={"white.main"} variant={"h2"} ml="5px">
-                Money
-              </Typography>
-            </div>
-            <div className={"flex justify-center"}>
-              <Typography variant={"h6"} color={"white.main"}>
-                Finance tracker
-              </Typography>
-            </div>
-          </div>
-        </div>
+          <MoneyBanner/>
       </Grid>
 
       {/*Form and title*/}
       <Grid xs={12} lg={6}>
         {/*Title*/}
-        <div className={lgUp ? "hidden": "h-[12rem] flex items-center justify-center"}>
-          <div>
-            <div className="flex items-center justify-center">
-              <img
-                  className="w-1/6"
-                  src="https://money-static-files.s3.amazonaws.com/images/dollar.png"
-                  alt="dollar_logo"
-              />
-              <Typography color={"darkGreen.main"} variant={"h2"} ml="5px">
-                Money
-              </Typography>
-            </div>
-            <div className={"flex justify-center"}>
-              <Typography variant={"h6"} color={"darkGreen.main"}>
-                Finance tracker
-              </Typography>
-            </div>
-          </div>
-        </div>
+        <MoneyBannerMobile/>
 
         {/*Form*/}
         <Box component="form" height={"100vh"} autoComplete="on">
-            <Grid container marginTop={10} justifyContent={"center"}>
+            <Grid container marginTop={20} justifyContent={"center"}>
               {/*Input fields*/}
               <Grid xs={12} md={9}>
                 <div className={"w-11/12 m-auto max-w-[645px]"}>
@@ -227,9 +182,9 @@ export function SignUp() {
                       </div>
                   )}
 
-                  <Typography textAlign={"center"}>
+                  <Typography textAlign={"center"} marginTop={"5px"}>
                     Already signed up?{" "}
-                    <Link color={Colors.BLUE_DARK} target={"_blank"} href={"/login"}>
+                    <Link color={Colors.BLUE_DARK} href={"/login"}>
                       Login
                     </Link>
                   </Typography>
