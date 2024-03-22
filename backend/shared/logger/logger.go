@@ -2,12 +2,14 @@ package logger
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"net"
+	"os"
 	"regexp"
 	"runtime/debug"
 	"sync"
@@ -167,6 +169,10 @@ func (l *Log) connect() error {
 	}
 
 	conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
+	if errors.Is(err, context.DeadlineExceeded) {
+		fmt.Println(fmt.Errorf("timeout dialing Logstash server: %w", err))
+		return fmt.Errorf("timeout dialing Logstash server: %w", err)
+	}
 
 	l.connection = conn
 
@@ -197,14 +203,17 @@ func (l *Log) write(data []byte) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	_, err := l.connection.Write(data)
-	backoff := time.Second * 1
+	err := l.connection.SetDeadline(time.Now().Add(connectionTimeout))
+	if err != nil {
+		return fmt.Errorf("error setting deadline: %w", err)
+	}
 
-	for i := 0; i < retries && err != nil; i++ {
-		time.Sleep(backoff)
-
-		_, err = l.connection.Write(data)
-		backoff *= backoffFactor
+	_, err = l.connection.Write(data)
+	if errors.Is(err, os.ErrDeadlineExceeded) {
+		err = l.connection.SetDeadline(time.Now().Add(connectionTimeout))
+		if err != nil {
+			return fmt.Errorf("error setting deadline: %w", err)
+		}
 	}
 
 	return err
