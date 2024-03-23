@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -35,7 +36,7 @@ func TestInfo(t *testing.T) {
 	c.Nil(err)
 
 	user := &testUser{
-		Name:       "Joel",
+		Name:       utils.GenerateDynamoID("rd"),
 		Age:        22,
 		Income:     123456,
 		DayOfBirth: &dayOfBirth,
