@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -40,7 +41,8 @@ func TestInfo(t *testing.T) {
 		DayOfBirth: &dayOfBirth,
 	}
 
-	logger := NewLoggerMock(nil)
+	//logger := NewLoggerMock(nil)
+	logger := NewLogger()
 	defer func() {
 		err = logger.Close()
 		if err != nil {
@@ -48,5 +50,8 @@ func TestInfo(t *testing.T) {
 		}
 	}()
 
-	logger.Info("test_event_emitted", []models.LoggerObject{user})
+	for i := 0; i < 10; i++ {
+		time.Sleep(time.Millisecond * 500)
+		logger.Info(fmt.Sprintf("test_event_emitted_%d", i+1), []models.LoggerObject{user})
+	}
 }
