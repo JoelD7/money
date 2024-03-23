@@ -37,6 +37,7 @@ var (
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 
 	connection net.Conn
+	once       sync.Once
 )
 
 type LogAPI interface {
@@ -173,23 +174,21 @@ func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error
 }
 
 func (l *Log) establishConnection() {
-	if connection != nil {
+	once.Do(func() {
+		conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
+		if err != nil {
+			errorLogger.Println(fmt.Errorf("connection to Logstash failed: %w", err))
+			//Write to std out if connection to Logstash fails
+			l.bw = bufio.NewWriter(os.Stdout)
+
+			return
+		}
+
+		connection = conn
+		l.bw = bufio.NewWriter(connection)
+
 		return
-	}
-
-	conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
-	if err != nil {
-		errorLogger.Println(fmt.Errorf("connection to Logstash failed: %w", err))
-		//Write to std out if connection to Logstash fails
-		l.bw = bufio.NewWriter(os.Stdout)
-
-		return
-	}
-
-	connection = conn
-	l.bw = bufio.NewWriter(connection)
-
-	return
+	})
 }
 
 func (l *Log) write(data []byte) error {
