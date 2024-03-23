@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -30,7 +31,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-226-32-165.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-158-20-203.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -52,6 +53,7 @@ type LogAPI interface {
 type Log struct {
 	Service   string `json:"service,omitempty"`
 	useBackup bool
+	bw        *bufio.Writer
 	wg        sync.WaitGroup
 }
 
@@ -66,6 +68,7 @@ type LogData struct {
 func NewLogger() LogAPI {
 	log := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		bw:      new(bufio.Writer),
 	}
 
 	log.establishConnection()
@@ -76,6 +79,7 @@ func NewLogger() LogAPI {
 func NewLoggerWithHandler(handler string) LogAPI {
 	log := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		bw:      new(bufio.Writer),
 	}
 
 	if handler != "" && log.Service != "unknown" {
@@ -143,7 +147,6 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 		//The lambda function shouldn't terminate because logs weren't sent. A future way of handling this
 		//could be setting Cloudwatch alarms to monitor this kind of failures.
 		errorLogger.Println(fmt.Errorf("logger: error writing data to logstash: %w", err))
-		backupLogger.Println(string(data))
 	}
 }
 
@@ -177,29 +180,31 @@ func (l *Log) establishConnection() {
 	conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
 	if err != nil {
 		errorLogger.Println(fmt.Errorf("connection to Logstash failed: %w", err))
-		l.useBackup = true
+		//Write to std out if connection to Logstash fails
+		l.bw = bufio.NewWriter(os.Stdout)
 
 		return
 	}
 
 	connection = conn
+	l.bw = bufio.NewWriter(connection)
 
 	return
 }
 
 func (l *Log) write(data []byte) error {
-	if l.useBackup {
-		backupLogger.Println(string(data))
-
-		return nil
+	if connection != nil {
+		err := connection.SetDeadline(time.Now().Add(connectionTimeout))
+		if err != nil {
+			return fmt.Errorf("error setting deadline: %w", err)
+		}
 	}
 
-	err := connection.SetDeadline(time.Now().Add(connectionTimeout))
+	_, err := l.bw.Write(data)
 	if err != nil {
-		return fmt.Errorf("error setting deadline: %w", err)
+		return fmt.Errorf("error writing log: %w", err)
 	}
 
-	_, err = connection.Write(data)
 	if errors.Is(err, os.ErrDeadlineExceeded) {
 		err = connection.SetDeadline(time.Now().Add(connectionTimeout))
 		if err != nil {
@@ -214,12 +219,17 @@ func (l *Log) write(data []byte) error {
 func (l *Log) Close() error {
 	l.wg.Wait()
 
+	err := l.bw.Flush()
+	if err != nil {
+		return fmt.Errorf("error flushing logger buffer: %w", err)
+	}
+
 	// this will be nil if a connection can never be made, in which case, there is no connection to close.
 	if connection == nil {
 		return nil
 	}
 
-	err := connection.Close()
+	err = connection.Close()
 	if err != nil {
 		return fmt.Errorf("error closing connection to Logstash server: %w", err)
 	}
