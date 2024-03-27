@@ -31,7 +31,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-158-20-203.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-23-20-202-215.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -64,6 +64,7 @@ type LogData struct {
 	Error     string                            `json:"error,omitempty"`
 	Event     string                            `json:"event,omitempty"`
 	LogObject map[string]map[string]interface{} `json:"properties,omitempty"`
+	Timestamp string                            `json:"@timestamp,omitempty"`
 }
 
 func NewLogger() LogAPI {
@@ -157,20 +158,21 @@ func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error
 		Event:     eventName,
 		Level:     string(level),
 		LogObject: getLogObjects(objects),
+		Timestamp: time.Now().Format(timestampLayout),
 	}
 
 	if errToLog != nil {
 		logData.Error = errToLog.Error()
 	}
 
-	dataAsBytes := new(bytes.Buffer)
+	dataBuffer := new(bytes.Buffer)
 
-	err := json.NewEncoder(dataAsBytes).Encode(logData)
+	err := json.NewEncoder(dataBuffer).Encode(logData)
 	if err != nil {
 		panic(fmt.Errorf("logger: error encoding log data: %w", err))
 	}
 
-	return dataAsBytes.Bytes()
+	return dataBuffer.Bytes()
 }
 
 func (l *Log) establishConnection() {
