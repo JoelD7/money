@@ -31,7 +31,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-23-20-202-215.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-160-152-230.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -70,7 +70,7 @@ type LogData struct {
 func NewLogger() LogAPI {
 	log := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
-		bw:      new(bufio.Writer),
+		bw:      bufio.NewWriter(os.Stdout),
 	}
 
 	log.establishConnection()
@@ -81,7 +81,7 @@ func NewLogger() LogAPI {
 func NewLoggerWithHandler(handler string) LogAPI {
 	log := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
-		bw:      new(bufio.Writer),
+		bw:      bufio.NewWriter(os.Stdout),
 	}
 
 	if handler != "" && log.Service != "unknown" {
@@ -180,8 +180,6 @@ func (l *Log) establishConnection() {
 		conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
 		if err != nil {
 			errorLogger.Println(fmt.Errorf("connection to Logstash failed: %w", err))
-			//Write to std out if connection to Logstash fails
-			l.bw = bufio.NewWriter(os.Stdout)
 
 			return
 		}
