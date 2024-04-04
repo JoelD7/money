@@ -1,7 +1,9 @@
 package logger
 
 import (
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -33,14 +35,17 @@ func TestInfo(t *testing.T) {
 	dayOfBirth, err := time.Parse("January 2, 2006 at 15:04:05", "April 13, 2000 at 18:23:00")
 	c.Nil(err)
 
+	name := utils.GenerateDynamoID("")
+
 	user := &testUser{
-		Name:       "Joel",
+		Name:       name,
 		Age:        22,
 		Income:     123456,
 		DayOfBirth: &dayOfBirth,
 	}
 
-	logger := NewLoggerMock(nil)
+	//logger := NewLoggerMock(nil)
+	logger := NewLogger()
 	defer func() {
 		err = logger.Close()
 		if err != nil {
@@ -48,5 +53,10 @@ func TestInfo(t *testing.T) {
 		}
 	}()
 
-	logger.Info("test_event_emitted", []models.LoggerObject{user})
+	fmt.Println(name)
+
+	for i := 0; i < 10; i++ {
+		time.Sleep(time.Millisecond * 500)
+		logger.Info(fmt.Sprintf("test_event_emitted_%d", i+1), []models.LoggerObject{user})
+	}
 }

@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"net"
+	"os"
 	"regexp"
 	"runtime/debug"
 	"sync"
@@ -22,8 +24,6 @@ const (
 	warningLevel logLevel = "warning"
 	panicLevel   logLevel = "panic"
 
-	retries           = 3
-	backoffFactor     = 2
 	connectionTimeout = time.Second * 3
 	//leave this here just in case you decide to add custom log timestamps
 	timestampLayout = "2006-01-02T15:04:05.999999999Z"
@@ -31,10 +31,13 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-226-32-165.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-23-20-202-215.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
+
+	connection net.Conn
+	once       sync.Once
 )
 
 type LogAPI interface {
@@ -49,10 +52,10 @@ type LogAPI interface {
 }
 
 type Log struct {
-	Service    string `json:"service,omitempty"`
-	connection net.Conn
-	mu         sync.Mutex
-	wg         sync.WaitGroup
+	Service   string `json:"service,omitempty"`
+	useBackup bool
+	bw        *bufio.Writer
+	wg        sync.WaitGroup
 }
 
 type LogData struct {
@@ -61,24 +64,33 @@ type LogData struct {
 	Error     string                            `json:"error,omitempty"`
 	Event     string                            `json:"event,omitempty"`
 	LogObject map[string]map[string]interface{} `json:"properties,omitempty"`
+	Timestamp string                            `json:"@timestamp,omitempty"`
 }
 
 func NewLogger() LogAPI {
-	return &Log{
+	log := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		bw:      new(bufio.Writer),
 	}
+
+	log.establishConnection()
+
+	return log
 }
 
 func NewLoggerWithHandler(handler string) LogAPI {
-	l := &Log{
+	log := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		bw:      new(bufio.Writer),
 	}
 
-	if handler != "" && l.Service != "unknown" {
-		l.Service += "-" + handler
+	if handler != "" && log.Service != "unknown" {
+		log.Service += "-" + handler
 	}
 
-	return l
+	log.establishConnection()
+
+	return log
 }
 
 func (l *Log) SetHandler(handler string) {
@@ -130,50 +142,8 @@ func (l *Log) Critical(eventName string, objects []models.LoggerObject) {
 func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) {
 	defer l.wg.Done()
 
-	err := l.connect()
-	if err != nil {
-		errorLogger.Println(fmt.Errorf("error connecting to Logstash server: %w", err))
+	data := l.getLogDataAsBytes(level, eventName, errToLog, objects)
 
-		return
-	}
-
-	logData := &LogData{
-		Service:   l.Service,
-		Event:     eventName,
-		Level:     string(level),
-		LogObject: getLogObjects(objects),
-	}
-
-	if errToLog != nil {
-		logData.Error = errToLog.Error()
-	}
-
-	dataAsBytes := new(bytes.Buffer)
-
-	err = json.NewEncoder(dataAsBytes).Encode(logData)
-	if err != nil {
-		panic(fmt.Errorf("logger: error encoding log data: %w", err))
-	}
-
-	l.writeToLogstash(dataAsBytes.Bytes())
-}
-
-func (l *Log) connect() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if l.connection != nil {
-		return nil
-	}
-
-	conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
-
-	l.connection = conn
-
-	return err
-}
-
-func (l *Log) writeToLogstash(data []byte) {
 	err := l.write(data)
 	if err != nil {
 		//The lambda function shouldn't terminate because logs weren't sent. A future way of handling this
@@ -182,29 +152,65 @@ func (l *Log) writeToLogstash(data []byte) {
 	}
 }
 
-func (l *Log) isConnectionClosed() bool {
-	if l.connection == nil {
-		return true
+func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) []byte {
+	logData := &LogData{
+		Service:   l.Service,
+		Event:     eventName,
+		Level:     string(level),
+		LogObject: getLogObjects(objects),
+		Timestamp: time.Now().Format(timestampLayout),
 	}
 
-	one := make([]byte, 1)
-	_, err := l.connection.Read(one)
+	if errToLog != nil {
+		logData.Error = errToLog.Error()
+	}
 
-	return errors.Is(err, net.ErrClosed)
+	dataBuffer := new(bytes.Buffer)
+
+	err := json.NewEncoder(dataBuffer).Encode(logData)
+	if err != nil {
+		panic(fmt.Errorf("logger: error encoding log data: %w", err))
+	}
+
+	return dataBuffer.Bytes()
+}
+
+func (l *Log) establishConnection() {
+	once.Do(func() {
+		conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
+		if err != nil {
+			errorLogger.Println(fmt.Errorf("connection to Logstash failed: %w", err))
+			//Write to std out if connection to Logstash fails
+			l.bw = bufio.NewWriter(os.Stdout)
+
+			return
+		}
+
+		connection = conn
+		l.bw = bufio.NewWriter(connection)
+
+		return
+	})
 }
 
 func (l *Log) write(data []byte) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+	if connection != nil {
+		err := connection.SetDeadline(time.Now().Add(connectionTimeout))
+		if err != nil {
+			return fmt.Errorf("error setting deadline: %w", err)
+		}
+	}
 
-	_, err := l.connection.Write(data)
-	backoff := time.Second * 1
+	_, err := l.bw.Write(data)
+	if err != nil {
+		return fmt.Errorf("error writing log: %w", err)
+	}
 
-	for i := 0; i < retries && err != nil; i++ {
-		time.Sleep(backoff)
-
-		_, err = l.connection.Write(data)
-		backoff *= backoffFactor
+	if errors.Is(err, os.ErrDeadlineExceeded) {
+		err = connection.SetDeadline(time.Now().Add(connectionTimeout))
+		if err != nil {
+			return fmt.Errorf("error setting deadline: %w", err)
+		}
 	}
 
 	return err
@@ -214,17 +220,22 @@ func (l *Log) write(data []byte) error {
 func (l *Log) Close() error {
 	l.wg.Wait()
 
+	err := l.bw.Flush()
+	if err != nil {
+		return fmt.Errorf("error flushing logger buffer: %w", err)
+	}
+
 	// this will be nil if a connection can never be made, in which case, there is no connection to close.
-	if l.connection == nil {
+	if connection == nil {
 		return nil
 	}
 
-	err := l.connection.Close()
+	err = connection.Close()
 	if err != nil {
 		return fmt.Errorf("error closing connection to Logstash server: %w", err)
 	}
 
-	l.connection = nil
+	connection = nil
 
 	return nil
 }
