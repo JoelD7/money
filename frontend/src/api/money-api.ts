@@ -9,3 +9,7 @@ export function signUp(newUser: SignUpUser){
 export function login(credentials: LoginCredentials){
     return axios.post(BASE_URL+"/auth/login", credentials)
 }
+
+export function getUser(username: string){
+    return axios.get(BASE_URL+"/users/"+username)
+}
