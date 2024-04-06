@@ -14,12 +14,16 @@ import { InputError } from "../types";
 import { api } from "../api";
 import { Colors } from "../assets";
 import Grid from "@mui/material/Unstable_Grid2";
+import {useNavigate} from "@tanstack/react-router";
 
 export function Login() {
+  const navigate = useNavigate({ from: "/login" })
+
   const mutation = useMutation({
     mutationFn: api.login,
     onSuccess: () => {
       setErrResponse("");
+      navigate({ to: "/" })
     },
     onError: (error) => {
       if (error) {
