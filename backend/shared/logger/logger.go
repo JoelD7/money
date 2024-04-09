@@ -24,20 +24,23 @@ const (
 	warningLevel logLevel = "warning"
 	panicLevel   logLevel = "panic"
 
-	connectionTimeout = time.Second * 3
 	//leave this here just in case you decide to add custom log timestamps
 	timestampLayout = "2006-01-02T15:04:05.999999999Z"
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-34-228-195-216.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-34-229-82-88.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 
-	connection net.Conn
-	once       sync.Once
+	connection        net.Conn
+	once              sync.Once
+	connectionTimeout = time.Second * 3
+	connDeadlineIncr  = time.Second * 4
+
+	connDeadline = time.Now().Add(connDeadlineIncr)
 )
 
 type LogAPI interface {
@@ -176,6 +179,21 @@ func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error
 }
 
 func (l *Log) establishConnection() {
+	go func() {
+		//str := connDeadline.String()
+		for {
+			select {
+			case <-time.After(connDeadline.Sub(time.Now())):
+				fmt.Println("Deadline passed")
+			}
+		}
+		//for {
+		//	if connDeadline.String() != str {
+		//		str = connDeadline.String()
+		//	}
+		//}
+	}()
+
 	once.Do(func() {
 		conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
 		if err != nil {
@@ -186,6 +204,7 @@ func (l *Log) establishConnection() {
 
 		connection = conn
 		l.bw = bufio.NewWriter(connection)
+		connDeadline = time.Now().Add(connDeadlineIncr)
 
 		return
 	})
@@ -211,6 +230,10 @@ func (l *Log) write(data []byte) error {
 		}
 	}
 
+	// Reset connection deadline on each successful write. This way the connection will only be closed when there aren't
+	// any writes for a certain amount of time.
+	connDeadline = time.Now().Add(connDeadlineIncr)
+
 	return err
 }
 
@@ -228,12 +251,15 @@ func (l *Log) Close() error {
 		return nil
 	}
 
-	err = connection.Close()
-	if err != nil {
-		return fmt.Errorf("error closing connection to Logstash server: %w", err)
-	}
+	if time.Now().After(connDeadline) {
+		fmt.Println("Closing connection to Logstash server")
+		err = connection.Close()
+		if err != nil {
+			return fmt.Errorf("error closing connection to Logstash server: %w", err)
+		}
 
-	connection = nil
+		connection = nil
+	}
 
 	return nil
 }
