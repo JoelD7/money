@@ -47,7 +47,7 @@ func TestInfo(t *testing.T) {
 	//logger := NewLoggerMock(nil)
 	logger := NewLogger()
 	defer func() {
-		err = logger.Close()
+		err = logger.Finish()
 		if err != nil {
 			panic(err)
 		}
@@ -55,8 +55,8 @@ func TestInfo(t *testing.T) {
 
 	fmt.Println(name)
 
-	for i := 0; i < 10; i++ {
-		time.Sleep(time.Millisecond * 500)
+	for i := 0; i < 5; i++ {
+		time.Sleep(time.Millisecond * 1000)
 		logger.Info(fmt.Sprintf("test_event_emitted_%d", i+1), []models.LoggerObject{user})
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -30,7 +29,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-34-229-82-88.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-226-242-228.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -38,7 +37,7 @@ var (
 	connection        net.Conn
 	once              sync.Once
 	connectionTimeout = time.Second * 3
-	connDeadlineIncr  = time.Second * 4
+	connDeadlineIncr  = time.Minute * 5
 
 	connDeadline = time.Now().Add(connDeadlineIncr)
 )
@@ -49,7 +48,7 @@ type LogAPI interface {
 	Error(eventName string, err error, objects []models.LoggerObject)
 	Critical(eventName string, objects []models.LoggerObject)
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
-	Close() error
+	Finish() error
 	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
 	SetHandler(handler string)
 }
@@ -179,20 +178,7 @@ func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error
 }
 
 func (l *Log) establishConnection() {
-	go func() {
-		//str := connDeadline.String()
-		for {
-			select {
-			case <-time.After(connDeadline.Sub(time.Now())):
-				fmt.Println("Deadline passed")
-			}
-		}
-		//for {
-		//	if connDeadline.String() != str {
-		//		str = connDeadline.String()
-		//	}
-		//}
-	}()
+	go l.closeConnection()
 
 	once.Do(func() {
 		conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
@@ -210,24 +196,38 @@ func (l *Log) establishConnection() {
 	})
 }
 
-func (l *Log) write(data []byte) error {
-	if connection != nil {
-		err := connection.SetDeadline(time.Now().Add(connectionTimeout))
-		if err != nil {
-			return fmt.Errorf("error setting deadline: %w", err)
+// closeConnection closes the connection when the deadline is reached.
+// Because the deadline is updated on each write, the connection will only be closed when no writes happen after a
+// certain amount of time.
+func (l *Log) closeConnection() {
+	for {
+		if time.Now().After(connDeadline) {
+			// this will be nil if a connection can never be made, in which case, there is no connection to close.
+			if connection == nil {
+				return
+			}
+
+			err := l.bw.Flush()
+			if err != nil {
+				errorLogger.Println(fmt.Errorf("error flushing buffer while closing to Logstash server connection: %w", err))
+			}
+
+			err = connection.Close()
+			if err != nil {
+				errorLogger.Println(fmt.Errorf("error closing connection to Logstash server: %w", err))
+				return
+			}
+
+			connection = nil
+			return
 		}
 	}
+}
 
+func (l *Log) write(data []byte) error {
 	_, err := l.bw.Write(data)
 	if err != nil {
 		return fmt.Errorf("error writing log: %w", err)
-	}
-
-	if errors.Is(err, os.ErrDeadlineExceeded) {
-		err = connection.SetDeadline(time.Now().Add(connectionTimeout))
-		if err != nil {
-			return fmt.Errorf("error setting deadline: %w", err)
-		}
 	}
 
 	// Reset connection deadline on each successful write. This way the connection will only be closed when there aren't
@@ -237,28 +237,13 @@ func (l *Log) write(data []byte) error {
 	return err
 }
 
-// Close closes the connection to the Logstash server
-func (l *Log) Close() error {
+// Finish sends the buffer's contents to Logstash in a batch
+func (l *Log) Finish() error {
 	l.wg.Wait()
 
 	err := l.bw.Flush()
 	if err != nil {
 		return fmt.Errorf("error flushing logger buffer: %w", err)
-	}
-
-	// this will be nil if a connection can never be made, in which case, there is no connection to close.
-	if connection == nil {
-		return nil
-	}
-
-	if time.Now().After(connDeadline) {
-		fmt.Println("Closing connection to Logstash server")
-		err = connection.Close()
-		if err != nil {
-			return fmt.Errorf("error closing connection to Logstash server: %w", err)
-		}
-
-		connection = nil
 	}
 
 	return nil

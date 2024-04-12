@@ -43,7 +43,7 @@ func (c *ConsoleLogger) Critical(eventName string, objects []models.LoggerObject
 
 func (c *ConsoleLogger) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {}
 
-func (c *ConsoleLogger) Close() error {
+func (c *ConsoleLogger) Finish() error {
 	return nil
 }
 

@@ -48,7 +48,7 @@ func NewRouter() *Router {
 
 func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (res *apigateway.Response, err error) {
 	defer func() {
-		closeErr := router.log.Close()
+		closeErr := router.log.Finish()
 		if closeErr != nil {
 			panic(closeErr)
 		}
