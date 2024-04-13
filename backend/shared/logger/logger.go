@@ -29,17 +29,14 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-226-242-228.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-227-124-38.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 
-	connection        net.Conn
 	once              sync.Once
 	connectionTimeout = time.Second * 3
 	connDeadlineIncr  = time.Minute * 5
-
-	connDeadline = time.Now().Add(connDeadlineIncr)
 )
 
 type LogAPI interface {
@@ -54,10 +51,11 @@ type LogAPI interface {
 }
 
 type Log struct {
-	Service   string `json:"service,omitempty"`
-	useBackup bool
-	bw        *bufio.Writer
-	wg        sync.WaitGroup
+	Service    string `json:"service,omitempty"`
+	bw         *bufio.Writer
+	connection net.Conn
+	connTimer  *time.Timer
+	wg         sync.WaitGroup
 }
 
 type LogData struct {
@@ -178,6 +176,8 @@ func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error
 }
 
 func (l *Log) establishConnection() {
+	l.connTimer = time.NewTimer(connDeadlineIncr)
+
 	go l.closeConnection()
 
 	once.Do(func() {
@@ -188,9 +188,8 @@ func (l *Log) establishConnection() {
 			return
 		}
 
-		connection = conn
-		l.bw = bufio.NewWriter(connection)
-		connDeadline = time.Now().Add(connDeadlineIncr)
+		l.bw = bufio.NewWriter(conn)
+		l.connection = conn
 
 		return
 	})
@@ -200,28 +199,26 @@ func (l *Log) establishConnection() {
 // Because the deadline is updated on each write, the connection will only be closed when no writes happen after a
 // certain amount of time.
 func (l *Log) closeConnection() {
-	for {
-		if time.Now().After(connDeadline) {
-			// this will be nil if a connection can never be made, in which case, there is no connection to close.
-			if connection == nil {
-				return
-			}
+	<-l.connTimer.C
 
-			err := l.bw.Flush()
-			if err != nil {
-				errorLogger.Println(fmt.Errorf("error flushing buffer while closing to Logstash server connection: %w", err))
-			}
-
-			err = connection.Close()
-			if err != nil {
-				errorLogger.Println(fmt.Errorf("error closing connection to Logstash server: %w", err))
-				return
-			}
-
-			connection = nil
-			return
-		}
+	// this will be nil if a connection can never be made, in which case, there is no connection to close.
+	if l.connection == nil {
+		return
 	}
+
+	err := l.bw.Flush()
+	if err != nil {
+		errorLogger.Println(fmt.Errorf("error flushing buffer while closing to Logstash server connection: %w", err))
+	}
+
+	err = l.connection.Close()
+	if err != nil {
+		errorLogger.Println(fmt.Errorf("error closing connection to Logstash server: %w", err))
+		return
+	}
+
+	l.connection = nil
+	return
 }
 
 func (l *Log) write(data []byte) error {
@@ -230,9 +227,12 @@ func (l *Log) write(data []byte) error {
 		return fmt.Errorf("error writing log: %w", err)
 	}
 
+	if !l.connTimer.Stop() {
+		<-l.connTimer.C
+	}
 	// Reset connection deadline on each successful write. This way the connection will only be closed when there aren't
 	// any writes for a certain amount of time.
-	connDeadline = time.Now().Add(connDeadlineIncr)
+	l.connTimer.Reset(connDeadlineIncr)
 
 	return err
 }
@@ -240,6 +240,10 @@ func (l *Log) write(data []byte) error {
 // Finish sends the buffer's contents to Logstash in a batch
 func (l *Log) Finish() error {
 	l.wg.Wait()
+
+	if l.connection == nil {
+		return nil
+	}
 
 	err := l.bw.Flush()
 	if err != nil {
