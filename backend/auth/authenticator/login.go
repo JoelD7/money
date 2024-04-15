@@ -24,7 +24,7 @@ type requestLoginHandler struct {
 }
 
 type accessTokenResponse struct {
-	AccessToken string `json:"access_token"`
+	AccessToken string `json:"accessToken"`
 }
 
 func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
