@@ -14,16 +14,21 @@ import { InputError } from "../types";
 import { api } from "../api";
 import { Colors } from "../assets";
 import Grid from "@mui/material/Unstable_Grid2";
-import {useNavigate} from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 export function Login() {
-  const navigate = useNavigate({ from: "/login" })
+  const navigate = useNavigate({ from: "/login" });
 
   const mutation = useMutation({
     mutationFn: api.login,
     onSuccess: () => {
       setErrResponse("");
+
       navigate({ to: "/" })
+        .then(() => {})
+        .catch((err) => {
+          console.log("Error navigation to /", err);
+        });
     },
     onError: (error) => {
       if (error) {
@@ -44,7 +49,7 @@ export function Login() {
   const [errResponse, setErrResponse] = useState<string>("");
 
   function login() {
-    mutation.reset()
+    mutation.reset();
 
     if (!validateInput()) {
       return;
@@ -95,7 +100,7 @@ export function Login() {
   }
 
   return (
-    <Grid container >
+    <Grid container>
       {/*Green background logo*/}
       <Grid lg={6}>
         <MoneyBanner />
@@ -179,10 +184,7 @@ export function Login() {
 
                 <Typography textAlign={"center"} marginTop={"5px"}>
                   Don't have an account?{" "}
-                  <Link
-                    color={Colors.BLUE_DARK}
-                    href={"/signup"}
-                  >
+                  <Link color={Colors.BLUE_DARK} href={"/signup"}>
                     Sign up
                   </Link>
                 </Typography>
