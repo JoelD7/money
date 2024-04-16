@@ -7,21 +7,27 @@ import {
   Typography,
 } from "@mui/material";
 import { Button, MoneyBanner, MoneyBannerMobile } from "../components";
-import { useMutation } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {AxiosError, AxiosResponse} from "axios";
 import { ChangeEvent, useState } from "react";
 import { InputError } from "../types";
 import { api } from "../api";
 import { Colors } from "../assets";
 import Grid from "@mui/material/Unstable_Grid2";
 import { useNavigate } from "@tanstack/react-router";
+import {LoginResponse} from "../types/other.ts";
+import { keys } from "../utils";
 
 export function Login() {
   const navigate = useNavigate({ from: "/login" });
 
   const mutation = useMutation({
     mutationFn: api.login,
-    onSuccess: () => {
+    onSuccess: (res: AxiosResponse) => {
+
+      const loginResponse: LoginResponse = res.data;
+      localStorage.setItem(keys.ACCESS_TOKEN, loginResponse.accessToken);
+      
       setErrResponse("");
 
       navigate({ to: "/" })
