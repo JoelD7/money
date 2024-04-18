@@ -11,6 +11,12 @@ export function Home() {
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
+  // const getUserQuery = useQuery({
+  //   queryKey: ["user"],
+  //   queryFn: () => api.getUser(),
+  // });
+  // console.log("user: ", getUserQuery.data);
+
   const user = {
     full_name: "Joel",
     username: "test@gmail.com",

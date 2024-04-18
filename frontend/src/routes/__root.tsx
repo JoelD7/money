@@ -2,6 +2,9 @@ import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import { ThemeProvider } from "@mui/material";
 import { theme } from "../assets";
+import { Provider } from "react-redux";
+import { persistor, store } from "../store";
+import { PersistGate } from "redux-persist/integration/react";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -50,7 +53,11 @@ function Root() {
   return (
     <>
       <ThemeProvider theme={theme}>
-        <Outlet />
+        <Provider store={store}>
+          <PersistGate loading={null} persistor={persistor}>
+            <Outlet />
+          </PersistGate>
+        </Provider>
       </ThemeProvider>
 
       <TanStackRouterDevtools />

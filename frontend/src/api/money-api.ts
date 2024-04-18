@@ -13,8 +13,8 @@ export function login(credentials: LoginCredentials){
     return axios.post(BASE_URL+"/auth/login", credentials)
 }
 
-export function getUser(username: string){
-    return axios.get(BASE_URL+"/users/"+username, {
+export function getUser(){
+    return axios.get(BASE_URL+"/users/", {
         headers: {
             "Auth": `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`
         }
