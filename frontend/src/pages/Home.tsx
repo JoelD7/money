@@ -3,53 +3,23 @@ import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import { BalanceCard, Button, ExpenseCard, ExpensesTable } from "../components";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Expense, RechartsLabelProps } from "../types";
+import { Expense, RechartsLabelProps, User } from "../types";
 import json2mq from "json2mq";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api";
 
 export function Home() {
   const theme = useTheme();
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
-  // const getUserQuery = useQuery({
-  //   queryKey: ["user"],
-  //   queryFn: () => api.getUser(),
-  // });
-  // console.log("user: ", getUserQuery.data);
+  const getUserQuery = useQuery({
+    queryKey: ["user"],
+    queryFn: () => api.getUser(),
+  });
+  console.log("user: ", getUserQuery.data);
 
-  const user = {
-    full_name: "Joel",
-    username: "test@gmail.com",
-    remainder: 14456.21,
-    expenses: 8563.05,
-    categories: [
-      {
-        id: "CTGzJeEzCNz6HMTiPKwgPmj",
-        name: "Entertainment",
-        color: "#ff8733",
-        value: 55,
-      },
-      {
-        id: "CTGtClGT160UteOl02jIH4F",
-        name: "Health",
-        color: "#00b85e",
-        value: 15,
-      },
-      {
-        id: "CTGrR7fO4ndmI0IthJ7Wg8f",
-        name: "Utilities",
-        color: "#009eb8",
-        value: 30,
-      },
-      {
-        id: "CTGrR7fO4ndmI0IthJ7Wg8fs",
-        name: "Shopping",
-        color: "#8c34eb",
-        value: 30,
-      },
-    ],
-    current_period: "2023-5",
-  };
+  const user: User | undefined = getUserQuery.data?.data;
 
   const period = {
     username: "test@gmail.com",
@@ -221,12 +191,12 @@ export function Home() {
       <Grid container spacing={1} justifyContent={"center"}>
         {/*Balance*/}
         <Grid xs={12} sm={6} hidden={mdUp}>
-          <BalanceCard remainder={user.remainder} />
+          <BalanceCard remainder={user ? user.remainder : 0} />
         </Grid>
 
         {/*Expenses*/}
         <Grid xs={12} sm={6} hidden={mdUp}>
-          <ExpenseCard expenses={user.expenses} />
+          <ExpenseCard expenses={user ? user.expenses : 0} />
         </Grid>
 
         {/*Chart, Current balance and expenses*/}
@@ -255,7 +225,7 @@ export function Home() {
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart width={350} height={chartHeight}>
                           <Pie
-                            data={user.categories}
+                            data={user ? user.categories : []}
                             label={getCustomLabel}
                             dataKey="value"
                             nameKey="name"
@@ -264,12 +234,14 @@ export function Home() {
                             labelLine={false}
                             fill="#8884d8"
                           >
-                            {user.categories.map((category, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={category.color}
-                              />
-                            ))}
+                            {user &&
+                              user.categories &&
+                              user.categories.map((category, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={category.color}
+                                />
+                              ))}
                           </Pie>
                           <Tooltip />
                         </PieChart>
@@ -281,20 +253,22 @@ export function Home() {
                       <Grid container width="100%" className="justify-between">
                         {/*Categories*/}
                         <Grid xs={6}>
-                          {user.categories.map((category) => (
-                            <div
-                              key={category.id}
-                              className="flex gap-1 items-center"
-                            >
+                          {user &&
+                            user.categories &&
+                            user.categories.map((category) => (
                               <div
-                                className="rounded-full w-3 h-3"
-                                style={{ backgroundColor: category.color }}
-                              />
-                              <Typography color="gray.light">
-                                {category.name}
-                              </Typography>
-                            </div>
-                          ))}
+                                key={category.categoryID}
+                                className="flex gap-1 items-center"
+                              >
+                                <div
+                                  className="rounded-full w-3 h-3"
+                                  style={{ backgroundColor: category.color }}
+                                />
+                                <Typography color="gray.light">
+                                  {category.name}
+                                </Typography>
+                              </div>
+                            ))}
                         </Grid>
                         {/*Details button*/}
                         <Grid xs={6}>
@@ -323,12 +297,12 @@ export function Home() {
                   <Grid container mt={"1rem"} spacing={1}>
                     {/*Balance*/}
                     <Grid xs={12} hidden={!mdUp}>
-                      <BalanceCard remainder={user.remainder} />
+                      <BalanceCard remainder={user ? user.remainder : 0} />
                     </Grid>
 
                     {/*Expenses*/}
                     <Grid xs={12} hidden={!mdUp}>
-                      <ExpenseCard expenses={user.expenses} />
+                      <ExpenseCard expenses={user ? user.expenses : 0} />
                     </Grid>
 
                     {/**New expense/income buttons*/}

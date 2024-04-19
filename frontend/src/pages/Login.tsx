@@ -18,7 +18,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { LoginResponse } from "../types/other.ts";
 import { keys } from "../utils";
 import { useDispatch } from "react-redux";
-import { setAuthenticated } from "../store";
+import { setIsAuthenticated } from "../store";
 
 export function Login() {
   const navigate = useNavigate({ from: "/login" });
@@ -32,7 +32,7 @@ export function Login() {
 
       setErrResponse("");
 
-      dispatch(setAuthenticated(true));
+      dispatch(setIsAuthenticated(true));
 
       navigate({ to: "/" })
         .then(() => {})

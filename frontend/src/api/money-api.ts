@@ -1,4 +1,4 @@
-import { LoginCredentials, SignUpUser } from "../types";
+import { LoginCredentials, SignUpUser, User } from "../types";
 import axios from "axios";
 import { keys } from "../utils";
 
@@ -14,7 +14,7 @@ export function login(credentials: LoginCredentials){
 }
 
 export function getUser(){
-    return axios.get(BASE_URL+"/users/", {
+    return axios.get<User>(BASE_URL+"/users/", {
         headers: {
             "Auth": `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`
         }

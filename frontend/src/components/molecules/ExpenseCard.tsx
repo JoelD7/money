@@ -3,7 +3,7 @@ import ArrowCircleDownRoundedIcon from "@mui/icons-material/ArrowCircleDownRound
 import {Typography, useMediaQuery, useTheme} from "@mui/material";
 
 type ExpenseCardProps = {
-    expenses: number
+    expenses?: number
 }
 
 export function ExpenseCard({expenses}: ExpenseCardProps) {
@@ -33,7 +33,7 @@ export function ExpenseCard({expenses}: ExpenseCardProps) {
                         {new Intl.NumberFormat('en-US', {
                             style: 'currency',
                             currency: 'USD'
-                        }).format(expenses)}
+                        }).format(expenses ? expenses : 0)}
                     </Typography>
                 </Grid>
             </Grid>
