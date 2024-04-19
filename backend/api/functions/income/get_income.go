@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,8 @@ type incomeGetRequest struct {
 	err          error
 	incomeRepo   income.Repository
 }
+
+var once sync.Once
 
 func (request *incomeGetRequest) init(log logger.LogAPI) {
 	dynamoClient := initDynamoClient()
@@ -40,6 +43,10 @@ func getIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Re
 }
 
 func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	once.Do(func() {
+		request.log.Info("sync_once_executed", nil)
+	})
+
 	incomeID, ok := req.PathParameters["incomeID"]
 	if !ok || incomeID == "" {
 		request.err = models.ErrMissingIncomeID

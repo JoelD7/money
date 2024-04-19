@@ -1,3 +1,11 @@
+export type User = {
+    username: string
+    currentPeriod: string
+    remainder: number
+    expenses?:number
+    categories?: Category[]
+}
+
 export type Expense = {
     expenseID: string
     username: string

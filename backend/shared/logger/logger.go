@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -24,20 +23,20 @@ const (
 	warningLevel logLevel = "warning"
 	panicLevel   logLevel = "panic"
 
-	connectionTimeout = time.Second * 3
 	//leave this here just in case you decide to add custom log timestamps
 	timestampLayout = "2006-01-02T15:04:05.999999999Z"
 )
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-160-152-230.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-162-202-219.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 
-	connection net.Conn
-	once       sync.Once
+	once              sync.Once
+	connectionTimeout = time.Second * 3
+	connDeadlineIncr  = time.Minute * 5
 )
 
 type LogAPI interface {
@@ -46,16 +45,17 @@ type LogAPI interface {
 	Error(eventName string, err error, objects []models.LoggerObject)
 	Critical(eventName string, objects []models.LoggerObject)
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
-	Close() error
+	Finish() error
 	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
 	SetHandler(handler string)
 }
 
 type Log struct {
-	Service   string `json:"service,omitempty"`
-	useBackup bool
-	bw        *bufio.Writer
-	wg        sync.WaitGroup
+	Service    string `json:"service,omitempty"`
+	bw         *bufio.Writer
+	connection net.Conn
+	connTimer  *time.Timer
+	wg         sync.WaitGroup
 }
 
 type LogData struct {
@@ -176,6 +176,10 @@ func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error
 }
 
 func (l *Log) establishConnection() {
+	l.connTimer = time.NewTimer(connDeadlineIncr)
+
+	go l.closeConnection()
+
 	once.Do(func() {
 		conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
 		if err != nil {
@@ -184,56 +188,67 @@ func (l *Log) establishConnection() {
 			return
 		}
 
-		connection = conn
-		l.bw = bufio.NewWriter(connection)
+		l.bw = bufio.NewWriter(conn)
+		l.connection = conn
 
 		return
 	})
 }
 
-func (l *Log) write(data []byte) error {
-	if connection != nil {
-		err := connection.SetDeadline(time.Now().Add(connectionTimeout))
-		if err != nil {
-			return fmt.Errorf("error setting deadline: %w", err)
-		}
+// closeConnection closes the connection when the deadline is reached.
+// Because the deadline is updated on each write, the connection will only be closed when no writes happen after a
+// certain amount of time.
+func (l *Log) closeConnection() {
+	<-l.connTimer.C
+
+	// this will be nil if a connection can never be made, in which case, there is no connection to close.
+	if l.connection == nil {
+		return
 	}
 
+	err := l.bw.Flush()
+	if err != nil {
+		errorLogger.Println(fmt.Errorf("error flushing buffer while closing to Logstash server connection: %w", err))
+	}
+
+	err = l.connection.Close()
+	if err != nil {
+		errorLogger.Println(fmt.Errorf("error closing connection to Logstash server: %w", err))
+		return
+	}
+
+	l.connection = nil
+	return
+}
+
+func (l *Log) write(data []byte) error {
 	_, err := l.bw.Write(data)
 	if err != nil {
 		return fmt.Errorf("error writing log: %w", err)
 	}
 
-	if errors.Is(err, os.ErrDeadlineExceeded) {
-		err = connection.SetDeadline(time.Now().Add(connectionTimeout))
-		if err != nil {
-			return fmt.Errorf("error setting deadline: %w", err)
-		}
+	if !l.connTimer.Stop() {
+		<-l.connTimer.C
 	}
+	// Reset connection deadline on each successful write. This way the connection will only be closed when there aren't
+	// any writes for a certain amount of time.
+	l.connTimer.Reset(connDeadlineIncr)
 
 	return err
 }
 
-// Close closes the connection to the Logstash server
-func (l *Log) Close() error {
+// Finish sends the buffer's contents to Logstash in a batch
+func (l *Log) Finish() error {
 	l.wg.Wait()
+
+	if l.connection == nil {
+		return nil
+	}
 
 	err := l.bw.Flush()
 	if err != nil {
 		return fmt.Errorf("error flushing logger buffer: %w", err)
 	}
-
-	// this will be nil if a connection can never be made, in which case, there is no connection to close.
-	if connection == nil {
-		return nil
-	}
-
-	err = connection.Close()
-	if err != nil {
-		return fmt.Errorf("error closing connection to Logstash server: %w", err)
-	}
-
-	connection = nil
 
 	return nil
 }

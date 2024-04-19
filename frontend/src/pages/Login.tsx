@@ -8,18 +8,37 @@ import {
 } from "@mui/material";
 import { Button, MoneyBanner, MoneyBannerMobile } from "../components";
 import { useMutation } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import { ChangeEvent, useState } from "react";
 import { InputError } from "../types";
 import { api } from "../api";
 import { Colors } from "../assets";
 import Grid from "@mui/material/Unstable_Grid2";
+import { useNavigate } from "@tanstack/react-router";
+import { LoginResponse } from "../types/other.ts";
+import { keys } from "../utils";
+import { useDispatch } from "react-redux";
+import { setIsAuthenticated } from "../store";
 
 export function Login() {
+  const navigate = useNavigate({ from: "/login" });
+  const dispatch = useDispatch();
+
   const mutation = useMutation({
     mutationFn: api.login,
-    onSuccess: () => {
+    onSuccess: (res: AxiosResponse) => {
+      const loginResponse: LoginResponse = res.data;
+      localStorage.setItem(keys.ACCESS_TOKEN, loginResponse.accessToken);
+
       setErrResponse("");
+
+      dispatch(setIsAuthenticated(true));
+
+      navigate({ to: "/" })
+        .then(() => {})
+        .catch((err) => {
+          console.log("Error navigation to /", err);
+        });
     },
     onError: (error) => {
       if (error) {
@@ -40,7 +59,7 @@ export function Login() {
   const [errResponse, setErrResponse] = useState<string>("");
 
   function login() {
-    mutation.reset()
+    mutation.reset();
 
     if (!validateInput()) {
       return;
@@ -91,7 +110,7 @@ export function Login() {
   }
 
   return (
-    <Grid container >
+    <Grid container>
       {/*Green background logo*/}
       <Grid lg={6}>
         <MoneyBanner />
@@ -175,10 +194,7 @@ export function Login() {
 
                 <Typography textAlign={"center"} marginTop={"5px"}>
                   Don't have an account?{" "}
-                  <Link
-                    color={Colors.BLUE_DARK}
-                    href={"/signup"}
-                  >
+                  <Link color={Colors.BLUE_DARK} href={"/signup"}>
                     Sign up
                   </Link>
                 </Typography>

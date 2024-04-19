@@ -32,7 +32,7 @@ func TestGetIncome(t *testing.T) {
 	}
 
 	defer func() {
-		err := request.log.Close()
+		err := request.log.Finish()
 		c.Nil(err)
 	}()
 

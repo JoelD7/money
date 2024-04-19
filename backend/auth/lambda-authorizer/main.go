@@ -78,7 +78,7 @@ func (req *requestInfo) init() {
 
 func (req *requestInfo) finish() {
 	defer func() {
-		err := req.log.Close()
+		err := req.log.Finish()
 		if err != nil {
 			panic(err)
 		}
