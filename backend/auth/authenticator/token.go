@@ -44,7 +44,7 @@ func (req *requestTokenHandler) initTokenHandler(log logger.LogAPI) {
 	req.invalidTokenManager = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("token")
+	req.log = log
 }
 
 func (req *requestTokenHandler) finish() {
