@@ -12,7 +12,7 @@ import (
 var (
 	redisClient RedisAPI
 
-	redisURL = env.GetString("REDIS_URL", "redis://default:f9742ee35a7f4641a55cf405a27cbe61@us1-dashing-lacewing-39786.upstash.io:39786")
+	redisURL = env.GetString("REDIS_URL", "redis://default:d45d4e1dbf8a4b809be74bda839a7a80@us1-casual-teal-41561.upstash.io:41561")
 )
 
 type RedisAPI interface {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -44,7 +43,7 @@ func (req *requestTokenHandler) initTokenHandler(log logger.LogAPI) {
 	req.invalidTokenManager = cache.NewRedisCache()
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("token")
+	req.log = log
 }
 
 func (req *requestTokenHandler) finish() {
@@ -95,19 +94,11 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 		return request.NewErrorResponse(err), nil
 	}
 
-	setCookieHeader := map[string]string{
-		"Set-Cookie": fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
-			refreshToken.Expiration.Format(time.RFC1123)),
-	}
+	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
-	fmt.Println("hi")
 	req.log.Info("new_tokens_issued_successfully", []models.LoggerObject{user})
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       string(data),
-		Headers:    setCookieHeader,
-	}, nil
+	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }
 
 func (req *requestTokenHandler) handleValidationError(ctx context.Context, user *models.User, request *apigateway.Request) (*apigateway.Response, error) {

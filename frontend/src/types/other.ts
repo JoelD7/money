@@ -13,6 +13,6 @@ export type InputError = {
     password?: string;
 };
 
-export type LoginResponse = {
+export type AccessTokenResponse = {
     accessToken: string;
 }

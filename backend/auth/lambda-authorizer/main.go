@@ -117,16 +117,10 @@ func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCust
 	verifyToken := usecases.NewTokenVerifier(req.client, req.log, req.secretsManager, req.cacheRepo)
 
 	subject, err := verifyToken(ctx, token)
-	if errors.Is(err, models.ErrUnauthorized) {
+	if errors.Is(err, models.ErrUnauthorized) || errors.Is(err, models.ErrInvalidToken) {
 		req.log.Error("request_unauthorized", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
 
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
-	}
-
-	if errors.Is(err, models.ErrInvalidToken) {
-		req.log.Error("request_denied", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
-
-		return defaultDenyAllPolicy(event.MethodArn, err), nil
 	}
 
 	if err != nil {
