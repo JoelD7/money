@@ -94,17 +94,11 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 		return request.NewErrorResponse(err), nil
 	}
 
-	setCookieHeader := map[string]string{
-		"Set-Cookie": getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration),
-	}
+	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
 	req.log.Info("new_tokens_issued_successfully", []models.LoggerObject{user})
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       string(data),
-		Headers:    setCookieHeader,
-	}, nil
+	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }
 
 func (req *requestTokenHandler) handleValidationError(ctx context.Context, user *models.User, request *apigateway.Request) (*apigateway.Response, error) {
