@@ -1,4 +1,4 @@
-import { Typography, useMediaQuery, useTheme } from "@mui/material";
+  import { Typography, useMediaQuery, useTheme } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import { BalanceCard, Button, ExpenseCard, ExpensesTable } from "../components";
@@ -7,6 +7,7 @@ import { Expense, RechartsLabelProps, User } from "../types";
 import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
+import { AxiosError } from "axios";
 
 export function Home() {
   const theme = useTheme();
@@ -16,8 +17,18 @@ export function Home() {
   const getUserQuery = useQuery({
     queryKey: ["user"],
     queryFn: () => api.getUser(),
+    retry: (_, error) => {
+      const err = error as AxiosError;
+
+      if (err.response?.status === 401) {
+        api.refreshToken()
+        return true
+      }
+
+      return false
+    },
+    refetchOnWindowFocus: false,
   });
-  console.log("user: ", getUserQuery.data);
 
   const user: User | undefined = getUserQuery.data?.data;
 

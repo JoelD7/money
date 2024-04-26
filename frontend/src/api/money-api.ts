@@ -1,5 +1,5 @@
 import { LoginCredentials, SignUpUser, User } from "../types";
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios from "axios";
 import { keys } from "../utils";
 
 export const BASE_URL =
@@ -16,20 +16,6 @@ export function login(credentials: LoginCredentials) {
 }
 
 export function getUser() {
-  // const req = authRequest(
-  //   axios.get<User>(BASE_URL + "/users/", {
-  //     headers: {
-  //       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
-  //     },
-  //   }), 1
-  // );
-  //
-  // req.catch((err) => {
-  //   console.error("Error getting user: ", err);
-  // });
-  //
-  // return req;
-
   return axios
     .get<User>(BASE_URL + "/users/", {
       withCredentials: true,
@@ -39,32 +25,15 @@ export function getUser() {
     })
 }
 
-async function authRequest(request: Promise<AxiosResponse>, retryCount: number) {
-  const req = request.then((res) => res).catch(async (err: AxiosError) => {
-    if (isUnauthorized(err) && retryCount < 2) {
-      await refreshToken();
-      await authRequest(request, retryCount++)
-      return
-    } else {
-      console.error("Error in auth request: ", err);
-      throw err;
-    }
-  });
-
-  return req;
-}
-
 export async function refreshToken() {
   axios
-    .post(BASE_URL + "/auth/token")
+    .post(BASE_URL + "/auth/token", {}, {
+      withCredentials: true,
+    })
     .then((res) => {
       localStorage.setItem(keys.ACCESS_TOKEN, res.data.accessToken);
     })
     .catch((err) => {
       console.error("Error refreshing token: ", err);
     });
-}
-
-function isUnauthorized(err: AxiosError): boolean {
-  return err.response?.status === 401;
 }

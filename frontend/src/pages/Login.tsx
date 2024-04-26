@@ -15,7 +15,7 @@ import { api } from "../api";
 import { Colors } from "../assets";
 import Grid from "@mui/material/Unstable_Grid2";
 import { useNavigate } from "@tanstack/react-router";
-import { LoginResponse } from "../types/other.ts";
+import { AccessTokenResponse } from "../types/other.ts";
 import { keys } from "../utils";
 import { useDispatch } from "react-redux";
 import { setIsAuthenticated } from "../store";
@@ -27,7 +27,7 @@ export function Login() {
   const mutation = useMutation({
     mutationFn: api.login,
     onSuccess: (res: AxiosResponse) => {
-      const loginResponse: LoginResponse = res.data;
+      const loginResponse: AccessTokenResponse = res.data;
       localStorage.setItem(keys.ACCESS_TOKEN, loginResponse.accessToken);
 
       setErrResponse("");
