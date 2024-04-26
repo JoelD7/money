@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -96,11 +95,9 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 	}
 
 	setCookieHeader := map[string]string{
-		"Set-Cookie": fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
-			refreshToken.Expiration.Format(time.RFC1123)),
+		"Set-Cookie": getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration),
 	}
 
-	fmt.Println("hi")
 	req.log.Info("new_tokens_issued_successfully", []models.LoggerObject{user})
 
 	return &apigateway.Response{

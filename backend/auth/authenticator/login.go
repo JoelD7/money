@@ -83,12 +83,16 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 		return request.NewErrorResponse(err), nil
 	}
 
-	cookieStr := fmt.Sprintf("%s=%s; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, refreshToken.Value,
-		refreshToken.Expiration.Format(time.RFC1123))
+	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
 	req.log.Info("login_succeeded", nil)
 
 	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
+}
+
+func getRefreshTokenCookieStr(value string, expiration time.Time) string {
+	return fmt.Sprintf("%s=%s; Expires=%s; Path=/; Secure; SameSite=None; HttpOnly;", refreshTokenCookieName, value,
+		expiration.Format(time.RFC1123))
 }
 
 func validateLoginInput(request *apigateway.Request) (*Credentials, error) {
