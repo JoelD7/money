@@ -119,8 +119,6 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}, headers ..
 
 	if allowedOrigins != "*" {
 		stdHeaders["Access-Control-Allow-Credentials"] = "true"
-		stdHeaders["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS,PUT,DELETE"
-		stdHeaders["Access-Control-Allow-Headers"] = "Content-Type,Origin"
 	}
 
 	for _, header := range headers {
