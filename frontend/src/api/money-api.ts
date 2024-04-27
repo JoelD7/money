@@ -3,6 +3,7 @@ import axios, { AxiosError } from "axios";
 import { keys } from "../utils";
 
 export const MAX_RETRIES: number = 3;
+const BACKOFF_TIME_MS: number = 1000;
 
 export const BASE_URL =
   "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging";
@@ -49,7 +50,7 @@ async function retryableRequest(request: () => Promise<void>) {
       return;
     } catch (err) {
       myErr = err as AxiosError;
-      await sleep(1000);
+      await sleep(BACKOFF_TIME_MS);
     }
   }
 
