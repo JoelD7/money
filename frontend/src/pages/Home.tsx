@@ -1,4 +1,4 @@
-  import { Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Typography, useMediaQuery, useTheme } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import { BalanceCard, Button, ExpenseCard, ExpensesTable } from "../components";
@@ -19,16 +19,51 @@ export function Home() {
     queryFn: () => api.getUser(),
     retry: (_, error) => {
       const err = error as AxiosError;
+      let shouldRetry: boolean = false;
 
       if (err.response?.status === 401) {
-        api.refreshToken()
-        return true
+        shouldRetry = handleQueryRetry();
       }
 
-      return false
+      return shouldRetry;
     },
     refetchOnWindowFocus: false,
   });
+
+  function handleQueryRetry(): boolean {
+    let shouldRetry: boolean = false;
+
+    api
+        .refreshToken()
+        .then(() => {
+          shouldRetry = true;
+          return;
+        })
+        .catch((error) => {
+          console.error("Error refreshing token", error);
+
+          const myErr = error as AxiosError;
+          if (!myErr.response?.status) {
+            //TODO: logout
+            shouldRetry = false;
+            return;
+          }
+
+          if (
+              myErr.response?.status >= 400 &&
+              myErr.response?.status <= 500
+          ) {
+            //TODO: logout
+            shouldRetry = false;
+            return;
+          }
+
+          shouldRetry = false;
+          return;
+        });
+
+    return shouldRetry;
+  }
 
   const user: User | undefined = getUserQuery.data?.data;
 
