@@ -2,7 +2,7 @@ import { LoginCredentials, SignUpUser, User } from "../types";
 import axios, { AxiosError } from "axios";
 import { keys } from "../utils";
 
-const MAX_RETRIES: number = 3;
+export const MAX_RETRIES: number = 3;
 
 export const BASE_URL =
   "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging";
@@ -18,7 +18,7 @@ export function login(credentials: LoginCredentials) {
 }
 
 export function getUser() {
-  return axios.get<User>(BASE_URL + "/users/", {
+  return axios.get<User>(BASE_URL + "/users", {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
@@ -28,13 +28,9 @@ export function getUser() {
 
 export async function refreshToken() {
   await retryableRequest(async () => {
-    const response = await axios.post(
-      "http://localhost:8080" + "/auth/token",
-      null,
-      {
-        withCredentials: true,
-      },
-    );
+    const response = await axios.post(BASE_URL + "/auth/token", null, {
+      withCredentials: true,
+    });
 
     localStorage.setItem(keys.ACCESS_TOKEN, response.data.accessToken);
   });
@@ -63,7 +59,7 @@ async function retryableRequest(request: () => Promise<void>) {
 }
 
 export function logout() {
-  return axios.post(BASE_URL + "/auth/logout", null, {
+  return axios.post("http://localhost:8080" + "/auth/logout", null, {
     withCredentials: true,
   });
 }

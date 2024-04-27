@@ -8,61 +8,59 @@ import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { AxiosError } from "axios";
+import { useState } from "react";
 
 export function Home() {
   const theme = useTheme();
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
+  const [tokenRefreshRetry, setTokenRefreshRetry] = useState<number>(0);
 
   const getUserQuery = useQuery({
-    queryKey: ["user"],
+    queryKey: ["user", tokenRefreshRetry],
     queryFn: () => api.getUser(),
-    retry: (_, error) => {
+    retry: (failureCount, error) => {
       const err = error as AxiosError;
-      let shouldRetry: boolean = false;
-
-      if (err.response?.status === 401) {
-        shouldRetry = handleQueryRetry();
+      if (failureCount >= api.MAX_RETRIES) {
+        //TODO: add error snackbar "Internal server error. Please try again later."
       }
 
-      return shouldRetry;
+      return err.response?.status === 500 && failureCount < api.MAX_RETRIES
     },
     refetchOnWindowFocus: false,
   });
 
-  function handleQueryRetry(): boolean {
-    let shouldRetry: boolean = false;
+  if (getUserQuery.isError) {
+    const err = getUserQuery.error as AxiosError;
 
+    if (err.response?.status === 401) {
+      handleQueryRetry();
+    }
+  }
+
+  function handleQueryRetry() {
     api
-        .refreshToken()
-        .then(() => {
-          shouldRetry = true;
+      .refreshToken()
+      .then(() => {
+        setTokenRefreshRetry(tokenRefreshRetry + 1);
+        return;
+      })
+      .catch((error) => {
+        console.error("Error refreshing token", error);
+
+        const myErr = error as AxiosError;
+        if (!myErr.response?.status) {
+          //TODO: logout
           return;
-        })
-        .catch((error) => {
-          console.error("Error refreshing token", error);
+        }
 
-          const myErr = error as AxiosError;
-          if (!myErr.response?.status) {
-            //TODO: logout
-            shouldRetry = false;
-            return;
-          }
-
-          if (
-              myErr.response?.status >= 400 &&
-              myErr.response?.status <= 500
-          ) {
-            //TODO: logout
-            shouldRetry = false;
-            return;
-          }
-
-          shouldRetry = false;
+        if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
+          //TODO: logout
           return;
-        });
+        }
 
-    return shouldRetry;
+        return;
+      });
   }
 
   const user: User | undefined = getUserQuery.data?.data;
