@@ -1,7 +1,13 @@
 import { Typography, useMediaQuery, useTheme } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
-import { BalanceCard, Button, ExpenseCard, ExpensesTable } from "../components";
+import {
+  BalanceCard,
+  Button,
+  ErrorSnackbar,
+  ExpenseCard,
+  ExpensesTable,
+} from "../components";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { Expense, RechartsLabelProps, User } from "../types";
 import json2mq from "json2mq";
@@ -9,23 +15,36 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { AxiosError } from "axios";
 import { useState } from "react";
+import { QUERY_RETRIES } from "../utils";
+import { useNavigate } from "@tanstack/react-router";
+import {setIsAuthenticated} from "../store";
+import {useDispatch} from "react-redux";
 
 export function Home() {
   const theme = useTheme();
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
+
   const [tokenRefreshRetry, setTokenRefreshRetry] = useState<number>(0);
+  const [isErrorSnackbarOpen, setIsErrorSnackbarOpen] =
+    useState<boolean>(false);
+  const [queryError, setQueryError] = useState<string>("");
+
+  const navigate = useNavigate({ from: "/" });
+
+  const dispatch = useDispatch();
 
   const getUserQuery = useQuery({
     queryKey: ["user", tokenRefreshRetry],
     queryFn: () => api.getUser(),
     retry: (failureCount, error) => {
       const err = error as AxiosError;
-      if (failureCount >= api.MAX_RETRIES) {
-        //TODO: add error snackbar "Internal server error. Please try again later."
+      if (failureCount >= QUERY_RETRIES) {
+        setQueryError(err.response?.data as string);
+        setIsErrorSnackbarOpen(true);
       }
 
-      return err.response?.status === 500 && failureCount < api.MAX_RETRIES
+      return err.response?.status === 500 && failureCount < QUERY_RETRIES;
     },
     refetchOnWindowFocus: false,
   });
@@ -34,32 +53,39 @@ export function Home() {
     const err = getUserQuery.error as AxiosError;
 
     if (err.response?.status === 401) {
-      handleQueryRetry();
+      handleQueryRetry().then(() => {});
     }
   }
 
-  function handleQueryRetry() {
-    api
-      .refreshToken()
-      .then(() => {
-        setTokenRefreshRetry(tokenRefreshRetry + 1);
+  async function handleQueryRetry() {
+    try {
+      await api.refreshToken();
+      setTokenRefreshRetry(tokenRefreshRetry + 1);
+    } catch (error) {
+      console.error("Error refreshing token", error);
+
+      const myErr = error as AxiosError;
+      if (!myErr.response?.status) {
+        await logout();
         return;
-      })
-      .catch((error) => {
-        console.error("Error refreshing token", error);
+      }
 
-        const myErr = error as AxiosError;
-        if (!myErr.response?.status) {
-          //TODO: logout
-          return;
-        }
-
-        if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
-          //TODO: logout
-          return;
-        }
-
+      if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
+        await logout();
         return;
+      }
+
+      return;
+    }
+  }
+
+  async function logout() {
+    await api.logout();
+    dispatch(setIsAuthenticated(false));
+    navigate({ to: "/login" })
+      .then(() => {})
+      .catch((err) => {
+        console.error("Error navigating to /login", err);
       });
   }
 
@@ -383,6 +409,14 @@ export function Home() {
           <ExpensesTable expenses={expenses} />
         </Grid>
       </Grid>
+
+      {/* Get user error snackbar */}
+      <ErrorSnackbar
+        open={isErrorSnackbarOpen}
+        onClose={() => setIsErrorSnackbarOpen(false)}
+        message={"Cannot get user data"}
+        extraDetails={queryError}
+      />
     </>
   );
 }

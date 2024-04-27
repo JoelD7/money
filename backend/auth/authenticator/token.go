@@ -44,6 +44,7 @@ func (req *requestTokenHandler) initTokenHandler(log logger.LogAPI) {
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
 	req.log = log
+	req.log.SetHandler("token")
 }
 
 func (req *requestTokenHandler) finish() {

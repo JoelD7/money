@@ -59,8 +59,12 @@ async function retryableRequest(request: () => Promise<void>) {
   }
 }
 
-export function logout() {
-  return axios.post("http://localhost:8080" + "/auth/logout", null, {
-    withCredentials: true,
-  });
+export async function logout() {
+  await retryableRequest(async () => {
+    await axios.post(BASE_URL + "/auth/logout", null, {
+      withCredentials: true,
+    });
+
+    localStorage.removeItem(keys.ACCESS_TOKEN);
+  })
 }
