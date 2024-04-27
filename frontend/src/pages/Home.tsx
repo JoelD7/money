@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { AxiosError } from "axios";
 import { useState } from "react";
-import {QUERY_RETRIES} from "../utils";
+import { QUERY_RETRIES } from "../utils";
 
 export function Home() {
   const theme = useTheme();
@@ -45,33 +45,30 @@ export function Home() {
     const err = getUserQuery.error as AxiosError;
 
     if (err.response?.status === 401) {
-      handleQueryRetry();
+      handleQueryRetry().then(() => {})
     }
   }
 
-  function handleQueryRetry() {
-    api
-      .refreshToken()
-      .then(() => {
-        setTokenRefreshRetry(tokenRefreshRetry + 1);
+  async function handleQueryRetry() {
+    try {
+      await api.refreshToken();
+      setTokenRefreshRetry(tokenRefreshRetry + 1);
+    } catch (error) {
+      console.error("Error refreshing token", error);
+
+      const myErr = error as AxiosError;
+      if (!myErr.response?.status) {
+        //TODO: logout
         return;
-      })
-      .catch((error) => {
-        console.error("Error refreshing token", error);
+      }
 
-        const myErr = error as AxiosError;
-        if (!myErr.response?.status) {
-          //TODO: logout
-          return;
-        }
-
-        if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
-          //TODO: logout
-          return;
-        }
-
+      if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
+        //TODO: logout
         return;
-      });
+      }
+
+      return;
+    }
   }
 
   const user: User | undefined = getUserQuery.data?.data;
