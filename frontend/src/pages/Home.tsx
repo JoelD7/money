@@ -1,4 +1,4 @@
-  import { Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Typography, useMediaQuery, useTheme } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import { BalanceCard, Button, ExpenseCard, ExpensesTable } from "../components";
@@ -8,27 +8,60 @@ import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { AxiosError } from "axios";
+import { useState } from "react";
 
 export function Home() {
   const theme = useTheme();
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
+  const [tokenRefreshRetry, setTokenRefreshRetry] = useState<number>(0);
 
   const getUserQuery = useQuery({
-    queryKey: ["user"],
+    queryKey: ["user", tokenRefreshRetry],
     queryFn: () => api.getUser(),
-    retry: (_, error) => {
+    retry: (failureCount, error) => {
       const err = error as AxiosError;
-
-      if (err.response?.status === 401) {
-        api.refreshToken()
-        return true
+      if (failureCount >= api.MAX_RETRIES) {
+        //TODO: add error snackbar "Internal server error. Please try again later."
       }
 
-      return false
+      return err.response?.status === 500 && failureCount < api.MAX_RETRIES
     },
     refetchOnWindowFocus: false,
   });
+
+  if (getUserQuery.isError) {
+    const err = getUserQuery.error as AxiosError;
+
+    if (err.response?.status === 401) {
+      handleQueryRetry();
+    }
+  }
+
+  function handleQueryRetry() {
+    api
+      .refreshToken()
+      .then(() => {
+        setTokenRefreshRetry(tokenRefreshRetry + 1);
+        return;
+      })
+      .catch((error) => {
+        console.error("Error refreshing token", error);
+
+        const myErr = error as AxiosError;
+        if (!myErr.response?.status) {
+          //TODO: logout
+          return;
+        }
+
+        if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
+          //TODO: logout
+          return;
+        }
+
+        return;
+      });
+  }
 
   const user: User | undefined = getUserQuery.data?.data;
 

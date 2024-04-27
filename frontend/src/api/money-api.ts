@@ -1,6 +1,9 @@
 import { LoginCredentials, SignUpUser, User } from "../types";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { keys } from "../utils";
+
+export const MAX_RETRIES: number = 3;
+const BACKOFF_TIME_MS: number = 1000;
 
 export const BASE_URL =
   "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging";
@@ -16,24 +19,48 @@ export function login(credentials: LoginCredentials) {
 }
 
 export function getUser() {
-  return axios
-    .get<User>(BASE_URL + "/users/", {
-      withCredentials: true,
-      headers: {
-        Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
-      },
-    })
+  return axios.get<User>(BASE_URL + "/users", {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+    },
+  });
 }
 
 export async function refreshToken() {
-  axios
-    .post(BASE_URL + "/auth/token", {}, {
+  await retryableRequest(async () => {
+    const response = await axios.post(BASE_URL + "/auth/token", null, {
       withCredentials: true,
-    })
-    .then((res) => {
-      localStorage.setItem(keys.ACCESS_TOKEN, res.data.accessToken);
-    })
-    .catch((err) => {
-      console.error("Error refreshing token: ", err);
     });
+
+    localStorage.setItem(keys.ACCESS_TOKEN, response.data.accessToken);
+  });
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function retryableRequest(request: () => Promise<void>) {
+  let myErr: AxiosError | undefined;
+
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      await request();
+      return;
+    } catch (err) {
+      myErr = err as AxiosError;
+      await sleep(BACKOFF_TIME_MS);
+    }
+  }
+
+  if (myErr) {
+    throw myErr;
+  }
+}
+
+export function logout() {
+  return axios.post("http://localhost:8080" + "/auth/logout", null, {
+    withCredentials: true,
+  });
 }
