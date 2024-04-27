@@ -75,18 +75,14 @@ func (req *requestLogoutHandler) processLogout(ctx context.Context, request *api
 		return request.NewErrorResponse(err), nil
 	}
 
-	setCookieHeader := map[string]string{
-		"Set-Cookie": getExpiredRefreshTokenCookie(),
-	}
-
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Headers:    setCookieHeader,
-	}, nil
+	return request.NewJSONResponse(http.StatusOK, nil, apigateway.Header{
+		Key:   "Set-Cookie",
+		Value: getExpiredRefreshTokenCookie(),
+	}), nil
 }
 
 func getExpiredRefreshTokenCookie() string {
 	t := time.Date(1970, 1, 1, 1, 0, 0, 0, time.UTC)
 
-	return fmt.Sprintf("%s=; Path=/; Expires=%s; Secure; HttpOnly", refreshTokenCookieName, t.Format(time.RFC1123))
+	return fmt.Sprintf("%s=; Path=/; Expires=%s; Secure; HttpOnly; SameSite=None", refreshTokenCookieName, t.Format(time.RFC1123))
 }
