@@ -16,15 +16,23 @@ import { api } from "../api";
 import { AxiosError } from "axios";
 import { useState } from "react";
 import { QUERY_RETRIES } from "../utils";
+import { useNavigate } from "@tanstack/react-router";
+import {setIsAuthenticated} from "../store";
+import {useDispatch} from "react-redux";
 
 export function Home() {
   const theme = useTheme();
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
+
   const [tokenRefreshRetry, setTokenRefreshRetry] = useState<number>(0);
   const [isErrorSnackbarOpen, setIsErrorSnackbarOpen] =
     useState<boolean>(false);
   const [queryError, setQueryError] = useState<string>("");
+
+  const navigate = useNavigate({ from: "/" });
+
+  const dispatch = useDispatch();
 
   const getUserQuery = useQuery({
     queryKey: ["user", tokenRefreshRetry],
@@ -45,7 +53,7 @@ export function Home() {
     const err = getUserQuery.error as AxiosError;
 
     if (err.response?.status === 401) {
-      handleQueryRetry().then(() => {})
+      handleQueryRetry().then(() => {});
     }
   }
 
@@ -58,17 +66,27 @@ export function Home() {
 
       const myErr = error as AxiosError;
       if (!myErr.response?.status) {
-        //TODO: logout
+        await logout();
         return;
       }
 
       if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
-        //TODO: logout
+        await logout();
         return;
       }
 
       return;
     }
+  }
+
+  async function logout() {
+    await api.logout();
+    dispatch(setIsAuthenticated(false));
+    navigate({ to: "/login" })
+      .then(() => {})
+      .catch((err) => {
+        console.error("Error navigating to /login", err);
+      });
   }
 
   const user: User | undefined = getUserQuery.data?.data;
