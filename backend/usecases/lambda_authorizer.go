@@ -22,8 +22,8 @@ var (
 	invalidJWTErrs = []error{jwt.ErrAudValidation, jwt.ErrExpValidation, jwt.ErrIatValidation, jwt.ErrIssValidation,
 		jwt.ErrJtiValidation, jwt.ErrNbfValidation, jwt.ErrSubValidation}
 
-	jwtAudience = env.GetString("AUDIENCE", "https://localhost:3000")
-	jwtIssuer   = env.GetString("ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
+	jwtAudience = env.GetString("TOKEN_AUDIENCE", "")
+	jwtIssuer   = env.GetString("TOKEN_ISSUER", "")
 )
 
 type JWKSGetter interface {

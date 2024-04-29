@@ -56,7 +56,7 @@ const (
 )
 
 var (
-	kidSecretName = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+	kidSecretName = env.GetString("KID_SECRET", "")
 	awsRegion     = env.GetString("REGION", "us-east-1")
 )
 
