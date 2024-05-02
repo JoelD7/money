@@ -31,7 +31,8 @@ func jwksHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Req
 func (req *requestJwksHandler) initJwksHandler(log logger.LogAPI) {
 	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = logger.NewLoggerWithHandler("jwks")
+	req.log = log
+	req.log.SetHandler("jwks")
 }
 
 func (req *requestJwksHandler) finish() {
