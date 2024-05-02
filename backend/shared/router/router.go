@@ -50,7 +50,7 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 	defer func() {
 		closeErr := router.log.Finish()
 		if closeErr != nil {
-			panic(closeErr)
+			fmt.Println("Error closing logger: ", closeErr)
 		}
 	}()
 
