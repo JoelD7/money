@@ -12,8 +12,12 @@ import (
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
+
+var gesExpensesRequest *getExpensesRequest
+var gesOnce sync.Once
 
 type expensesResponse struct {
 	Expenses []*models.Expense `json:"expenses"`
@@ -32,12 +36,14 @@ type getExpensesRequest struct {
 }
 
 func (request *getExpensesRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	gesOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.log = log
+	})
 	request.startingTime = time.Now()
-	request.log = log
 }
 
 func (request *getExpensesRequest) finish() {
@@ -45,17 +51,19 @@ func (request *getExpensesRequest) finish() {
 }
 
 func getExpensesHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getExpensesRequest)
+	if gesExpensesRequest == nil {
+		gesExpensesRequest = new(getExpensesRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	gesExpensesRequest.init(log)
+	defer gesExpensesRequest.finish()
 
-	err := request.prepareRequest(req)
+	err := gesExpensesRequest.prepareRequest(req)
 	if err != nil {
 		return req.NewErrorResponse(err), nil
 	}
 
-	return request.routeToHandlers(ctx, req)
+	return gesExpensesRequest.routeToHandlers(ctx, req)
 }
 
 func (request *getExpensesRequest) prepareRequest(req *apigateway.Request) error {

@@ -13,8 +13,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var ueRequest *updateExpenseRequest
+var ueOnce sync.Once
 
 type updateExpenseRequest struct {
 	log          logger.LogAPI
@@ -26,13 +30,15 @@ type updateExpenseRequest struct {
 }
 
 func (request *updateExpenseRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	ueOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
-	request.periodRepo = period.NewDynamoRepository(dynamoClient)
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.log = log
+	})
 	request.startingTime = time.Now()
-	request.log = log
 }
 
 func (request *updateExpenseRequest) finish() {
@@ -40,12 +46,14 @@ func (request *updateExpenseRequest) finish() {
 }
 
 func updateExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(updateExpenseRequest)
+	if ueRequest == nil {
+		ueRequest = new(updateExpenseRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	ueRequest.init(log)
+	defer ueRequest.finish()
 
-	return request.process(ctx, req)
+	return ueRequest.process(ctx, req)
 }
 
 func (request *updateExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
