@@ -78,21 +78,6 @@ func NewLogger() LogAPI {
 	return log
 }
 
-func NewLoggerWithHandler(handler string) LogAPI {
-	log := &Log{
-		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
-		bw:      bufio.NewWriter(os.Stdout),
-	}
-
-	if handler != "" && log.Service != "unknown" {
-		log.Service += "-" + handler
-	}
-
-	log.establishConnection()
-
-	return log
-}
-
 func (l *Log) SetHandler(handler string) {
 	if handler != "" && l.Service != "unknown" {
 		l.Service += "-" + handler
