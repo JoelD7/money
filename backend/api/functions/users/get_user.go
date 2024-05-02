@@ -12,8 +12,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var guRequest *getUserRequest
+var guOnce sync.Once
 
 type getUserRequest struct {
 	log          logger.LogAPI
@@ -25,14 +29,16 @@ type getUserRequest struct {
 }
 
 func (request *getUserRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	guOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
-	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
-	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("get-user")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("get-user")
 }
 
 func (request *getUserRequest) finish() {
@@ -40,12 +46,14 @@ func (request *getUserRequest) finish() {
 }
 
 func getUserHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getUserRequest)
+	if guRequest == nil {
+		guRequest = new(getUserRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	guRequest.init(log)
+	defer guRequest.finish()
 
-	return request.process(ctx, req)
+	return guRequest.process(ctx, req)
 }
 
 func (request *getUserRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

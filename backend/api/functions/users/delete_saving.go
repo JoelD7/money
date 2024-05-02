@@ -9,8 +9,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var dsRequest *deleteSavingRequest
+var dsOnce sync.Once
 
 type deleteSavingRequest struct {
 	log          logger.LogAPI
@@ -20,12 +24,14 @@ type deleteSavingRequest struct {
 }
 
 func (request *deleteSavingRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	dsOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("delete-saving")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("delete-saving")
 }
 
 func (request *deleteSavingRequest) finish() {
@@ -33,12 +39,14 @@ func (request *deleteSavingRequest) finish() {
 }
 
 func deleteSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(deleteSavingRequest)
+	if dsRequest == nil {
+		dsRequest = new(deleteSavingRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	dsRequest.init(log)
+	defer dsRequest.finish()
 
-	return request.process(ctx, req)
+	return dsRequest.process(ctx, req)
 }
 
 func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

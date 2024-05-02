@@ -12,8 +12,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var csRequest *createSavingRequest
+var csOnce sync.Once
 
 type createSavingRequest struct {
 	log          logger.LogAPI
@@ -25,13 +29,15 @@ type createSavingRequest struct {
 }
 
 func (request *createSavingRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	csOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
-	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("create-saving")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("create-saving")
 }
 
 func (request *createSavingRequest) finish() {
@@ -39,12 +45,14 @@ func (request *createSavingRequest) finish() {
 }
 
 func createSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(createSavingRequest)
+	if csRequest == nil {
+		csRequest = new(createSavingRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	csRequest.init(log)
+	defer csRequest.finish()
 
-	return request.process(ctx, req)
+	return csRequest.process(ctx, req)
 }
 
 func (request *createSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

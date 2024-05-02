@@ -13,11 +13,14 @@ import (
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
 	"net/http"
+	"sync"
 	"time"
 )
 
 var (
 	errNoCategoryIDInPath = errors.New("no category id in path")
+	ucRequest             *updateCategoryRequest
+	ucOnce                sync.Once
 )
 
 type updateCategoryRequest struct {
@@ -28,12 +31,14 @@ type updateCategoryRequest struct {
 }
 
 func (request *updateCategoryRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	ucOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("update-category")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("update-category")
 }
 
 func (request *updateCategoryRequest) finish() {
@@ -41,12 +46,14 @@ func (request *updateCategoryRequest) finish() {
 }
 
 func updateCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(updateCategoryRequest)
+	if ucRequest == nil {
+		ucRequest = new(updateCategoryRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	ucRequest.init(log)
+	defer ucRequest.finish()
 
-	return request.process(ctx, req)
+	return ucRequest.process(ctx, req)
 }
 
 func (request *updateCategoryRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

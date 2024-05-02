@@ -8,8 +8,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var gpRequest *getPeriodRequest
+var gpOnce sync.Once
 
 type getPeriodRequest struct {
 	log          logger.LogAPI
@@ -19,12 +23,14 @@ type getPeriodRequest struct {
 }
 
 func (request *getPeriodRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	gpOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("get-period")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("get-period")
 }
 
 func (request *getPeriodRequest) finish() {
@@ -32,12 +38,14 @@ func (request *getPeriodRequest) finish() {
 }
 
 func getPeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getPeriodRequest)
+	if gpRequest == nil {
+		gpRequest = new(getPeriodRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	gpRequest.init(log)
+	defer gpRequest.finish()
 
-	return request.process(ctx, req)
+	return gpRequest.process(ctx, req)
 }
 
 func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

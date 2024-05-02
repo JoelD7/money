@@ -11,11 +11,14 @@ import (
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
 
 var (
 	errMissingSavingID = apigateway.NewError("missing saving ID", http.StatusBadRequest)
+	gsRequest          *getSavingRequest
+	gsOnce             sync.Once
 )
 
 type getSavingRequest struct {
@@ -27,13 +30,15 @@ type getSavingRequest struct {
 }
 
 func (request *getSavingRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	gsOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
-	request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
+		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("get-saving")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("get-saving")
 }
 
 func (request *getSavingRequest) finish() {
@@ -41,12 +46,14 @@ func (request *getSavingRequest) finish() {
 }
 
 func getSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getSavingRequest)
+	if gsRequest == nil {
+		gsRequest = new(getSavingRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	gsRequest.init(log)
+	defer gsRequest.finish()
 
-	return request.process(ctx, req)
+	return gsRequest.process(ctx, req)
 }
 
 func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
