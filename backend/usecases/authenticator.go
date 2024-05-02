@@ -30,12 +30,12 @@ const (
 )
 
 var (
-	accessTokenAudience  = env.GetString("TOKEN_AUDIENCE", "https://localhost:3000")
-	accessTokenIssuer    = env.GetString("TOKEN_ISSUER", "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging")
+	accessTokenAudience  = env.GetString("TOKEN_AUDIENCE", "")
+	accessTokenIssuer    = env.GetString("TOKEN_ISSUER", "")
 	accessTokenScope     = env.GetString("TOKEN_SCOPE", "read write")
-	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "staging/money/rsa/private")
-	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "staging/money/rsa/public")
-	kidSecretName        = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "")
+	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "")
+	kidSecretName        = env.GetString("KID_SECRET", "")
 	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
 	refreshTokenDuration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
 

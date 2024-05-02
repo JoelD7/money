@@ -23,9 +23,9 @@ var (
 )
 
 var (
-	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "staging/money/rsa/private")
-	publicSecretName  = env.GetString("TOKEN_PUBLIC_SECRET", "staging/money/rsa/public")
-	kidSecretName     = env.GetString("KID_SECRET", "staging/money/rsa/kid")
+	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "")
+	publicSecretName  = env.GetString("TOKEN_PUBLIC_SECRET", "")
+	kidSecretName     = env.GetString("KID_SECRET", "")
 	awsRegion         = env.GetString("REGION", "us-east-1")
 )
 

@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	allowedOrigins    = env.GetString("CORS_ORIGIN", "http://localhost:5173")
+	allowedOrigins    = env.GetString("CORS_ORIGIN", "")
 	allowedOriginsMap = map[string]struct{}{}
 
 	responseByErrors = map[error]Error{

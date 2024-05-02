@@ -5,21 +5,20 @@ import { keys } from "../utils";
 export const MAX_RETRIES: number = 3;
 const BACKOFF_TIME_MS: number = 1000;
 
-export const BASE_URL =
-  "https://38qslpe8d9.execute-api.us-east-1.amazonaws.com/staging";
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 export function signUp(newUser: SignUpUser) {
-  return axios.post(BASE_URL + "/auth/signup", newUser);
+  return axios.post(API_BASE_URL + "/auth/signup", newUser);
 }
 
 export function login(credentials: LoginCredentials) {
-  return axios.post(BASE_URL + "/auth/login", credentials, {
+  return axios.post(API_BASE_URL + "/auth/login", credentials, {
     withCredentials: true, //required so that the browser will store the cookie. See more: https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials
   });
 }
 
 export function getUser() {
-  return axios.get<User>(BASE_URL + "/users", {
+  return axios.get<User>(API_BASE_URL + "/users", {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
@@ -29,7 +28,7 @@ export function getUser() {
 
 export async function refreshToken() {
   await retryableRequest(async () => {
-    const response = await axios.post(BASE_URL + "/auth/token", null, {
+    const response = await axios.post(API_BASE_URL + "/auth/token", null, {
       withCredentials: true,
     });
 
@@ -61,10 +60,10 @@ async function retryableRequest(request: () => Promise<void>) {
 
 export async function logout() {
   await retryableRequest(async () => {
-    await axios.post(BASE_URL + "/auth/logout", null, {
+    await axios.post(API_BASE_URL + "/auth/logout", null, {
       withCredentials: true,
     });
 
     localStorage.removeItem(keys.ACCESS_TOKEN);
-  })
+  });
 }
