@@ -69,16 +69,23 @@ func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
 	}
 
 	cookieParts := make([]string, 0)
+	var name, value string
 
 	for _, cookie := range strings.Split(cookies, ";") {
 		cookieParts = strings.Split(cookie, "=")
-
-		if cookieParts[0] == "" || cookieParts[1] == "" {
+		if len(cookieParts) < 2 {
 			continue
 		}
 
-		if strings.HasPrefix(cookie, refreshTokenCookieName) && len(cookieParts) > 1 {
-			return cookieParts[1], nil
+		name = strings.TrimSpace(cookieParts[0])
+		value = strings.TrimSpace(cookieParts[1])
+
+		if name == "" || value == "" {
+			continue
+		}
+
+		if name == refreshTokenCookieName && len(cookieParts) > 1 {
+			return value, nil
 		}
 	}
 
