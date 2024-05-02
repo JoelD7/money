@@ -9,8 +9,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var gcRequest *getCategoriesRequest
+var gcOnce sync.Once
 
 type getCategoriesRequest struct {
 	log          logger.LogAPI
@@ -20,12 +24,14 @@ type getCategoriesRequest struct {
 }
 
 func (request *getCategoriesRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	gcOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("get-categories")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("get-categories")
 }
 
 func (request *getCategoriesRequest) finish() {
@@ -33,12 +39,14 @@ func (request *getCategoriesRequest) finish() {
 }
 
 func getCategoriesHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getCategoriesRequest)
+	if gcRequest == nil {
+		gcRequest = new(getCategoriesRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	gcRequest.init(log)
+	defer gcRequest.finish()
 
-	return request.process(ctx, req)
+	return gcRequest.process(ctx, req)
 }
 
 func (request *getCategoriesRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

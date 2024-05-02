@@ -8,8 +8,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var dpRequest *deletePeriodRequest
+var dpOnce sync.Once
 
 type deletePeriodRequest struct {
 	log          logger.LogAPI
@@ -19,12 +23,14 @@ type deletePeriodRequest struct {
 }
 
 func (request *deletePeriodRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	dpOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("delete-period")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("delete-period")
 }
 
 func (request *deletePeriodRequest) finish() {
@@ -32,12 +38,14 @@ func (request *deletePeriodRequest) finish() {
 }
 
 func deletePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(deletePeriodRequest)
+	if dpRequest == nil {
+		dpRequest = new(deletePeriodRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	dpRequest.init(log)
+	defer dpRequest.finish()
 
-	return request.process(ctx, req)
+	return dpRequest.process(ctx, req)
 }
 
 func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

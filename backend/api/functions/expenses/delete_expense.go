@@ -9,8 +9,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var deRequest *deleteExpenseRequest
+var deOnce sync.Once
 
 type deleteExpenseRequest struct {
 	log          logger.LogAPI
@@ -20,11 +24,13 @@ type deleteExpenseRequest struct {
 }
 
 func (request *deleteExpenseRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	deOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.log = log
+	})
 	request.startingTime = time.Now()
-	request.log = log
 }
 
 func (request *deleteExpenseRequest) finish() {
@@ -32,12 +38,14 @@ func (request *deleteExpenseRequest) finish() {
 }
 
 func deleteExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(deleteExpenseRequest)
+	if deRequest == nil {
+		deRequest = new(deleteExpenseRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	deRequest.init(log)
+	defer deRequest.finish()
 
-	return request.process(ctx, req)
+	return deRequest.process(ctx, req)
 }
 
 func (request *deleteExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

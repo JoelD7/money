@@ -12,7 +12,13 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
+)
+
+var (
+	once sync.Once
+	req  *requestTokenHandler
 )
 
 type requestTokenHandler struct {
@@ -27,7 +33,9 @@ type requestTokenHandler struct {
 }
 
 func tokenHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestTokenHandler{}
+	if req == nil {
+		req = new(requestTokenHandler)
+	}
 
 	req.initTokenHandler(log)
 	defer req.finish()
@@ -36,15 +44,17 @@ func tokenHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Re
 }
 
 func (req *requestTokenHandler) initTokenHandler(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	once.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	req.userRepo = users.NewDynamoRepository(dynamoClient)
+		req.userRepo = users.NewDynamoRepository(dynamoClient)
+		req.invalidTokenManager = cache.NewRedisCache()
+		req.secretsManager = secrets.NewAWSSecretManager()
+		req.log = log
+		req.log.SetHandler("token")
+	})
 
-	req.invalidTokenManager = cache.NewRedisCache()
-	req.secretsManager = secrets.NewAWSSecretManager()
 	req.startingTime = time.Now()
-	req.log = log
-	req.log.SetHandler("token")
 }
 
 func (req *requestTokenHandler) finish() {

@@ -9,8 +9,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var signUpRequest *requestSignUpHandler
+var signUpOnce sync.Once
 
 type requestSignUpHandler struct {
 	log          logger.LogAPI
@@ -19,26 +23,26 @@ type requestSignUpHandler struct {
 	userRepo     users.Repository
 }
 
-func optionsHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
-	return request.NewJSONResponse(http.StatusOK, nil), nil
-}
-
 func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestSignUpHandler{}
+	if signUpRequest == nil {
+		signUpRequest = new(requestSignUpHandler)
+	}
 
-	req.initSignUpHandler(log)
-	defer req.finish()
+	signUpRequest.initSignUpHandler(log)
+	defer signUpRequest.finish()
 
-	return req.processSignUp(ctx, request)
+	return signUpRequest.processSignUp(ctx, request)
 }
 
 func (req *requestSignUpHandler) initSignUpHandler(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	signUpOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	req.userRepo = users.NewDynamoRepository(dynamoClient)
+		req.userRepo = users.NewDynamoRepository(dynamoClient)
+		req.log = log
+		req.log.SetHandler("sign-up")
+	})
 	req.startingTime = time.Now()
-	req.log = log
-	req.log.SetHandler("sign-up")
 }
 
 func (req *requestSignUpHandler) finish() {

@@ -10,8 +10,12 @@ import (
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 )
+
+var gmiRequest *getMultipleIncomeRequest
+var gmiOnce sync.Once
 
 type getMultipleIncomeRequest struct {
 	log          logger.LogAPI
@@ -29,11 +33,13 @@ type multipleIncomeResponse struct {
 }
 
 func (request *getMultipleIncomeRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	gmiOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.log = log
+	})
 	request.startingTime = time.Now()
-	request.log = log
 }
 
 func (request *getMultipleIncomeRequest) finish() {
@@ -41,17 +47,19 @@ func (request *getMultipleIncomeRequest) finish() {
 }
 
 func getMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getMultipleIncomeRequest)
+	if gmiRequest == nil {
+		gmiRequest = new(getMultipleIncomeRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	gmiRequest.init(log)
+	defer gmiRequest.finish()
 
-	err := request.prepareRequest(req)
+	err := gmiRequest.prepareRequest(req)
 	if err != nil {
 		return req.NewErrorResponse(err), nil
 	}
 
-	return request.routeToHandlers(ctx, req)
+	return gmiRequest.routeToHandlers(ctx, req)
 }
 
 func (request *getMultipleIncomeRequest) prepareRequest(req *apigateway.Request) error {

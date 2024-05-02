@@ -12,8 +12,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var ciRequest *createIncomeRequest
+var ciOnce sync.Once
 
 type createIncomeRequest struct {
 	log          logger.LogAPI
@@ -24,12 +28,14 @@ type createIncomeRequest struct {
 }
 
 func (request *createIncomeRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	ciOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
-	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.log = log
+	})
 	request.startingTime = time.Now()
-	request.log = log
 }
 
 func (request *createIncomeRequest) finish() {
@@ -37,12 +43,14 @@ func (request *createIncomeRequest) finish() {
 }
 
 func createIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(createIncomeRequest)
+	if ciRequest == nil {
+		ciRequest = new(createIncomeRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	ciRequest.init(log)
+	defer ciRequest.finish()
 
-	return request.process(ctx, req)
+	return ciRequest.process(ctx, req)
 }
 
 func (request *createIncomeRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

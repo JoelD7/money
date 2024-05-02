@@ -11,8 +11,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var gssRequest *getSavingsRequest
+var gssOnce sync.Once
 
 type getSavingsRequest struct {
 	log            logger.LogAPI
@@ -31,13 +35,15 @@ type savingsResponse struct {
 }
 
 func (request *getSavingsRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	gssOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
-	request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
+		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("get-savings")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("get-savings")
 }
 
 func (request *getSavingsRequest) finish() {
@@ -45,17 +51,19 @@ func (request *getSavingsRequest) finish() {
 }
 
 func getSavingsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(getSavingsRequest)
+	if gssRequest == nil {
+		gssRequest = new(getSavingsRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	gssRequest.init(log)
+	defer gssRequest.finish()
 
-	err := request.prepareRequest(req)
+	err := gssRequest.prepareRequest(req)
 	if err != nil {
 		return req.NewErrorResponse(err), nil
 	}
 
-	return request.routeToHandlers(ctx, req)
+	return gssRequest.routeToHandlers(ctx, req)
 }
 
 func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error {

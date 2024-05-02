@@ -232,7 +232,9 @@ func (l *Log) Finish() error {
 
 	err := l.bw.Flush()
 	if err != nil {
-		return fmt.Errorf("error flushing logger buffer: %w", err)
+		err = fmt.Errorf("error flushing logger buffer: %w", err)
+		errorLogger.Println(err)
+		return err
 	}
 
 	return nil

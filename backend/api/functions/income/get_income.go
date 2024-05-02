@@ -20,13 +20,16 @@ type incomeGetRequest struct {
 }
 
 var once sync.Once
+var request *incomeGetRequest
 
 func (request *incomeGetRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	once.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.log = log
+	})
 	request.startingTime = time.Now()
-	request.log = log
 }
 
 func (request *incomeGetRequest) finish() {
@@ -34,7 +37,9 @@ func (request *incomeGetRequest) finish() {
 }
 
 func getIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(incomeGetRequest)
+	if request == nil {
+		request = new(incomeGetRequest)
+	}
 
 	request.init(log)
 	defer request.finish()
@@ -43,10 +48,6 @@ func getIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Re
 }
 
 func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	once.Do(func() {
-		request.log.Info("sync_once_executed", nil)
-	})
-
 	incomeID, ok := req.PathParameters["incomeID"]
 	if !ok || incomeID == "" {
 		request.err = models.ErrMissingIncomeID

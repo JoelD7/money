@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/JoelD7/money/backend/shared/apigateway"
@@ -11,6 +12,9 @@ import (
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/usecases"
 )
+
+var jwksRequest *requestJwksHandler
+var jwksOnce sync.Once
 
 type requestJwksHandler struct {
 	log            logger.LogAPI
@@ -20,19 +24,23 @@ type requestJwksHandler struct {
 }
 
 func jwksHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestJwksHandler{}
+	if jwksRequest == nil {
+		jwksRequest = new(requestJwksHandler)
+	}
 
-	req.initJwksHandler(log)
-	defer req.finish()
+	jwksRequest.initJwksHandler(log)
+	defer jwksRequest.finish()
 
-	return req.processJWKS(ctx, request)
+	return jwksRequest.processJWKS(ctx, request)
 }
 
 func (req *requestJwksHandler) initJwksHandler(log logger.LogAPI) {
-	req.secretsManager = secrets.NewAWSSecretManager()
+	jwksOnce.Do(func() {
+		req.secretsManager = secrets.NewAWSSecretManager()
+		req.log = log
+		req.log.SetHandler("jwks")
+	})
 	req.startingTime = time.Now()
-	req.log = log
-	req.log.SetHandler("jwks")
 }
 
 func (req *requestJwksHandler) finish() {

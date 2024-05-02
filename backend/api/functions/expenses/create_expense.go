@@ -13,8 +13,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var ceRequest *createExpenseRequest
+var ceOnce sync.Once
 
 type createExpenseRequest struct {
 	log          logger.LogAPI
@@ -26,12 +30,14 @@ type createExpenseRequest struct {
 }
 
 func (request *createExpenseRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	ceOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
-	request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.log = log
+	})
 	request.startingTime = time.Now()
-	request.log = log
 }
 
 func (request *createExpenseRequest) finish() {
@@ -39,12 +45,14 @@ func (request *createExpenseRequest) finish() {
 }
 
 func createExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(createExpenseRequest)
+	if ceRequest == nil {
+		ceRequest = new(createExpenseRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	ceRequest.init(log)
+	defer ceRequest.finish()
 
-	return request.process(ctx, req)
+	return ceRequest.process(ctx, req)
 }
 
 func (request *createExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

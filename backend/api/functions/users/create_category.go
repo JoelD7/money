@@ -12,8 +12,12 @@ import (
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var ccRequest *createCategoryRequest
+var ccOnce sync.Once
 
 type createCategoryRequest struct {
 	log          logger.LogAPI
@@ -23,12 +27,14 @@ type createCategoryRequest struct {
 }
 
 func (request *createCategoryRequest) init(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	ccOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.log = log
+		request.log.SetHandler("create-category")
+	})
 	request.startingTime = time.Now()
-	request.log = log
-	request.log.SetHandler("create-category")
 }
 
 func (request *createCategoryRequest) finish() {
@@ -36,12 +42,14 @@ func (request *createCategoryRequest) finish() {
 }
 
 func createCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	request := new(createCategoryRequest)
+	if ccRequest == nil {
+		ccRequest = new(createCategoryRequest)
+	}
 
-	request.init(log)
-	defer request.finish()
+	ccRequest.init(log)
+	defer ccRequest.finish()
 
-	return request.process(ctx, req)
+	return ccRequest.process(ctx, req)
 }
 
 func (request *createCategoryRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
