@@ -64,6 +64,22 @@ func (d *DynamoMock) UpdateUser(ctx context.Context, user *models.User) error {
 		return d.mockedErr
 	}
 
+	for _, mockedUser := range d.mockedUsers {
+		if mockedUser.Username == user.Username {
+			mockedUser.FullName = user.FullName
+			mockedUser.Username = user.Username
+			mockedUser.CurrentPeriod = user.CurrentPeriod
+			mockedUser.Password = user.Password
+			mockedUser.AccessToken = user.AccessToken
+			mockedUser.RefreshToken = user.RefreshToken
+			mockedUser.Categories = user.Categories
+			mockedUser.UpdatedDate = user.UpdatedDate
+			mockedUser.CreatedDate = user.CreatedDate
+			mockedUser.Remainder = user.Remainder
+			return nil
+		}
+	}
+
 	return nil
 }
 
