@@ -12,8 +12,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var loginRequest *requestLoginHandler
+var loginOnce sync.Once
 
 type requestLoginHandler struct {
 	log            logger.LogAPI
@@ -28,22 +32,26 @@ type accessTokenResponse struct {
 }
 
 func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestLoginHandler{}
+	if loginRequest == nil {
+		loginRequest = new(requestLoginHandler)
+	}
 
-	req.initLoginHandler(log)
-	defer req.finish()
+	loginRequest.initLoginHandler(log)
+	defer loginRequest.finish()
 
-	return req.processLogin(ctx, request)
+	return loginRequest.processLogin(ctx, request)
 }
 
 func (req *requestLoginHandler) initLoginHandler(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	loginOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	req.userRepo = users.NewDynamoRepository(dynamoClient)
-	req.secretsManager = secrets.NewAWSSecretManager()
+		req.userRepo = users.NewDynamoRepository(dynamoClient)
+		req.secretsManager = secrets.NewAWSSecretManager()
+		req.log = log
+		req.log.SetHandler("login")
+	})
 	req.startingTime = time.Now()
-	req.log = log
-	req.log.SetHandler("login")
 }
 
 func (req *requestLoginHandler) finish() {

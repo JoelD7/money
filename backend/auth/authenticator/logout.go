@@ -11,8 +11,12 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"sync"
 	"time"
 )
+
+var logoutRequest *requestLogoutHandler
+var logoutOnce sync.Once
 
 type requestLogoutHandler struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
@@ -25,22 +29,26 @@ type requestLogoutHandler struct {
 }
 
 func logoutHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
-	req := &requestLogoutHandler{}
+	if logoutRequest == nil {
+		logoutRequest = new(requestLogoutHandler)
+	}
 
-	req.initLogoutHandler(log)
-	defer req.finish()
+	logoutRequest.initLogoutHandler(log)
+	defer logoutRequest.finish()
 
-	return req.processLogout(ctx, request)
+	return logoutRequest.processLogout(ctx, request)
 }
 
 func (req *requestLogoutHandler) initLogoutHandler(log logger.LogAPI) {
-	dynamoClient := initDynamoClient()
+	logoutOnce.Do(func() {
+		dynamoClient := initDynamoClient()
 
-	req.userRepo = users.NewDynamoRepository(dynamoClient)
-	req.invalidTokenManager = cache.NewRedisCache()
+		req.userRepo = users.NewDynamoRepository(dynamoClient)
+		req.invalidTokenManager = cache.NewRedisCache()
+		req.log = log
+		req.log.SetHandler("logout")
+	})
 	req.startingTime = time.Now()
-	req.log = log
-	req.log.SetHandler("logout")
 }
 
 func (req *requestLogoutHandler) finish() {
