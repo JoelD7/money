@@ -7,14 +7,14 @@ import (
 )
 
 const (
-	DummyToken         = "header.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiZXhwIjo5OTk5OTk5OTk5fQ.signature"
+	DummyToken         = "header.eyJzdWIiOiJ0ZXN0QGdtYWlsLmNvbSIsImV4cCI6MTcxNzI0NzExOX0.signature"
 	DummyPreviousToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGdtYWlsLmNvbSIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTUxNjIzOTAyMn0.nL-Ir6ZnsMHZa7YYwjfpy1QJ1OTmBCFHCDXVSToXUqf3DHA5oWnBtlBuUZ1xTHa5ArQf5vQQIOIrW6p6OjtMdHO3h3-TWOWJIJhbkEmUjS5EMRtZfLWnf9gDnF7CxmUn0yA1qK0B4Nqx57lsI8eMeZKDvN8bqfwlEe53Qy8tYXP5jNxP2zA6Mt7ROCGrfvulTyM0ZwV7klArEKs485NPao8BlyV90s-whjk6h1_mtderbMA2iRxkoARzPRnSftULDYmzCJ3i4IOX9p6xyOcgwecpn93-ya1x1nZtoITZ2It5SYUcrsQ2KhiP2c95bFpJTr6A2UcuAz1Y0GguSR2wlw"
 )
 
 var (
 	// This is the hashed version of the DummyToken variable with the same hash function we use to store the tokens on
 	// the DB. We need this variable for the mock because all tokens are stored hashed on the DB.
-	hashedDummyToken = "4f7c5d5d43a3c7e28ea09bc73679378151a3e086ad4360e5469423197a62b665"
+	hashedDummyToken = "1fdf990fc3115f6f25e2008492c5b416d9235af21a1ec594947a81d728a3f842"
 )
 
 var mockedPerson *models.User
@@ -62,6 +62,22 @@ func (d *DynamoMock) GetUser(ctx context.Context, username string) (*models.User
 func (d *DynamoMock) UpdateUser(ctx context.Context, user *models.User) error {
 	if d.mockedErr != nil {
 		return d.mockedErr
+	}
+
+	for _, mockedUser := range d.mockedUsers {
+		if mockedUser.Username == user.Username {
+			mockedUser.FullName = user.FullName
+			mockedUser.Username = user.Username
+			mockedUser.CurrentPeriod = user.CurrentPeriod
+			mockedUser.Password = user.Password
+			mockedUser.AccessToken = user.AccessToken
+			mockedUser.RefreshToken = user.RefreshToken
+			mockedUser.Categories = user.Categories
+			mockedUser.UpdatedDate = user.UpdatedDate
+			mockedUser.CreatedDate = user.CreatedDate
+			mockedUser.Remainder = user.Remainder
+			return nil
+		}
 	}
 
 	return nil

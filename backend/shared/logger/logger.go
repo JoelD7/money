@@ -29,7 +29,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-107-20-105-227.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-226-7-203.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -71,21 +71,6 @@ func NewLogger() LogAPI {
 	log := &Log{
 		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
 		bw:      bufio.NewWriter(os.Stdout),
-	}
-
-	log.establishConnection()
-
-	return log
-}
-
-func NewLoggerWithHandler(handler string) LogAPI {
-	log := &Log{
-		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
-		bw:      bufio.NewWriter(os.Stdout),
-	}
-
-	if handler != "" && log.Service != "unknown" {
-		log.Service += "-" + handler
 	}
 
 	log.establishConnection()

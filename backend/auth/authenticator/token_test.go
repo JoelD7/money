@@ -34,17 +34,22 @@ func TestTokenHandler(t *testing.T) {
 		invalidTokenManager: cache.NewRedisCacheMock(),
 	}
 
-	apigwRequest, err := dummyAPIGatewayProxyRequest()
-	c.Nil(err)
+	var apigwRequest *apigateway.Request
+	var err error
 
-	apigwRequest.Headers["Cookie"] = refreshTokenCookieName + "=" + users.DummyToken
+	t.Run("Token handler dummy token", func(t *testing.T) {
+		apigwRequest, err = dummyAPIGatewayProxyRequest()
+		c.Nil(err)
 
-	response, err := request.processToken(ctx, apigwRequest)
-	c.Nil(err)
-	c.Equal(http.StatusOK, response.StatusCode)
-	c.Contains(response.Body, "access_token")
-	c.NotNil(response.Headers["Set-Cookie"])
-	c.Contains(response.Headers["Set-Cookie"], refreshTokenCookieName)
+		apigwRequest.Headers["Cookie"] = refreshTokenCookieName + "=" + users.DummyToken
+
+		response, err := request.processToken(ctx, apigwRequest)
+		c.Nil(err)
+		c.Equal(http.StatusOK, response.StatusCode)
+		c.Contains(response.Body, "accessToken")
+		c.NotNil(response.Headers["Set-Cookie"])
+		c.Contains(response.Headers["Set-Cookie"], refreshTokenCookieName)
+	})
 }
 
 func TestTokenHandlerFailed(t *testing.T) {
