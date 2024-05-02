@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
@@ -58,6 +59,9 @@ const (
 var (
 	kidSecretName = env.GetString("KID_SECRET", "")
 	awsRegion     = env.GetString("REGION", "us-east-1")
+
+	req  *requestInfo
+	once sync.Once
 )
 
 type requestInfo struct {
@@ -70,10 +74,12 @@ type requestInfo struct {
 }
 
 func (req *requestInfo) init() {
+	once.Do(func() {
+		req.cacheRepo = cache.NewRedisCache()
+		req.secretsManager = secrets.NewAWSSecretManager()
+		req.client = restclient.New()
+	})
 	req.startingTime = time.Now()
-	req.cacheRepo = cache.NewRedisCache()
-	req.secretsManager = secrets.NewAWSSecretManager()
-	req.client = restclient.New()
 }
 
 func (req *requestInfo) finish() {
@@ -88,8 +94,10 @@ func (req *requestInfo) finish() {
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
-	req := &requestInfo{
-		log: logger.NewLogger(),
+	if req == nil {
+		req = &requestInfo{
+			log: logger.NewLogger(),
+		}
 	}
 
 	req.init()
