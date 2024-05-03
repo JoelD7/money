@@ -62,6 +62,9 @@ export async function logout() {
   await retryableRequest(async () => {
     await axios.post(API_BASE_URL + "/auth/logout", null, {
       withCredentials: true,
+      headers: {
+        Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+      },
     });
 
     localStorage.removeItem(keys.ACCESS_TOKEN);
