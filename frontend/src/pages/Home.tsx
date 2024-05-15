@@ -25,7 +25,6 @@ export function Home() {
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
-  const [tokenRefreshRetry, setTokenRefreshRetry] = useState<number>(0);
   const [isErrorSnackbarOpen, setIsErrorSnackbarOpen] =
     useState<boolean>(false);
   const [queryError, setQueryError] = useState<string>("");
@@ -35,7 +34,7 @@ export function Home() {
   const dispatch = useDispatch();
 
   const getUserQuery = useQuery({
-    queryKey: ["user", tokenRefreshRetry],
+    queryKey: ["user"],
     queryFn: () => api.getUser(),
     retry: (failureCount, error) => {
       const err = error as AxiosError;
@@ -48,36 +47,6 @@ export function Home() {
     },
     refetchOnWindowFocus: false,
   });
-
-  if (getUserQuery.isError) {
-    const err = getUserQuery.error as AxiosError;
-
-    if (err.response?.status === 401) {
-      handleQueryRetry().then(() => {});
-    }
-  }
-
-  async function handleQueryRetry() {
-    try {
-      await api.refreshToken();
-      setTokenRefreshRetry(tokenRefreshRetry + 1);
-    } catch (error) {
-      console.error("Error refreshing token", error);
-
-      const myErr = error as AxiosError;
-      if (!myErr.response?.status) {
-        await logout();
-        return;
-      }
-
-      if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
-        await logout();
-        return;
-      }
-
-      return;
-    }
-  }
 
   async function logout() {
     await api.logout();
