@@ -2,9 +2,7 @@ import { LoginCredentials, SignUpUser, User } from "../types";
 import axios, { AxiosError } from "axios";
 import { keys } from "../utils";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
-
-export const MAX_RETRIES: number = 3;
-const BACKOFF_TIME_MS: number = 1000;
+import { retryableRequest } from "./utils.ts";
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -12,7 +10,7 @@ const axiosClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
-createAuthRefreshInterceptor(axiosClient, refreshAuth, {
+createAuthRefreshInterceptor(axiosClient, refreshAuthInterceptor, {
   statusCodes: [401],
   pauseInstanceWhileRefreshing: true,
 });
@@ -36,20 +34,7 @@ export function getUser() {
   });
 }
 
-async function refreshAuth(failedRequest: AxiosError): Promise<string> {
-  await refreshToken();
-   
-  const newToken = localStorage.getItem(keys.ACCESS_TOKEN);
-
-  if (newToken && failedRequest.response) {
-    failedRequest.response.config.headers.Auth = "Bearer " + newToken;
-    return Promise.resolve(newToken);
-  } else {
-    return Promise.reject();
-  }
-}
-
-export async function refreshToken() {
+async function refreshToken() {
   await retryableRequest(async () => {
     const response = await axiosClient.post(
       API_BASE_URL + "/auth/token",
@@ -96,4 +81,17 @@ export async function logout() {
 
     localStorage.removeItem(keys.ACCESS_TOKEN);
   });
+}
+
+async function refreshAuthInterceptor(failedRequest: AxiosError): Promise<string> {
+  await refreshToken();
+
+  const newToken = localStorage.getItem(keys.ACCESS_TOKEN);
+
+  if (newToken && failedRequest.response) {
+    failedRequest.response.config.headers.Auth = "Bearer " + newToken;
+    return Promise.resolve(newToken);
+  } else {
+    return Promise.reject();
+  }
 }
