@@ -13,12 +13,10 @@ import { Expense, RechartsLabelProps, User } from "../types";
 import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
-import { AxiosError } from "axios";
 import { useState } from "react";
-import { QUERY_RETRIES } from "../utils";
 import { useNavigate } from "@tanstack/react-router";
-import {setIsAuthenticated} from "../store";
-import {useDispatch} from "react-redux";
+import { setAuthData } from "../store";
+import { useDispatch } from "react-redux";
 
 export function Home() {
   const theme = useTheme();
@@ -296,14 +294,16 @@ export function Home() {
                             user.categories &&
                             user.categories.map((category) => (
                               <div
-                                key={category.categoryID}
+                                  key={`${category.id}`}
                                 className="flex gap-1 items-center"
                               >
                                 <div
                                   className="rounded-full w-3 h-3"
                                   style={{ backgroundColor: category.color }}
                                 />
-                                <Typography color="gray.light">
+                                <Typography
+                                  color="gray.light"
+                                >
                                   {category.name}
                                 </Typography>
                               </div>
