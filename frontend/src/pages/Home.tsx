@@ -14,9 +14,6 @@ import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { setAuthData } from "../store";
-import { useDispatch } from "react-redux";
 
 export function Home() {
   const theme = useTheme();
@@ -34,15 +31,6 @@ export function Home() {
   const getUserQuery = useQuery({
     queryKey: ["user"],
     queryFn: () => api.getUser(),
-    retry: (failureCount, error) => {
-      const err = error as AxiosError;
-      if (failureCount >= QUERY_RETRIES) {
-        setQueryError(err.response?.data as string);
-        setIsErrorSnackbarOpen(true);
-      }
-
-      return err.response?.status === 500 && failureCount < QUERY_RETRIES;
-    },
     refetchOnWindowFocus: false,
   });
 
@@ -294,16 +282,14 @@ export function Home() {
                             user.categories &&
                             user.categories.map((category) => (
                               <div
-                                  key={`${category.id}`}
+                                key={`${category.id}`}
                                 className="flex gap-1 items-center"
                               >
                                 <div
                                   className="rounded-full w-3 h-3"
                                   style={{ backgroundColor: category.color }}
                                 />
-                                <Typography
-                                  color="gray.light"
-                                >
+                                <Typography color="gray.light">
                                   {category.name}
                                 </Typography>
                               </div>
