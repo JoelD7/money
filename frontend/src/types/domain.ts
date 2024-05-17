@@ -32,7 +32,7 @@ export type SignUpUser = {
     fullname: string
 }
 
-export type LoginCredentials = {
+export type Credentials = {
     username: string
     password: string
 }

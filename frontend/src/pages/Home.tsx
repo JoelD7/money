@@ -24,25 +24,11 @@ export function Home() {
     useState<boolean>(false);
   const [queryError, setQueryError] = useState<string>("");
 
-  const navigate = useNavigate({ from: "/" });
-
-  const dispatch = useDispatch();
-
   const getUserQuery = useQuery({
     queryKey: ["user"],
     queryFn: () => api.getUser(),
     refetchOnWindowFocus: false,
   });
-
-  async function logout() {
-    await api.logout();
-    dispatch(setIsAuthenticated(false));
-    navigate({ to: "/login" })
-      .then(() => {})
-      .catch((err) => {
-        console.error("Error navigating to /login", err);
-      });
-  }
 
   const user: User | undefined = getUserQuery.data?.data;
 

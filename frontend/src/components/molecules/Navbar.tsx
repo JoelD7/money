@@ -20,6 +20,8 @@ import { setIsAuthenticated } from "../../store";
 import { useNavigate } from "@tanstack/react-router";
 import { useDispatch } from "react-redux";
 import { api } from "../../api";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Credentials, User } from "../../types";
 
 type NavbarProps = {
   children?: ReactNode;
@@ -48,17 +50,36 @@ export function Navbar({ children }: NavbarProps) {
   const theme = useTheme();
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
+  const getUserQuery = useQuery({
+    queryKey: ["user"],
+    queryFn: () => api.getUser(),
+    refetchOnWindowFocus: false,
+  });
+
+  const user: User | undefined = getUserQuery.data?.data;
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  async function logout() {
-    await api.logout();
-    dispatch(setIsAuthenticated(false));
-    navigate({ to: "/login" })
-      .then(() => {})
-      .catch((err) => {
-        console.error("Error navigating to /login", err);
-      });
+  const logoutMutation = useMutation({
+    mutationFn: api.logout,
+    onSuccess: () => {
+      dispatch(setIsAuthenticated(false));
+      navigate({ to: "/login" })
+        .then(() => {})
+        .catch((err) => {
+          console.error("Error navigating to /login", err);
+        });
+    },
+  });
+
+  function logout() {
+    let username = "";
+    if (user) {
+      username = user.username;
+    }
+    const credentials: Credentials = { username: username, password: "" };
+    logoutMutation.mutate(credentials);
   }
 
   return (

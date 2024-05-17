@@ -1,4 +1,4 @@
-import { LoginCredentials, SignUpUser, User } from "../types";
+import { Credentials, SignUpUser, User } from "../types";
 import axios, { AxiosError } from "axios";
 import { keys } from "../utils";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
@@ -48,35 +48,10 @@ async function refreshToken() {
   });
 }
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function retryableRequest(request: () => Promise<void>) {
-  let myErr: AxiosError | undefined;
-
-  for (let i = 0; i < MAX_RETRIES; i++) {
-    try {
-      await request();
-      return;
-    } catch (err) {
-      myErr = err as AxiosError;
-      await sleep(BACKOFF_TIME_MS);
-    }
-  }
-
-  if (myErr) {
-    throw myErr;
-  }
-}
-
-export async function logout() {
+export async function logout(credentials: Credentials) {
   await retryableRequest(async () => {
-    await axios.post(API_BASE_URL + "/auth/logout", null, {
+    await axiosClient.post(API_BASE_URL + "/auth/logout", credentials, {
       withCredentials: true,
-      headers: {
-        Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
-      },
     });
 
     localStorage.removeItem(keys.ACCESS_TOKEN);
