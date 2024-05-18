@@ -20,7 +20,7 @@ export type Expense = {
 }
 
 export type Category = {
-    categoryID: string
+    id: string
     name: string
     budget: number
     color: string
@@ -32,7 +32,7 @@ export type SignUpUser = {
     fullname: string
 }
 
-export type LoginCredentials = {
+export type Credentials = {
     username: string
     password: string
 }

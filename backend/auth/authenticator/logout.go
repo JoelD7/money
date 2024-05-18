@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
@@ -19,8 +20,6 @@ var logoutRequest *requestLogoutHandler
 var logoutOnce sync.Once
 
 type requestLogoutHandler struct {
-	RefreshToken string `json:"refresh_token,omitempty"`
-
 	log                 logger.LogAPI
 	startingTime        time.Time
 	err                 error
@@ -58,17 +57,17 @@ func (req *requestLogoutHandler) finish() {
 func (req *requestLogoutHandler) processLogout(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	var err error
 
-	req.RefreshToken, err = getRefreshTokenCookie(request)
+	credentials, err := validateRequestBody(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("getting_refresh_token_cookie_failed", err, nil)
+		req.log.Error("logout_failed", err, nil)
 
 		return request.NewErrorResponse(err), nil
 	}
 
 	logout := usecases.NewUserLogout(req.userRepo, req.invalidTokenManager, req.log)
 
-	err = logout(ctx, req.RefreshToken)
+	err = logout(ctx, credentials.Username)
 	if errors.Is(err, models.ErrUserNotFound) {
 		req.err = err
 		req.log.Error("logout_failed", err, nil)
@@ -87,6 +86,25 @@ func (req *requestLogoutHandler) processLogout(ctx context.Context, request *api
 		Key:   "Set-Cookie",
 		Value: getExpiredRefreshTokenCookie(),
 	}), nil
+}
+
+func validateRequestBody(request *apigateway.Request) (*Credentials, error) {
+	var credentials *Credentials
+
+	err := json.Unmarshal([]byte(request.Body), &credentials)
+	if err != nil {
+		err = fmt.Errorf("%w: %v", models.ErrInvalidRequestBody, err)
+		req.err = err
+		req.log.Error("unmarshal_credentials_failed", err, nil)
+
+		return nil, err
+	}
+
+	if credentials.Username == "" {
+		return nil, models.ErrMissingUsername
+	}
+
+	return credentials, nil
 }
 
 func getExpiredRefreshTokenCookie() string {

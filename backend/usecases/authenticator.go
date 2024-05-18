@@ -417,15 +417,8 @@ func getKidFromSecret(ctx context.Context, secrets SecretManager) (string, error
 }
 
 func NewUserLogout(userGetter UserManager, tokenCache InvalidTokenCache, logger Logger) func(ctx context.Context, token string) error {
-	return func(ctx context.Context, token string) error {
-		payload, err := getTokenPayload(token)
-		if err != nil {
-			logger.Error("get_token_payload_failed", err, nil)
-
-			return fmt.Errorf("%w: %v", models.ErrMalformedToken, err)
-		}
-
-		user, err := userGetter.GetUser(ctx, payload.Subject)
+	return func(ctx context.Context, username string) error {
+		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
 			logger.Error("fetching_user_from_storage_failed", err, nil)
 

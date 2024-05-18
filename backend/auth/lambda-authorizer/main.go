@@ -153,19 +153,6 @@ func (req *requestInfo) getEventAsLoggerObject(event events.APIGatewayCustomAuth
 	})
 }
 
-func defaultDenyAllPolicy(methodArn string, err error) events.APIGatewayCustomAuthorizerResponse {
-	resp := NewAuthorizerResponse(methodArn, "user")
-	resp.DenyAllMethods()
-
-	if err != nil {
-		resp.APIGatewayCustomAuthorizerResponse.Context = map[string]interface{}{
-			"stringKey": err.Error(),
-		}
-	}
-
-	return resp.APIGatewayCustomAuthorizerResponse
-}
-
 func (hv HttpVerb) String() string {
 	switch hv {
 	case Get:

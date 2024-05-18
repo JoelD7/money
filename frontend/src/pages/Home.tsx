@@ -13,81 +13,22 @@ import { Expense, RechartsLabelProps, User } from "../types";
 import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
-import { AxiosError } from "axios";
 import { useState } from "react";
-import { QUERY_RETRIES } from "../utils";
-import { useNavigate } from "@tanstack/react-router";
-import {setIsAuthenticated} from "../store";
-import {useDispatch} from "react-redux";
 
 export function Home() {
   const theme = useTheme();
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
-  const [tokenRefreshRetry, setTokenRefreshRetry] = useState<number>(0);
   const [isErrorSnackbarOpen, setIsErrorSnackbarOpen] =
     useState<boolean>(false);
   const [queryError, setQueryError] = useState<string>("");
 
-  const navigate = useNavigate({ from: "/" });
-
-  const dispatch = useDispatch();
-
   const getUserQuery = useQuery({
-    queryKey: ["user", tokenRefreshRetry],
+    queryKey: ["user"],
     queryFn: () => api.getUser(),
-    retry: (failureCount, error) => {
-      const err = error as AxiosError;
-      if (failureCount >= QUERY_RETRIES) {
-        setQueryError(err.response?.data as string);
-        setIsErrorSnackbarOpen(true);
-      }
-
-      return err.response?.status === 500 && failureCount < QUERY_RETRIES;
-    },
     refetchOnWindowFocus: false,
   });
-
-  if (getUserQuery.isError) {
-    const err = getUserQuery.error as AxiosError;
-
-    if (err.response?.status === 401) {
-      handleQueryRetry().then(() => {});
-    }
-  }
-
-  async function handleQueryRetry() {
-    try {
-      await api.refreshToken();
-      setTokenRefreshRetry(tokenRefreshRetry + 1);
-    } catch (error) {
-      console.error("Error refreshing token", error);
-
-      const myErr = error as AxiosError;
-      if (!myErr.response?.status) {
-        await logout();
-        return;
-      }
-
-      if (myErr.response?.status >= 400 && myErr.response?.status <= 500) {
-        await logout();
-        return;
-      }
-
-      return;
-    }
-  }
-
-  async function logout() {
-    await api.logout();
-    dispatch(setIsAuthenticated(false));
-    navigate({ to: "/login" })
-      .then(() => {})
-      .catch((err) => {
-        console.error("Error navigating to /login", err);
-      });
-  }
 
   const user: User | undefined = getUserQuery.data?.data;
 
@@ -327,7 +268,7 @@ export function Home() {
                             user.categories &&
                             user.categories.map((category) => (
                               <div
-                                key={category.categoryID}
+                                key={`${category.id}`}
                                 className="flex gap-1 items-center"
                               >
                                 <div

@@ -89,16 +89,16 @@ func init() {
 func (req *Request) NewErrorResponse(err error) *Response {
 	var knownError *Error
 	if errors.As(err, &knownError) {
-		return req.NewJSONResponse(knownError.HTTPCode, knownError.Message)
+		return req.NewJSONResponse(knownError.HTTPCode, knownError)
 	}
 
 	for mappedErr, responseErr := range responseByErrors {
 		if errors.Is(err, mappedErr) {
-			return req.NewJSONResponse(responseErr.HTTPCode, responseErr.Message)
+			return req.NewJSONResponse(responseErr.HTTPCode, responseErr)
 		}
 	}
 
-	return req.NewJSONResponse(ErrInternalError.HTTPCode, ErrInternalError.Message)
+	return req.NewJSONResponse(ErrInternalError.HTTPCode, ErrInternalError)
 }
 
 // NewJSONResponse creates a new JSON response given a serializable `body`
