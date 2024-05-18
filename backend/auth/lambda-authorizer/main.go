@@ -94,16 +94,16 @@ func (req *requestInfo) finish() {
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
-	if req == nil {
-		req = &requestInfo{
-			log: logger.NewLogger(),
-		}
-	}
-
-	req.init()
-	defer req.finish()
-
 	stackTrace, ctxError := shared.ExecuteLambda(ctx, func(ctx context.Context) {
+		if req == nil {
+			req = &requestInfo{
+				log: logger.NewLogger(),
+			}
+		}
+
+		req.init()
+		defer req.finish()
+
 		res, err = req.process(ctx, event)
 	})
 
