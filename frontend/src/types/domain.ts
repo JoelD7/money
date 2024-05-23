@@ -36,3 +36,14 @@ export type Credentials = {
     username: string
     password: string
 }
+
+export type APIError = {
+    message: string
+    http_code: number
+}
+
+export type AccessToken = {
+    sub: string
+    exp: number
+    iat: number
+}

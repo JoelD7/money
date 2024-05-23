@@ -24,13 +24,14 @@ export function Home() {
     useState<boolean>(false);
   const [queryError, setQueryError] = useState<string>("");
 
-  const getUserQuery = useQuery({
+  const getUser = useQuery({
     queryKey: ["user"],
     queryFn: () => api.getUser(),
+    retry: false,
     refetchOnWindowFocus: false,
   });
 
-  const user: User | undefined = getUserQuery.data?.data;
+  const user: User | undefined = getUser.data?.data;
 
   const period = {
     username: "test@gmail.com",

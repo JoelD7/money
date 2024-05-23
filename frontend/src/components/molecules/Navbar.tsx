@@ -53,6 +53,7 @@ export function Navbar({ children }: NavbarProps) {
   const getUserQuery = useQuery({
     queryKey: ["user"],
     queryFn: () => api.getUser(),
+    retry: false,
     refetchOnWindowFocus: false,
   });
 

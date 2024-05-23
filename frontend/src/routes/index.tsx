@@ -9,7 +9,6 @@ function isAuth() {
 
 export const Route = createFileRoute("/")({
   beforeLoad: async ({ location }) => {
-
     if (!isAuth()) {
       throw redirect({
         to: "/login",
