@@ -36,13 +36,9 @@ export function getUser() {
 
 async function refreshToken() {
   await retryableRequest(async () => {
-    const response = await axiosClient.post(
-      API_BASE_URL + "/auth/token",
-      null,
-      {
-        withCredentials: true,
-      },
-    );
+    const response = await axios.post(API_BASE_URL + "/auth/token", null, {
+      withCredentials: true,
+    });
 
     localStorage.setItem(keys.ACCESS_TOKEN, response.data.accessToken);
   });
