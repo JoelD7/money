@@ -66,17 +66,7 @@ async function refreshAuthInterceptor(
 ): Promise<string> {
   try {
     await refreshToken();
-
-    const newToken = localStorage.getItem(keys.ACCESS_TOKEN);
-
-    if (newToken && failedRequest.response) {
-      failedRequest.response.config.headers.Auth = "Bearer " + newToken;
-      return Promise.resolve(newToken);
-    } else {
-      console.error("Couldn't update Bearer token. Logging out.")
-      window.location.pathname = "/login";
-      return Promise.reject();
-    }
+    return updateBearerToken(failedRequest)
   } catch (err) {
     console.error("Error refreshing the token: ", err);
     const axiosError = err as AxiosError;
@@ -87,9 +77,25 @@ async function refreshAuthInterceptor(
       if (logout) {
         await logout();
       }
+    } else {
+      console.error("Couldn't read error response. Logging out.")
+      window.location.pathname = "/login";
     }
 
     return Promise.reject(err);
+  }
+}
+
+function updateBearerToken(failedRequest: AxiosError) : Promise<string>{
+  const newToken = localStorage.getItem(keys.ACCESS_TOKEN);
+
+  if (newToken && failedRequest.response) {
+    failedRequest.response.config.headers.Auth = "Bearer " + newToken;
+    return Promise.resolve(newToken);
+  } else {
+    console.error("Couldn't update Bearer token. Logging out.")
+    window.location.pathname = "/login";
+    return Promise.reject();
   }
 }
 
