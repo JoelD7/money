@@ -14,6 +14,7 @@ import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 import { useState } from "react";
+import {Loading} from "./Loading.tsx";
 
 export function Home() {
   const theme = useTheme();
@@ -198,7 +199,9 @@ export function Home() {
     ).format(new Date(period.end_date))}`;
   }
 
-  return (
+  return getUser.isPending ? (
+    <Loading />
+  ) : (
     <>
       <Grid container spacing={1} justifyContent={"center"}>
         {/*Balance*/}

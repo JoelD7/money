@@ -7,7 +7,6 @@ import {Cell, Pie, PieChart, ResponsiveContainer, Tooltip} from "recharts";
 import {BalanceCard, Button, ExpenseCard, ExpensesTable} from "../components";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowCircleLeftIcon from '@mui/icons-material/ArrowCircleLeft';
-import json2mq from "json2mq";
 import {Colors} from "../assets";
 
 type ExpenseCategorySummary = {
