@@ -4,14 +4,14 @@ import {
   Box,
   Link,
   TextField,
-  Typography,
+  Typography, useMediaQuery,
 } from "@mui/material";
-import {Button, MoneyBanner, MoneyBannerMobile} from "../components";
-import { Colors } from "../assets";
+import { Button, MoneyBanner, MoneyBannerMobile } from "../components";
+import {Colors, theme} from "../assets";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api";
-import {ChangeEvent, FormEvent, useState} from "react";
-import {InputError, SignUpUser} from "../types";
+import { ChangeEvent, FormEvent, useState } from "react";
+import { InputError, SignUpUser } from "../types";
 import { AxiosError } from "axios";
 import Grid from "@mui/material/Unstable_Grid2";
 
@@ -28,6 +28,8 @@ export function SignUp() {
       }
     },
   });
+
+  const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
   const [signUpUser, setSignUpUser] = useState<SignUpUser>({
     username: "",
@@ -59,7 +61,7 @@ export function SignUp() {
   }
 
   function signUp(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateInput()) {
       return;
@@ -93,19 +95,35 @@ export function SignUp() {
   }
 
   return (
-    <Grid container>
-      {/*Green background logo*/}
-      <Grid lg={6}>
-          <MoneyBanner/>
-      </Grid>
+    <div>
+      <Grid
+        container
+        width={"100vw"}
+        sx={
+          mdUp
+            ? { backgroundColor: "#ffffff" }
+            : { backgroundColor: "#ffffff", marginLeft: "-40px" }
+        }
+      >
+        {/*Green background logo*/}
+        <Grid lg={6}>
+          <MoneyBanner />
+        </Grid>
 
-      {/*Form and title*/}
-      <Grid xs={12} lg={6}>
-        {/*Title*/}
-        <MoneyBannerMobile/>
+        {/*Form and title*/}
+        <Grid xs={12} lg={6}>
+          {/*Title*/}
+          <MoneyBannerMobile />
 
-        {/*Form*/}
-        <Box component="form" onSubmit={signUp} height={"100vh"} autoComplete="on">
+          {/*Form*/}
+          <Box
+            component="form"
+            onSubmit={signUp}
+            height={"100vh"}
+            autoComplete="on"
+            maxWidth={"645px"}
+            margin={"auto"}
+          >
             <Grid container marginTop={20} justifyContent={"center"}>
               {/*Input fields*/}
               <Grid xs={12} md={9}>
@@ -115,41 +133,41 @@ export function SignUp() {
                   </Typography>
 
                   <TextField
-                      margin={"normal"}
-                      name={"fullname"}
-                      value={signUpUser.fullname}
-                      fullWidth={true}
-                      label={"Full name"}
-                      variant={"outlined"}
-                      onChange={onInputChange}
+                    margin={"normal"}
+                    name={"fullname"}
+                    value={signUpUser.fullname}
+                    fullWidth={true}
+                    label={"Full name"}
+                    variant={"outlined"}
+                    onChange={onInputChange}
                   />
                   <TextField
-                      autoComplete={"on"}
-                      margin={"normal"}
-                      name={"username"}
-                      value={signUpUser.username}
-                      fullWidth={true}
-                      type={"email"}
-                      label={"Email"}
-                      variant={"outlined"}
-                      error={inputErr.username !== ""}
-                      helperText={inputErr.username}
-                      required
-                      onChange={onInputChange}
+                    autoComplete={"on"}
+                    margin={"normal"}
+                    name={"username"}
+                    value={signUpUser.username}
+                    fullWidth={true}
+                    type={"email"}
+                    label={"Email"}
+                    variant={"outlined"}
+                    error={inputErr.username !== ""}
+                    helperText={inputErr.username}
+                    required
+                    onChange={onInputChange}
                   />
                   <TextField
-                      autoComplete={"on"}
-                      margin={"normal"}
-                      name={"password"}
-                      value={signUpUser.password}
-                      fullWidth={true}
-                      type={"password"}
-                      label={"Password"}
-                      variant={"outlined"}
-                      error={inputErr.password !== ""}
-                      helperText={inputErr.password}
-                      required={true}
-                      onChange={onInputChange}
+                    autoComplete={"on"}
+                    margin={"normal"}
+                    name={"password"}
+                    value={signUpUser.password}
+                    fullWidth={true}
+                    type={"password"}
+                    label={"Password"}
+                    variant={"outlined"}
+                    error={inputErr.password !== ""}
+                    helperText={inputErr.password}
+                    required={true}
+                    onChange={onInputChange}
                   />
                 </div>
               </Grid>
@@ -158,30 +176,30 @@ export function SignUp() {
               <Grid maxWidth={"645px"} xs={12} md={9} paddingTop={1}>
                 <div className={"w-11/12 m-auto max-w-[645px]"}>
                   <Button
-                      variant={"contained"}
-                      loading={mutation.isPending}
-                      fullWidth={true}
-                      type={"submit"}
+                    variant={"contained"}
+                    loading={mutation.isPending}
+                    fullWidth={true}
+                    type={"submit"}
                   >
                     Sign up
                   </Button>
 
                   {mutation.isError && (
-                      <div className={"p-2"}>
-                        <Alert severity="error">
-                          <AlertTitle>Error</AlertTitle>
-                          {errResponse ? errResponse : mutation.error.message}
-                        </Alert>
-                      </div>
+                    <div className={"p-2"}>
+                      <Alert severity="error">
+                        <AlertTitle>Error</AlertTitle>
+                        {errResponse ? errResponse : mutation.error.message}
+                      </Alert>
+                    </div>
                   )}
 
                   {mutation.isSuccess && (
-                      <div className={"p-2"}>
-                        <Alert severity="success">
-                          <AlertTitle>Success</AlertTitle>
-                          {"Account successfully created."}
-                        </Alert>
-                      </div>
+                    <div className={"p-2"}>
+                      <Alert severity="success">
+                        <AlertTitle>Success</AlertTitle>
+                        {"Account successfully created."}
+                      </Alert>
+                    </div>
                   )}
 
                   <Typography textAlign={"center"} marginTop={"5px"}>
@@ -193,10 +211,9 @@ export function SignUp() {
                 </div>
               </Grid>
             </Grid>
-        </Box>
+          </Box>
+        </Grid>
       </Grid>
-
-
-    </Grid>
+    </div>
   );
 }
