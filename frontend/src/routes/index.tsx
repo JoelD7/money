@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Home } from "../pages";
-import { NavbarLayout } from "../components";
 import { store } from "../store";
 
 function isAuth() {
@@ -9,7 +8,6 @@ function isAuth() {
 
 export const Route = createFileRoute("/")({
   beforeLoad: async ({ location }) => {
-
     if (!isAuth()) {
       throw redirect({
         to: "/login",
@@ -23,9 +21,5 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return (
-    <NavbarLayout>
-      <Home />
-    </NavbarLayout>
-  );
+  return <Home />;
 }

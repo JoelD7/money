@@ -9,7 +9,7 @@ import {
 import { Button, MoneyBanner, MoneyBannerMobile } from "../components";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
 import { InputError } from "../types";
 import { api } from "../api";
 import { Colors } from "../assets";
@@ -58,7 +58,8 @@ export function Login() {
 
   const [errResponse, setErrResponse] = useState<string>("");
 
-  function login() {
+  function login(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     mutation.reset();
 
     if (!validateInput()) {
@@ -122,7 +123,12 @@ export function Login() {
         <MoneyBannerMobile />
 
         {/*Form*/}
-        <Box component="form" height={"100vh"} autoComplete="on">
+        <Box
+          component="form"
+          onSubmit={login}
+          height={"100vh"}
+          autoComplete="on"
+        >
           <Grid container marginTop={20} justifyContent={"center"}>
             {/*Input fields*/}
             <Grid xs={12} md={9}>
@@ -168,8 +174,8 @@ export function Login() {
                 <Button
                   variant={"contained"}
                   loading={mutation.isPending}
+                  type={"submit"}
                   fullWidth={true}
-                  onClick={login}
                 >
                   Login
                 </Button>

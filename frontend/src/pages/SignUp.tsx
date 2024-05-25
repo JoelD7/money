@@ -10,7 +10,7 @@ import {Button, MoneyBanner, MoneyBannerMobile} from "../components";
 import { Colors } from "../assets";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api";
-import { ChangeEvent, useState } from "react";
+import {ChangeEvent, FormEvent, useState} from "react";
 import {InputError, SignUpUser} from "../types";
 import { AxiosError } from "axios";
 import Grid from "@mui/material/Unstable_Grid2";
@@ -58,7 +58,9 @@ export function SignUp() {
     });
   }
 
-  function signUp() {
+  function signUp(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+
     if (!validateInput()) {
       return;
     }
@@ -103,7 +105,7 @@ export function SignUp() {
         <MoneyBannerMobile/>
 
         {/*Form*/}
-        <Box component="form" height={"100vh"} autoComplete="on">
+        <Box component="form" onSubmit={signUp} height={"100vh"} autoComplete="on">
             <Grid container marginTop={20} justifyContent={"center"}>
               {/*Input fields*/}
               <Grid xs={12} md={9}>
@@ -159,7 +161,7 @@ export function SignUp() {
                       variant={"contained"}
                       loading={mutation.isPending}
                       fullWidth={true}
-                      onClick={signUp}
+                      type={"submit"}
                   >
                     Sign up
                   </Button>
