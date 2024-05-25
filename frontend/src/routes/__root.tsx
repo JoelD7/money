@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/router-devtools";
-import { ThemeProvider } from "@mui/material";
+import { ThemeProvider, useMediaQuery } from "@mui/material";
 import { theme } from "../assets";
 import { Provider } from "react-redux";
 import { persistor, store } from "../store";
@@ -50,12 +50,25 @@ export const Route = createRootRoute({
 });
 
 function Root() {
+  const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
+
   return (
     <>
       <ThemeProvider theme={theme}>
         <Provider store={store}>
           <PersistGate loading={null} persistor={persistor}>
-            <Outlet />
+            <div className={"bg-zinc-50"}>
+              <div
+                className={"flex max-w-[1200px]"}
+                style={mdUp ? {} : { flexDirection: "column" }}
+              >
+                {mdUp ? (
+                  <Outlet />
+                ) : (
+                  <div className={"px-10"}>{<Outlet />}</div>
+                )}
+              </div>
+            </div>
           </PersistGate>
         </Provider>
       </ThemeProvider>
