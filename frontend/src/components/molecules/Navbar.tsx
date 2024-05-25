@@ -172,64 +172,70 @@ export function Navbar({ children }: NavbarProps) {
         </nav>
       </Drawer>
 
-      <nav
-        style={{ backgroundColor: "white" }}
-        className={mdUp ? "flex flex-col h-screen w-44 fixed" : "hidden"}
-      >
-        <div className="flex items-center p-4 justify-center w-full">
-          <Logo variant="h5" />
-        </div>
+      <div>
+        <nav
+          style={{ backgroundColor: "white" }}
+          className={
+            mdUp
+              ? "flex flex-col h-screen w-[180px] sticky top-0 mr-3"
+              : "hidden"
+          }
+        >
+          <div className="flex items-center p-4 justify-center w-full">
+            <Logo variant="h5" />
+          </div>
 
-        <div className="pl-3">
-          <Button sx={buttonStyle} startIcon={<HomeIcon sx={customWidth} />}>
-            Home
-          </Button>
+          <div className="pl-3">
+            <Button sx={buttonStyle} startIcon={<HomeIcon sx={customWidth} />}>
+              Home
+            </Button>
 
-          <Button
-            sx={buttonStyle}
-            startIcon={<AccessTimeFilledIcon sx={customWidth} />}
-          >
-            History
-          </Button>
+            <Button
+              sx={buttonStyle}
+              startIcon={<AccessTimeFilledIcon sx={customWidth} />}
+            >
+              History
+            </Button>
 
-          <Button
-            sx={buttonStyle}
-            startIcon={<NotificationImportantIcon sx={customWidth} />}
-          >
-            Notifications
-          </Button>
+            <Button
+              sx={buttonStyle}
+              startIcon={<NotificationImportantIcon sx={customWidth} />}
+            >
+              Notifications
+            </Button>
 
-          <Button sx={buttonStyle} startIcon={<LabelIcon sx={customWidth} />}>
-            Categories
-          </Button>
+            <Button sx={buttonStyle} startIcon={<LabelIcon sx={customWidth} />}>
+              Categories
+            </Button>
 
-          <Button
-            sx={buttonStyle}
-            startIcon={<AutoStoriesIcon sx={customWidth} />}
-          >
-            Savings
-          </Button>
-        </div>
+            <Button
+              sx={buttonStyle}
+              startIcon={<AutoStoriesIcon sx={customWidth} />}
+            >
+              Savings
+            </Button>
+          </div>
 
-        <Divider sx={{ width: "60%", margin: "20px auto" }} />
+          <Divider sx={{ width: "60%", margin: "20px auto" }} />
 
-        <div className="pl-3 h-full">
-          <Button
-            sx={{ ...buttonStyle, margin: "0px" }}
-            startIcon={<SettingsIcon sx={customWidth} />}
-          >
-            Settings
-          </Button>
+          <div className="pl-3 h-full">
+            <Button
+              sx={{ ...buttonStyle, margin: "0px" }}
+              startIcon={<SettingsIcon sx={customWidth} />}
+            >
+              Settings
+            </Button>
 
-          <Button
-            onClick={() => logout()}
-            sx={{ ...buttonStyle, marginTop: "auto", marginBottom: "20px" }}
-            startIcon={<LogoutIcon sx={customWidth} />}
-          >
-            Logout
-          </Button>
-        </div>
-      </nav>
+            <Button
+              onClick={() => logout()}
+              sx={{ ...buttonStyle, marginTop: "auto", marginBottom: "20px" }}
+              startIcon={<LogoutIcon sx={customWidth} />}
+            >
+              Logout
+            </Button>
+          </div>
+        </nav>
+      </div>
     </>
   );
 }
