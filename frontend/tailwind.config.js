@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+import  colors  from "tailwindcss/colors";
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   safelist: ["bg-white"],
@@ -11,6 +12,7 @@ export default {
       xl: "1536px",
     },
     colors: {
+      ...colors,
       white: {
         100: "#FFFFFF",
         200: "#e6e6e6",
