@@ -1,4 +1,4 @@
-import { AccessToken, APIError, Credentials, SignUpUser, User } from "../types";
+import { AccessToken, Credentials, SignUpUser, User } from "../types";
 import axios, { AxiosError } from "axios";
 import { keys } from "../utils";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
@@ -66,37 +66,47 @@ async function refreshAuthInterceptor(
 ): Promise<string> {
   try {
     await refreshToken();
-    return updateBearerToken(failedRequest)
+    return updateBearerToken(failedRequest);
   } catch (err) {
     console.error("Error refreshing the token: ", err);
     const axiosError = err as AxiosError;
 
-    if (axiosError.response) {
-      const apiErr: APIError = axiosError.response.data as APIError;
-      const logout = refreshTokenErrorHandlers.get(apiErr.http_code);
-      if (logout) {
-        await logout();
-      }
-    } else {
-      console.error("Couldn't read error response. Logging out.")
-      window.location.pathname = "/login";
-    }
+    await handleRefreshTokenError(axiosError);
 
     return Promise.reject(err);
   }
 }
 
-function updateBearerToken(failedRequest: AxiosError) : Promise<string>{
+function updateBearerToken(failedRequest: AxiosError): Promise<string> {
   const newToken = localStorage.getItem(keys.ACCESS_TOKEN);
 
   if (newToken && failedRequest.response) {
     failedRequest.response.config.headers.Auth = "Bearer " + newToken;
     return Promise.resolve(newToken);
-  } else {
-    console.error("Couldn't update Bearer token. Logging out.")
-    window.location.pathname = "/login";
-    return Promise.reject();
   }
+
+  console.error("Couldn't update Bearer token. Logging out.");
+  window.location.pathname = "/login";
+  return Promise.reject();
+}
+
+async function handleRefreshTokenError(axiosError: AxiosError) {
+  if (!axiosError.response) {
+    console.error("Couldn't read error response. Logging out.");
+    window.location.pathname = "/login";
+    return;
+  }
+
+  const logout = refreshTokenErrorHandlers.get(axiosError.response.status);
+  if (logout) {
+    await logout();
+    return;
+  }
+
+  console.error(
+    `Couldn't get refresh token error handler for the status code '${axiosError.response.status}'. Logging out.`,
+  );
+  window.location.pathname = "/login";
 }
 
 async function logoutWoApiRequest() {
