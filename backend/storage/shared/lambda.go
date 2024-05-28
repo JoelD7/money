@@ -3,6 +3,8 @@ package shared
 import (
 	"bytes"
 	"context"
+	"log"
+	"os"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -17,6 +19,7 @@ var (
 	lambdaTimeout = env.GetString("LAMBDA_TIMEOUT", "10")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
+	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 // ExecuteLambda executes a lambda function's code and returns the stack trace and error in case of a timeout.
@@ -69,6 +72,7 @@ func ExecuteLambda(parentCtx context.Context, handler func(ctx context.Context))
 func getContextWithLambdaTimeout(parentCtx context.Context) (context.Context, context.CancelFunc) {
 	durationInt, err := strconv.Atoi(lambdaTimeout)
 	if err != nil {
+		errorLogger.Println("Error converting LAMBDA_TIMEOUT to int: ", err)
 		return context.WithTimeout(parentCtx, 10*time.Second)
 	}
 
