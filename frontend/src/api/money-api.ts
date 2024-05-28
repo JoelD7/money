@@ -52,7 +52,7 @@ async function refreshToken() {
 
 export async function logout(credentials: Credentials) {
   await retryableRequest(async () => {
-    await axiosClient.post(API_BASE_URL + "/auth/logout", credentials, {
+    await axios.post(API_BASE_URL + "/auth/logout", credentials, {
       withCredentials: true,
     });
 
