@@ -120,8 +120,5 @@ func (req *requestTokenHandler) handleValidationError(ctx context.Context, user 
 		return request.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusUnauthorized,
-		Body:       models.ErrInvalidToken.Error(),
-	}, nil
+	return request.NewErrorResponse(models.ErrInvalidToken), nil
 }
