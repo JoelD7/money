@@ -29,7 +29,7 @@ const (
 
 var (
 	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-90-242-4.compute-1.amazonaws.com")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-44-222-210-142.compute-1.amazonaws.com")
 	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
@@ -52,6 +52,8 @@ type LogAPI interface {
 
 type Log struct {
 	Service    string `json:"service,omitempty"`
+	lambdaName string
+	handler    string
 	bw         *bufio.Writer
 	connection net.Conn
 	connTimer  *time.Timer
@@ -69,8 +71,8 @@ type LogData struct {
 
 func NewLogger() LogAPI {
 	log := &Log{
-		Service: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
-		bw:      bufio.NewWriter(os.Stdout),
+		lambdaName: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		bw:         bufio.NewWriter(os.Stdout),
 	}
 
 	log.establishConnection()
@@ -79,8 +81,8 @@ func NewLogger() LogAPI {
 }
 
 func (l *Log) SetHandler(handler string) {
-	if handler != "" && l.Service != "unknown" {
-		l.Service += "-" + handler
+	if handler != "" && l.lambdaName != "unknown" {
+		l.handler = handler
 	}
 }
 
@@ -139,7 +141,7 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 
 func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) []byte {
 	logData := &LogData{
-		Service:   l.Service,
+		Service:   l.getService(),
 		Event:     eventName,
 		Level:     string(level),
 		LogObject: getLogObjects(objects),
@@ -158,6 +160,14 @@ func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error
 	}
 
 	return dataBuffer.Bytes()
+}
+
+func (l *Log) getService() string {
+	if l.handler != "" {
+		return fmt.Sprintf("%s-%s", l.lambdaName, l.handler)
+	}
+
+	return l.lambdaName
 }
 
 func (l *Log) establishConnection() {
