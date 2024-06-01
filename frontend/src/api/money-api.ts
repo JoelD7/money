@@ -57,7 +57,7 @@ export async function logout(credentials: Credentials) {
     });
 
     localStorage.removeItem(keys.ACCESS_TOKEN);
-    window.location.pathname = "/login";
+    redirectToLogin()
   });
 }
 
@@ -86,14 +86,14 @@ function updateBearerToken(failedRequest: AxiosError): Promise<string> {
   }
 
   console.error("Couldn't update Bearer token. Logging out.");
-  window.location.pathname = "/login";
+  redirectToLogin()
   return Promise.reject();
 }
 
 async function handleRefreshTokenError(axiosError: AxiosError) {
   if (!axiosError.response) {
     console.error("Couldn't read error response. Logging out.");
-    window.location.pathname = "/login";
+    redirectToLogin()
     return;
   }
 
@@ -106,12 +106,12 @@ async function handleRefreshTokenError(axiosError: AxiosError) {
   console.error(
     `Couldn't get refresh token error handler for the status code '${axiosError.response.status}'. Logging out.`,
   );
-  window.location.pathname = "/login";
+  redirectToLogin()
 }
 
 async function logoutWoApiRequest() {
   localStorage.removeItem(keys.ACCESS_TOKEN);
-  window.location.pathname = "/login";
+  redirectToLogin()
 }
 
 async function logoutWithApiRequest() {
@@ -121,7 +121,7 @@ async function logoutWithApiRequest() {
     await logout({ username: accessToken.sub, password: "" });
   } catch (error) {
     console.error("Error logging out", error);
-    window.location.pathname = "/login";
+    redirectToLogin()
   }
 }
 
@@ -143,4 +143,8 @@ function parseJwt(token: string | null): AccessToken {
   );
 
   return JSON.parse(jsonPayload);
+}
+
+function redirectToLogin() {
+  window.location.replace("/login");
 }
