@@ -4,22 +4,35 @@ import {
   Box,
   Link,
   TextField,
-  Typography, useMediaQuery,
+  Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { Button, MoneyBanner, MoneyBannerMobile } from "../components";
-import {Colors, theme} from "../assets";
+import { Colors, theme } from "../assets";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { InputError, SignUpUser } from "../types";
 import { AxiosError } from "axios";
 import Grid from "@mui/material/Unstable_Grid2";
+import { AccessTokenResponse } from "../types/other.ts";
+import { setIsAuthenticated } from "../store";
+import { useDispatch } from "react-redux";
+import { keys } from "../utils/index.ts";
 
 export function SignUp() {
+  const dispatch = useDispatch();
+
   const mutation = useMutation({
     mutationFn: api.signUp,
-    onSuccess: () => {
+    onSuccess: (res) => {
+      const loginResponse: AccessTokenResponse = res.data;
+      localStorage.setItem(keys.ACCESS_TOKEN, loginResponse.accessToken);
+
       setErrResponse("");
+
+      dispatch(setIsAuthenticated(true));
+      window.location.pathname = "/";
     },
     onError: (error) => {
       if (error) {
