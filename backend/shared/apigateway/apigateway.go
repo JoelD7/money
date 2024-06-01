@@ -47,7 +47,6 @@ var (
 		models.ErrInvalidSavingAmount:            {HTTPCode: http.StatusBadRequest, Message: "Invalid amount"},
 		models.ErrSavingNotFound:                 {HTTPCode: http.StatusNotFound, Message: "Not found"},
 		models.ErrSavingGoalNotFound:             {HTTPCode: http.StatusNotFound, Message: "Not found"},
-		models.ErrNoUsernameInContext:            {HTTPCode: http.StatusBadRequest, Message: "Couldn't identify the user. Check if your Bearer token header is correct"},
 		models.ErrMissingName:                    {HTTPCode: http.StatusBadRequest, Message: "Missing name"},
 		models.ErrMissingExpenseID:               {HTTPCode: http.StatusBadRequest, Message: "Missing expense id"},
 		models.ErrPeriodNotFound:                 {HTTPCode: http.StatusNotFound, Message: "Not found"},
