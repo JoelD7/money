@@ -1,3 +1,5 @@
+import { AxiosError } from "axios";
+
 const BACKOFF_TIME_MS: number = 1000;
 export const MAX_RETRIES: number = 3;
 
@@ -14,8 +16,12 @@ export async function retryableRequest(request: () => Promise<void>) {
       myErr = undefined;
       return;
     } catch (err) {
-      myErr = err;
+      myErr = err as AxiosError;
+      if (myErr.response && myErr.response.status >= 400 && myErr.response.status < 500) {
+        throw myErr;
+      }
     }
+
     await sleep(BACKOFF_TIME_MS);
   }
 
