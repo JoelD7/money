@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -17,10 +18,11 @@ var signUpRequest *requestSignUpHandler
 var signUpOnce sync.Once
 
 type requestSignUpHandler struct {
-	log          logger.LogAPI
-	startingTime time.Time
-	err          error
-	userRepo     users.Repository
+	log            logger.LogAPI
+	startingTime   time.Time
+	err            error
+	userRepo       users.Repository
+	secretsManager secrets.SecretManager
 }
 
 func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
@@ -41,6 +43,7 @@ func (req *requestSignUpHandler) initSignUpHandler(log logger.LogAPI) {
 		req.userRepo = users.NewDynamoRepository(dynamoClient)
 		req.log = log
 		req.log.SetHandler("sign-up")
+		req.secretsManager = secrets.NewAWSSecretManager()
 	})
 	req.startingTime = time.Now()
 }
@@ -68,7 +71,28 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		return request.NewErrorResponse(err), nil
 	}
 
-	return request.NewJSONResponse(http.StatusCreated, nil), nil
+	newUser := &models.User{
+		Username: reqBody.Username,
+		FullName: reqBody.FullName,
+	}
+
+	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
+
+	accessToken, refreshToken, err := generateTokens(ctx, newUser)
+	if err != nil {
+		return request.NewErrorResponse(err), nil
+	}
+
+	response := &accessTokenResponse{accessToken.Value}
+
+	data, err := json.Marshal(response)
+	if err != nil {
+		return request.NewErrorResponse(err), nil
+	}
+
+	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
+
+	return request.NewJSONResponse(http.StatusCreated, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }
 
 func validateSingUpInput(request *apigateway.Request) (*signUpBody, error) {
