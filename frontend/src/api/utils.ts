@@ -29,3 +29,7 @@ export async function retryableRequest(request: () => Promise<void>) {
     throw myErr;
   }
 }
+
+export function redirectToLogin() {
+  window.location.replace("/login");
+}

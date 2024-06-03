@@ -1,8 +1,9 @@
-import { AccessToken, Credentials, SignUpUser, User } from "../types";
+import { AccessToken, User } from "../types";
 import axios, { AxiosError } from "axios";
 import { keys } from "../utils";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
-import { retryableRequest } from "./utils.ts";
+import { redirectToLogin, retryableRequest } from "./utils.ts";
+import { logout } from "./auth.ts";
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -21,16 +22,6 @@ createAuthRefreshInterceptor(axiosClient, refreshAuthInterceptor, {
   pauseInstanceWhileRefreshing: true,
 });
 
-export function signUp(newUser: SignUpUser) {
-  return axiosClient.post(API_BASE_URL + "/auth/signup", newUser);
-}
-
-export function login(credentials: Credentials) {
-  return axiosClient.post(API_BASE_URL + "/auth/login", credentials, {
-    withCredentials: true, //required so that the browser will store the cookie. See more: https://developer.mozilla.org/en-US/docs/Web/API/Request/credentials
-  });
-}
-
 export function getUser() {
   return axiosClient.get<User>(API_BASE_URL + "/users", {
     withCredentials: true,
@@ -47,17 +38,6 @@ async function refreshToken() {
     });
 
     localStorage.setItem(keys.ACCESS_TOKEN, response.data.accessToken);
-  });
-}
-
-export async function logout(credentials: Credentials) {
-  await retryableRequest(async () => {
-    await axios.post(API_BASE_URL + "/auth/logout", credentials, {
-      withCredentials: true,
-    });
-
-    localStorage.removeItem(keys.ACCESS_TOKEN);
-    redirectToLogin()
   });
 }
 
@@ -86,14 +66,14 @@ function updateBearerToken(failedRequest: AxiosError): Promise<string> {
   }
 
   console.error("Couldn't update Bearer token. Logging out.");
-  redirectToLogin()
+  redirectToLogin();
   return Promise.reject();
 }
 
 async function handleRefreshTokenError(axiosError: AxiosError) {
   if (!axiosError.response) {
     console.error("Couldn't read error response. Logging out.");
-    redirectToLogin()
+    redirectToLogin();
     return;
   }
 
@@ -106,12 +86,12 @@ async function handleRefreshTokenError(axiosError: AxiosError) {
   console.error(
     `Couldn't get refresh token error handler for the status code '${axiosError.response.status}'. Logging out.`,
   );
-  redirectToLogin()
+  redirectToLogin();
 }
 
 async function logoutWoApiRequest() {
   localStorage.removeItem(keys.ACCESS_TOKEN);
-  redirectToLogin()
+  redirectToLogin();
 }
 
 async function logoutWithApiRequest() {
@@ -121,7 +101,7 @@ async function logoutWithApiRequest() {
     await logout({ username: accessToken.sub, password: "" });
   } catch (error) {
     console.error("Error logging out", error);
-    redirectToLogin()
+    redirectToLogin();
   }
 }
 
@@ -143,8 +123,4 @@ function parseJwt(token: string | null): AccessToken {
   );
 
   return JSON.parse(jsonPayload);
-}
-
-function redirectToLogin() {
-  window.location.replace("/login");
 }
