@@ -12,7 +12,7 @@ import { Colors, theme } from "../assets";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../api";
 import { ChangeEvent, FormEvent, useState } from "react";
-import { InputError, SignUpUser } from "../types";
+import { APIError, InputError, SignUpUser } from "../types";
 import { AxiosError } from "axios";
 import Grid from "@mui/material/Unstable_Grid2";
 import { AccessTokenResponse } from "../types/other.ts";
@@ -37,7 +37,9 @@ export function SignUp() {
     onError: (error) => {
       if (error) {
         const err = error as AxiosError;
-        setErrResponse(err.response?.data as string);
+        const responseError = err.response?.data as APIError;
+
+        setErrResponse(responseError.message as string);
       }
     },
   });

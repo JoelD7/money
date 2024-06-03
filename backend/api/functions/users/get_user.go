@@ -6,7 +6,6 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
-	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -64,13 +63,6 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 		return req.NewErrorResponse(err), nil
 	}
 
-	err = validate.Email(username)
-	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{req})
-
-		return req.NewErrorResponse(err), nil
-	}
-
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)
 
 	user, err := getUser(ctx, username)
@@ -83,6 +75,13 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 		request.log.Warning("user_remainder_could_not_be_calculated", err, []models.LoggerObject{req})
 
 		return req.NewJSONResponse(http.StatusOK, user), nil
+	}
+
+	if errors.Is(err, models.ErrUserNotFound) {
+		request.err = err
+		request.log.Error("user_not_found", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(errors.New("user not found")), nil
 	}
 
 	if err != nil {
