@@ -13,7 +13,7 @@ const refreshTokenErrorHandlers = new Map<number, ErrorHandler>([
   [401, logoutWithApiRequest],
 ]);
 
-const axiosClient = axios.create({
+export const axiosClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
