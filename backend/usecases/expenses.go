@@ -40,11 +40,16 @@ func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Con
 
 func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, expenseID, username string, expense *models.Expense) (*models.Expense, error) {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
+		}
+
 		expense.Username = username
 		expense.ExpenseID = expenseID
 		expense.UpdateDate = time.Now()
 
-		err := validateExpensePeriod(ctx, expense, username, pm)
+		err = validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {
 			return nil, err
 		}
@@ -59,7 +64,7 @@ func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func
 			return nil, fmt.Errorf("getting updated expense failed: %w", err)
 		}
 
-		err = setExpensesCategoryNames(ctx, username, um, []*models.Expense{updatedExpense})
+		err = setExpensesCategoryNames(user, []*models.Expense{updatedExpense})
 		if err != nil {
 			return updatedExpense, err
 		}
@@ -70,12 +75,17 @@ func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func
 
 func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 	return func(ctx context.Context, username, expenseID string) (*models.Expense, error) {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
+		}
+
 		expense, err := em.GetExpense(ctx, username, expenseID)
 		if err != nil {
 			return nil, err
 		}
 
-		err = setExpensesCategoryNames(ctx, username, um, []*models.Expense{expense})
+		err = setExpensesCategoryNames(user, []*models.Expense{expense})
 		if err != nil {
 			return expense, err
 		}
@@ -86,12 +96,17 @@ func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Contex
 
 func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
 	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
+		}
+
 		expenses, nextKey, err := em.GetExpenses(ctx, username, startKey, pageSize)
 		if err != nil {
 			return nil, "", err
 		}
 
-		err = setExpensesCategoryNames(ctx, username, um, expenses)
+		err = setExpensesCategoryNames(user, expenses)
 		if err != nil {
 			return expenses, "", err
 		}
@@ -102,12 +117,17 @@ func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Conte
 
 func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
 	return func(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
+		}
+
 		expenses, nextKey, err := em.GetExpensesByCategory(ctx, username, startKey, categories, pageSize)
 		if err != nil {
 			return nil, "", err
 		}
 
-		err = setExpensesCategoryNames(ctx, username, um, expenses)
+		err = setExpensesCategoryNames(user, expenses)
 		if err != nil {
 			return expenses, "", err
 		}
@@ -118,12 +138,21 @@ func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx c
 
 func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
 	return func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
+		}
+
+		if periodID == string(models.PeriodTypeCurrent) {
+			periodID = user.CurrentPeriod
+		}
+
 		expenses, nextKey, err := em.GetExpensesByPeriod(ctx, username, periodID, startKey, pageSize)
 		if err != nil {
 			return nil, "", err
 		}
 
-		err = setExpensesCategoryNames(ctx, username, um, expenses)
+		err = setExpensesCategoryNames(user, expenses)
 		if err != nil {
 			return expenses, "", err
 		}
@@ -134,12 +163,21 @@ func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx conte
 
 func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
 	return func(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
+		}
+
+		if periodID == string(models.PeriodTypeCurrent) {
+			periodID = user.CurrentPeriod
+		}
+
 		expenses, nextKey, err := em.GetExpensesByPeriodAndCategories(ctx, username, periodID, startKey, categories, pageSize)
 		if err != nil {
 			return nil, "", err
 		}
 
-		err = setExpensesCategoryNames(ctx, username, um, expenses)
+		err = setExpensesCategoryNames(user, expenses)
 		if err != nil {
 			return expenses, "", err
 		}
@@ -154,12 +192,7 @@ func NewExpensesDeleter(em ExpenseManager) func(ctx context.Context, expenseID, 
 	}
 }
 
-func setExpensesCategoryNames(ctx context.Context, username string, um UserManager, expenses []*models.Expense) error {
-	user, err := um.GetUser(ctx, username)
-	if err != nil {
-		return fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
-	}
-
+func setExpensesCategoryNames(user *models.User, expenses []*models.Expense) error {
 	categoryNamesByID := make(map[string]string)
 
 	for _, category := range user.Categories {
