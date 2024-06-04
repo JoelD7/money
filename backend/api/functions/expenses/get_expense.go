@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -84,12 +83,6 @@ func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.R
 	getExpense := usecases.NewExpenseGetter(request.expensesRepo, request.userRepo)
 
 	expense, err := getExpense(ctx, username, expenseID)
-	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
-		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
-
-		return req.NewJSONResponse(http.StatusOK, expense), nil
-	}
-
 	if err != nil {
 		request.log.Error("get_expense_failed", err, []models.LoggerObject{req})
 

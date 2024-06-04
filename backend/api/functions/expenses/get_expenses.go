@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -136,15 +135,6 @@ func (request *getExpensesRequest) getByCategories(ctx context.Context, req *api
 	getExpensesByCategory := usecases.NewExpensesByCategoriesGetter(request.expensesRepo, request.userRepo)
 
 	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.username, request.startKey, categories, request.pageSize)
-	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
-		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
-
-		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
-			Expenses: userExpenses,
-			NextKey:  nextKey,
-		}), nil
-	}
-
 	if err != nil {
 		request.log.Error("get_expenses_by_category_failed", err, []models.LoggerObject{req})
 
@@ -163,15 +153,6 @@ func (request *getExpensesRequest) getByPeriod(ctx context.Context, req *apigate
 	getExpensesByPeriod := usecases.NewExpensesByPeriodGetter(request.expensesRepo, request.userRepo)
 
 	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.username, period, request.startKey, request.pageSize)
-	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
-		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
-
-		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
-			Expenses: userExpenses,
-			NextKey:  nextKey,
-		}), nil
-	}
-
 	if err != nil {
 		request.log.Error("get_expenses_by_period_failed", err, []models.LoggerObject{req})
 
@@ -191,15 +172,6 @@ func (request *getExpensesRequest) getByCategoriesAndPeriod(ctx context.Context,
 	getExpensesByPeriodAndCategories := usecases.NewExpensesByPeriodAndCategoriesGetter(request.expensesRepo, request.userRepo)
 
 	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.username, period, request.startKey, categories, request.pageSize)
-	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
-		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
-
-		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
-			Expenses: userExpenses,
-			NextKey:  nextKey,
-		}), nil
-	}
-
 	if err != nil {
 		request.log.Error("get_expenses_by_period_and_categories_failed", err, []models.LoggerObject{req})
 
@@ -216,15 +188,6 @@ func (request *getExpensesRequest) getAll(ctx context.Context, req *apigateway.R
 	getExpenses := usecases.NewExpensesGetter(request.expensesRepo, request.userRepo)
 
 	userExpenses, nextKey, err := getExpenses(ctx, request.username, request.startKey, request.pageSize)
-	if errors.Is(err, models.ErrCategoryNameSettingFailed) {
-		request.log.Error("set_expense_category_name_failed", err, []models.LoggerObject{req})
-
-		return req.NewJSONResponse(http.StatusOK, &expensesResponse{
-			Expenses: userExpenses,
-			NextKey:  nextKey,
-		}), nil
-	}
-
 	if err != nil {
 		request.log.Error("get_expenses_failed", err, []models.LoggerObject{req})
 
