@@ -1,22 +1,22 @@
 export type User = {
   username: string;
-  currentPeriod: string;
+  current_period: string;
   remainder: number;
   expenses?: number;
   categories?: Category[];
 };
 
 export type Expense = {
-  expenseID: string;
+  expense_id: string;
   username: string;
-  categoryID?: string;
-  categoryName?: string;
+  category_id?: string;
+  category_name?: string;
   amount: number;
   name: string;
   notes?: string;
-  createdDate: Date;
+  created_date: Date;
   period: string;
-  updateDate: Date;
+  update_date: Date;
 };
 
 export type Expenses = {

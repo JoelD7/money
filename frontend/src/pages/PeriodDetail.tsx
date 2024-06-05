@@ -79,110 +79,110 @@ export function PeriodDetail() {
 
     const expenses: Expense[] = [
         {
-            expenseID: "EX5DK8d8LTywTKC8r87vdS",
+            expense_id: "EX5DK8d8LTywTKC8r87vdS",
             username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
+            category_id: "CTGiBScOP3V16LYBjdIStP9",
+            category_name: "Shopping",
             amount: 12.99,
             name: "Blue pair of socks",
             notes: "Ipsum mollit est pariatur esse ex. Aliqua laborum laboris laboris laboris. Laboris pectum",
-            createdDate: new Date("2023-10-27T23:42:54.980596532Z"),
+            created_date: new Date("2023-10-27T23:42:54.980596532Z"),
             period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXBLsynfE2QSAX8awfWptn",
+            expense_id: "EXBLsynfE2QSAX8awfWptn",
             username: "test@gmail.com",
-            categoryID: "CTGcSuhjzVmu3WrHLKD5fhS",
-            categoryName: "Health",
+            category_id: "CTGcSuhjzVmu3WrHLKD5fhS",
+            category_name: "Health",
             amount: 1000,
             name: "Protector solar",
-            createdDate: new Date("2023-10-14T19:55:45.261990038Z"),
+            created_date: new Date("2023-10-14T19:55:45.261990038Z"),
             period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXD5G8OdwlKC81tH9ZE3eO",
+            expense_id: "EXD5G8OdwlKC81tH9ZE3eO",
             username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
+            category_id: "CTGiBScOP3V16LYBjdIStP9",
+            category_name: "Shopping",
             amount: 1898.11,
             name: "Vacuum Cleaner",
-            createdDate: new Date("2023-10-18T22:41:56.024322091Z"),
+            created_date: new Date("2023-10-18T22:41:56.024322091Z"),
             period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXF5Mg3fpxct3v0BI91XYB",
+            expense_id: "EXF5Mg3fpxct3v0BI91XYB",
             username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
+            category_id: "CTGiBScOP3V16LYBjdIStP9",
+            category_name: "Shopping",
             amount: 1202.17,
             name: "Microwave",
-            createdDate: new Date("2023-10-18T22:41:46.946640398Z"),
+            created_date: new Date("2023-10-18T22:41:46.946640398Z"),
             period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXHrwzQezXK6nXyclUHbVH",
+            expense_id: "EXHrwzQezXK6nXyclUHbVH",
             username: "test@gmail.com",
-            categoryID: "CTGGyouAaIPPWKzxpyxHACS",
-            categoryName: "Entertainment",
+            category_id: "CTGGyouAaIPPWKzxpyxHACS",
+            category_name: "Entertainment",
             amount: 955,
             name: "Plza Juan Baron",
             notes: "Lorem ipsum note to fill space",
-            createdDate: new Date("2023-10-14T19:52:11.552327532Z"),
+            created_date: new Date("2023-10-14T19:52:11.552327532Z"),
             period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXIGBwc0sBWeyL9hy8jVuI",
+            expense_id: "EXIGBwc0sBWeyL9hy8jVuI",
             username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
+            category_id: "CTGiBScOP3V16LYBjdIStP9",
+            category_name: "Shopping",
             amount: 620,
             name: "Correa amarilla",
-            createdDate: new Date("2023-10-18T22:37:04.230522146Z"),
+            created_date: new Date("2023-10-18T22:37:04.230522146Z"),
             period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXIfxidmlBJtq97xjQZfNh",
+            expense_id: "EXIfxidmlBJtq97xjQZfNh",
             username: "test@gmail.com",
-            categoryID: "CTGiBScOP3V16LYBjdIStP9",
-            categoryName: "Shopping",
+            category_id: "CTGiBScOP3V16LYBjdIStP9",
+            category_name: "Shopping",
             amount: 123,
             name: "Correa azul",
-            createdDate: new Date("2023-10-18T22:37:15.57296052Z"),
+            created_date: new Date("2023-10-18T22:37:15.57296052Z"),
             period: "2023-7",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXP123",
+            expense_id: "EXP123",
             username: "test@gmail.com",
             amount: 893,
             name: "Jordan shopping",
-            createdDate: new Date("0001-01-01T00:00:00Z"),
+            created_date: new Date("0001-01-01T00:00:00Z"),
             period: "2023-5",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXP456",
+            expense_id: "EXP456",
             username: "test@gmail.com",
             amount: 112,
             name: "Uber drive",
-            createdDate: new Date("0001-01-01T00:00:00Z"),
+            created_date: new Date("0001-01-01T00:00:00Z"),
             period: "2023-5",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         },
         {
-            expenseID: "EXP789",
+            expense_id: "EXP789",
             username: "test@gmail.com",
             amount: 525,
             name: "Lunch",
-            createdDate: new Date("0001-01-01T00:00:00Z"),
+            created_date: new Date("0001-01-01T00:00:00Z"),
             period: "2023-5",
-            updateDate: new Date("0001-01-01T00:00:00Z")
+            update_date: new Date("0001-01-01T00:00:00Z")
         }
     ]
 
@@ -201,7 +201,7 @@ export function PeriodDetail() {
         let categoryData: ExpenseCategorySummary | undefined
 
         expenses.forEach((expense) => {
-            if (!expense.categoryID) {
+            if (!expense.category_id) {
                 categoryData = summaryByCategory.get("Other")
 
                 if (categoryData) {
@@ -213,20 +213,20 @@ export function PeriodDetail() {
                 return
             }
 
-            categoryData = summaryByCategory.get(expense.categoryID)
+            categoryData = summaryByCategory.get(expense.category_id)
 
             if (categoryData) {
                 categoryData.total += expense.amount
                 categoryData.percentage = getPercentageFromExpenses(categoryData.total)
-                summaryByCategory.set(expense.categoryID, categoryData)
+                summaryByCategory.set(expense.category_id, categoryData)
                 return
             }
 
-            summaryByCategory.set(expense.categoryID, {
+            summaryByCategory.set(expense.category_id, {
                 percentage: getPercentageFromExpenses(expense.amount),
                 total: expense.amount,
-                categoryID: expense.categoryID ? expense.categoryID : "",
-                categoryName: expense.categoryName ? expense.categoryName : "",
+                categoryID: expense.category_id ? expense.category_id : "",
+                categoryName: expense.category_name ? expense.category_name : "",
             })
         })
 

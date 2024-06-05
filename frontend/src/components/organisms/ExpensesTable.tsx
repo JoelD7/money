@@ -74,11 +74,11 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
     function getTableRows(expenses: Expense[]): GridRowsProp {
         return expenses.map((expense): GridValidRowModel => {
             return {
-                id: expense.expenseID,
+                id: expense.expense_id,
                 amount: new Intl.NumberFormat('en-US', {
                     style: 'currency', currency: 'USD'
                 }).format(expense.amount),
-                categoryName: expense.categoryName ? expense.categoryName : "-",
+                categoryName: expense.category_name ? expense.category_name : "-",
                 notes: expense.notes ? expense.notes : "-",
                 createdDate: new Intl.DateTimeFormat('en-GB', {
                     weekday: "short",
@@ -87,7 +87,7 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
                     day: "numeric",
                     hour: 'numeric',
                     minute: 'numeric',
-                }).format(expense.createdDate),
+                }).format(new Date(expense.created_date)),
             }
         })
     }
@@ -127,8 +127,8 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
         const colorsByExpense: Map<string, string> = new Map<string, string>()
         expenses.forEach((expense) => {
             user.categories.forEach((category) => {
-                if (category.name === expense.categoryName) {
-                    colorsByExpense.set(expense.expenseID, category.color)
+                if (category.name === expense.category_name) {
+                    colorsByExpense.set(expense.expense_id, category.color)
                 }
             })
         })
@@ -141,13 +141,13 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
         let options: CategorySelectorOption[] = []
 
         expenses.forEach((expense) => {
-            if (expense.categoryName && !addedCategories.has(expense.categoryName)) {
+            if (expense.category_name && !addedCategories.has(expense.category_name)) {
                 options.push({
-                    label: expense.categoryName,
-                    color: colorsByExpense.get(expense.expenseID) || "gray.main"
+                    label: expense.category_name,
+                    color: colorsByExpense.get(expense.expense_id) || "gray.main"
                 })
 
-                addedCategories.add(expense.categoryName)
+                addedCategories.add(expense.category_name)
             }
         })
 
@@ -161,7 +161,7 @@ export function ExpensesTable({expenses}: ExpensesTableProps) {
         }
 
         let newFilteredExpenses: Expense[] = expenses.filter((expense) => {
-            return selected.includes(expense.categoryName || "")
+            return selected.includes(expense.category_name || "")
         })
 
         setFilteredExpenses(newFilteredExpenses)
