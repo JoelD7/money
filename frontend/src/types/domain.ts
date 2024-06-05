@@ -14,9 +14,9 @@ export type Expense = {
   amount: number;
   name: string;
   notes?: string;
-  created_date: Date;
+  created_date: string;
   period: string;
-  update_date: Date;
+  update_date: string;
 };
 
 export type Expenses = {
@@ -57,8 +57,8 @@ export type Period = {
   username: string;
   period: string;
   name: string;
-  start_date: Date;
-  end_date: Date;
-  created_date: Date;
-  updated_date: Date;
+  start_date: string;
+  end_date: string;
+  created_date: string;
+  updated_date: string;
 };
