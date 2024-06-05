@@ -19,6 +19,11 @@ export type Expense = {
   updateDate: Date;
 };
 
+export type Expenses = {
+  expenses: Expense[];
+  next_key: string;
+};
+
 export type Category = {
   id: string;
   name: string;

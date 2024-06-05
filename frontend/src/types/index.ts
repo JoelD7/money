@@ -7,5 +7,6 @@ export type {
   APIError,
   AccessToken,
   Period,
+  Expenses,
 } from "./domain.ts";
 export type { RechartsLabelProps, InputError } from "./other.ts";
