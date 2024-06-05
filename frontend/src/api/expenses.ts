@@ -1,9 +1,9 @@
-import { Expense } from "../types";
+import { Expenses } from "../types";
 import { keys } from "../utils";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 
 export function getExpenses(
-  period: string,
+  period: string = "current",
   categories: string[] = [],
   startKey: string = "",
   pageSize: number = 10,
@@ -19,7 +19,7 @@ export function getExpenses(
     params += `&start_key=${startKey}`;
   }
 
-  return axiosClient.get<Expense[]>(API_BASE_URL + `/expenses?${params}`, {
+  return axiosClient.get<Expenses>(API_BASE_URL + `/expenses?${params}`, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
