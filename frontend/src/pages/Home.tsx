@@ -15,6 +15,13 @@ import { useQuery } from "@tanstack/react-query";
 import api from "../api";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
+import { Colors } from "../assets";
+
+type CategoryExpense = {
+  category: string;
+  color: string;
+  value: number;
+};
 
 export function Home() {
   const theme = useTheme();
@@ -42,6 +49,8 @@ export function Home() {
   const user: User | undefined = getUser.data?.data;
   const expenses: Expense[] | undefined = getExpenses.data?.data.expenses;
   const period: Period | undefined = getPeriod.data?.data;
+  const colorsByCategory: Map<string, string> = getColorsByCategory();
+  const categoryExpense: CategoryExpense[] = getCategoryExpense();
 
   const xlCustom = useMediaQuery(
     json2mq({
@@ -94,6 +103,55 @@ export function Home() {
     ).format(new Date(period.end_date))}`;
   }
 
+  function getColorsByCategory(): Map<string, string> {
+    const colorsByCategory: Map<string, string> = new Map<string, string>();
+    if (user && user.categories) {
+      user.categories.forEach((category) => {
+        colorsByCategory.set(category.name, category.color);
+      });
+    }
+
+    return colorsByCategory;
+  }
+
+  function getCategoryExpense(): CategoryExpense[] {
+    if (!user || !expenses) {
+      return [];
+    }
+
+    const categoryExpense: CategoryExpense[] = [];
+    const totalExpenseByCategory: Map<string, number> = new Map<
+      string,
+      number
+    >();
+
+    expenses.forEach((expense) => {
+      let category = expense.category_name;
+      if (!category) {
+        category = "Other";
+      }
+
+      const curTotal: number | undefined = totalExpenseByCategory.get(category);
+
+      if (curTotal) {
+        totalExpenseByCategory.set(category, curTotal + expense.amount);
+      } else {
+        totalExpenseByCategory.set(category, expense.amount);
+      }
+    });
+
+    totalExpenseByCategory.forEach((value, key) => {
+      let color = colorsByCategory.get(key);
+      if (!color) {
+        color = Colors.GRAY_DARK;
+      }
+
+      categoryExpense.push({ category: key, value: value, color: color });
+    });
+
+    return categoryExpense;
+  }
+
   if (getUser.isPending) {
     return <Loading />;
   }
@@ -143,30 +201,30 @@ export function Home() {
                     </Grid>
                     {/*Chart*/}
                     <Grid xs={12} height={chartHeight}>
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart width={350} height={chartHeight}>
-                          <Pie
-                            data={user ? user.categories : []}
-                            label={getCustomLabel}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            fill="#8884d8"
-                          >
-                            {user &&
-                              user.categories &&
-                              user.categories.map((category, index) => (
+                      {user && user.categories && (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart width={350} height={chartHeight}>
+                            <Pie
+                              data={categoryExpense}
+                              label={getCustomLabel}
+                              dataKey="value"
+                              nameKey="category"
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              fill="#8884d8"
+                            >
+                              {categoryExpense.map((category, index) => (
                                 <Cell
                                   key={`cell-${index}`}
                                   fill={category.color}
                                 />
                               ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
                     </Grid>
 
                     {/*Chart legend*/}
@@ -174,22 +232,20 @@ export function Home() {
                       <Grid container width="100%" className="justify-between">
                         {/*Categories*/}
                         <Grid xs={6}>
-                          {user &&
-                            user.categories &&
-                            user.categories.map((category) => (
+                          {categoryExpense.map((ce) => (
+                            <div
+                              key={`${ce.category}`}
+                              className="flex gap-1 items-center"
+                            >
                               <div
-                                key={`${category.id}`}
-                                className="flex gap-1 items-center"
-                              >
-                                <div
-                                  className="rounded-full w-3 h-3"
-                                  style={{ backgroundColor: category.color }}
-                                />
-                                <Typography color="gray.light">
-                                  {category.name}
-                                </Typography>
-                              </div>
-                            ))}
+                                className="rounded-full w-3 h-3"
+                                style={{ backgroundColor: ce.color }}
+                              />
+                              <Typography color="gray.light">
+                                {ce.category}
+                              </Typography>
+                            </div>
+                          ))}
                         </Grid>
                         {/*Details button*/}
                         <Grid xs={6}>
