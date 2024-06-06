@@ -3,12 +3,11 @@ import { CategoryExpense, Period, RechartsLabelProps } from "../../types";
 import { CircularProgress, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { Button } from "../atoms";
-import { useQuery } from "@tanstack/react-query";
-import api from "../../api";
 import { Colors } from "../../assets";
 
 type ExpensesChartProps = {
   categoryExpense: CategoryExpense[];
+  period?: Period;
   chartHeight: number;
   isLoading: boolean;
   isError: boolean;
@@ -17,17 +16,10 @@ type ExpensesChartProps = {
 export function ExpensesChart({
   categoryExpense,
   chartHeight,
+  period,
   isLoading,
   isError,
 }: ExpensesChartProps) {
-  const getPeriod = useQuery({
-    queryKey: ["period"],
-    queryFn: () => api.getPeriod(),
-    refetchOnWindowFocus: false,
-  });
-
-  const period: Period | undefined = getPeriod.data?.data;
-
   const RADIAN: number = Math.PI / 180;
 
   function getCustomLabel({

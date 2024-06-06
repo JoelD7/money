@@ -9,7 +9,7 @@ import {
   ExpensesTable,
   Navbar,
 } from "../components";
-import { Expense, User } from "../types";
+import { Expense, Period, User } from "../types";
 import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api";
@@ -40,8 +40,16 @@ export function Home() {
     refetchOnWindowFocus: false,
   });
 
+  const getPeriod = useQuery({
+    queryKey: ["period"],
+    queryFn: () => api.getPeriod(),
+    refetchOnWindowFocus: false,
+  });
+
   const user: User | undefined = getUser.data?.data;
   const expenses: Expense[] | undefined = getExpenses.data?.data.expenses;
+  const period: Period | undefined = getPeriod.data?.data;
+
   const colorsByCategory: Map<string, string> = getColorsByCategory();
   const categoryExpense: CategoryExpense[] = getCategoryExpense();
 
@@ -131,6 +139,7 @@ export function Home() {
               {/*Chart section*/}
               <Grid xs={12} md={6} maxWidth={"430px"}>
                 <ExpensesChart
+                  period={period}
                   categoryExpense={categoryExpense}
                   chartHeight={chartHeight}
                   isLoading={getUser.isLoading || getExpenses.isLoading}
