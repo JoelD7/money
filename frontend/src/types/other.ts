@@ -16,3 +16,9 @@ export type InputError = {
 export type AccessTokenResponse = {
     accessToken: string;
 }
+
+export type CategoryExpense = {
+  category: string;
+  color: string;
+  value: number;
+};

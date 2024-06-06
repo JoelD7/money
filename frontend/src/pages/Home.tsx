@@ -5,11 +5,11 @@ import {
   BalanceCard,
   Button,
   ExpenseCard,
+  ExpensesChart,
   ExpensesTable,
   Navbar,
 } from "../components";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { Expense, Period, RechartsLabelProps, User } from "../types";
+import { Expense, User } from "../types";
 import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api";
@@ -40,15 +40,8 @@ export function Home() {
     refetchOnWindowFocus: false,
   });
 
-  const getPeriod = useQuery({
-    queryKey: ["period"],
-    queryFn: () => api.getPeriod(),
-    refetchOnWindowFocus: false,
-  });
-
   const user: User | undefined = getUser.data?.data;
   const expenses: Expense[] | undefined = getExpenses.data?.data.expenses;
-  const period: Period | undefined = getPeriod.data?.data;
   const colorsByCategory: Map<string, string> = getColorsByCategory();
   const categoryExpense: CategoryExpense[] = getCategoryExpense();
 
@@ -59,49 +52,6 @@ export function Home() {
   );
 
   const chartHeight: number = 250;
-  const RADIAN: number = Math.PI / 180;
-
-  function getCustomLabel({
-    cx,
-    cy,
-    midAngle,
-    innerRadius,
-    outerRadius,
-    percent,
-  }: RechartsLabelProps) {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="white"
-        textAnchor={x > cx ? "start" : "end"}
-        dominantBaseline="central"
-      >
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
-    );
-  }
-
-  function getPeriodDates(): string {
-    if (!period) {
-      return "";
-    }
-
-    return `${new Intl.DateTimeFormat("en-US", {
-      month: "short",
-      day: "2-digit",
-    }).format(new Date(period.start_date))} - ${new Intl.DateTimeFormat(
-      "default",
-      {
-        month: "short",
-        day: "2-digit",
-      },
-    ).format(new Date(period.end_date))}`;
-  }
 
   function getColorsByCategory(): Map<string, string> {
     const colorsByCategory: Map<string, string> = new Map<string, string>();
@@ -180,94 +130,13 @@ export function Home() {
             <Grid container spacing={1}>
               {/*Chart section*/}
               <Grid xs={12} md={6} maxWidth={"430px"}>
-                <div>
-                  <Grid
-                    container
-                    bgcolor={"white.main"}
-                    borderRadius="1rem"
-                    p="1rem"
-                    boxShadow="3"
-                    mt="1rem"
-                  >
-                    <Grid xs={12}>
-                      {period && (
-                        <>
-                          <Typography variant="h4">{period.name}</Typography>
-                          <Typography color="gray.light">
-                            {getPeriodDates()}
-                          </Typography>
-                        </>
-                      )}
-                    </Grid>
-                    {/*Chart*/}
-                    <Grid xs={12} height={chartHeight}>
-                      {user && user.categories && (
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart width={350} height={chartHeight}>
-                            <Pie
-                              data={categoryExpense}
-                              label={getCustomLabel}
-                              dataKey="value"
-                              nameKey="category"
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              fill="#8884d8"
-                            >
-                              {categoryExpense.map((category, index) => (
-                                <Cell
-                                  key={`cell-${index}`}
-                                  fill={category.color}
-                                />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      )}
-                    </Grid>
-
-                    {/*Chart legend*/}
-                    <Grid xs={12}>
-                      <Grid container width="100%" className="justify-between">
-                        {/*Categories*/}
-                        <Grid xs={6}>
-                          {categoryExpense.map((ce) => (
-                            <div
-                              key={`${ce.category}`}
-                              className="flex gap-1 items-center"
-                            >
-                              <div
-                                className="rounded-full w-3 h-3"
-                                style={{ backgroundColor: ce.color }}
-                              />
-                              <Typography color="gray.light">
-                                {ce.category}
-                              </Typography>
-                            </div>
-                          ))}
-                        </Grid>
-                        {/*Details button*/}
-                        <Grid xs={6}>
-                          <Grid container className="items-end h-full">
-                            <Button
-                              variant="outlined"
-                              sx={{
-                                textTransform: "capitalize",
-                                borderRadius: "1rem",
-                                height: "fit-content",
-                              }}
-                            >
-                              View details
-                            </Button>
-                          </Grid>
-                        </Grid>
-                      </Grid>
-                    </Grid>
-                  </Grid>
-                </div>
+                <ExpensesChart
+                  categoryExpense={categoryExpense}
+                  chartHeight={chartHeight}
+                  isLoading={getUser.isLoading || getExpenses.isLoading}
+                  isError={getExpenses.isError}
+                />
               </Grid>
-
               {/*New expense/income buttons, Current balance and expenses*/}
               <Grid xs={12} md={6} maxWidth={"430px"}>
                 <div>

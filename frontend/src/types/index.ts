@@ -9,4 +9,8 @@ export type {
   Period,
   Expenses,
 } from "./domain.ts";
-export type { RechartsLabelProps, InputError } from "./other.ts";
+export type {
+  RechartsLabelProps,
+  InputError,
+  CategoryExpense,
+} from "./other.ts";
