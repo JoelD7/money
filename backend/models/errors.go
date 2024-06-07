@@ -47,7 +47,7 @@ var (
 	ErrInvalidSavingAmount         = errors.New("saving amount must be greater than or equal to 0")
 	ErrSavingGoalNameSettingFailed = errors.New("saving goal name not set")
 	ErrSavingGoalNotFound          = errors.New("saving goal not found")
-	ErrNoUsernameInContext         = errors.New("couldn't identify the user. Check if your Bearer token header is correct")
+	ErrNoUsernameInContext         = errors.New("username not found in authorizer context")
 	ErrCategoryNameSettingFailed   = errors.New("couldn't set category name for expenses")
 	ErrMissingName                 = errors.New("missing name")
 	ErrMissingExpenseID            = errors.New("missing expense id")

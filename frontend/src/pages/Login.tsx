@@ -11,8 +11,8 @@ import { Button, MoneyBanner, MoneyBannerMobile } from "../components";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
 import { ChangeEvent, FormEvent, useState } from "react";
-import { InputError } from "../types";
-import api from "../api";
+import { APIError, InputError } from "../types";
+import { api } from "../api";
 import { Colors, theme } from "../assets";
 import Grid from "@mui/material/Unstable_Grid2";
 import { useNavigate } from "@tanstack/react-router";
@@ -46,7 +46,9 @@ export function Login() {
     onError: (error) => {
       if (error) {
         const err = error as AxiosError;
-        setErrResponse(err.response?.data as string);
+        const responseError = err.response?.data as APIError;
+
+        setErrResponse(responseError.message as string);
       }
     },
   });
