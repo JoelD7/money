@@ -36,8 +36,7 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
     },
   };
 
-  const [colorsByExpense, setColorsByExpense] =
-    useState<Map<string, string>>(getColorsByExpense());
+  const colorsByExpense : Map<string, string> = getColorsByExpense()
   const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>(expenses);
 
   const columns: GridColDef[] = [
