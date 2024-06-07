@@ -31,19 +31,16 @@ export function Home() {
   const getUser = useQuery({
     queryKey: ["user"],
     queryFn: () => api.getUser(),
-    refetchOnWindowFocus: false,
   });
 
   const getExpenses = useQuery({
     queryKey: ["expenses"],
     queryFn: () => api.getExpenses(),
-    refetchOnWindowFocus: false,
   });
 
   const getPeriod = useQuery({
     queryKey: ["period"],
     queryFn: () => api.getPeriod(),
-    refetchOnWindowFocus: false,
   });
 
   const user: User | undefined = getUser.data?.data;
