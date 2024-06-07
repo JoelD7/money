@@ -191,7 +191,9 @@ export function Home() {
             Latest
           </Typography>
 
-          {expenses && <ExpensesTable expenses={expenses} />}
+          {expenses && user && user.categories && (
+            <ExpensesTable expenses={expenses} categories={user.categories} />
+          )}
         </Grid>
       </Grid>
     </>
