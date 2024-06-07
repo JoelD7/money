@@ -48,7 +48,7 @@ var (
 	ErrSavingGoalNameSettingFailed = errors.New("saving goal name not set")
 	ErrSavingGoalNotFound          = errors.New("saving goal not found")
 	ErrNoUsernameInContext         = errors.New("username not found in authorizer context")
-	ErrCategoryNameSettingFailed   = errors.New("category name not set")
+	ErrCategoryNameSettingFailed   = errors.New("couldn't set category name for expenses")
 	ErrMissingName                 = errors.New("missing name")
 	ErrMissingExpenseID            = errors.New("missing expense id")
 

@@ -12,7 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { APIError, InputError } from "../types";
-import { api } from "../api";
+import api from "../api";
 import { Colors, theme } from "../assets";
 import Grid from "@mui/material/Unstable_Grid2";
 import { useNavigate } from "@tanstack/react-router";

@@ -4,6 +4,10 @@ import (
 	"time"
 )
 
+type PeriodType string
+
+const PeriodTypeCurrent PeriodType = "current"
+
 type Period struct {
 	Username    string    `json:"username,omitempty"`
 	ID          string    `json:"period,omitempty"`

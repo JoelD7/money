@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"sync"
@@ -20,6 +21,7 @@ type getPeriodRequest struct {
 	startingTime time.Time
 	err          error
 	periodRepo   period.Repository
+	usersRepo    users.Repository
 }
 
 func (request *getPeriodRequest) init(log logger.LogAPI) {
@@ -27,6 +29,7 @@ func (request *getPeriodRequest) init(log logger.LogAPI) {
 		dynamoClient := initDynamoClient()
 
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.usersRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
 		request.log.SetHandler("get-period")
 	})
@@ -65,7 +68,7 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 		return req.NewErrorResponse(err), nil
 	}
 
-	getPeriod := usecases.NewPeriodGetter(request.periodRepo)
+	getPeriod := usecases.NewPeriodGetter(request.periodRepo, request.usersRepo)
 
 	userPeriod, err := getPeriod(ctx, username, periodID)
 	if err != nil {

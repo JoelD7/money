@@ -10,7 +10,7 @@ import {
 import { Button, MoneyBanner, MoneyBannerMobile } from "../components";
 import { Colors, theme } from "../assets";
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../api";
+import api from "../api";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { APIError, InputError, SignUpUser } from "../types";
 import { AxiosError } from "axios";
