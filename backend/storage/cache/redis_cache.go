@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/redis/go-redis/v9"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
@@ -12,25 +15,37 @@ import (
 
 var (
 	ErrInvalidTTL = errors.New("TTL is from a past datetime")
+	redisURL      = env.GetString("REDIS_URL", "redis://default:randome@random.upstash.io:41561")
 )
 
-type redisCache struct{}
-
-func NewRedisCache() *redisCache {
-	return &redisCache{}
+type RedisCache struct {
+	client *redis.Client
 }
 
-func (r *redisCache) GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error) {
+func NewRedisCache() *RedisCache {
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		panic(err)
+	}
+
+	opt.ContextTimeoutEnabled = true
+
+	return &RedisCache{
+		redis.NewClient(opt),
+	}
+}
+
+func (r *RedisCache) GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error) {
 	key := keyPrefix + username
 
-	dataStr, err := redisClient.Get(ctx, key)
-	if err != nil {
-		return nil, err
+	value, err := r.client.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("%w:%v", models.ErrInvalidTokensNotFound, err)
 	}
 
 	invalidTokens := make([]*models.InvalidToken, 0)
 
-	err = json.Unmarshal([]byte(dataStr), &invalidTokens)
+	err = json.Unmarshal([]byte(value), &invalidTokens)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +57,7 @@ func (r *redisCache) GetInvalidTokens(ctx context.Context, username string) ([]*
 	return invalidTokens, nil
 }
 
-func (r *redisCache) AddInvalidToken(ctx context.Context, username, token string, ttl int64) error {
+func (r *RedisCache) AddInvalidToken(ctx context.Context, username, token string, ttl int64) error {
 	if time.Now().Unix() > ttl && ttl > 0 {
 		return ErrInvalidTTL
 	}
@@ -70,7 +85,7 @@ func (r *redisCache) AddInvalidToken(ctx context.Context, username, token string
 		return err
 	}
 
-	err = redisClient.Set(ctx, key, result, 0)
+	_, err = r.client.Set(ctx, key, result, 0).Result()
 	if err != nil {
 		return err
 	}
