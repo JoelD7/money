@@ -1,20 +1,12 @@
-import {
-  Box,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  SelectChangeEvent,
-  Typography,
-} from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { DataGrid, GridCell, GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { Category, Expense } from "../../types";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { GridCellProps } from "@mui/x-data-grid/components/cell/GridCell";
 import { useState } from "react";
 import { Colors } from "../../assets";
-import { v4 as uuidv4 } from "uuid";
 import { Button } from "../atoms";
+import { CategorySelect } from "./CategorySelect.tsx";
 
 type ExpensesTableProps = {
   expenses: Expense[];
@@ -36,8 +28,9 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
     },
   };
 
-  const colorsByExpense : Map<string, string> = getColorsByExpense()
+  const colorsByExpense: Map<string, string> = getColorsByExpense();
   const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>(expenses);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   const columns: GridColDef[] = [
     { field: "amount", headerName: "Amount", width: 150 },
@@ -112,47 +105,46 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
     return colorsByExpense;
   }
 
-  function getCategoryOptions(): CategorySelectorOption[] {
-    const addedCategories = new Set<string>();
-    const options: CategorySelectorOption[] = [];
-
-    expenses.forEach((expense) => {
-      if (
-        expense.category_name &&
-        !addedCategories.has(expense.category_name)
-      ) {
-        options.push({
-          label: expense.category_name,
-          color: colorsByExpense.get(expense.expense_id) || "gray.main",
-        });
-
-        addedCategories.add(expense.category_name);
-      }
-    });
-
-    return options;
-  }
-
-  function onCategorySelectedChange(selected: string[]) {
-    if (selected.length === 0) {
+  function onCategorySelectedChange() {
+    if (selectedCategories.length === 0) {
       setFilteredExpenses(expenses);
       return;
     }
 
     const newFilteredExpenses: Expense[] = expenses.filter((expense) => {
-      return selected.includes(expense.category_name || "");
+      return selectedCategories.includes(expense.category_name || "");
     });
 
     setFilteredExpenses(newFilteredExpenses);
   }
 
+  function clearFilter(): void {
+    setSelectedCategories([]);
+  }
+
   return (
     <div>
-      <CategorySelector
-        onSelectedUpdate={onCategorySelectedChange}
-        options={getCategoryOptions()}
+      <CategorySelect
+        width={"700px"}
+        multiple
+        selected={selectedCategories}
+        onSelectedUpdate={(selected) => setSelectedCategories(selected)}
+        categories={categories}
         label={"Filter by categories"}
       />
+      <div className="flex mt-2">
+        <Button variant="outlined" onClick={() => onCategorySelectedChange()}>
+          Apply filter
+        </Button>
+        <Button
+          sx={{ marginLeft: "1rem" }}
+          onClick={clearFilter}
+          color={"darkerGray"}
+          variant={"outlined"}
+        >
+          Clear filter
+        </Button>
+      </div>
       <div className={"pt-4"}>
         <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
           <DataGrid
@@ -166,116 +158,5 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
         </Box>
       </div>
     </div>
-  );
-}
-
-type CategorySelectorOption = {
-  label: string;
-  color: string;
-};
-
-type CategorySelectorProps = {
-  options: CategorySelectorOption[];
-  label: string;
-  onSelectedUpdate: (selected: string[]) => void;
-};
-
-function CategorySelector({
-  options,
-  label,
-  onSelectedUpdate,
-}: CategorySelectorProps) {
-  const labelId: string = uuidv4();
-  const [selected, setSelected] = useState<string[]>([]);
-  const colorMap: Map<string, string> = buildColorMap();
-
-  function onSelectedChange(event: SelectChangeEvent<typeof selected>) {
-    const {
-      target: { value },
-    } = event;
-    const newValue = typeof value === "string" ? value.split(" ") : value;
-    setSelected(newValue);
-  }
-
-  function buildColorMap(): Map<string, string> {
-    const colorMap = new Map<string, string>();
-    options.forEach((option) => {
-      colorMap.set(option.label, option.color);
-    });
-
-    return colorMap;
-  }
-
-  function getOptionColor(value: string): string {
-    return colorMap.get(value) || "gray.main";
-  }
-
-  function clearFilter(): void {
-    setSelected([]);
-    onSelectedUpdate([]);
-  }
-
-  return (
-    <>
-      <FormControl fullWidth sx={{ background: "white", maxWidth: "460px" }}>
-        <InputLabel id={labelId}>{label}</InputLabel>
-        <Select
-          labelId={labelId}
-          id={label}
-          label={label}
-          value={selected}
-          onChange={onSelectedChange}
-          multiple
-          renderValue={(selected) => (
-            // This is how items will appear on the select input
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {selected.map((value) => (
-                <Box
-                  key={value}
-                  className="p-1 w-fit text-sm rounded-xl"
-                  style={{ color: "white" }}
-                  sx={{ backgroundColor: getOptionColor(value) }}
-                >
-                  {value}
-                </Box>
-              ))}
-            </Box>
-          )}
-        >
-          {
-            // This is how items will appear on the menu
-            options.map((option) => (
-              <MenuItem
-                key={option.label}
-                id={option.label}
-                value={option.label}
-              >
-                <Box
-                  className="p-1 w-fit text-sm rounded-xl"
-                  style={{ color: "white" }}
-                  sx={{ backgroundColor: option.color }}
-                >
-                  {option.label}
-                </Box>
-              </MenuItem>
-            ))
-          }
-        </Select>
-      </FormControl>
-
-      <div className="flex mt-2">
-        <Button variant="outlined" onClick={() => onSelectedUpdate(selected)}>
-          Apply filter
-        </Button>
-        <Button
-          sx={{ marginLeft: "1rem" }}
-          onClick={clearFilter}
-          color={"darkerGray"}
-          variant={"outlined"}
-        >
-          Clear filter
-        </Button>
-      </div>
-    </>
   );
 }
