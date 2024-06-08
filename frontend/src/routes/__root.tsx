@@ -5,6 +5,8 @@ import { theme } from "../assets";
 import { Provider } from "react-redux";
 import { persistor, store } from "../store";
 import { PersistGate } from "redux-persist/integration/react";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -54,24 +56,26 @@ function Root() {
 
   return (
     <>
-      <ThemeProvider theme={theme}>
-        <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
-            <div className={"bg-zinc-50"}>
-              <div
-                className={"flex max-w-[1200px]"}
-                style={mdUp ? {} : { flexDirection: "column" }}
-              >
-                {mdUp ? (
-                  <Outlet />
-                ) : (
-                  <div className={"px-10"}>{<Outlet />}</div>
-                )}
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <ThemeProvider theme={theme}>
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <div className={"bg-zinc-50"}>
+                <div
+                  className={"flex max-w-[1200px] h-screen items-center"}
+                  style={mdUp ? {} : { flexDirection: "column" }}
+                >
+                  {mdUp ? (
+                    <Outlet />
+                  ) : (
+                    <div className={"px-10"}>{<Outlet />}</div>
+                  )}
+                </div>
               </div>
-            </div>
-          </PersistGate>
-        </Provider>
-      </ThemeProvider>
+            </PersistGate>
+          </Provider>
+        </ThemeProvider>
+      </LocalizationProvider>
 
       <TanStackRouterDevtools />
     </>
