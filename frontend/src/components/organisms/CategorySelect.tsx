@@ -91,6 +91,9 @@ export function CategorySelect({
               </MenuItem>
             ))
           }
+          {/*Material UI complains when passing a value(like an empty string) that is not in the list of options. This
+          is why we need this line*/}
+          <MenuItem hidden value={""} />
         </Select>
       </FormControl>
     </>
