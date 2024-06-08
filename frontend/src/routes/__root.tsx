@@ -7,6 +7,7 @@ import { persistor, store } from "../store";
 import { PersistGate } from "redux-persist/integration/react";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import 'dayjs/locale/en-gb';
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -56,7 +57,7 @@ function Root() {
 
   return (
     <>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale={"en-gb"}>
         <ThemeProvider theme={theme}>
           <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
