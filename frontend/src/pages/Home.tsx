@@ -1,4 +1,4 @@
-import { Typography, useMediaQuery, useTheme } from "@mui/material";
+import {Dialog, Typography, useMediaQuery, useTheme} from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import {
@@ -7,7 +7,7 @@ import {
   ExpenseCard,
   ExpensesChart,
   ExpensesTable,
-  Navbar,
+  Navbar, NewExpense,
 } from "../components";
 import { Expense, Period, User } from "../types";
 import json2mq from "json2mq";
@@ -16,6 +16,7 @@ import api from "../api";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { Colors } from "../assets";
+import {useState} from "react";
 
 type CategoryExpense = {
   category: string;
@@ -25,6 +26,8 @@ type CategoryExpense = {
 
 export function Home() {
   const theme = useTheme();
+
+  const[openNewExpense, setOpenNewExpense] = useState<boolean>(false);
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
@@ -163,6 +166,7 @@ export function Home() {
                         color={"secondary"}
                         variant={"contained"}
                         startIcon={<AddIcon />}
+                        onClick={()=> setOpenNewExpense(true)}
                       >
                         New expense
                       </Button>
@@ -193,6 +197,8 @@ export function Home() {
           )}
         </Grid>
       </Grid>
+
+        <NewExpense open={openNewExpense} onClose={()=> setOpenNewExpense(false)}/>
     </>
   );
 }
