@@ -1,4 +1,4 @@
-import { Expenses } from "../types";
+import { Expense, Expenses } from "../types";
 import { keys } from "../utils";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 
@@ -20,6 +20,15 @@ export function getExpenses(
   }
 
   return axiosClient.get<Expenses>(API_BASE_URL + `/expenses?${params}`, {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+    },
+  });
+}
+
+export function createExpense(expense: Expense) {
+  return axiosClient.post(API_BASE_URL + "/expenses", expense, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
