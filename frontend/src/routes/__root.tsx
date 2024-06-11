@@ -63,7 +63,7 @@ function Root() {
             <PersistGate loading={null} persistor={persistor}>
               <div className={"bg-zinc-50"}>
                 <div
-                  className={"flex max-w-[1200px] h-screen items-center"}
+                  className={"flex max-w-[1200px]"}
                   style={mdUp ? {} : { flexDirection: "column" }}
                 >
                   {mdUp ? (
