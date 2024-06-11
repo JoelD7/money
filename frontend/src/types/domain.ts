@@ -6,6 +6,8 @@ export type User = {
   categories?: Category[];
 };
 
+export type ExpenseType = "regular" | "recurring";
+
 export type Expense = {
   expense_id: string;
   username: string;
@@ -14,9 +16,10 @@ export type Expense = {
   amount: number;
   name: string;
   notes?: string;
+  type: ExpenseType;
   created_date: string;
   period: string;
-  update_date: string;
+  update_date?: string;
 };
 
 export type Expenses = {

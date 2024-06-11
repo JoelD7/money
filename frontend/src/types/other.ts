@@ -22,3 +22,9 @@ export type CategoryExpense = {
   color: string;
   value: number;
 };
+
+export type SnackAlert = {
+  open: boolean;
+  type: "success" | "error";
+  message: string;
+};

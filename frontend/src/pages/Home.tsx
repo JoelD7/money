@@ -8,6 +8,7 @@ import {
   ExpensesChart,
   ExpensesTable,
   Navbar,
+  NewExpense,
 } from "../components";
 import { Expense, Period, User } from "../types";
 import json2mq from "json2mq";
@@ -16,6 +17,7 @@ import api from "../api";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { Colors } from "../assets";
+import { useState } from "react";
 
 type CategoryExpense = {
   category: string;
@@ -26,24 +28,23 @@ type CategoryExpense = {
 export function Home() {
   const theme = useTheme();
 
+  const [openNewExpense, setOpenNewExpense] = useState<boolean>(false);
+
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
   const getUser = useQuery({
     queryKey: ["user"],
     queryFn: () => api.getUser(),
-    refetchOnWindowFocus: false,
   });
 
   const getExpenses = useQuery({
     queryKey: ["expenses"],
     queryFn: () => api.getExpenses(),
-    refetchOnWindowFocus: false,
   });
 
   const getPeriod = useQuery({
     queryKey: ["period"],
     queryFn: () => api.getPeriod(),
-    refetchOnWindowFocus: false,
   });
 
   const user: User | undefined = getUser.data?.data;
@@ -110,6 +111,10 @@ export function Home() {
     return categoryExpense;
   }
 
+  function handleClose() {
+    setOpenNewExpense(false);
+  }
+
   if (getUser.isPending) {
     return <Loading />;
   }
@@ -166,6 +171,7 @@ export function Home() {
                         color={"secondary"}
                         variant={"contained"}
                         startIcon={<AddIcon />}
+                        onClick={() => setOpenNewExpense(true)}
                       >
                         New expense
                       </Button>
@@ -196,6 +202,8 @@ export function Home() {
           )}
         </Grid>
       </Grid>
+
+      <NewExpense open={openNewExpense} onClose={handleClose} />
     </>
   );
 }
