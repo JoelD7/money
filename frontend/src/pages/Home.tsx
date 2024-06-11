@@ -29,7 +29,6 @@ export function Home() {
   const theme = useTheme();
 
   const [openNewExpense, setOpenNewExpense] = useState<boolean>(false);
-  const [key, setKey] = useState<number>(0);
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
@@ -113,7 +112,6 @@ export function Home() {
   }
 
   function handleClose() {
-    setKey(key + 1);
     setOpenNewExpense(false);
   }
 
@@ -205,7 +203,7 @@ export function Home() {
         </Grid>
       </Grid>
 
-      <NewExpense key={key} open={openNewExpense} onClose={handleClose} />
+      <NewExpense open={openNewExpense} onClose={handleClose} />
     </>
   );
 }

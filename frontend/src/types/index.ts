@@ -8,9 +8,11 @@ export type {
   AccessToken,
   Period,
   Expenses,
+  ExpenseType,
 } from "./domain.ts";
 export type {
   RechartsLabelProps,
   InputError,
   CategoryExpense,
+  SnackAlert,
 } from "./other.ts";
