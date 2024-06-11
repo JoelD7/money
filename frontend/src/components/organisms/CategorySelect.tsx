@@ -13,7 +13,7 @@ type CategorySelectorProps = {
   categories: Category[];
   label: string;
   selected: string[];
-  onSelectedUpdate: (selected: string[]) => void;
+  onSelectedUpdate: (selected: Category[]) => void;
   width: string;
   multiple?: boolean;
 };
@@ -27,27 +27,35 @@ export function CategorySelect({
   onSelectedUpdate,
 }: CategorySelectorProps) {
   const labelId: string = uuidv4();
-  const colorByCategory: Map<string, string> = buildColorByCategory();
+  const categoryMap: Map<string, Category> = buildCategoryMap();
 
   function onSelectedChange(event: SelectChangeEvent<string[]>) {
     const {
       target: { value },
     } = event;
     const newValue = typeof value === "string" ? value.split(" ") : value;
-    onSelectedUpdate(newValue);
+
+    const category = newValue.map((value) => categoryMap.get(value) as Category);
+    onSelectedUpdate(category);
   }
 
-  function buildColorByCategory(): Map<string, string> {
-    const colorByCategory = new Map<string, string>();
-    categories.forEach((option) => {
-      colorByCategory.set(option.name, option.color);
+  function buildCategoryMap(): Map<string, Category> {
+    const map = new Map<string, Category>();
+
+    categories.forEach((category) => {
+      map.set(category.name, category);
     });
 
-    return colorByCategory;
+    return map
   }
 
   function getOptionColor(value: string): string {
-    return colorByCategory.get(value) || "gray.main";
+    const category = categoryMap.get(value);
+    if (category) {
+      return category.color
+    }
+
+    return "gray.main";
   }
 
   return (
@@ -93,7 +101,7 @@ export function CategorySelect({
           }
           {/*Material UI complains when passing a value(like an empty string) that is not in the list of options. This
           is why we need this line*/}
-          <MenuItem hidden value={""} />
+          <MenuItem hidden disabled value={""} />
         </Select>
       </FormControl>
     </>
