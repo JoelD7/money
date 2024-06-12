@@ -53,6 +53,7 @@ var (
 	ErrMissingExpenseID            = errors.New("missing expense id")
 	ErrMissingRecurringDay         = errors.New("missing recurring day")
 	ErrInvalidRecurringDay         = errors.New("recurring day must be between 1 and 31")
+	ErrRecurringExpenseNameTaken   = errors.New("recurring expense name is taken")
 
 	ErrPeriodNotFound                 = errors.New("period not found")
 	ErrPeriodsNotFound                = errors.New("periods not found")

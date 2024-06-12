@@ -68,6 +68,7 @@ var (
 		models.ErrNoMoreItemsToBeRetrieved:       {HTTPCode: http.StatusNoContent, Message: "No more items to be retrieved"},
 		models.ErrMissingRecurringDay:            {HTTPCode: http.StatusBadRequest, Message: "Missing recurring_day. Recurring expenses must have a recurring_day"},
 		models.ErrInvalidRecurringDay:            {HTTPCode: http.StatusBadRequest, Message: "Recurring day must be between 1 and 31"},
+		models.ErrRecurringExpenseNameTaken:      {HTTPCode: http.StatusBadRequest, Message: "Recurring expense name is taken"},
 	}
 )
 

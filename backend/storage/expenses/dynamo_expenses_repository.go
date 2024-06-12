@@ -17,13 +17,15 @@ import (
 )
 
 const (
-	defaultPageSize   = 10
-	nameAttributeName = "#n"
+	defaultPageSize          = 10
+	nameAttributeName        = "#n"
+	conditionalFailedKeyword = "ConditionalCheckFailed"
 )
 
 var (
-	tableName                = env.GetString("EXPENSES_TABLE_NAME", "expenses")
-	periodUserExpenseIDIndex = "period_user-expense_id-index"
+	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "expenses")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "expenses-recurring")
+	periodUserExpenseIDIndex   = "period_user-expense_id-index"
 )
 
 type keys struct {
@@ -48,24 +50,72 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error) {
 	entity := toExpenseEntity(expense)
 
-	entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
-
-	item, err := attributevalue.MarshalMap(entity)
+	input, err := buildTransactWriteItemsInput(entity, expense)
 	if err != nil {
-		return nil, fmt.Errorf("marshal expense failed: %v", err)
+		return nil, err
 	}
 
-	input := &dynamodb.PutItemInput{
-		TableName: aws.String(tableName),
-		Item:      item,
+	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
+	if err != nil && strings.Contains(err.Error(), conditionalFailedKeyword) {
+		return nil, fmt.Errorf("%v: %w", err, models.ErrRecurringExpenseNameTaken)
 	}
 
-	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("put expense failed: %v", err)
 	}
 
 	return toExpenseModel(*entity), nil
+}
+
+func buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
+	expenseEnt.PeriodUser = shared.BuildPeriodUser(expenseEnt.Username, *expenseEnt.Period)
+
+	item, err := attributevalue.MarshalMap(expenseEnt)
+	if err != nil {
+		return nil, fmt.Errorf("marshal expense failed: %v", err)
+	}
+
+	transactItems := []types.TransactWriteItem{
+		{
+			Put: &types.Put{
+				Item:      item,
+				TableName: aws.String(tableName),
+			},
+		},
+	}
+
+	if !expense.IsRecurring {
+		return &dynamodb.TransactWriteItemsInput{
+			TransactItems: transactItems,
+		}, nil
+	}
+
+	expenseRecurringEnt := toExpenseRecurringEntity(expense)
+
+	itemRecurring, err := attributevalue.MarshalMap(expenseRecurringEnt)
+	if err != nil {
+		return nil, fmt.Errorf("marshal expense recurring failed: %v", err)
+	}
+
+	condExpr := expression.Name("id").AttributeNotExists().And(expression.Name("username").AttributeNotExists())
+
+	expr, err := expression.NewBuilder().WithCondition(condExpr).Build()
+	if err != nil {
+		return nil, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	transactItems = append(transactItems, types.TransactWriteItem{
+		Put: &types.Put{
+			Item:                     itemRecurring,
+			TableName:                aws.String(expensesRecurringTableName),
+			ConditionExpression:      expr.Condition(),
+			ExpressionAttributeNames: expr.Names(),
+		},
+	})
+
+	return &dynamodb.TransactWriteItemsInput{
+		TransactItems: transactItems,
+	}, nil
 }
 
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
