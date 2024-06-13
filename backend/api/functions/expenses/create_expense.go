@@ -118,7 +118,7 @@ func validateInput(req *apigateway.Request, username string) (*models.Expense, e
 		return nil, models.ErrMissingRecurringDay
 	}
 
-	if expense.IsRecurring && *expense.RecurringDay < 1 || *expense.RecurringDay > 31 {
+	if (expense.IsRecurring && expense.RecurringDay != nil) && (*expense.RecurringDay < 1 || *expense.RecurringDay > 31) {
 		return nil, models.ErrInvalidRecurringDay
 	}
 
