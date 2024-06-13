@@ -67,12 +67,13 @@ func toExpenseModels(es []expenseEntity) []*models.Expense {
 
 func toExpenseRecurringEntity(e *models.Expense) *er.ExpenseRecurringEntity {
 	entity := &er.ExpenseRecurringEntity{
-		ID:          strings.ToLower(*e.Name),
-		Username:    e.Username,
-		CategoryID:  e.CategoryID,
-		Notes:       e.Notes,
-		CreatedDate: e.CreatedDate,
-		UpdateDate:  e.UpdateDate,
+		ID:           strings.ToLower(*e.Name),
+		Username:     e.Username,
+		CategoryID:   e.CategoryID,
+		Notes:        e.Notes,
+		RecurringDay: *e.RecurringDay,
+		CreatedDate:  e.CreatedDate,
+		UpdateDate:   e.UpdateDate,
 	}
 
 	if e.Amount != nil {
