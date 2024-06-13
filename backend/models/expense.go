@@ -9,7 +9,7 @@ type Expense struct {
 	CategoryName string    `json:"category_name,omitempty"`
 	Amount       *float64  `json:"amount"`
 	RecurringDay *int      `json:"recurring_day,omitempty"`
-	IsRecurring  bool      `json:"is_recurring,omitempty"`
+	IsRecurring  bool      `json:"is_recurring"`
 	Name         *string   `json:"name,omitempty"`
 	Notes        string    `json:"notes,omitempty"`
 	CreatedDate  time.Time `json:"created_date,omitempty"`
