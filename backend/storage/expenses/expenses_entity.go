@@ -2,6 +2,8 @@ package expenses
 
 import (
 	"github.com/JoelD7/money/backend/models"
+	er "github.com/JoelD7/money/backend/storage/expenses-recurring"
+	"strings"
 	"time"
 )
 
@@ -61,4 +63,25 @@ func toExpenseModels(es []expenseEntity) []*models.Expense {
 	}
 
 	return expenses
+}
+
+func toExpenseRecurringEntity(e *models.Expense) *er.ExpenseRecurringEntity {
+	entity := &er.ExpenseRecurringEntity{
+		ID:          strings.ToLower(*e.Name),
+		Username:    e.Username,
+		CategoryID:  e.CategoryID,
+		Notes:       e.Notes,
+		CreatedDate: e.CreatedDate,
+		UpdateDate:  e.UpdateDate,
+	}
+
+	if e.Amount != nil {
+		entity.Amount = *e.Amount
+	}
+
+	if e.Name != nil {
+		entity.Name = *e.Name
+	}
+
+	return entity
 }
