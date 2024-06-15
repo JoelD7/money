@@ -17,6 +17,20 @@ type ExpenseRecurringEntity struct {
 	UpdateDate   time.Time `json:"update_date,omitempty" dynamodbav:"update_date"`
 }
 
+func toExpenseRecurringEntity(e *models.ExpenseRecurring) *ExpenseRecurringEntity {
+	return &ExpenseRecurringEntity{
+		ID:           e.ID,
+		Username:     e.Username,
+		CategoryID:   e.CategoryID,
+		Amount:       e.Amount,
+		Name:         e.Name,
+		RecurringDay: e.RecurringDay,
+		Notes:        e.Notes,
+		CreatedDate:  e.CreatedDate,
+		UpdateDate:   e.UpdateDate,
+	}
+}
+
 // Currently the mapping from entity to model is 1:1 so unmarshalling the query result directly to the model might seem
 // the obvious option. However, we don't know if the model or entity will change in the future, so it's better to keep
 // the mapping logic separate.

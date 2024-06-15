@@ -25,6 +25,27 @@ func NewExpenseRecurringDynamoRepository(dynamoClient *dynamodb.Client) *Expense
 	}
 }
 
+func (d *ExpenseRecurringDynamoRepository) CreateExpenseRecurring(ctx context.Context, expenseRecurring *models.ExpenseRecurring) (*models.ExpenseRecurring, error) {
+	entity := toExpenseRecurringEntity(expenseRecurring)
+
+	item, err := attributevalue.MarshalMap(entity)
+	if err != nil {
+		return nil, fmt.Errorf("marshal expense recurring entity failed: %v", err)
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      item,
+		TableName: aws.String(tableName),
+	}
+
+	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("put expense recurring item failed: %v", err)
+	}
+
+	return expenseRecurring, nil
+}
+
 func (d *ExpenseRecurringDynamoRepository) ScanExpensesForDay(ctx context.Context, day int) ([]*models.ExpenseRecurring, error) {
 	filter := expression.Name("recurring_day").Equal(expression.Value(day))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
