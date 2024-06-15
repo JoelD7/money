@@ -63,15 +63,16 @@ func (d *ExpenseRecurringDynamoRepository) ScanExpensesForDay(ctx context.Contex
 
 	var result *dynamodb.ScanOutput
 	entities := make([]*ExpenseRecurringEntity, 0)
-	itemsInQuery := make([]*ExpenseRecurringEntity, 0)
+	var itemsInQuery []*ExpenseRecurringEntity
 
 	for {
+		itemsInQuery = make([]*ExpenseRecurringEntity, 0)
 		result, err = d.dynamoClient.Scan(ctx, input)
 		if err != nil {
 			return nil, err
 		}
 
-		if (result.Items == nil || len(result.Items) == 0) && input.ExclusiveStartKey == nil {
+		if (result.Items == nil || len(result.Items) == 0) && result.LastEvaluatedKey == nil {
 			break
 		}
 
@@ -81,6 +82,11 @@ func (d *ExpenseRecurringDynamoRepository) ScanExpensesForDay(ctx context.Contex
 		}
 
 		entities = append(entities, itemsInQuery...)
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+
+		if result.LastEvaluatedKey == nil {
+			break
+		}
 	}
 
 	if len(entities) == 0 {
