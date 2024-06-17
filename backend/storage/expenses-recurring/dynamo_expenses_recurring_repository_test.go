@@ -66,7 +66,7 @@ func TestScanExpensesForDay(t *testing.T) {
 	//c.False(areRepeated(expenses))
 }
 
-func createExpenses(c *require.Assertions, repository *ExpenseRecurringDynamoRepository) {
+func createExpenses(c *require.Assertions, repository *DynamoRepository) {
 	b := []byte(`[
 	 {
 	   "id": "gym membership",

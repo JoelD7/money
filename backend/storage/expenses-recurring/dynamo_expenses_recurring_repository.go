@@ -15,17 +15,17 @@ var (
 	tableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "expenses-recurring")
 )
 
-type ExpenseRecurringDynamoRepository struct {
+type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
 }
 
-func NewExpenseRecurringDynamoRepository(dynamoClient *dynamodb.Client) *ExpenseRecurringDynamoRepository {
-	return &ExpenseRecurringDynamoRepository{
+func NewExpenseRecurringDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
+	return &DynamoRepository{
 		dynamoClient: dynamoClient,
 	}
 }
 
-func (d *ExpenseRecurringDynamoRepository) CreateExpenseRecurring(ctx context.Context, expenseRecurring *models.ExpenseRecurring) (*models.ExpenseRecurring, error) {
+func (d *DynamoRepository) CreateExpenseRecurring(ctx context.Context, expenseRecurring *models.ExpenseRecurring) (*models.ExpenseRecurring, error) {
 	entity := toExpenseRecurringEntity(expenseRecurring)
 
 	item, err := attributevalue.MarshalMap(entity)
@@ -46,7 +46,7 @@ func (d *ExpenseRecurringDynamoRepository) CreateExpenseRecurring(ctx context.Co
 	return expenseRecurring, nil
 }
 
-func (d *ExpenseRecurringDynamoRepository) ScanExpensesForDay(ctx context.Context, day int) ([]*models.ExpenseRecurring, error) {
+func (d *DynamoRepository) ScanExpensesForDay(ctx context.Context, day int) ([]*models.ExpenseRecurring, error) {
 	filter := expression.Name("recurring_day").Equal(expression.Value(day))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
 	if err != nil {
