@@ -5,7 +5,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 )
 
-type ExpensesRecurringRepository interface {
+type Repository interface {
 	CreateExpenseRecurring(ctx context.Context, expenseRecurring *models.ExpenseRecurring) (*models.ExpenseRecurring, error)
 	ScanExpensesForDay(ctx context.Context, day int) ([]*models.ExpenseRecurring, error)
 }
