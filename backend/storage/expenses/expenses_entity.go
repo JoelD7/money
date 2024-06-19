@@ -86,3 +86,21 @@ func toExpenseRecurringEntity(e *models.Expense) *er.ExpenseRecurringEntity {
 
 	return entity
 }
+
+func (e *expenseEntity) LogName() string {
+	return "expense_entity"
+}
+
+func (e *expenseEntity) LogProperties() map[string]interface{} {
+	return map[string]interface{}{
+		"expense_id":   e.ExpenseID,
+		"username":     e.Username,
+		"category_id":  e.CategoryID,
+		"amount":       e.Amount,
+		"name":         e.Name,
+		"notes":        e.Notes,
+		"created_date": e.CreatedDate,
+		"period":       e.Period,
+		"update_date":  e.UpdateDate,
+	}
+}
