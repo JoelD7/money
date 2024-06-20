@@ -3,6 +3,7 @@ package expenses
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"time"
 )
 
@@ -40,6 +41,11 @@ func (d *DynamoMock) CreateExpense(ctx context.Context, expense *models.Expense)
 	}
 
 	return expense, nil
+}
+
+func (d *DynamoMock) BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+	//TODO implement me
+	return nil
 }
 
 func (d *DynamoMock) UpdateExpense(ctx context.Context, expense *models.Expense) error {
