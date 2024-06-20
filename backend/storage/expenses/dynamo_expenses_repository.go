@@ -21,6 +21,7 @@ const (
 	defaultPageSize          = 10
 	nameAttributeName        = "#n"
 	conditionalFailedKeyword = "ConditionalCheckFailed"
+	dynamoDBMaxBatchWrite    = 25
 )
 
 var (
@@ -131,19 +132,43 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 		entities = append(entities, entity)
 	}
 
-	input := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]types.WriteRequest{
-			tableName: getBatchWriteRequests(entities, log),
-		},
+	start := 0
+	end := dynamoDBMaxBatchWrite
+	entitiesInBatch := entities
+
+	if len(entitiesInBatch) > dynamoDBMaxBatchWrite {
+		entitiesInBatch = entities[start:end]
 	}
 
-	result, err := d.dynamoClient.BatchWriteItem(ctx, input)
-	if err != nil {
-		return fmt.Errorf("batch write expenses failed: %v", err)
-	}
+	for {
+		input := &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]types.WriteRequest{
+				tableName: getBatchWriteRequests(entitiesInBatch, log),
+			},
+		}
 
-	if result != nil && len(result.UnprocessedItems) > 0 {
-		return d.handleBatchWriteRetries(ctx, result.UnprocessedItems)
+		result, err := d.dynamoClient.BatchWriteItem(ctx, input)
+		if err != nil {
+			return fmt.Errorf("batch write expenses failed: %v", err)
+		}
+
+		if result != nil && len(result.UnprocessedItems) > 0 {
+			return d.handleBatchWriteRetries(ctx, result.UnprocessedItems)
+		}
+
+		if end >= len(entities) {
+			break
+		}
+
+		start += dynamoDBMaxBatchWrite
+		end += dynamoDBMaxBatchWrite
+
+		if len(entities[start:]) > dynamoDBMaxBatchWrite {
+			entitiesInBatch = entities[start:end]
+			continue
+		}
+
+		entitiesInBatch = entities[start:]
 	}
 
 	return nil
