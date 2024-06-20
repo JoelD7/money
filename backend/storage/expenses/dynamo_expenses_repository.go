@@ -128,7 +128,6 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 	for _, expense := range expenses {
 		entity := toExpenseEntity(expense)
 		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
-		entity.CreatedDate = time.Now()
 		entities = append(entities, entity)
 	}
 

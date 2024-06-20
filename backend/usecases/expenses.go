@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"time"
 )
 
 type ExpenseManager interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
+	BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
@@ -35,6 +37,17 @@ func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Con
 		}
 
 		return newExpense, nil
+	}
+}
+
+func NewBatchExpensesCreator(em ExpenseManager, log logger.LogAPI) func(ctx context.Context, expenses []*models.Expense) error {
+	return func(ctx context.Context, expenses []*models.Expense) error {
+		for _, expense := range expenses {
+			expense.ExpenseID = generateDynamoID("EX")
+			expense.CreatedDate = time.Now()
+		}
+
+		return em.BatchCreateExpenses(ctx, log, expenses)
 	}
 }
 
