@@ -1,11 +1,21 @@
 package shared
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"time"
+)
+
+var (
+	batchWriteRetries       = env.GetInt("BATCH_WRITE_RETRIES", 3)
+	batchWriteBaseDelay     = env.GetInt("BATCH_WRITE_BASE_DELAY_IN_MS", 300)
+	batchWriteBackoffFactor = env.GetInt("BATCH_WRITE_BACKOFF_FACTOR", 2)
 )
 
 // BuildPeriodUser builds a combined string of period and username required to identify an item of certain period and user.
@@ -57,4 +67,34 @@ func DecodePaginationKey(startKey string, keyType interface{}) (map[string]types
 	}
 
 	return exclusiveStartKey, nil
+}
+
+// HandleBatchWriteRetries is a helper function to handle retries for batch write operations in DynamoDB.
+func HandleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocessedItems map[string][]types.WriteRequest) error {
+	var result *dynamodb.BatchWriteItemOutput
+	var err error
+
+	delay := time.Duration(batchWriteBaseDelay) * time.Millisecond
+
+	for i := 0; i < batchWriteRetries; i++ {
+		time.Sleep(delay)
+
+		input := &dynamodb.BatchWriteItemInput{
+			RequestItems: unprocessedItems,
+		}
+
+		result, err = d.BatchWriteItem(ctx, input)
+		if err != nil {
+			return fmt.Errorf("batch write failed: %v", err)
+		}
+
+		if result != nil && len(result.UnprocessedItems) == 0 {
+			return nil
+		}
+
+		unprocessedItems = result.UnprocessedItems
+		delay *= time.Duration(batchWriteBackoffFactor)
+	}
+
+	return nil
 }

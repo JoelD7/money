@@ -27,9 +27,6 @@ const (
 var (
 	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "expenses")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "expenses-recurring")
-	batchWriteRetries          = env.GetInt("BATCH_WRITE_RETRIES", 3)
-	batchWriteBaseDelay        = env.GetInt("BATCH_WRITE_BASE_DELAY_IN_MS", 300)
-	batchWriteBackoffFactor    = env.GetInt("BATCH_WRITE_BACKOFF_FACTOR", 2)
 	periodUserExpenseIDIndex   = "period_user-expense_id-index"
 )
 
@@ -153,7 +150,7 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 		}
 
 		if result != nil && len(result.UnprocessedItems) > 0 {
-			return d.handleBatchWriteRetries(ctx, result.UnprocessedItems)
+			return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
 		}
 
 		if end >= len(entities) {
@@ -192,35 +189,6 @@ func getBatchWriteRequests(entities []*expenseEntity, log logger.LogAPI) []types
 	}
 
 	return writeRequests
-}
-
-func (d *DynamoRepository) handleBatchWriteRetries(ctx context.Context, unprocessedItems map[string][]types.WriteRequest) error {
-	var result *dynamodb.BatchWriteItemOutput
-	var err error
-
-	delay := time.Duration(batchWriteBaseDelay) * time.Millisecond
-
-	for i := 0; i < batchWriteRetries; i++ {
-		time.Sleep(delay)
-
-		input := &dynamodb.BatchWriteItemInput{
-			RequestItems: unprocessedItems,
-		}
-
-		result, err = d.dynamoClient.BatchWriteItem(ctx, input)
-		if err != nil {
-			return fmt.Errorf("batch write expenses failed: %v", err)
-		}
-
-		if result != nil && len(result.UnprocessedItems) == 0 {
-			return nil
-		}
-
-		unprocessedItems = result.UnprocessedItems
-		delay *= time.Duration(batchWriteBackoffFactor)
-	}
-
-	return nil
 }
 
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
@@ -455,7 +423,7 @@ func (d *DynamoRepository) BatchDeleteExpenses(ctx context.Context, expenses []*
 	}
 
 	if result != nil && len(result.UnprocessedItems) > 0 {
-		return d.handleBatchWriteRetries(ctx, result.UnprocessedItems)
+		return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
 	}
 
 	return nil
