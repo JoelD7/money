@@ -393,3 +393,69 @@ func (d *DynamoRepository) DeletePeriod(ctx context.Context, periodID, username 
 
 	return err
 }
+
+func (d *DynamoRepository) BatchDeletePeriods(ctx context.Context, periods []*models.Period) error {
+	periodWriteRequests, uniquePeriodWriteRequests, err := getBatchPeriodDeleteRequests(periods)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			periodTableName:           periodWriteRequests,
+			uniquePeriodNameTableName: uniquePeriodWriteRequests,
+		},
+	}
+
+	result, err := d.dynamoClient.BatchWriteItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("batch delete recurring expenses failed: %v", err)
+	}
+
+	if result != nil && len(result.UnprocessedItems) > 0 {
+		return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
+	}
+
+	return nil
+}
+
+func getBatchPeriodDeleteRequests(periods []*models.Period) ([]types.WriteRequest, []types.WriteRequest, error) {
+	periodWriteRequests := make([]types.WriteRequest, 0, len(periods))
+	uniquePeriodWriteRequests := make([]types.WriteRequest, 0, len(periods))
+
+	var periodNameAV types.AttributeValue
+	var usernameAV types.AttributeValue
+	var err error
+
+	for _, p := range periods {
+		periodNameAV, err = attributevalue.Marshal(p.ID)
+		if err != nil {
+			return nil, nil, fmt.Errorf("marshal id key failed: %v", err)
+		}
+
+		usernameAV, err = attributevalue.Marshal(p.Username)
+		if err != nil {
+			return nil, nil, fmt.Errorf("marshal username key failed: %v", err)
+		}
+
+		periodWriteRequests = append(periodWriteRequests, types.WriteRequest{
+			DeleteRequest: &types.DeleteRequest{
+				Key: map[string]types.AttributeValue{
+					"period":   periodNameAV,
+					"username": usernameAV,
+				},
+			},
+		})
+
+		uniquePeriodWriteRequests = append(uniquePeriodWriteRequests, types.WriteRequest{
+			DeleteRequest: &types.DeleteRequest{
+				Key: map[string]types.AttributeValue{
+					"name":     periodNameAV,
+					"username": usernameAV,
+				},
+			},
+		})
+	}
+
+	return periodWriteRequests, uniquePeriodWriteRequests, nil
+}
