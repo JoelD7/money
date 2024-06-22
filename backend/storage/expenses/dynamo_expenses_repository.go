@@ -437,6 +437,61 @@ func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, usernam
 	return nil
 }
 
+func (d *DynamoRepository) BatchDeleteExpenseRecurring(ctx context.Context, expenses []*models.Expense) error {
+	writeRequests, err := getBatchDeleteRequests(expenses)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			tableName: writeRequests,
+		},
+	}
+
+	result, err := d.dynamoClient.BatchWriteItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("batch delete expenses failed: %v", err)
+	}
+
+	if result != nil && len(result.UnprocessedItems) > 0 {
+		return d.handleBatchWriteRetries(ctx, result.UnprocessedItems)
+	}
+
+	return nil
+}
+
+func getBatchDeleteRequests(expenses []*models.Expense) ([]types.WriteRequest, error) {
+	writeRequests := make([]types.WriteRequest, 0, len(expenses))
+
+	var usernameAttrValue types.AttributeValue
+	var expenseIDAttrValue types.AttributeValue
+	var err error
+
+	for _, expense := range expenses {
+		usernameAttrValue, err = attributevalue.Marshal(expense.Username)
+		if err != nil {
+			return nil, fmt.Errorf("marshal id key failed: %v", err)
+		}
+
+		expenseIDAttrValue, err = attributevalue.Marshal(expense.ExpenseID)
+		if err != nil {
+			return nil, fmt.Errorf("marshal username key failed: %v", err)
+		}
+
+		writeRequests = append(writeRequests, types.WriteRequest{
+			DeleteRequest: &types.DeleteRequest{
+				Key: map[string]types.AttributeValue{
+					"username":   usernameAttrValue,
+					"expense_id": expenseIDAttrValue,
+				},
+			},
+		})
+	}
+
+	return writeRequests, nil
+}
+
 func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
 	var err error
 
