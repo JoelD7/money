@@ -120,6 +120,9 @@ func copyRequestItems(requestItems map[string][]types.WriteRequest) map[string][
 	return c
 }
 
+// splitRequestItems splits batch write's request items in batches of 25, as this is DynamoDB's current limit of batch items per request.
+// The function works regardless of how many tables are in the request, meaning that a batch may be composed of a single table with
+// 25 request items or a group of tables that add up to 25 items.
 func splitRequestItems(requestItems map[string][]types.WriteRequest) []map[string][]types.WriteRequest {
 	var result []map[string][]types.WriteRequest
 	batch := make(map[string][]types.WriteRequest)
@@ -142,6 +145,7 @@ func splitRequestItems(requestItems map[string][]types.WriteRequest) []map[strin
 				if remSlots == 0 {
 					result = append(result, batch)
 					batch = make(map[string][]types.WriteRequest)
+					remSlots = dynamoDBMaxBatchWrite
 				}
 
 				break
@@ -151,10 +155,17 @@ func splitRequestItems(requestItems map[string][]types.WriteRequest) []map[strin
 				batch[table] = itemsWoProcess[:remSlots]
 				itemsWoProcess = itemsWoProcess[remSlots:]
 				result = append(result, batch)
+				batch = make(map[string][]types.WriteRequest)
 				remSlots = dynamoDBMaxBatchWrite
 				continue
 			}
 		}
+
+	}
+
+	if len(batch) > 0 {
+		result = append(result, batch)
+		batch = make(map[string][]types.WriteRequest)
 	}
 
 	return result
