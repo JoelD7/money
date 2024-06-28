@@ -4,69 +4,57 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	repo "github.com/JoelD7/money/backend/storage/expenses-recurring"
+	"github.com/JoelD7/money/backend/tests/e2e/utils"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
-var awsRegion = env.GetString("REGION", "us-east-1")
-
-func initDynamoClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
-	if err != nil {
-		panic(err)
-	}
-
-	return dynamodb.NewFromConfig(cfg)
-}
-
 func TestScanExpensesForDay(t *testing.T) {
-	//c := require.New(t)
-	//
-	//dynamoClient := initDynamoClient()
-	//
-	//repository := NewExpenseRecurringDynamoRepository(dynamoClient)
-	//
-	//createExpenses(c, repository)
-	//
-	//var expenses []*models.ExpenseRecurring
-	//var err error
-	//
-	//expenses, err = repository.ScanExpensesForDay(context.Background(), 15)
-	//c.Nil(err)
-	//c.Len(expenses, 2)
-	//c.False(areRepeated(expenses))
-	//
-	//expenses, err = repository.ScanExpensesForDay(context.Background(), 5)
-	//c.Nil(err)
-	//c.Len(expenses, 1)
-	//c.False(areRepeated(expenses))
-	//
-	//expenses, err = repository.ScanExpensesForDay(context.Background(), 1)
-	//c.Nil(err)
-	//c.Len(expenses, 11)
-	//c.False(areRepeated(expenses))
-	//
-	//expenses, err = repository.ScanExpensesForDay(context.Background(), 10)
-	//c.Nil(err)
-	//c.Len(expenses, 1)
-	//c.False(areRepeated(expenses))
-	//
-	//expenses, err = repository.ScanExpensesForDay(context.Background(), 20)
-	//c.Nil(err)
-	//c.Len(expenses, 2)
-	//c.False(areRepeated(expenses))
-	//
-	//expenses, err = repository.ScanExpensesForDay(context.Background(), 25)
-	//c.Nil(err)
-	//c.Len(expenses, 1)
-	//c.False(areRepeated(expenses))
+	c := require.New(t)
+
+	dynamoClient := utils.InitDynamoClient()
+
+	repository := repo.NewExpenseRecurringDynamoRepository(dynamoClient)
+
+	createExpenses(c, repository)
+
+	var expenses []*models.ExpenseRecurring
+	var err error
+
+	expenses, err = repository.ScanExpensesForDay(context.Background(), 15)
+	c.Nil(err)
+	c.Len(expenses, 2)
+	c.False(areRepeated(expenses))
+
+	expenses, err = repository.ScanExpensesForDay(context.Background(), 5)
+	c.Nil(err)
+	c.Len(expenses, 1)
+	c.False(areRepeated(expenses))
+
+	expenses, err = repository.ScanExpensesForDay(context.Background(), 1)
+	c.Nil(err)
+	c.Len(expenses, 11)
+	c.False(areRepeated(expenses))
+
+	expenses, err = repository.ScanExpensesForDay(context.Background(), 10)
+	c.Nil(err)
+	c.Len(expenses, 1)
+	c.False(areRepeated(expenses))
+
+	expenses, err = repository.ScanExpensesForDay(context.Background(), 20)
+	c.Nil(err)
+	c.Len(expenses, 2)
+	c.False(areRepeated(expenses))
+
+	expenses, err = repository.ScanExpensesForDay(context.Background(), 25)
+	c.Nil(err)
+	c.Len(expenses, 1)
+	c.False(areRepeated(expenses))
 }
 
-func createExpenses(c *require.Assertions, repository *DynamoRepository) {
+func createExpenses(c *require.Assertions, repository *repo.DynamoRepository) {
 	b := []byte(`[
 	 {
 	   "id": "gym membership",
