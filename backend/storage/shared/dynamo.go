@@ -70,54 +70,25 @@ func DecodePaginationKey(startKey string, keyType interface{}) (map[string]types
 	return exclusiveStartKey, nil
 }
 
-//func BatchWrite(input *dynamodb.BatchWriteItemInput) error {
-//	start := 0
-//	end := dynamoDBMaxBatchWrite
-//	requestItemsInBatch := copyRequestItems(input.RequestItems)
-//
-//	if len(requestItemsInBatch) > dynamoDBMaxBatchWrite {
-//		requestItemsInBatch = entities[start:end]
-//	}
-//
-//	for {
-//		input := &dynamodb.BatchWriteItemInput{
-//			RequestItems: map[string][]types.WriteRequest{
-//				tableName: getBatchWriteRequests(requestItemsInBatch, log),
-//			},
-//		}
-//
-//		result, err := d.dynamoClient.BatchWriteItem(ctx, input)
-//		if err != nil {
-//			return fmt.Errorf("batch write recurring expenses failed: %v", err)
-//		}
-//
-//		if result != nil && len(result.UnprocessedItems) > 0 {
-//			return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
-//		}
-//
-//		if end >= len(entities) {
-//			break
-//		}
-//
-//		start += dynamoDBMaxBatchWrite
-//		end += dynamoDBMaxBatchWrite
-//
-//		if len(entities[start:]) > dynamoDBMaxBatchWrite {
-//			requestItemsInBatch = entities[start:end]
-//			continue
-//		}
-//
-//		requestItemsInBatch = entities[start:]
-//	}
-//}
+// BatchWrite is a helper function to handle batch write operations in DynamoDB. Prevents more than 25 items per batch by
+// splitting the request items in multiple batches and also handles retries in case of unprocessed items.
+func BatchWrite(ctx context.Context, dynamoClient *dynamodb.Client, input *dynamodb.BatchWriteItemInput) error {
+	requestItemsBatches := splitRequestItems(input.RequestItems)
 
-func copyRequestItems(requestItems map[string][]types.WriteRequest) map[string][]types.WriteRequest {
-	c := make(map[string][]types.WriteRequest)
-	for key, value := range requestItems {
-		c[key] = value
+	for _, requestItems := range requestItemsBatches {
+		input.RequestItems = requestItems
+
+		result, err := dynamoClient.BatchWriteItem(ctx, input)
+		if err != nil {
+			return fmt.Errorf("batch write recurring expenses failed: %v", err)
+		}
+
+		if result != nil && len(result.UnprocessedItems) > 0 {
+			return HandleBatchWriteRetries(ctx, dynamoClient, result.UnprocessedItems)
+		}
 	}
 
-	return c
+	return nil
 }
 
 // splitRequestItems splits batch write's request items in batches of 25, as this is DynamoDB's current limit of batch items per request.
