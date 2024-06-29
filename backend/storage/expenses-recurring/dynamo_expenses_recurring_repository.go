@@ -138,30 +138,6 @@ func (d *DynamoRepository) ScanExpensesForDay(ctx context.Context, day int) ([]*
 }
 
 func (d *DynamoRepository) BatchDeleteExpenseRecurring(ctx context.Context, log logger.LogAPI, expenseRecurring []*models.ExpenseRecurring) error {
-	writeRequests, err := getBatchDeleteRequests(expenseRecurring)
-	if err != nil {
-		return err
-	}
-
-	input := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]types.WriteRequest{
-			tableName: writeRequests,
-		},
-	}
-
-	result, err := d.dynamoClient.BatchWriteItem(ctx, input)
-	if err != nil {
-		return fmt.Errorf("batch delete recurring expenses failed: %v", err)
-	}
-
-	if result != nil && len(result.UnprocessedItems) > 0 {
-		return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
-	}
-
-	return nil
-}
-
-func getBatchDeleteRequests(expenseRecurring []*models.ExpenseRecurring) ([]types.WriteRequest, error) {
 	writeRequests := make([]types.WriteRequest, 0, len(expenseRecurring))
 
 	var idAttrValue types.AttributeValue
@@ -171,12 +147,12 @@ func getBatchDeleteRequests(expenseRecurring []*models.ExpenseRecurring) ([]type
 	for _, expense := range expenseRecurring {
 		idAttrValue, err = attributevalue.Marshal(expense.ID)
 		if err != nil {
-			return nil, fmt.Errorf("marshal id key failed: %v", err)
+			return fmt.Errorf("marshal id key failed: %v", err)
 		}
 
 		usernameAttrValue, err = attributevalue.Marshal(expense.Username)
 		if err != nil {
-			return nil, fmt.Errorf("marshal username key failed: %v", err)
+			return fmt.Errorf("marshal username key failed: %v", err)
 		}
 
 		writeRequests = append(writeRequests, types.WriteRequest{
@@ -189,5 +165,11 @@ func getBatchDeleteRequests(expenseRecurring []*models.ExpenseRecurring) ([]type
 		})
 	}
 
-	return writeRequests, nil
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			tableName: writeRequests,
+		},
+	}
+
+	return shared.BatchWrite(ctx, d.dynamoClient, input)
 }

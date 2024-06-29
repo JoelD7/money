@@ -407,16 +407,7 @@ func (d *DynamoRepository) BatchDeletePeriods(ctx context.Context, periods []*mo
 		},
 	}
 
-	result, err := d.dynamoClient.BatchWriteItem(ctx, input)
-	if err != nil {
-		return fmt.Errorf("batch delete recurring expenses failed: %v", err)
-	}
-
-	if result != nil && len(result.UnprocessedItems) > 0 {
-		return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
-	}
-
-	return nil
+	return shared.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func getBatchPeriodDeleteRequests(periods []*models.Period) ([]types.WriteRequest, []types.WriteRequest, error) {

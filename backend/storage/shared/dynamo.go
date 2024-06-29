@@ -84,7 +84,7 @@ func BatchWrite(ctx context.Context, dynamoClient *dynamodb.Client, input *dynam
 		}
 
 		if result != nil && len(result.UnprocessedItems) > 0 {
-			return HandleBatchWriteRetries(ctx, dynamoClient, result.UnprocessedItems)
+			return handleBatchWriteRetries(ctx, dynamoClient, result.UnprocessedItems)
 		}
 	}
 
@@ -142,8 +142,8 @@ func splitRequestItems(requestItems map[string][]types.WriteRequest) []map[strin
 	return result
 }
 
-// HandleBatchWriteRetries is a helper function to handle retries for batch write operations in DynamoDB.
-func HandleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocessedItems map[string][]types.WriteRequest) error {
+// handleBatchWriteRetries is a helper function to handle retries for batch write operations in DynamoDB.
+func handleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocessedItems map[string][]types.WriteRequest) error {
 	var result *dynamodb.BatchWriteItemOutput
 	var err error
 

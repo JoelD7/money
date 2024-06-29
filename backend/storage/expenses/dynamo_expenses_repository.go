@@ -129,46 +129,13 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 		entities = append(entities, entity)
 	}
 
-	start := 0
-	end := dynamoDBMaxBatchWrite
-	entitiesInBatch := entities
-
-	if len(entitiesInBatch) > dynamoDBMaxBatchWrite {
-		entitiesInBatch = entities[start:end]
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			tableName: getBatchWriteRequests(entities, log),
+		},
 	}
 
-	for {
-		input := &dynamodb.BatchWriteItemInput{
-			RequestItems: map[string][]types.WriteRequest{
-				tableName: getBatchWriteRequests(entitiesInBatch, log),
-			},
-		}
-
-		result, err := d.dynamoClient.BatchWriteItem(ctx, input)
-		if err != nil {
-			return fmt.Errorf("batch write expenses failed: %v", err)
-		}
-
-		if result != nil && len(result.UnprocessedItems) > 0 {
-			return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
-		}
-
-		if end >= len(entities) {
-			break
-		}
-
-		start += dynamoDBMaxBatchWrite
-		end += dynamoDBMaxBatchWrite
-
-		if len(entities[start:]) > dynamoDBMaxBatchWrite {
-			entitiesInBatch = entities[start:end]
-			continue
-		}
-
-		entitiesInBatch = entities[start:]
-	}
-
-	return nil
+	return shared.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func getBatchWriteRequests(entities []*expenseEntity, log logger.LogAPI) []types.WriteRequest {
@@ -406,30 +373,6 @@ func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, usernam
 }
 
 func (d *DynamoRepository) BatchDeleteExpenses(ctx context.Context, expenses []*models.Expense) error {
-	writeRequests, err := getBatchDeleteRequests(expenses)
-	if err != nil {
-		return err
-	}
-
-	input := &dynamodb.BatchWriteItemInput{
-		RequestItems: map[string][]types.WriteRequest{
-			tableName: writeRequests,
-		},
-	}
-
-	result, err := d.dynamoClient.BatchWriteItem(ctx, input)
-	if err != nil {
-		return fmt.Errorf("batch delete expenses failed: %v", err)
-	}
-
-	if result != nil && len(result.UnprocessedItems) > 0 {
-		return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
-	}
-
-	return nil
-}
-
-func getBatchDeleteRequests(expenses []*models.Expense) ([]types.WriteRequest, error) {
 	writeRequests := make([]types.WriteRequest, 0, len(expenses))
 
 	var usernameAttrValue types.AttributeValue
@@ -439,12 +382,12 @@ func getBatchDeleteRequests(expenses []*models.Expense) ([]types.WriteRequest, e
 	for _, expense := range expenses {
 		usernameAttrValue, err = attributevalue.Marshal(expense.Username)
 		if err != nil {
-			return nil, fmt.Errorf("marshal id key failed: %v", err)
+			return fmt.Errorf("marshal id key failed: %v", err)
 		}
 
 		expenseIDAttrValue, err = attributevalue.Marshal(expense.ExpenseID)
 		if err != nil {
-			return nil, fmt.Errorf("marshal username key failed: %v", err)
+			return fmt.Errorf("marshal username key failed: %v", err)
 		}
 
 		writeRequests = append(writeRequests, types.WriteRequest{
@@ -457,7 +400,13 @@ func getBatchDeleteRequests(expenses []*models.Expense) ([]types.WriteRequest, e
 		})
 	}
 
-	return writeRequests, nil
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			tableName: writeRequests,
+		},
+	}
+
+	return shared.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
