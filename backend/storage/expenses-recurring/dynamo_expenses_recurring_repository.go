@@ -58,46 +58,13 @@ func (d *DynamoRepository) BatchCreateExpenseRecurring(ctx context.Context, log 
 		entities = append(entities, entity)
 	}
 
-	start := 0
-	end := dynamoDBMaxBatchWrite
-	entitiesInBatch := entities
-
-	if len(entitiesInBatch) > dynamoDBMaxBatchWrite {
-		entitiesInBatch = entities[start:end]
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			tableName: getBatchWriteRequests(entities, log),
+		},
 	}
 
-	for {
-		input := &dynamodb.BatchWriteItemInput{
-			RequestItems: map[string][]types.WriteRequest{
-				tableName: getBatchWriteRequests(entitiesInBatch, log),
-			},
-		}
-
-		result, err := d.dynamoClient.BatchWriteItem(ctx, input)
-		if err != nil {
-			return fmt.Errorf("batch write recurring expenses failed: %v", err)
-		}
-
-		if result != nil && len(result.UnprocessedItems) > 0 {
-			return shared.HandleBatchWriteRetries(ctx, d.dynamoClient, result.UnprocessedItems)
-		}
-
-		if end >= len(entities) {
-			break
-		}
-
-		start += dynamoDBMaxBatchWrite
-		end += dynamoDBMaxBatchWrite
-
-		if len(entities[start:]) > dynamoDBMaxBatchWrite {
-			entitiesInBatch = entities[start:end]
-			continue
-		}
-
-		entitiesInBatch = entities[start:]
-	}
-
-	return nil
+	return shared.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func getBatchWriteRequests(entities []*ExpenseRecurringEntity, log logger.LogAPI) []types.WriteRequest {
