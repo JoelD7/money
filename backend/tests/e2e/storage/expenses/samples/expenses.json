@@ -1,0 +1,466 @@
+[
+  {
+    "expense_id": "expense_001",
+    "username": "e2e_test@gmail.com",
+    "period": "dummy",
+    "amount": 100.0,
+    "name": "Sample Expense 1",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_002",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 200.0,
+    "name": "Sample Expense 2",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_003",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 300.0,
+    "name": "Sample Expense 3",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_004",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 400.0,
+    "name": "Sample Expense 4",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_005",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 500.0,
+    "name": "Sample Expense 5",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_006",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 600.0,
+    "name": "Sample Expense 6",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_007",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 700.0,
+    "name": "Sample Expense 7",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_008",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 800.0,
+    "name": "Sample Expense 8",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_009",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 900.0,
+    "name": "Sample Expense 9",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_010",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1000.0,
+    "name": "Sample Expense 10",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_011",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1100.0,
+    "name": "Sample Expense 11",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_012",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1200.0,
+    "name": "Sample Expense 12",
+    "created_date": "2023-10-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_013",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1300.0,
+    "name": "Sample Expense 13",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_014",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1400.0,
+    "name": "Sample Expense 14",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_015",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1500.0,
+    "name": "Sample Expense 15",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_016",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1600.0,
+    "name": "Sample Expense 16",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_017",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1700.0,
+    "name": "Sample Expense 17",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_018",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1800.0,
+    "name": "Sample Expense 18",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_019",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 1900.0,
+    "name": "Sample Expense 19",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_020",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2000.0,
+    "name": "Sample Expense 20",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_021",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2100.0,
+    "name": "Sample Expense 21",
+    "created_date": "2023-11-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_022",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2200.0,
+    "name": "Sample Expense 22",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_023",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2300.0,
+    "name": "Sample Expense 23",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_024",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2400.0,
+    "name": "Sample Expense 24",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_025",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2500.0,
+    "name": "Sample Expense 25",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_026",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2600.0,
+    "name": "Sample Expense 26",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_027",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2700.0,
+    "name": "Sample Expense 27",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_028",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2800.0,
+    "name": "Sample Expense 28",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_029",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 2900.0,
+    "name": "Sample Expense 29",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_030",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3000.0,
+    "name": "Sample Expense 30",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_031",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3100.0,
+    "name": "Sample Expense 31",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_032",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3200.0,
+    "name": "Sample Expense 32",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_033",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3300.0,
+    "name": "Sample Expense 33",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_034",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3400.0,
+    "name": "Sample Expense 34",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_035",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3500.0,
+    "name": "Sample Expense 35",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_036",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3600.0,
+    "name": "Sample Expense 36",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_037",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3700.0,
+    "name": "Sample Expense 37",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_038",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3800.0,
+    "name": "Sample Expense 38",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_039",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 3900.0,
+    "name": "Sample Expense 39",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_040",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4000.0,
+    "name": "Sample Expense 40",
+    "created_date": "2023-12-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_041",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4100.0,
+    "name": "Sample Expense 41",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_042",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4200.0,
+    "name": "Sample Expense 42",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_043",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4300.0,
+    "name": "Sample Expense 43",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_044",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4400.0,
+    "name": "Sample Expense 44",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_045",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4500.0,
+    "name": "Sample Expense 45",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_046",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4600.0,
+    "name": "Sample Expense 46",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_047",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4700.0,
+    "name": "Sample Expense 47",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_048",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4800.0,
+    "name": "Sample Expense 48",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_049",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 4900.0,
+    "name": "Sample Expense 49",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_050",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5000.0,
+    "name": "Sample Expense 50",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_051",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5100.0,
+    "name": "Sample Expense 51",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_052",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5200.0,
+    "name": "Sample Expense 52",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_053",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5300.0,
+    "name": "Sample Expense 53",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_054",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5400.0,
+    "name": "Sample Expense 54",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_055",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5500.0,
+    "name": "Sample Expense 55",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_056",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5600.0,
+    "name": "Sample Expense 56",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_057",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5700.0,
+    "name": "Sample Expense 57",
+    "created_date": "2023-09-14T00:00:00Z"
+  },
+  {
+    "expense_id": "expense_058",
+    "username": "e2e_test@gmail.com",
+    "period":  "dummy",
+    "amount": 5800.0,
+    "name": "Sample Expense 58",
+    "created_date": "2023-09-14T00:00:00Z"
+  }
+]

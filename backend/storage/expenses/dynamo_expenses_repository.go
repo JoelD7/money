@@ -355,6 +355,59 @@ func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, 
 	return d.performQuery(ctx, input, startKey)
 }
 
+func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error) {
+	userFilter := expression.Name("username").Equal(expression.Value(username))
+	dateFilter := expression.Name("created_date").Between(expression.Value(startDate), expression.Value(endDate))
+	filter := expression.And(userFilter, dateFilter)
+
+	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.ScanInput{
+		TableName:                 aws.String(tableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ExclusiveStartKey:         nil,
+	}
+
+	var result *dynamodb.ScanOutput
+	entities := make([]expenseEntity, 0)
+	var itemsInQuery []expenseEntity
+
+	for {
+		itemsInQuery = make([]expenseEntity, 0)
+		result, err = d.dynamoClient.Scan(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+
+		if (result.Items == nil || len(result.Items) == 0) && result.LastEvaluatedKey == nil {
+			break
+		}
+
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &itemsInQuery)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal expenses items failed: %v", err)
+		}
+
+		entities = append(entities, itemsInQuery...)
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+
+		if result.LastEvaluatedKey == nil {
+			break
+		}
+	}
+
+	if len(entities) == 0 {
+		return nil, models.ErrExpensesNotFound
+	}
+
+	return toExpenseModels(entities), nil
+}
+
 func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, username string) error {
 	input := &dynamodb.DeleteItemInput{
 		TableName: aws.String(tableName),
