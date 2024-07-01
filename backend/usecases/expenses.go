@@ -11,12 +11,17 @@ import (
 type ExpenseManager interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
 	BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
-	UpdateExpense(ctx context.Context, expense *models.Expense) error
+
 	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
+	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
+
+	UpdateExpense(ctx context.Context, expense *models.Expense) error
+	BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
+
 	DeleteExpense(ctx context.Context, expenseID, username string) error
 }
 
@@ -202,6 +207,34 @@ func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager) f
 func NewExpensesDeleter(em ExpenseManager) func(ctx context.Context, expenseID, username string) error {
 	return func(ctx context.Context, expenseID, username string) error {
 		return em.DeleteExpense(ctx, expenseID, username)
+	}
+}
+
+func NewExpensesPeriodSetter(em ExpenseManager, pm PeriodManager, log logger.LogAPI) func(ctx context.Context, username, periodID string) error {
+	return func(ctx context.Context, username, periodID string) error {
+		period, err := pm.GetPeriod(ctx, username, periodID)
+		if err != nil {
+			return err
+		}
+
+		startDate := period.StartDate.Format(time.DateOnly)
+		endDate := period.EndDate.Format(time.DateOnly)
+
+		expenses, err := em.GetAllExpensesBetweenDates(ctx, username, startDate, endDate)
+		if err != nil {
+			return err
+		}
+
+		for _, expense := range expenses {
+			expense.Period = &period.ID
+		}
+
+		err = em.BatchUpdateExpenses(ctx, log, expenses)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	}
 }
 
