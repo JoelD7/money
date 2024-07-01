@@ -291,6 +291,24 @@ func getUpdateExpression(attributeValues map[string]types.AttributeValue) *strin
 	return aws.String("SET " + strings.Join(attributes, ", "))
 }
 
+func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+	entities := make([]*expenseEntity, 0, len(expenses))
+
+	for _, expense := range expenses {
+		entity := toExpenseEntity(expense)
+		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
+		entities = append(entities, entity)
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			tableName: getBatchWriteRequests(entities, log),
+		},
+	}
+
+	return shared.BatchWrite(ctx, d.dynamoClient, input)
+}
+
 func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(tableName),
