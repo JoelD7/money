@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -15,10 +15,10 @@ import (
 	"time"
 )
 
-var preRequest *patchRecurrentExpenseRequest
+var preRequest *PatchRecurrentExpenseRequest
 var preOnce sync.Once
 
-type patchRecurrentExpenseRequest struct {
+type PatchRecurrentExpenseRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
 	err          error
@@ -30,7 +30,7 @@ type patchRecurrentExpenseRequestBody struct {
 	Period string `json:"period"`
 }
 
-func (request *patchRecurrentExpenseRequest) init(log logger.LogAPI) {
+func (request *PatchRecurrentExpenseRequest) init(log logger.LogAPI) {
 	preOnce.Do(func() {
 		dynamoClient := initDynamoClient()
 
@@ -41,13 +41,13 @@ func (request *patchRecurrentExpenseRequest) init(log logger.LogAPI) {
 	request.startingTime = time.Now()
 }
 
-func (request *patchRecurrentExpenseRequest) finish() {
+func (request *PatchRecurrentExpenseRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func patchRecurrentExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func PatchRecurrentExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if preRequest == nil {
-		preRequest = new(patchRecurrentExpenseRequest)
+		preRequest = new(PatchRecurrentExpenseRequest)
 	}
 
 	preRequest.init(log)
@@ -56,7 +56,7 @@ func patchRecurrentExpenseHandler(ctx context.Context, log logger.LogAPI, req *a
 	return preRequest.process(ctx, req)
 }
 
-func (request *patchRecurrentExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func (request *PatchRecurrentExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})

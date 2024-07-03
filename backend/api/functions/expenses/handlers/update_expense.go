@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -17,10 +17,10 @@ import (
 	"time"
 )
 
-var ceRequest *createExpenseRequest
-var ceOnce sync.Once
+var ueRequest *updateExpenseRequest
+var ueOnce sync.Once
 
-type createExpenseRequest struct {
+type updateExpenseRequest struct {
 	log          logger.LogAPI
 	startingTime time.Time
 	err          error
@@ -29,33 +29,41 @@ type createExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createExpenseRequest) init(log logger.LogAPI) {
-	ceOnce.Do(func() {
+func (request *updateExpenseRequest) init(log logger.LogAPI) {
+	ueOnce.Do(func() {
 		dynamoClient := initDynamoClient()
 
 		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
 	})
 	request.startingTime = time.Now()
 }
 
-func (request *createExpenseRequest) finish() {
+func (request *updateExpenseRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func createExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
-	if ceRequest == nil {
-		ceRequest = new(createExpenseRequest)
+func UpdateExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+	if ueRequest == nil {
+		ueRequest = new(updateExpenseRequest)
 	}
 
-	ceRequest.init(log)
-	defer ceRequest.finish()
+	ueRequest.init(log)
+	defer ueRequest.finish()
 
-	return ceRequest.process(ctx, req)
+	return ueRequest.process(ctx, req)
 }
 
-func (request *createExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func (request *updateExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	expenseID, ok := req.PathParameters["expenseID"]
+	if !ok || expenseID == "" {
+		request.log.Error("missing_expense_id", nil, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(models.ErrMissingExpenseID), nil
+	}
+
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
@@ -63,26 +71,26 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 		return req.NewErrorResponse(err), nil
 	}
 
-	expense, err := validateInput(req, username)
+	expense, err := validateUpdateInput(req, username)
 	if err != nil {
 		request.log.Error("validate_input_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.periodRepo)
+	updateExpense := usecases.NewExpenseUpdater(request.expensesRepo, request.periodRepo, request.userRepo)
 
-	newExpense, err := createExpense(ctx, username, expense)
+	updatedExpense, err := updateExpense(ctx, expenseID, username, expense)
 	if err != nil {
-		request.log.Error("create_expense_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_expense_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	return req.NewJSONResponse(http.StatusCreated, newExpense), nil
+	return req.NewJSONResponse(http.StatusOK, updatedExpense), nil
 }
 
-func validateInput(req *apigateway.Request, username string) (*models.Expense, error) {
+func validateUpdateInput(req *apigateway.Request, username string) (*models.Expense, error) {
 	expense := new(models.Expense)
 
 	err := json.Unmarshal([]byte(req.Body), expense)
@@ -97,29 +105,9 @@ func validateInput(req *apigateway.Request, username string) (*models.Expense, e
 
 	expense.Username = username
 
-	if expense.Name == nil {
-		return nil, models.ErrMissingName
-	}
-
-	if expense.Amount == nil {
-		return nil, models.ErrMissingAmount
-	}
-
 	err = validate.Amount(expense.Amount)
 	if err != nil {
 		return nil, err
-	}
-
-	if expense.Period == nil || (expense.Period != nil && *expense.Period == "") {
-		return nil, models.ErrMissingPeriod
-	}
-
-	if expense.IsRecurring && expense.RecurringDay == nil {
-		return nil, models.ErrMissingRecurringDay
-	}
-
-	if (expense.IsRecurring && expense.RecurringDay != nil) && (*expense.RecurringDay < 1 || *expense.RecurringDay > 31) {
-		return nil, models.ErrInvalidRecurringDay
 	}
 
 	return expense, nil

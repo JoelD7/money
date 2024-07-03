@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func (request *getExpenseRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if geExpenseRequest == nil {
 		geExpenseRequest = new(getExpenseRequest)
 	}

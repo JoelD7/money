@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -37,7 +37,7 @@ func (request *deleteExpenseRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func deleteExpenseHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func DeleteExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if deRequest == nil {
 		deRequest = new(deleteExpenseRequest)
 	}
