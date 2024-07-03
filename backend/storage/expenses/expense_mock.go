@@ -124,6 +124,21 @@ func (d *DynamoMock) DeleteExpense(ctx context.Context, expenseID, username stri
 	return nil
 }
 
+func (d *DynamoMock) GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error) {
+	//TODO implement me
+	return nil, nil
+}
+
+func (d *DynamoMock) BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+	//TODO implement me
+	return nil
+}
+
+func (d *DynamoMock) BatchDeleteExpenses(ctx context.Context, expenses []*models.Expense) error {
+	//TODO implement me
+	return nil
+}
+
 func GetDummyExpenses() []*models.Expense {
 	return []*models.Expense{
 		{

@@ -85,6 +85,11 @@ func (d *DynamoMock) DeletePeriod(ctx context.Context, periodID, username string
 	return nil
 }
 
+func (d *DynamoMock) BatchDeletePeriods(ctx context.Context, periods []*models.Period) error {
+	//TODO implement me
+	return nil
+}
+
 func (d *DynamoMock) GetDefaultPeriod() *models.Period {
 	return defaultPeriod
 }
