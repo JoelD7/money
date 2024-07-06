@@ -17,3 +17,7 @@ func InitDynamoClient() *dynamodb.Client {
 
 	return dynamodb.NewFromConfig(cfg)
 }
+
+func StringPtr(s string) *string {
+	return &s
+}

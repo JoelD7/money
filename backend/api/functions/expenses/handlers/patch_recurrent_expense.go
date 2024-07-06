@@ -19,11 +19,11 @@ var preRequest *PatchRecurrentExpenseRequest
 var preOnce sync.Once
 
 type PatchRecurrentExpenseRequest struct {
-	log          logger.LogAPI
+	Log          logger.LogAPI
 	startingTime time.Time
 	err          error
-	expensesRepo expenses.Repository
-	periodRepo   period.Repository
+	ExpensesRepo expenses.Repository
+	PeriodRepo   period.Repository
 }
 
 type patchRecurrentExpenseRequestBody struct {
@@ -34,15 +34,15 @@ func (request *PatchRecurrentExpenseRequest) init(log logger.LogAPI) {
 	preOnce.Do(func() {
 		dynamoClient := initDynamoClient()
 
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
-		request.log = log
+		request.ExpensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.PeriodRepo = period.NewDynamoRepository(dynamoClient)
+		request.Log = log
 	})
 	request.startingTime = time.Now()
 }
 
 func (request *PatchRecurrentExpenseRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	request.Log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
 func PatchRecurrentExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
@@ -53,29 +53,29 @@ func PatchRecurrentExpense(ctx context.Context, log logger.LogAPI, req *apigatew
 	preRequest.init(log)
 	defer preRequest.finish()
 
-	return preRequest.process(ctx, req)
+	return preRequest.Process(ctx, req)
 }
 
-func (request *PatchRecurrentExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func (request *PatchRecurrentExpenseRequest) Process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	reqBody, err := validateRequestBody(req)
 	if err != nil {
-		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
+		request.Log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	updateExpensesWoPeriod := usecases.NewExpensesPeriodSetter(request.expensesRepo, request.periodRepo, request.log)
+	updateExpensesWoPeriod := usecases.NewExpensesPeriodSetter(request.ExpensesRepo, request.PeriodRepo, request.Log)
 
 	err = updateExpensesWoPeriod(ctx, username, reqBody.Period)
 	if err != nil {
-		request.log.Error("patch_recurrent_expenses_failed", err, []models.LoggerObject{req})
+		request.Log.Error("patch_recurrent_expenses_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}

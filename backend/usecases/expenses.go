@@ -226,7 +226,9 @@ func NewExpensesPeriodSetter(em ExpenseManager, pm PeriodManager, log logger.Log
 		}
 
 		for _, expense := range expenses {
-			expense.Period = &period.ID
+			if expense.Period == "" {
+				expense.Period = period.ID
+			}
 		}
 
 		err = em.BatchUpdateExpenses(ctx, log, expenses)
@@ -257,7 +259,7 @@ func setExpensesCategoryNames(user *models.User, expenses []*models.Expense) err
 }
 
 func validateExpensePeriod(ctx context.Context, expense *models.Expense, username string, p PeriodManager) error {
-	if expense.Period == nil {
+	if expense.Period == "" {
 		return nil
 	}
 
@@ -280,7 +282,7 @@ func validateExpensePeriod(ctx context.Context, expense *models.Expense, usernam
 	}
 
 	for _, period := range periods {
-		if period.ID == *expense.Period {
+		if period.ID == expense.Period {
 			return nil
 		}
 	}
