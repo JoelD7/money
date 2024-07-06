@@ -38,8 +38,9 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error) {
 	periodEnt := toPeriodEntity(*period)
 	uPeriodName := &uniquePeriodNameEntity{
-		Name:     *periodEnt.Name,
-		Username: periodEnt.Username,
+		Name:        *periodEnt.Name,
+		Username:    periodEnt.Username,
+		CreatedDate: time.Now(),
 	}
 
 	attrValue, err := attributevalue.MarshalMap(periodEnt)
