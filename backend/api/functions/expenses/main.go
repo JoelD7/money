@@ -16,11 +16,6 @@ func main() {
 			r.Delete("/{expenseID}", handlers.DeleteExpense)
 			r.Get("/", handlers.GetExpenses)
 			r.Post("/", handlers.CreateExpense)
-
-			r.Route("/period", func(r *router.Router) {
-				r.Patch("/missing", handlers.PatchRecurrentExpense)
-			})
-
 		})
 	})
 
