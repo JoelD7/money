@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/JoelD7/money/backend/cron/recurrent-expense-generator/handler"
+	"github.com/JoelD7/money/backend/lambda/recurrent-expense-generator/handler"
 	"github.com/aws/aws-lambda-go/lambda"
 )
 

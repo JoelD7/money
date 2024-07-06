@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JoelD7/money/backend/cron/recurrent-expense-generator/handler"
+	"github.com/JoelD7/money/backend/lambda/recurrent-expense-generator/handler"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
