@@ -149,7 +149,7 @@ func GetDummyExpenses() []*models.Expense {
 			Name:        getStringPtr("Jordan shopping"),
 			Notes:       "",
 			CreatedDate: time.Date(2023, 5, 12, 20, 15, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			Period:      "2023-5",
 			UpdateDate:  time.Time{},
 		},
 		{
@@ -160,7 +160,7 @@ func GetDummyExpenses() []*models.Expense {
 			Name:        getStringPtr("Uber drive"),
 			Notes:       "",
 			CreatedDate: time.Date(2023, 5, 15, 12, 15, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			Period:      "2023-5",
 			UpdateDate:  time.Time{},
 		},
 		{
@@ -171,7 +171,7 @@ func GetDummyExpenses() []*models.Expense {
 			Name:        getStringPtr("Lunch"),
 			Notes:       "",
 			CreatedDate: time.Date(2023, 5, 12, 11, 15, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			Period:      "2023-5",
 			UpdateDate:  time.Time{},
 		},
 	}

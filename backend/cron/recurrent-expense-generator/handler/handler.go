@@ -135,7 +135,7 @@ func (req *CronRequest) createExpenses(ctx context.Context, username string, rec
 				Amount:     &expense.Amount,
 				Name:       &expense.Name,
 				Notes:      expense.Notes,
-				Period:     lastPeriod.Name,
+				Period:     *lastPeriod.Name,
 			})
 		}
 	}

@@ -70,7 +70,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 }
 
 func buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
-	expenseEnt.PeriodUser = shared.BuildPeriodUser(expenseEnt.Username, *expenseEnt.Period)
+	expenseEnt.PeriodUser = shared.BuildPeriodUser(expenseEnt.Username, expenseEnt.Period)
 
 	item, err := attributevalue.MarshalMap(expenseEnt)
 	if err != nil {
@@ -125,7 +125,7 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 
 	for _, expense := range expenses {
 		entity := toExpenseEntity(expense)
-		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
+		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, entity.Period)
 		entities = append(entities, entity)
 	}
 
@@ -161,8 +161,8 @@ func getBatchWriteRequests(entities []*expenseEntity, log logger.LogAPI) []types
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
 	entity := toExpenseEntity(expense)
 
-	if entity.Period != nil {
-		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
+	if entity.Period != "" {
+		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, entity.Period)
 	}
 
 	username, err := attributevalue.Marshal(entity.Username)
@@ -263,7 +263,7 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 		attrValues[":notes"] = notes
 	}
 
-	if expense.Period != nil {
+	if expense.Period != "" {
 		attrValues[":period"] = period
 		attrValues[":period_user"] = periodUser
 	}
@@ -296,7 +296,7 @@ func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.L
 
 	for _, expense := range expenses {
 		entity := toExpenseEntity(expense)
-		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
+		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, entity.Period)
 		entities = append(entities, entity)
 	}
 
