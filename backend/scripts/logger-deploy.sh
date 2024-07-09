@@ -10,3 +10,5 @@ echo "Deploying expenses"
 bash expenses-deploy.sh
 echo "Deploying income"
 bash income-deploy.sh
+echo "Deploying recurrent-expense-period-setter"
+bash recurrent-expense-period-setter-deploy.sh
