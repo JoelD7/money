@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/storage/shared"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -73,7 +73,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keys{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keys{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -115,7 +115,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -128,13 +128,13 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keysPeriodIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysPeriodIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
 
-	periodUser := shared.BuildPeriodUser(username, period)
+	periodUser := dynamo.BuildPeriodUser(username, period)
 
 	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
@@ -173,7 +173,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -186,7 +186,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keysSavingGoalIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysSavingGoalIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -229,7 +229,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keysSavingGoalIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keysSavingGoalIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -245,7 +245,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	resultSet := make([]savingEntity, 0)
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keysSavingGoalIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysSavingGoalIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -299,7 +299,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		}
 	}
 
-	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -326,7 +326,7 @@ func getPaginatedSavings(resultSet, itemsInQuery []savingEntity, input *dynamodb
 		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -366,7 +366,7 @@ func getAttributeValuePK(item savingEntity) (map[string]types.AttributeValue, er
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
 	savingEnt := toSavingEntity(saving)
 
-	periodUser := shared.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
+	periodUser := dynamo.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
 	savingEnt.PeriodUser = periodUser
 
 	item, err := attributevalue.MarshalMap(savingEnt)
@@ -391,7 +391,7 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 	savingEnt := toSavingEntity(saving)
 
 	if savingEnt.Period != nil {
-		periodUser := shared.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
+		periodUser := dynamo.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
 		savingEnt.PeriodUser = periodUser
 	}
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/storage/shared"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -34,7 +34,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
 
 func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
 	incomeEnt := toIncomeEntity(income)
-	incomeEnt.PeriodUser = shared.BuildPeriodUser(income.Username, *income.Period)
+	incomeEnt.PeriodUser = dynamo.BuildPeriodUser(income.Username, *income.Period)
 
 	incomeAv, err := attributevalue.MarshalMap(incomeEnt)
 	if err != nil {
@@ -100,13 +100,13 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keysPeriodUserIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysPeriodUserIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
 
-	periodUser := shared.BuildPeriodUser(username, periodID)
+	periodUser := dynamo.BuildPeriodUser(username, periodID)
 
 	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
@@ -145,7 +145,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", err
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodUserIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodUserIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -158,7 +158,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keys{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keys{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -200,7 +200,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 		return nil, "", err
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
 	if err != nil {
 		return nil, "", err
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
-	"github.com/JoelD7/money/backend/storage/shared"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -63,7 +63,7 @@ func (d *DynamoRepository) BatchCreateExpenseRecurring(ctx context.Context, log 
 		},
 	}
 
-	return shared.BatchWrite(ctx, d.dynamoClient, input)
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func getBatchWriteRequests(entities []*ExpenseRecurringEntity, log logger.LogAPI) []types.WriteRequest {
@@ -170,5 +170,5 @@ func (d *DynamoRepository) BatchDeleteExpenseRecurring(ctx context.Context, log 
 		},
 	}
 
-	return shared.BatchWrite(ctx, d.dynamoClient, input)
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/storage/shared"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -277,7 +277,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	var decodedStartKey map[string]types.AttributeValue
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keys{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keys{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -308,7 +308,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("unmarshal periods failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -408,7 +408,7 @@ func (d *DynamoRepository) BatchDeletePeriods(ctx context.Context, periods []*mo
 		},
 	}
 
-	return shared.BatchWrite(ctx, d.dynamoClient, input)
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func getBatchPeriodDeleteRequests(periods []*models.Period) ([]types.WriteRequest, []types.WriteRequest, error) {

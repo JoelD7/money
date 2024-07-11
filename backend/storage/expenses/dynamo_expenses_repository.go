@@ -6,7 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
-	"github.com/JoelD7/money/backend/storage/shared"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -70,7 +70,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 }
 
 func buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
-	expenseEnt.PeriodUser = shared.BuildPeriodUser(expenseEnt.Username, expenseEnt.Period)
+	expenseEnt.PeriodUser = dynamo.BuildPeriodUser(expenseEnt.Username, expenseEnt.Period)
 
 	item, err := attributevalue.MarshalMap(expenseEnt)
 	if err != nil {
@@ -125,7 +125,7 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 
 	for _, expense := range expenses {
 		entity := toExpenseEntity(expense)
-		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, entity.Period)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
 		entities = append(entities, entity)
 	}
 
@@ -135,7 +135,7 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 		},
 	}
 
-	return shared.BatchWrite(ctx, d.dynamoClient, input)
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func getBatchWriteRequests(entities []*expenseEntity, log logger.LogAPI) []types.WriteRequest {
@@ -162,7 +162,7 @@ func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Ex
 	entity := toExpenseEntity(expense)
 
 	if entity.Period != "" {
-		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, entity.Period)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
 	}
 
 	username, err := attributevalue.Marshal(entity.Username)
@@ -296,7 +296,7 @@ func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.L
 
 	for _, expense := range expenses {
 		entity := toExpenseEntity(expense)
-		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, entity.Period)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
 		entities = append(entities, entity)
 	}
 
@@ -306,7 +306,7 @@ func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.L
 		},
 	}
 
-	return shared.BatchWrite(ctx, d.dynamoClient, input)
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
@@ -477,7 +477,7 @@ func (d *DynamoRepository) BatchDeleteExpenses(ctx context.Context, expenses []*
 		},
 	}
 
-	return shared.BatchWrite(ctx, d.dynamoClient, input)
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
@@ -494,7 +494,7 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 	if periodID != "" {
 		input.IndexName = aws.String(periodUserExpenseIDIndex)
 
-		periodUser := shared.BuildPeriodUser(username, periodID)
+		periodUser := dynamo.BuildPeriodUser(username, periodID)
 		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
 	}
 
@@ -528,7 +528,7 @@ func setExclusiveStartKey(startKey string, input *dynamodb.QueryInput) error {
 		return nil
 	}
 
-	decodedStartKey, err := shared.DecodePaginationKey(startKey, getPaginationKeyType(input))
+	decodedStartKey, err := dynamo.DecodePaginationKey(startKey, getPaginationKeyType(input))
 	if err != nil {
 		return fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 	}
@@ -603,7 +603,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}
@@ -646,7 +646,7 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 		}
 	}
 
-	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}
@@ -673,7 +673,7 @@ func getPaginatedExpenses(resultSet, itemsInQuery []expenseEntity, input *dynamo
 		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}

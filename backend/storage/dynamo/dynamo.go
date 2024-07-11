@@ -1,4 +1,4 @@
-package shared
+package dynamo
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -17,6 +18,8 @@ var (
 	batchWriteBaseDelay     = env.GetInt("BATCH_WRITE_BASE_DELAY_IN_MS", 300)
 	batchWriteBackoffFactor = env.GetInt("BATCH_WRITE_BACKOFF_FACTOR", 2)
 	dynamoDBMaxBatchWrite   = env.GetInt("DYNAMODB_MAX_BATCH_WRITE", 25)
+
+	awsRegion = env.GetString("AWS_REGION", "")
 )
 
 // BuildPeriodUser builds a combined string of period and username required to identify an item of certain period and user.
@@ -170,4 +173,13 @@ func handleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocesse
 	}
 
 	return nil
+}
+
+func InitDynamoClient(ctx context.Context) *dynamodb.Client {
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+	if err != nil {
+		panic(err)
+	}
+
+	return dynamodb.NewFromConfig(cfg)
 }
