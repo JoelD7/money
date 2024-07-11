@@ -54,14 +54,11 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 		}
 	}()
 
-	fmt.Printf("jdebug_%s_request_received\n", request.Resource)
-
 	stackTrace, ctxErr := shared.ExecuteLambda(ctx, func(ctx context.Context) {
 		res, err = router.executeHandle(ctx, request)
 	})
 
 	if ctxErr != nil {
-		fmt.Printf("jdebug_%s_request_finished\n", request.Resource)
 		router.log.Error("request_timeout", ctxErr, []models.LoggerObject{
 			router.log.MapToLoggerObject("stack", map[string]interface{}{
 				"s_trace": stackTrace,
@@ -75,7 +72,6 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 		err = nil
 	}
 
-	fmt.Printf("jdebug_%s_request_finished\n", request.Resource)
 	return
 }
 
