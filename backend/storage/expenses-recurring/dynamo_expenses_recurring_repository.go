@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	tableName             = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "expenses-recurring")
-	dynamoDBMaxBatchWrite = 25
+	tableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 )
 
 type DynamoRepository struct {

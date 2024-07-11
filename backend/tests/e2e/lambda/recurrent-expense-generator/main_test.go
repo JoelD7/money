@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/lambda/recurrent-expense-generator/handler"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	expenses_recurring "github.com/JoelD7/money/backend/storage/expenses-recurring"
@@ -26,8 +25,6 @@ type testCase struct {
 }
 
 var (
-	awsRegion = env.GetString("REGION", "us-east-1")
-
 	testCases = []*testCase{
 		{
 			username:         "e2e_test@gmail.com",

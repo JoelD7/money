@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	TableName               = env.GetString("INCOME_TABLE_NAME", "income")
+	TableName               = env.GetString("INCOME_TABLE_NAME", "")
 	periodUserIncomeIDIndex = "period_user-income_id-index"
 )
 

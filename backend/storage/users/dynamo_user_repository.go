@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	TableName = env.GetString("USERS_TABLE_NAME", "users")
+	TableName = env.GetString("USERS_TABLE_NAME", "")
 )
 
 type DynamoRepository struct {

@@ -58,7 +58,7 @@ const (
 
 var (
 	kidSecretName = env.GetString("KID_SECRET", "")
-	awsRegion     = env.GetString("REGION", "us-east-1")
+	awsRegion     = env.GetString("AWS_REGION", "")
 
 	req  *requestInfo
 	once sync.Once

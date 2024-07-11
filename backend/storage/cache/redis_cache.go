@@ -15,7 +15,7 @@ import (
 
 var (
 	ErrInvalidTTL = errors.New("TTL is from a past datetime")
-	redisURL      = env.GetString("REDIS_URL", "redis://default:randome@random.upstash.io:41561")
+	redisURL      = env.GetString("REDIS_URL", "")
 )
 
 type RedisCache struct {

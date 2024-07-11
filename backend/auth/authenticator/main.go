@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -26,7 +27,7 @@ var (
 	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "")
 	publicSecretName  = env.GetString("TOKEN_PUBLIC_SECRET", "")
 	kidSecretName     = env.GetString("KID_SECRET", "")
-	awsRegion         = env.GetString("REGION", "us-east-1")
+	awsRegion         = env.GetString("AWS_REGION", "")
 )
 
 const (
@@ -106,6 +107,11 @@ func validateCredentials(email, password string) error {
 }
 
 func main() {
+	err := env.LoadEnv(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("loading environment failed: %v", err))
+	}
+
 	route := router.NewRouter()
 
 	route.Route("/auth", func(r *router.Router) {

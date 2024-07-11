@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	tableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "invalid_token")
+	tableName = env.GetString("INVALID_TOKEN_TABLE_NAME", "")
 
 	ErrNotFound = errors.New("no tokens found for this user")
 )
@@ -36,7 +36,7 @@ var (
 	dynamoClient  *dynamodb.Client
 	DefaultClient DynamoAPI
 
-	awsRegion = env.GetString("REGION", "us-east-1")
+	awsRegion = env.GetString("AWS_REGION", "")
 )
 
 func init() {

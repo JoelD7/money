@@ -25,8 +25,8 @@ const (
 )
 
 var (
-	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "expenses")
-	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "expenses-recurring")
+	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 	periodUserExpenseIDIndex   = "period_user-expense_id-index"
 )
 

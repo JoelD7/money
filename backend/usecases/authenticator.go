@@ -32,7 +32,7 @@ const (
 var (
 	accessTokenAudience  = env.GetString("TOKEN_AUDIENCE", "")
 	accessTokenIssuer    = env.GetString("TOKEN_ISSUER", "")
-	accessTokenScope     = env.GetString("TOKEN_SCOPE", "read write")
+	accessTokenScope     = env.GetString("TOKEN_SCOPE", "")
 	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "")
 	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "")
 	kidSecretName        = env.GetString("KID_SECRET", "")

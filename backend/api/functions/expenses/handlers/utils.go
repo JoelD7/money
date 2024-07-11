@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	awsRegion = env.GetString("REGION", "us-east-1")
+	awsRegion = env.GetString("AWS_REGION", "")
 )
 
 func initDynamoClient() *dynamodb.Client {

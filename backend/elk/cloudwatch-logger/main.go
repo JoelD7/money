@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	logstashServerType = env.GetString("LOGSTASH_TYPE", "tcp")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "ec2-54-209-181-211.compute-1.amazonaws.com")
-	logstashPort       = env.GetString("LOGSTASH_PORT", "5044")
+	logstashServerType = env.GetString("LOGSTASH_TYPE", "")
+	logstashHost       = env.GetString("LOGSTASH_HOST", "")
+	logstashPort       = env.GetString("LOGSTASH_PORT", "")
 )
 
 type logstashEvent struct {

@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var awsRegion = env.GetString("REGION", "us-east-1")
+var awsRegion = env.GetString("AWS_REGION", "")
 
 var preRequest *Request
 var preOnce sync.Once
