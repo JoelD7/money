@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -28,9 +29,9 @@ type createSavingRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createSavingRequest) init(log logger.LogAPI) {
+func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI) {
 	csOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
@@ -44,12 +45,12 @@ func (request *createSavingRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func createSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func CreateSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if csRequest == nil {
 		csRequest = new(createSavingRequest)
 	}
 
-	csRequest.init(log)
+	csRequest.init(ctx, log)
 	defer csRequest.finish()
 
 	return csRequest.process(ctx, req)

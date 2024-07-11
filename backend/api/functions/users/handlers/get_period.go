@@ -1,10 +1,11 @@
-package main
+package handlers
 
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
@@ -24,9 +25,9 @@ type getPeriodRequest struct {
 	usersRepo    users.Repository
 }
 
-func (request *getPeriodRequest) init(log logger.LogAPI) {
+func (request *getPeriodRequest) init(ctx context.Context, log logger.LogAPI) {
 	gpOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.usersRepo = users.NewDynamoRepository(dynamoClient)
@@ -40,12 +41,12 @@ func (request *getPeriodRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getPeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetPeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if gpRequest == nil {
 		gpRequest = new(getPeriodRequest)
 	}
 
-	gpRequest.init(log)
+	gpRequest.init(ctx, log)
 	defer gpRequest.finish()
 
 	return gpRequest.process(ctx, req)

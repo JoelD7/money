@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
@@ -30,9 +31,9 @@ type updateCategoryRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *updateCategoryRequest) init(log logger.LogAPI) {
+func (request *updateCategoryRequest) init(ctx context.Context, log logger.LogAPI) {
 	ucOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -45,12 +46,12 @@ func (request *updateCategoryRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func updateCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdateCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if ucRequest == nil {
 		ucRequest = new(updateCategoryRequest)
 	}
 
-	ucRequest.init(log)
+	ucRequest.init(ctx, log)
 	defer ucRequest.finish()
 
 	return ucRequest.process(ctx, req)

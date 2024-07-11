@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -31,9 +32,9 @@ type getPeriodsRequest struct {
 	pageSize     int
 }
 
-func (request *getPeriodsRequest) init(log logger.LogAPI) {
+func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI) {
 	gpsOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -46,12 +47,12 @@ func (request *getPeriodsRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getPeriodsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetPeriodsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if gpsRequest == nil {
 		gpsRequest = new(getPeriodsRequest)
 	}
 
-	gpsRequest.init(log)
+	gpsRequest.init(ctx, log)
 	defer gpsRequest.finish()
 
 	return gpsRequest.process(ctx, req)

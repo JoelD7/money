@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -18,7 +19,8 @@ import (
 func TestHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
-	dynamoClient := initDynamoClient()
+	ctx := context.Background()
+	dynamoClient := dynamo.InitDynamoClient(ctx)
 	usersMock := users.NewDynamoRepository(dynamoClient)
 	expensesMock := expenses.NewDynamoRepository(dynamoClient)
 	incomeMock := income.NewDynamoRepository(dynamoClient)
@@ -26,7 +28,6 @@ func TestHandlerSuccess(t *testing.T) {
 	//expensesMock := expenses.NewDynamoMock()
 	//incomeMock := income.NewDynamoMock()
 	logMock := logger.NewLoggerMock(nil)
-	ctx := context.Background()
 
 	request := &getUserRequest{
 		userRepo:     usersMock,

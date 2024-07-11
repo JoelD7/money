@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"math"
@@ -26,9 +27,9 @@ type createCategoryRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *createCategoryRequest) init(log logger.LogAPI) {
+func (request *createCategoryRequest) init(ctx context.Context, log logger.LogAPI) {
 	ccOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -41,12 +42,12 @@ func (request *createCategoryRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func createCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func CreateCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if ccRequest == nil {
 		ccRequest = new(createCategoryRequest)
 	}
 
-	ccRequest.init(log)
+	ccRequest.init(ctx, log)
 	defer ccRequest.finish()
 
 	return ccRequest.process(ctx, req)

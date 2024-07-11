@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -23,9 +24,9 @@ type getCategoriesRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *getCategoriesRequest) init(log logger.LogAPI) {
+func (request *getCategoriesRequest) init(ctx context.Context, log logger.LogAPI) {
 	gcOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -38,12 +39,12 @@ func (request *getCategoriesRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getCategoriesHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetCategoriesHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if gcRequest == nil {
 		gcRequest = new(getCategoriesRequest)
 	}
 
-	gcRequest.init(log)
+	gcRequest.init(ctx, log)
 	defer gcRequest.finish()
 
 	return gcRequest.process(ctx, req)

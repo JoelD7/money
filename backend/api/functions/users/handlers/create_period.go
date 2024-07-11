@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -14,47 +15,47 @@ import (
 	"time"
 )
 
-var cpRequest *createPeriodRequest
+var cpRequest *CreatePeriodRequest
 var cpOnce sync.Once
 
-type createPeriodRequest struct {
-	log          logger.LogAPI
+type CreatePeriodRequest struct {
+	Log          logger.LogAPI
 	startingTime time.Time
 	err          error
-	periodRepo   period.Repository
+	PeriodRepo   period.Repository
 }
 
-func (request *createPeriodRequest) init(log logger.LogAPI) {
+func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI) {
 	cpOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
-		request.log = log
-		request.log.SetHandler("create-period")
+		request.PeriodRepo = period.NewDynamoRepository(dynamoClient)
+		request.Log = log
+		request.Log.SetHandler("create-period")
 	})
 	request.startingTime = time.Now()
 }
 
-func (request *createPeriodRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+func (request *CreatePeriodRequest) finish() {
+	request.Log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func createPeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func CreatePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if cpRequest == nil {
-		cpRequest = new(createPeriodRequest)
+		cpRequest = new(CreatePeriodRequest)
 	}
 
-	cpRequest.init(log)
+	cpRequest.init(ctx, log)
 	defer cpRequest.finish()
 
-	return cpRequest.process(ctx, req)
+	return cpRequest.Process(ctx, req)
 }
 
-func (request *createPeriodRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	periodModel, err := request.validateCreateRequestBody(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
+		request.Log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -62,17 +63,17 @@ func (request *createPeriodRequest) process(ctx context.Context, req *apigateway
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	createPeriod := usecases.NewPeriodCreator(request.periodRepo, request.log)
+	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.Log)
 
 	createdPeriod, err := createPeriod(ctx, username, periodModel)
 	if err != nil {
 		request.err = err
-		request.log.Error("create_period_failed", err, []models.LoggerObject{req})
+		request.Log.Error("create_period_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -80,7 +81,7 @@ func (request *createPeriodRequest) process(ctx context.Context, req *apigateway
 	return req.NewJSONResponse(http.StatusCreated, createdPeriod), nil
 }
 
-func (request *createPeriodRequest) validateCreateRequestBody(req *apigateway.Request) (*models.Period, error) {
+func (request *CreatePeriodRequest) validateCreateRequestBody(req *apigateway.Request) (*models.Period, error) {
 	p := new(models.Period)
 
 	err := json.Unmarshal([]byte(req.Body), p)

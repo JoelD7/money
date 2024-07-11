@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -24,9 +25,9 @@ type updatePeriodRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *updatePeriodRequest) init(log logger.LogAPI) {
+func (request *updatePeriodRequest) init(ctx context.Context, log logger.LogAPI) {
 	upOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -39,12 +40,12 @@ func (request *updatePeriodRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func updatePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdatePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if upRequest == nil {
 		upRequest = new(updatePeriodRequest)
 	}
 
-	upRequest.init(log)
+	upRequest.init(ctx, log)
 	defer upRequest.finish()
 
 	return upRequest.process(ctx, req)

@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
@@ -28,9 +29,9 @@ type updateSavingRequest struct {
 	periodRepo     period.Repository
 }
 
-func (request *updateSavingRequest) init(log logger.LogAPI) {
+func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI) {
 	usOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
@@ -45,12 +46,12 @@ func (request *updateSavingRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func updateSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdateSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if usRequest == nil {
 		usRequest = new(updateSavingRequest)
 	}
 
-	usRequest.init(log)
+	usRequest.init(ctx, log)
 	defer usRequest.finish()
 
 	return usRequest.process(ctx, req)

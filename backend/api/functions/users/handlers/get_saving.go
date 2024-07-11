@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
@@ -29,9 +30,9 @@ type getSavingRequest struct {
 	savingGoalRepo savingoal.Repository
 }
 
-func (request *getSavingRequest) init(log logger.LogAPI) {
+func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI) {
 	gsOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
@@ -45,12 +46,12 @@ func (request *getSavingRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if gsRequest == nil {
 		gsRequest = new(getSavingRequest)
 	}
 
-	gsRequest.init(log)
+	gsRequest.init(ctx, log)
 	defer gsRequest.finish()
 
 	return gsRequest.process(ctx, req)

@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -27,9 +28,9 @@ type getUserRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *getUserRequest) init(log logger.LogAPI) {
+func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) {
 	guOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitDynamoClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
@@ -44,12 +45,12 @@ func (request *getUserRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getUserHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetUserHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
 	if guRequest == nil {
 		guRequest = new(getUserRequest)
 	}
 
-	guRequest.init(log)
+	guRequest.init(ctx, log)
 	defer guRequest.finish()
 
 	return guRequest.process(ctx, req)

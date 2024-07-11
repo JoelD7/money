@@ -1,10 +1,11 @@
-package main
+package handlers
 
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -15,11 +16,11 @@ import (
 func TestJoel(t *testing.T) {
 	c := require.New(t)
 
-	dynamoClient := initDynamoClient()
+	ctx := context.Background()
+	dynamoClient := dynamo.InitDynamoClient(ctx)
 
 	logMock := logger.NewLoggerMock(nil)
 	periodMock := period.NewDynamoRepository(dynamoClient)
-	ctx := context.Background()
 
 	request := &updatePeriodRequest{
 		log:        logMock,

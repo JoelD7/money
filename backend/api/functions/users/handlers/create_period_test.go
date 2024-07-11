@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -19,14 +19,14 @@ func TestCreatePeriodSuccess(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
-	request := &createPeriodRequest{
-		log:        logMock,
-		periodRepo: periodMock,
+	request := &CreatePeriodRequest{
+		Log:        logMock,
+		PeriodRepo: periodMock,
 	}
 
 	apigwRequest := getCreatePeriodRequest()
 
-	response, err := request.process(ctx, apigwRequest)
+	response, err := request.Process(ctx, apigwRequest)
 	c.NoError(err)
 	c.Equal(http.StatusCreated, response.StatusCode)
 }
@@ -38,9 +38,9 @@ func TestCreatePeriodSuccessFailed(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
-	request := &createPeriodRequest{
-		log:        logMock,
-		periodRepo: periodMock,
+	request := &CreatePeriodRequest{
+		Log:        logMock,
+		PeriodRepo: periodMock,
 	}
 
 	apigwRequest := getCreatePeriodRequest()
@@ -49,7 +49,7 @@ func TestCreatePeriodSuccessFailed(t *testing.T) {
 		apigwRequest.Body = `{"start_date":"2023-12-01","end_date":"2023-12-05"}`
 		defer func() { apigwRequest = getCreatePeriodRequest() }()
 
-		response, err := request.process(ctx, apigwRequest)
+		response, err := request.Process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(response.Body, models.ErrMissingPeriodName.Error())
