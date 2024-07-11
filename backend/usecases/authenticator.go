@@ -144,7 +144,11 @@ func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx contex
 	return func(ctx context.Context, username, password string) (*models.User, error) {
 		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
-			logger.Error("user_fetching_failed", err, nil)
+			logger.Error("user_fetching_failed", err, []models.LoggerObject{
+				logger.MapToLoggerObject("auth_request", map[string]interface{}{
+					"s_username": username,
+				}),
+			})
 
 			return nil, err
 		}
