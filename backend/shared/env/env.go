@@ -6,6 +6,8 @@ import (
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/joho/godotenv"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 )
 
@@ -42,7 +44,16 @@ func LoadEnv(ctx context.Context) error {
 }
 
 func LoadEnvTesting() error {
-	err := godotenv.Load()
+	//Currently, it appears that godotenv doesn't support loading files using relative paths. This is why we need to use
+	//absolute paths to load the .env file.
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return fmt.Errorf("unable to identify current directory needed to load .env")
+	}
+
+	basepath := filepath.Dir(file)
+	path := filepath.Join(basepath, "../../.env")
+	err := godotenv.Load(path)
 	if err != nil {
 		return fmt.Errorf("cannot read enviroment configuration file: %v", err)
 	}
