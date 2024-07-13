@@ -39,7 +39,10 @@ func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI) er
 	gsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		if err != nil {
+			return
+		}
 		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, savingGoalTableName)
 		if err != nil {
 			return

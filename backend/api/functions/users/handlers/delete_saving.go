@@ -24,15 +24,21 @@ type deleteSavingRequest struct {
 	savingsRepo  savings.Repository
 }
 
-func (request *deleteSavingRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *deleteSavingRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	dsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		if err != nil {
+			return
+		}
 		request.log = log
 		request.log.SetHandler("delete-saving")
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *deleteSavingRequest) finish() {
@@ -44,7 +50,11 @@ func DeleteSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway
 		dsRequest = new(deleteSavingRequest)
 	}
 
-	dsRequest.init(ctx, log)
+	err := dsRequest.init(ctx, log)
+	if err != nil {
+		log.Error("delete_saving_init_failed", err, []models.LoggerObject{req})
+		return req.NewErrorResponse(err), nil
+	}
 	defer dsRequest.finish()
 
 	return dsRequest.process(ctx, req)

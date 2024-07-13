@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -16,18 +17,45 @@ import (
 )
 
 const (
-	tableName             = "savings"
-	periodSavingIndex     = "period_user-saving_id-index"
-	savingGoalSavingIndex = "saving_goal_id-saving_id-index"
-	defaultPageSize       = 10
+	defaultPageSize = 10
 )
 
 type DynamoRepository struct {
-	dynamoClient *dynamodb.Client
+	dynamoClient          *dynamodb.Client
+	tableName             string
+	periodSavingIndex     string
+	savingGoalSavingIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, periodSavingIndex, savingGoalSavingIndex string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+
+	tableNameEnv := env.GetString("SAVINGS_TABLE_NAME", "")
+	periodSavingIndexEnv := env.GetString("PERIOD_SAVING_INDEX_NAME", "")
+	savingGoalSavingIndexEnv := env.GetString("SAVING_GOAL_SAVING_INDEX_NAME", "")
+
+	err := validateParams(tableName, periodSavingIndex, savingGoalSavingIndex, tableNameEnv, periodSavingIndexEnv, savingGoalSavingIndexEnv)
+	if err != nil {
+		return nil, fmt.Errorf("initialize saving dynamo repository failed: %v", err)
+	}
+
+	return d, nil
+}
+
+func validateParams(tableName, periodSavingIndex, savingGoalSavingIndex, tableNameEnv, periodSavingIndexEnv, savingGoalSavingIndexEnv string) error {
+	if tableName == "" && tableNameEnv == "" {
+		return fmt.Errorf("table name is required")
+	}
+
+	if periodSavingIndex == "" && periodSavingIndexEnv == "" {
+		return fmt.Errorf("period saving index is required")
+	}
+
+	if savingGoalSavingIndex == "" && savingGoalSavingIndexEnv == "" {
+		return fmt.Errorf("saving goal saving index is required")
+	}
+
+	return nil
 }
 
 func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error) {
@@ -42,7 +70,7 @@ func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID str
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"username":  userKey,
 			"saving_id": savingIDKey,
@@ -90,7 +118,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.tableName),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(pageSize),
 	}
@@ -147,8 +175,8 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(tableName),
-		IndexName:                 aws.String(periodSavingIndex),
+		TableName:                 aws.String(d.tableName),
+		IndexName:                 aws.String(d.periodSavingIndex),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(pageSize),
 	}
@@ -203,8 +231,8 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(tableName),
-		IndexName:                 aws.String(savingGoalSavingIndex),
+		TableName:                 aws.String(d.tableName),
+		IndexName:                 aws.String(d.savingGoalSavingIndex),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(pageSize),
 	}
@@ -264,8 +292,8 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
 		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(tableName),
-		IndexName:                 aws.String(savingGoalSavingIndex),
+		TableName:                 aws.String(d.tableName),
+		IndexName:                 aws.String(d.savingGoalSavingIndex),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(pageSize),
 	}
@@ -376,7 +404,7 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 
 	input := &dynamodb.PutItemInput{
 		Item:      item,
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
@@ -417,7 +445,7 @@ func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Savi
 			"username":  username,
 			"saving_id": savingID,
 		},
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.tableName),
 		ConditionExpression:       aws.String("attribute_exists(saving_id)"),
 		ExpressionAttributeValues: attributeValues,
 		UpdateExpression:          updateExpression,
@@ -518,7 +546,7 @@ func (d *DynamoRepository) DeleteSaving(ctx context.Context, savingID, username 
 			"username":  usernameAtr,
 			"saving_id": savingIDAtr,
 		},
-		TableName:           aws.String(tableName),
+		TableName:           aws.String(d.tableName),
 		ConditionExpression: aws.String("attribute_exists(saving_id)"),
 	}
 

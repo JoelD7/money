@@ -18,10 +18,16 @@ import (
 	"time"
 )
 
-var csRequest *createSavingRequest
-var csOnce sync.Once
-var periodTableNameEnv = env.GetString("PERIOD_TABLE_NAME", "")
-var uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+var (
+	csRequest *createSavingRequest
+	csOnce    sync.Once
+
+	periodTableNameEnv       = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+	tableName                = env.GetString("SAVINGS_TABLE_NAME", "")
+	periodSavingIndex        = env.GetString("PERIOD_SAVING_INDEX_NAME", "")
+	savingGoalSavingIndex    = env.GetString("SAVING_GOAL_SAVING_INDEX_NAME", "")
+)
 
 type createSavingRequest struct {
 	log          logger.LogAPI
@@ -39,7 +45,10 @@ func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI)
 		request.log.SetHandler("create-saving")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		if err != nil {
+			return
+		}
 		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
 		if err != nil {
 			return
