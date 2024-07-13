@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -32,9 +33,9 @@ type multipleIncomeResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *getMultipleIncomeRequest) init(log logger.LogAPI) {
+func (request *getMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI) {
 	gmiOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -51,7 +52,7 @@ func getMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, req *apiga
 		gmiRequest = new(getMultipleIncomeRequest)
 	}
 
-	gmiRequest.init(log)
+	gmiRequest.init(ctx, log)
 	defer gmiRequest.finish()
 
 	err := gmiRequest.prepareRequest(req)

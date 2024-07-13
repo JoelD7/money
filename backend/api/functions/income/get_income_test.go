@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -13,7 +14,8 @@ import (
 func TestGetIncome(t *testing.T) {
 	c := require.New(t)
 
-	dynamoClient := initDynamoClient()
+	ctx := context.Background()
+	dynamoClient := dynamo.InitClient(ctx)
 
 	request := &incomeGetRequest{
 		incomeRepo: income.NewDynamoRepository(dynamoClient),

@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
@@ -27,9 +28,9 @@ type createIncomeRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createIncomeRequest) init(log logger.LogAPI) {
+func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI) {
 	ciOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
@@ -47,7 +48,7 @@ func createIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway
 		ciRequest = new(createIncomeRequest)
 	}
 
-	ciRequest.init(log)
+	ciRequest.init(ctx, log)
 	defer ciRequest.finish()
 
 	return ciRequest.process(ctx, req)

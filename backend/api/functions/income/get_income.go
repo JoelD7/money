@@ -5,6 +5,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -22,9 +23,9 @@ type incomeGetRequest struct {
 var once sync.Once
 var request *incomeGetRequest
 
-func (request *incomeGetRequest) init(log logger.LogAPI) {
+func (request *incomeGetRequest) init(ctx context.Context, log logger.LogAPI) {
 	once.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -41,7 +42,7 @@ func getIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Re
 		request = new(incomeGetRequest)
 	}
 
-	request.init(log)
+	request.init(ctx, log)
 	defer request.finish()
 
 	return request.process(ctx, req)
