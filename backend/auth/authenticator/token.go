@@ -38,17 +38,27 @@ func tokenHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Re
 		req = new(requestTokenHandler)
 	}
 
-	req.initTokenHandler(ctx, log)
+	err := req.initTokenHandler(ctx, log)
+	if err != nil {
+		req.err = err
+		req.log.Error("token_init_failed", err, nil)
+
+		return request.NewErrorResponse(err), nil
+	}
 	defer req.finish()
 
 	return req.processToken(ctx, request)
 }
 
-func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger.LogAPI) {
+func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	once.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		req.userRepo = users.NewDynamoRepository(dynamoClient)
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 		req.invalidTokenManager = cache.NewRedisCache()
 		req.secretsManager = secrets.NewAWSSecretManager()
 		req.log = log
@@ -56,6 +66,8 @@ func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger
 	})
 
 	req.startingTime = time.Now()
+
+	return err
 }
 
 func (req *requestTokenHandler) finish() {

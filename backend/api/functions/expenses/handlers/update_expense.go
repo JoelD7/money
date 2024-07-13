@@ -33,15 +33,20 @@ type updateExpenseRequest struct {
 func (request *updateExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
 	var err error
 	ueOnce.Do(func() {
+		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
 		if err != nil {
 			return
 		}
+
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
-		request.log = log
+
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
 

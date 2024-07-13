@@ -31,22 +31,35 @@ func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.R
 		signUpRequest = new(requestSignUpHandler)
 	}
 
-	signUpRequest.initSignUpHandler(ctx, log)
+	err := signUpRequest.initSignUpHandler(ctx, log)
+	if err != nil {
+		signUpRequest.err = err
+
+		signUpRequest.log.Error("sign_up_init_failed", err, []models.LoggerObject{request})
+
+		return request.NewErrorResponse(err), nil
+	}
 	defer signUpRequest.finish()
 
 	return signUpRequest.processSignUp(ctx, request)
 }
 
-func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, log logger.LogAPI) {
+func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	signUpOnce.Do(func() {
-		dynamoClient := dynamo.InitClient(ctx)
-
-		req.userRepo = users.NewDynamoRepository(dynamoClient)
 		req.log = log
 		req.log.SetHandler("sign-up")
+		dynamoClient := dynamo.InitClient(ctx)
+
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 		req.secretsManager = secrets.NewAWSSecretManager()
 	})
 	req.startingTime = time.Now()
+
+	return err
 }
 
 func (req *requestSignUpHandler) finish() {

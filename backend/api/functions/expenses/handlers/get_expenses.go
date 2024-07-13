@@ -38,14 +38,18 @@ type getExpensesRequest struct {
 func (request *getExpensesRequest) init(ctx context.Context, log logger.LogAPI) error {
 	var err error
 	gesOnce.Do(func() {
+		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
 		if err != nil {
 			return
 		}
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
-		request.log = log
+
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
 

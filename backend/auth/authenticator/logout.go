@@ -33,22 +33,35 @@ func logoutHandler(ctx context.Context, log logger.LogAPI, request *apigateway.R
 		logoutRequest = new(requestLogoutHandler)
 	}
 
-	logoutRequest.initLogoutHandler(ctx, log)
+	err := logoutRequest.initLogoutHandler(ctx, log)
+	if err != nil {
+		logoutRequest.err = err
+
+		log.Error("logout_init_failed", err, []models.LoggerObject{request})
+
+		return request.NewErrorResponse(err), nil
+	}
 	defer logoutRequest.finish()
 
 	return logoutRequest.processLogout(ctx, request)
 }
 
-func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, log logger.LogAPI) {
+func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	logoutOnce.Do(func() {
-		dynamoClient := dynamo.InitClient(ctx)
-
-		req.userRepo = users.NewDynamoRepository(dynamoClient)
-		req.invalidTokenManager = cache.NewRedisCache()
 		req.log = log
 		req.log.SetHandler("logout")
+		dynamoClient := dynamo.InitClient(ctx)
+
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
+		req.invalidTokenManager = cache.NewRedisCache()
 	})
 	req.startingTime = time.Now()
+
+	return err
 }
 
 func (req *requestLogoutHandler) finish() {

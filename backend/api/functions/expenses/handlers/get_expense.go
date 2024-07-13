@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -19,6 +20,8 @@ var (
 	errMissingExpenseID = apigateway.NewError("missing expense ID", http.StatusBadRequest)
 	geExpenseRequest    *getExpenseRequest
 	getExpenseOnce      sync.Once
+
+	usersTableName = env.GetString("USERS_TABLE_NAME", "")
 )
 
 type getExpenseRequest struct {
@@ -32,14 +35,18 @@ type getExpenseRequest struct {
 func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
 	var err error
 	getExpenseOnce.Do(func() {
+		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
 		if err != nil {
 			return
 		}
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
-		request.log = log
+
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
 

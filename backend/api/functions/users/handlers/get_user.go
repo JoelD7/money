@@ -43,7 +43,11 @@ func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) erro
 
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
+
 		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, incomeTableName)
 		if err != nil {
 			return

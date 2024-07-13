@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -19,6 +20,7 @@ import (
 
 var loginRequest *requestLoginHandler
 var loginOnce sync.Once
+var usersTableName = env.GetString("USERS_TABLE_NAME", "")
 
 type requestLoginHandler struct {
 	log            logger.LogAPI
@@ -37,22 +39,35 @@ func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Re
 		loginRequest = new(requestLoginHandler)
 	}
 
-	loginRequest.initLoginHandler(ctx, log)
+	err := loginRequest.initLoginHandler(ctx, log)
+	if err != nil {
+		loginRequest.err = err
+		log.Error("login_init_failed", err, []models.LoggerObject{request})
+
+		return request.NewErrorResponse(err), nil
+	}
 	defer loginRequest.finish()
 
 	return loginRequest.processLogin(ctx, request)
 }
 
-func (req *requestLoginHandler) initLoginHandler(ctx context.Context, log logger.LogAPI) {
+func (req *requestLoginHandler) initLoginHandler(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	loginOnce.Do(func() {
-		dynamoClient := dynamo.InitClient(ctx)
-
-		req.userRepo = users.NewDynamoRepository(dynamoClient)
-		req.secretsManager = secrets.NewAWSSecretManager()
 		req.log = log
 		req.log.SetHandler("login")
+		dynamoClient := dynamo.InitClient(ctx)
+
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
+
+		req.secretsManager = secrets.NewAWSSecretManager()
 	})
 	req.startingTime = time.Now()
+
+	return err
 }
 
 func (req *requestLoginHandler) finish() {

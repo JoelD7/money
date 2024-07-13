@@ -31,15 +31,21 @@ type updateCategoryRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *updateCategoryRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *updateCategoryRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	ucOnce.Do(func() {
-		dynamoClient := dynamo.InitClient(ctx)
-
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
 		request.log.SetHandler("update-category")
+		dynamoClient := dynamo.InitClient(ctx)
+
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *updateCategoryRequest) finish() {
@@ -51,7 +57,14 @@ func UpdateCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigatew
 		ucRequest = new(updateCategoryRequest)
 	}
 
-	ucRequest.init(ctx, log)
+	err := ucRequest.init(ctx, log)
+	if err != nil {
+		ucRequest.err = err
+
+		log.Error("update_category_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer ucRequest.finish()
 
 	return ucRequest.process(ctx, req)
