@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -36,15 +37,15 @@ func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Re
 		loginRequest = new(requestLoginHandler)
 	}
 
-	loginRequest.initLoginHandler(log)
+	loginRequest.initLoginHandler(ctx, log)
 	defer loginRequest.finish()
 
 	return loginRequest.processLogin(ctx, request)
 }
 
-func (req *requestLoginHandler) initLoginHandler(log logger.LogAPI) {
+func (req *requestLoginHandler) initLoginHandler(ctx context.Context, log logger.LogAPI) {
 	loginOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		req.userRepo = users.NewDynamoRepository(dynamoClient)
 		req.secretsManager = secrets.NewAWSSecretManager()

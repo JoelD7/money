@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/storage/cache"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -37,15 +38,15 @@ func tokenHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Re
 		req = new(requestTokenHandler)
 	}
 
-	req.initTokenHandler(log)
+	req.initTokenHandler(ctx, log)
 	defer req.finish()
 
 	return req.processToken(ctx, request)
 }
 
-func (req *requestTokenHandler) initTokenHandler(log logger.LogAPI) {
+func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger.LogAPI) {
 	once.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		req.userRepo = users.NewDynamoRepository(dynamoClient)
 		req.invalidTokenManager = cache.NewRedisCache()

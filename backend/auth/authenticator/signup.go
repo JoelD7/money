@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -30,15 +31,15 @@ func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.R
 		signUpRequest = new(requestSignUpHandler)
 	}
 
-	signUpRequest.initSignUpHandler(log)
+	signUpRequest.initSignUpHandler(ctx, log)
 	defer signUpRequest.finish()
 
 	return signUpRequest.processSignUp(ctx, request)
 }
 
-func (req *requestSignUpHandler) initSignUpHandler(log logger.LogAPI) {
+func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, log logger.LogAPI) {
 	signUpOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		req.userRepo = users.NewDynamoRepository(dynamoClient)
 		req.log = log

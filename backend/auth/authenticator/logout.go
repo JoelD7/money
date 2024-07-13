@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/cache"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -32,15 +33,15 @@ func logoutHandler(ctx context.Context, log logger.LogAPI, request *apigateway.R
 		logoutRequest = new(requestLogoutHandler)
 	}
 
-	logoutRequest.initLogoutHandler(log)
+	logoutRequest.initLogoutHandler(ctx, log)
 	defer logoutRequest.finish()
 
 	return logoutRequest.processLogout(ctx, request)
 }
 
-func (req *requestLogoutHandler) initLogoutHandler(log logger.LogAPI) {
+func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, log logger.LogAPI) {
 	logoutOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		req.userRepo = users.NewDynamoRepository(dynamoClient)
 		req.invalidTokenManager = cache.NewRedisCache()
