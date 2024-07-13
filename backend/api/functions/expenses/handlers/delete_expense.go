@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -23,9 +24,9 @@ type deleteExpenseRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *deleteExpenseRequest) init(log logger.LogAPI) {
+func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
 	deOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.log = log
@@ -42,7 +43,7 @@ func DeleteExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		deRequest = new(deleteExpenseRequest)
 	}
 
-	deRequest.init(log)
+	deRequest.init(ctx, log)
 	defer deRequest.finish()
 
 	return deRequest.process(ctx, req)

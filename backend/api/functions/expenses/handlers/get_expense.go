@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
@@ -28,9 +29,9 @@ type getExpenseRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *getExpenseRequest) init(log logger.LogAPI) {
+func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
 	getExpenseOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
@@ -48,7 +49,7 @@ func GetExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request)
 		geExpenseRequest = new(getExpenseRequest)
 	}
 
-	geExpenseRequest.init(log)
+	geExpenseRequest.init(ctx, log)
 	defer geExpenseRequest.finish()
 
 	return geExpenseRequest.process(ctx, req)

@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -29,9 +30,9 @@ type updateExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *updateExpenseRequest) init(log logger.LogAPI) {
+func (request *updateExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
 	ueOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
@@ -50,7 +51,7 @@ func UpdateExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		ueRequest = new(updateExpenseRequest)
 	}
 
-	ueRequest.init(log)
+	ueRequest.init(ctx, log)
 	defer ueRequest.finish()
 
 	return ueRequest.process(ctx, req)

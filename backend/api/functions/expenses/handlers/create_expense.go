@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -29,9 +30,9 @@ type createExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createExpenseRequest) init(log logger.LogAPI) {
+func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
 	ceOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
@@ -49,7 +50,7 @@ func CreateExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		ceRequest = new(createExpenseRequest)
 	}
 
-	ceRequest.init(log)
+	ceRequest.init(ctx, log)
 	defer ceRequest.finish()
 
 	return ceRequest.process(ctx, req)
