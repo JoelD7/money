@@ -54,6 +54,8 @@ func TestCron(t *testing.T) {
 	var (
 		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
 		expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+		periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+		uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 	)
 
 	c := require.New(t)
@@ -61,9 +63,13 @@ func TestCron(t *testing.T) {
 	ctx := context.Background()
 	dynamoClient := utils.InitDynamoClient()
 	log := logger.NewConsoleLogger("e2e-recurring-expense-generator")
+
 	repo, err := expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
 	c.Nil(err, "failed to create recurring expenses repository")
-	periodRepo := period.NewDynamoRepository(dynamoClient)
+
+	periodRepo, err := period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+	c.Nil(err, "failed to create period repository")
+
 	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
 	c.Nil(err, "failed to create expenses repository")
 

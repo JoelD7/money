@@ -32,7 +32,10 @@ func (request *getPeriodRequest) init(ctx context.Context, log logger.LogAPI) er
 		request.log.SetHandler("get-period")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 		request.usersRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
 		if err != nil {
 			return

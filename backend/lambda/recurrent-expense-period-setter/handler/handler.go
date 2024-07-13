@@ -19,6 +19,8 @@ import (
 var (
 	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 
 	preRequest *Request
 	preOnce    sync.Once
@@ -42,7 +44,11 @@ func (request *Request) init(ctx context.Context) error {
 		if err != nil {
 			return
 		}
-		request.PeriodRepo = period.NewDynamoRepository(dynamoClient)
+
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
 

@@ -23,15 +23,21 @@ type deletePeriodRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	dpOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
-
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.log = log
 		request.log.SetHandler("delete-period")
+
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *deletePeriodRequest) finish() {
@@ -43,7 +49,15 @@ func DeletePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway
 		dpRequest = new(deletePeriodRequest)
 	}
 
-	dpRequest.init(ctx, log)
+	err := dpRequest.init(ctx, log)
+	if err != nil {
+		dpRequest.err = err
+
+		log.Error("delete_period_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+
+	}
 	defer dpRequest.finish()
 
 	return dpRequest.process(ctx, req)

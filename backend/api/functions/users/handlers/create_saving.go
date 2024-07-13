@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -19,6 +20,8 @@ import (
 
 var csRequest *createSavingRequest
 var csOnce sync.Once
+var periodTableNameEnv = env.GetString("PERIOD_TABLE_NAME", "")
+var uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 
 type createSavingRequest struct {
 	log          logger.LogAPI
@@ -29,16 +32,22 @@ type createSavingRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	csOnce.Do(func() {
+		request.log = log
+		request.log.SetHandler("create-saving")
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
-		request.log = log
-		request.log.SetHandler("create-saving")
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *createSavingRequest) finish() {
@@ -50,7 +59,12 @@ func CreateSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway
 		csRequest = new(createSavingRequest)
 	}
 
-	csRequest.init(ctx, log)
+	err := csRequest.init(ctx, log)
+	if err != nil {
+		log.Error("init_create_saving_request_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer csRequest.finish()
 
 	return csRequest.process(ctx, req)

@@ -21,6 +21,8 @@ var (
 
 	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 )
 
 type CronRequest struct {
@@ -76,7 +78,10 @@ func (req *CronRequest) init(ctx context.Context) error {
 			return
 		}
 
-		req.PeriodRepo = period.NewDynamoRepository(dynamoClient)
+		req.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 
 		req.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
 		if err != nil {

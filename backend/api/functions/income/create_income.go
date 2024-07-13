@@ -19,7 +19,9 @@ import (
 )
 
 var (
-	tableName = env.GetString("INCOME_TABLE_NAME", "")
+	tableName                = env.GetString("INCOME_TABLE_NAME", "")
+	periodTableNameEnv       = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 
 	ciRequest *createIncomeRequest
 	ciOnce    sync.Once
@@ -37,13 +39,16 @@ func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI)
 	var err error
 	ciOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
+		request.log = log
 
 		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
 		if err != nil {
 			return
 		}
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
-		request.log = log
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
 
