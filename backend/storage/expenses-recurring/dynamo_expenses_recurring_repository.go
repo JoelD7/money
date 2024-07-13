@@ -28,6 +28,10 @@ func NewExpenseRecurringDynamoRepository(dynamoClient *dynamodb.Client, tableNam
 	}
 
 	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
 	return d, nil
 }
 

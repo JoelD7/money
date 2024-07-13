@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -17,8 +18,12 @@ import (
 	"time"
 )
 
-var ciRequest *createIncomeRequest
-var ciOnce sync.Once
+var (
+	tableName = env.GetString("INCOME_TABLE_NAME", "")
+
+	ciRequest *createIncomeRequest
+	ciOnce    sync.Once
+)
 
 type createIncomeRequest struct {
 	log          logger.LogAPI
@@ -28,15 +33,21 @@ type createIncomeRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	ciOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
+		if err != nil {
+			return
+		}
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.log = log
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *createIncomeRequest) finish() {

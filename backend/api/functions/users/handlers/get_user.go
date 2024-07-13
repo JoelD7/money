@@ -20,6 +20,7 @@ import (
 var (
 	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	incomeTableName            = env.GetString("INCOME_TABLE_NAME", "")
 
 	guRequest *getUserRequest
 	guOnce    sync.Once
@@ -37,16 +38,21 @@ type getUserRequest struct {
 func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) error {
 	var err error
 	guOnce.Do(func() {
+		request.log = log
+		request.log.SetHandler("get-user")
+
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
-		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, incomeTableName)
+		if err != nil {
+			return
+		}
+
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
 		if err != nil {
 			return
 		}
-		request.log = log
-		request.log.SetHandler("get-user")
 	})
 	request.startingTime = time.Now()
 

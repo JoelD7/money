@@ -33,14 +33,20 @@ type multipleIncomeResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *getMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *getMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	gmiOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
+		if err != nil {
+			return
+		}
 		request.log = log
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *getMultipleIncomeRequest) finish() {

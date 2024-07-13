@@ -23,14 +23,20 @@ type incomeGetRequest struct {
 var once sync.Once
 var request *incomeGetRequest
 
-func (request *incomeGetRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *incomeGetRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	once.Do(func() {
+		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
-		request.log = log
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *incomeGetRequest) finish() {
