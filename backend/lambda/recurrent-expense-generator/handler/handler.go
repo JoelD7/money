@@ -6,13 +6,12 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	expenses_recurring "github.com/JoelD7/money/backend/storage/expenses-recurring"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"sync"
 	"time"
 )
@@ -37,7 +36,7 @@ func Handle(ctx context.Context) error {
 	var err error
 
 	stackTrace, ctxError := shared.ExecuteLambda(ctx, func(ctx context.Context) {
-		req.init()
+		req.init(ctx)
 		defer req.finish()
 
 		err = req.Process(ctx)
@@ -54,24 +53,15 @@ func Handle(ctx context.Context) error {
 	return err
 }
 
-func (req *CronRequest) init() {
+func (req *CronRequest) init(ctx context.Context) {
 	once.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 		req.Repo = expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient)
 		req.PeriodRepo = period.NewDynamoRepository(dynamoClient)
 		req.ExpensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		req.Log = logger.NewLogger()
 	})
 	req.startingTime = time.Now()
-}
-
-func initDynamoClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
-	if err != nil {
-		panic(err)
-	}
-
-	return dynamodb.NewFromConfig(cfg)
 }
 
 func (req *CronRequest) finish() {

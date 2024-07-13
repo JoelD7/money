@@ -7,12 +7,11 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"sync"
 	"time"
 )
@@ -30,23 +29,14 @@ type Request struct {
 	PeriodRepo   period.Repository
 }
 
-func (request *Request) init() {
+func (request *Request) init(ctx context.Context) {
 	preOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.ExpensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.PeriodRepo = period.NewDynamoRepository(dynamoClient)
 	})
 	request.startingTime = time.Now()
-}
-
-func initDynamoClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
-	if err != nil {
-		panic(err)
-	}
-
-	return dynamodb.NewFromConfig(cfg)
 }
 
 func (request *Request) finish() {
@@ -60,7 +50,7 @@ func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 	}
 
-	preRequest.init()
+	preRequest.init(ctx)
 	defer preRequest.finish()
 
 	for _, record := range sqsEvent.Records {
