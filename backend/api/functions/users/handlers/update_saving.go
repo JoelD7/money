@@ -35,11 +35,16 @@ func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI)
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
+
 		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
 		if err != nil {
 			return
 		}
-		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
+
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, savingGoalTableName)
+		if err != nil {
+			return
+		}
 		request.log = log
 		request.log.SetHandler("update-saving")
 	})

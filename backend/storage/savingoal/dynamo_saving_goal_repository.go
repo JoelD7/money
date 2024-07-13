@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -11,16 +12,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-const (
-	tableName = "saving-goals"
-)
-
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
+	tableName    string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+	tableNameEnv := env.GetString("SAVING_GOALS_TABLE_NAME", "")
+
+	if tableNameEnv == "" && tableName == "" {
+		return nil, fmt.Errorf("initialize saving goal dynamo repository failed: table name is required")
+	}
+
+	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
+	return d, nil
 }
 
 func (d *DynamoRepository) GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error) {
@@ -35,7 +45,7 @@ func (d *DynamoRepository) GetSavingGoal(ctx context.Context, username, savingGo
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"username":       userKey,
 			"saving_goal_id": savingGoalIDKey,
@@ -66,7 +76,7 @@ func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string) 
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.tableName),
 		KeyConditionExpression:    expr.Condition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
