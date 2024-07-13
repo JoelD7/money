@@ -14,18 +14,21 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 )
 
-var (
-	tableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-)
-
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
+	tableName    string
 }
 
-func NewExpenseRecurringDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{
-		dynamoClient: dynamoClient,
+func NewExpenseRecurringDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+	tableNameEnv := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+
+	if tableNameEnv == "" && tableName == "" {
+		return nil, fmt.Errorf("initialize expenses recurring dynamo repository failed: table name is required")
 	}
+
+	d.tableName = tableName
+	return d, nil
 }
 
 func (d *DynamoRepository) CreateExpenseRecurring(ctx context.Context, expenseRecurring *models.ExpenseRecurring) (*models.ExpenseRecurring, error) {
@@ -38,7 +41,7 @@ func (d *DynamoRepository) CreateExpenseRecurring(ctx context.Context, expenseRe
 
 	input := &dynamodb.PutItemInput{
 		Item:      item,
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
@@ -59,7 +62,7 @@ func (d *DynamoRepository) BatchCreateExpenseRecurring(ctx context.Context, log 
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			tableName: getBatchWriteRequests(entities, log),
+			d.tableName: getBatchWriteRequests(entities, log),
 		},
 	}
 
@@ -94,7 +97,7 @@ func (d *DynamoRepository) ScanExpensesForDay(ctx context.Context, day int) ([]*
 	}
 
 	input := &dynamodb.ScanInput{
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
@@ -166,7 +169,7 @@ func (d *DynamoRepository) BatchDeleteExpenseRecurring(ctx context.Context, log 
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			tableName: writeRequests,
+			d.tableName: writeRequests,
 		},
 	}
 

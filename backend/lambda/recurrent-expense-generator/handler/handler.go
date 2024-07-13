@@ -71,8 +71,13 @@ func (req *CronRequest) init(ctx context.Context) error {
 		req.Log = logger.NewLogger()
 
 		dynamoClient := dynamo.InitClient(ctx)
-		req.Repo = expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient)
+		req.Repo, err = expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
+
 		req.PeriodRepo = period.NewDynamoRepository(dynamoClient)
+
 		req.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
 		if err != nil {
 			return
