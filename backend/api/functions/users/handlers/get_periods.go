@@ -34,7 +34,7 @@ type getPeriodsRequest struct {
 
 func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI) {
 	gpsOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.log = log

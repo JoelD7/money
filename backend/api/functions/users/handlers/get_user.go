@@ -30,7 +30,7 @@ type getUserRequest struct {
 
 func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) {
 	guOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.incomeRepo = income.NewDynamoRepository(dynamoClient)

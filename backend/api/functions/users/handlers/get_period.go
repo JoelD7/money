@@ -27,7 +27,7 @@ type getPeriodRequest struct {
 
 func (request *getPeriodRequest) init(ctx context.Context, log logger.LogAPI) {
 	gpOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.usersRepo = users.NewDynamoRepository(dynamoClient)

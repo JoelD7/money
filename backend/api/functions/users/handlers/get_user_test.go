@@ -20,7 +20,7 @@ func TestHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
 	ctx := context.Background()
-	dynamoClient := dynamo.InitDynamoClient(ctx)
+	dynamoClient := dynamo.InitClient(ctx)
 	usersMock := users.NewDynamoRepository(dynamoClient)
 	expensesMock := expenses.NewDynamoRepository(dynamoClient)
 	incomeMock := income.NewDynamoRepository(dynamoClient)

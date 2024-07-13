@@ -31,7 +31,7 @@ type updateSavingRequest struct {
 
 func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI) {
 	usOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)

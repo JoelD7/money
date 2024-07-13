@@ -26,7 +26,7 @@ type deleteSavingRequest struct {
 
 func (request *deleteSavingRequest) init(ctx context.Context, log logger.LogAPI) {
 	dsOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.log = log

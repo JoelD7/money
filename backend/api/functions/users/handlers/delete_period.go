@@ -25,7 +25,7 @@ type deletePeriodRequest struct {
 
 func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI) {
 	dpOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.log = log

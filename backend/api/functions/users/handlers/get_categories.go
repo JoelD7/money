@@ -26,7 +26,7 @@ type getCategoriesRequest struct {
 
 func (request *getCategoriesRequest) init(ctx context.Context, log logger.LogAPI) {
 	gcOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log

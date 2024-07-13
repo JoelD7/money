@@ -32,7 +32,7 @@ type getSavingRequest struct {
 
 func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI) {
 	gsOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)

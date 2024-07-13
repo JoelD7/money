@@ -31,7 +31,7 @@ type createSavingRequest struct {
 
 func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI) {
 	csOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)

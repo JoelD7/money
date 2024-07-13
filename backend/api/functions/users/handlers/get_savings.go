@@ -37,7 +37,7 @@ type savingsResponse struct {
 
 func (request *getSavingsRequest) init(ctx context.Context, log logger.LogAPI) {
 	gssOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
 		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)

@@ -29,7 +29,7 @@ type createCategoryRequest struct {
 
 func (request *createCategoryRequest) init(ctx context.Context, log logger.LogAPI) {
 	ccOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
