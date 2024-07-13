@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -17,8 +19,15 @@ import (
 	"time"
 )
 
-var ceRequest *createExpenseRequest
-var ceOnce sync.Once
+var (
+	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+
+	ceRequest *createExpenseRequest
+	ceOnce    sync.Once
+)
 
 type createExpenseRequest struct {
 	log          logger.LogAPI
@@ -29,15 +38,25 @@ type createExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createExpenseRequest) init(log logger.LogAPI) {
+func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	ceOnce.Do(func() {
-		dynamoClient := initDynamoClient()
-
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		dynamoClient := dynamo.InitClient(ctx)
 		request.log = log
+
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
+
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *createExpenseRequest) finish() {
@@ -49,7 +68,13 @@ func CreateExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		ceRequest = new(createExpenseRequest)
 	}
 
-	ceRequest.init(log)
+	err := ceRequest.init(ctx, log)
+	if err != nil {
+		log.Error("create_expense_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
+
 	defer ceRequest.finish()
 
 	return ceRequest.process(ctx, req)

@@ -175,7 +175,7 @@ func handleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocesse
 	return nil
 }
 
-func InitDynamoClient(ctx context.Context) *dynamodb.Client {
+func InitClient(ctx context.Context) *dynamodb.Client {
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
 	if err != nil {
 		panic(err)

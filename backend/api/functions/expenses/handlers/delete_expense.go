@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -23,14 +24,19 @@ type deleteExpenseRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *deleteExpenseRequest) init(log logger.LogAPI) {
-	deOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+	deOnce.Do(func() {
+		dynamoClient := dynamo.InitClient(ctx)
+
 		request.log = log
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
 	})
+
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *deleteExpenseRequest) finish() {
@@ -42,7 +48,11 @@ func DeleteExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		deRequest = new(deleteExpenseRequest)
 	}
 
-	deRequest.init(log)
+	err := deRequest.init(ctx, log)
+	if err != nil {
+		log.Error("delete_expense_init_failed", err, []models.LoggerObject{req})
+		return req.NewErrorResponse(err), nil
+	}
 	defer deRequest.finish()
 
 	return deRequest.process(ctx, req)

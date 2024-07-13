@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/lambda/recurrent-expense-generator/handler"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	expenses_recurring "github.com/JoelD7/money/backend/storage/expenses-recurring"
@@ -50,14 +51,27 @@ var (
 )
 
 func TestCron(t *testing.T) {
+	var (
+		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+		expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+		periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+		uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+	)
+
 	c := require.New(t)
 
 	ctx := context.Background()
 	dynamoClient := utils.InitDynamoClient()
 	log := logger.NewConsoleLogger("e2e-recurring-expense-generator")
-	repo := expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient)
-	periodRepo := period.NewDynamoRepository(dynamoClient)
-	expensesRepo := expenses.NewDynamoRepository(dynamoClient)
+
+	repo, err := expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
+	c.Nil(err, "failed to create recurring expenses repository")
+
+	periodRepo, err := period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+	c.Nil(err, "failed to create period repository")
+
+	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+	c.Nil(err, "failed to create expenses repository")
 
 	req := &handler.CronRequest{
 		Log:          log,
@@ -77,7 +91,7 @@ func TestCron(t *testing.T) {
 
 	baseTime := time.Now()
 
-	err := setup(baseTime, req, &recExpenses, &periods)
+	err = setup(baseTime, req, &recExpenses, &periods)
 	c.Nil(err, "failed to setup test")
 	c.NotEmpty(recExpenses, "recurring expenses array is empty")
 

@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
@@ -34,15 +35,25 @@ type getExpensesRequest struct {
 	pageSize     int
 }
 
-func (request *getExpensesRequest) init(log logger.LogAPI) {
+func (request *getExpensesRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	gesOnce.Do(func() {
-		dynamoClient := initDynamoClient()
-
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
+		dynamoClient := dynamo.InitClient(ctx)
+
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
+
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *getExpensesRequest) finish() {
@@ -54,10 +65,15 @@ func GetExpenses(ctx context.Context, log logger.LogAPI, req *apigateway.Request
 		gesExpensesRequest = new(getExpensesRequest)
 	}
 
-	gesExpensesRequest.init(log)
+	err := gesExpensesRequest.init(ctx, log)
+	if err != nil {
+		log.Error("get_expenses_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer gesExpensesRequest.finish()
 
-	err := gesExpensesRequest.prepareRequest(req)
+	err = gesExpensesRequest.prepareRequest(req)
 	if err != nil {
 		return req.NewErrorResponse(err), nil
 	}

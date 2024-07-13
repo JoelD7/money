@@ -24,9 +24,7 @@ const (
 )
 
 var (
-	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "")
-	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	periodUserExpenseIDIndex   = "period_user-expense_id-index"
+	periodUserExpenseIDIndex = "period_user-expense_id-index"
 )
 
 type keys struct {
@@ -41,17 +39,50 @@ type keysPeriodUserIndex struct {
 }
 
 type DynamoRepository struct {
-	dynamoClient *dynamodb.Client
+	dynamoClient               *dynamodb.Client
+	tableName                  string
+	expensesRecurringTableName string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, expensesRecurringTableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+	tableNameEnv := env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableNameEnv := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+
+	err := validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv)
+	if err != nil {
+		return nil, fmt.Errorf("initialize expenses dynamo repository failed: %v", err)
+	}
+
+	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
+	d.expensesRecurringTableName = expensesRecurringTableName
+	if d.expensesRecurringTableName == "" {
+		d.expensesRecurringTableName = expensesRecurringTableNameEnv
+	}
+
+	return d, nil
+}
+
+func validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv string) error {
+	if tableName == "" && tableNameEnv == "" {
+		return fmt.Errorf("table name is required")
+	}
+
+	if expensesRecurringTableName == "" && expensesRecurringTableNameEnv == "" {
+		return fmt.Errorf("expenses recurring table name is required")
+	}
+
+	return nil
 }
 
 func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error) {
 	entity := toExpenseEntity(expense)
 
-	input, err := buildTransactWriteItemsInput(entity, expense)
+	input, err := d.buildTransactWriteItemsInput(entity, expense)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +99,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 	return expense, nil
 }
 
-func buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
+func (d *DynamoRepository) buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
 	expenseEnt.PeriodUser = dynamo.BuildPeriodUser(expenseEnt.Username, expenseEnt.Period)
 
 	item, err := attributevalue.MarshalMap(expenseEnt)
@@ -80,7 +111,7 @@ func buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Exp
 		{
 			Put: &types.Put{
 				Item:      item,
-				TableName: aws.String(tableName),
+				TableName: aws.String(d.tableName),
 			},
 		},
 	}
@@ -108,7 +139,7 @@ func buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Exp
 	transactItems = append(transactItems, types.TransactWriteItem{
 		Put: &types.Put{
 			Item:                     itemRecurring,
-			TableName:                aws.String(expensesRecurringTableName),
+			TableName:                aws.String(d.expensesRecurringTableName),
 			ConditionExpression:      expr.Condition(),
 			ExpressionAttributeNames: expr.Names(),
 		},
@@ -133,7 +164,7 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			tableName: getBatchWriteRequests(entities, log),
+			d.tableName: getBatchWriteRequests(entities, log),
 		},
 	}
 
@@ -189,7 +220,7 @@ func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Ex
 			"username":   username,
 			"expense_id": expenseID,
 		},
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.tableName),
 		ConditionExpression:       aws.String("attribute_exists(expense_id)"),
 		ExpressionAttributeValues: attributeValues,
 		UpdateExpression:          updateExpression,
@@ -304,7 +335,7 @@ func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.L
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			tableName: getBatchWriteRequests(entities, log),
+			d.tableName: getBatchWriteRequests(entities, log),
 		},
 	}
 
@@ -313,7 +344,7 @@ func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.L
 
 func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"username":   &types.AttributeValueMemberS{Value: username},
 			"expense_id": &types.AttributeValueMemberS{Value: expenseID},
@@ -340,7 +371,7 @@ func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID s
 }
 
 func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, "", startKey, nil, pageSize)
+	input, err := d.buildQueryInput(username, "", startKey, nil, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -349,7 +380,7 @@ func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey s
 }
 
 func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, periodID, startKey, categories, pageSize)
+	input, err := d.buildQueryInput(username, periodID, startKey, categories, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -358,7 +389,7 @@ func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context,
 }
 
 func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, periodID, startKey, nil, pageSize)
+	input, err := d.buildQueryInput(username, periodID, startKey, nil, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -367,7 +398,7 @@ func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, pe
 }
 
 func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, "", startKey, categories, pageSize)
+	input, err := d.buildQueryInput(username, "", startKey, categories, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -386,7 +417,7 @@ func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, usern
 	}
 
 	input := &dynamodb.ScanInput{
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		FilterExpression:          expr.Filter(),
@@ -430,7 +461,7 @@ func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, usern
 
 func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, username string) error {
 	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"username":   &types.AttributeValueMemberS{Value: username},
 			"expense_id": &types.AttributeValueMemberS{Value: expenseID},
@@ -475,18 +506,18 @@ func (d *DynamoRepository) BatchDeleteExpenses(ctx context.Context, expenses []*
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			tableName: writeRequests,
+			d.tableName: writeRequests,
 		},
 	}
 
 	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
-func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
+func (d *DynamoRepository) buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
 	var err error
 
 	input := &dynamodb.QueryInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Limit:     getPageSize(pageSize),
 	}
 

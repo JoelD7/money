@@ -20,16 +20,28 @@ const (
 )
 
 var (
-	TableName               = env.GetString("INCOME_TABLE_NAME", "")
 	periodUserIncomeIDIndex = "period_user-income_id-index"
 )
 
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
+	tableName    string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+
+	tableNameEnv := env.GetString("INCOME_TABLE_NAME", "")
+	if tableName == "" && tableNameEnv == "" {
+		return nil, fmt.Errorf("initialize income recurring dynamo repository failed: table name is required")
+	}
+
+	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
+	return d, nil
 }
 
 func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
@@ -49,7 +61,7 @@ func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Inco
 	}
 
 	input := &dynamodb.PutItemInput{
-		TableName:                aws.String(TableName),
+		TableName:                aws.String(d.tableName),
 		Item:                     incomeAv,
 		ConditionExpression:      expr.Condition(),
 		ExpressionAttributeNames: expr.Names(),
@@ -69,7 +81,7 @@ func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Inco
 
 func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error) {
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(TableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"income_id": &types.AttributeValueMemberS{Value: incomeID},
 			"username":  &types.AttributeValueMemberS{Value: username},
@@ -116,7 +128,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(TableName),
+		TableName:                 aws.String(d.tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
@@ -172,7 +184,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(TableName),
+		TableName:                 aws.String(d.tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),

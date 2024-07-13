@@ -5,16 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/storage/period"
-	"net/http"
-	"testing"
-
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
+	"net/http"
+	"testing"
 )
 
 func TestHandlerSuccess(t *testing.T) {

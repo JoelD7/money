@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
@@ -16,8 +18,14 @@ import (
 	"time"
 )
 
-var ciRequest *createIncomeRequest
-var ciOnce sync.Once
+var (
+	tableName                = env.GetString("INCOME_TABLE_NAME", "")
+	periodTableNameEnv       = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+
+	ciRequest *createIncomeRequest
+	ciOnce    sync.Once
+)
 
 type createIncomeRequest struct {
 	log          logger.LogAPI
@@ -27,15 +35,24 @@ type createIncomeRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createIncomeRequest) init(log logger.LogAPI) {
+func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	ciOnce.Do(func() {
-		dynamoClient := initDynamoClient()
-
-		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		dynamoClient := dynamo.InitClient(ctx)
 		request.log = log
+
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
+		if err != nil {
+			return
+		}
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *createIncomeRequest) finish() {
@@ -47,7 +64,7 @@ func createIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway
 		ciRequest = new(createIncomeRequest)
 	}
 
-	ciRequest.init(log)
+	ciRequest.init(ctx, log)
 	defer ciRequest.finish()
 
 	return ciRequest.process(ctx, req)

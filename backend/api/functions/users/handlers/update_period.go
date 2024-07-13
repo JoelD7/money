@@ -25,15 +25,21 @@ type updatePeriodRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *updatePeriodRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *updatePeriodRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	upOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
-		request.periodRepo = period.NewDynamoRepository(dynamoClient)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 		request.log = log
 		request.log.SetHandler("update-period")
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *updatePeriodRequest) finish() {
@@ -45,7 +51,12 @@ func UpdatePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway
 		upRequest = new(updatePeriodRequest)
 	}
 
-	upRequest.init(ctx, log)
+	err := upRequest.init(ctx, log)
+	if err != nil {
+		log.Error("update_period_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer upRequest.finish()
 
 	return upRequest.process(ctx, req)

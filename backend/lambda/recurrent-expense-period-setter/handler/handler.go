@@ -7,20 +7,24 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"sync"
 	"time"
 )
 
-var awsRegion = env.GetString("AWS_REGION", "")
+var (
+	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 
-var preRequest *Request
-var preOnce sync.Once
+	preRequest *Request
+	preOnce    sync.Once
+)
 
 type Request struct {
 	Log          logger.LogAPI
@@ -30,23 +34,25 @@ type Request struct {
 	PeriodRepo   period.Repository
 }
 
-func (request *Request) init() {
-	preOnce.Do(func() {
-		dynamoClient := initDynamoClient()
+func (request *Request) init(ctx context.Context) error {
+	var err error
 
-		request.ExpensesRepo = expenses.NewDynamoRepository(dynamoClient)
-		request.PeriodRepo = period.NewDynamoRepository(dynamoClient)
+	preOnce.Do(func() {
+		dynamoClient := dynamo.InitClient(ctx)
+
+		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
+
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
-}
 
-func initDynamoClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
-	if err != nil {
-		panic(err)
-	}
-
-	return dynamodb.NewFromConfig(cfg)
+	return err
 }
 
 func (request *Request) finish() {
@@ -60,7 +66,7 @@ func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 	}
 
-	preRequest.init()
+	preRequest.init(ctx)
 	defer preRequest.finish()
 
 	for _, record := range sqsEvent.Records {

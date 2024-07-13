@@ -24,15 +24,21 @@ type getCategoriesRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *getCategoriesRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *getCategoriesRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	gcOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
-
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
 		request.log.SetHandler("get-categories")
+		dynamoClient := dynamo.InitClient(ctx)
+
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *getCategoriesRequest) finish() {
@@ -44,7 +50,15 @@ func GetCategoriesHandler(ctx context.Context, log logger.LogAPI, req *apigatewa
 		gcRequest = new(getCategoriesRequest)
 	}
 
-	gcRequest.init(ctx, log)
+	err := gcRequest.init(ctx, log)
+	if err != nil {
+		gcRequest.err = err
+
+		log.Error("get_categories_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+
+	}
 	defer gcRequest.finish()
 
 	return gcRequest.process(ctx, req)

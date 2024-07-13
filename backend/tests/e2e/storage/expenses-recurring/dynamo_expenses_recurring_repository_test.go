@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	repo "github.com/JoelD7/money/backend/storage/expenses-recurring"
 	"github.com/JoelD7/money/backend/tests/e2e/utils"
@@ -17,14 +18,16 @@ import (
 func TestScanExpensesForDay(t *testing.T) {
 	c := require.New(t)
 
-	dynamoClient := utils.InitDynamoClient()
+	var err error
 
-	repository := repo.NewExpenseRecurringDynamoRepository(dynamoClient)
+	dynamoClient := utils.InitDynamoClient()
+	expensesRecurringTableName := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+
+	repository, err := repo.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
 
 	createExpenses(c, repository)
 
 	var expenses []*models.ExpenseRecurring
-	var err error
 
 	expenses, err = repository.ScanExpensesForDay(context.Background(), 15)
 	c.Nil(err)

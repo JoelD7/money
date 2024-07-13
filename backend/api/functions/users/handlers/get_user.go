@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
@@ -16,8 +17,14 @@ import (
 	"time"
 )
 
-var guRequest *getUserRequest
-var guOnce sync.Once
+var (
+	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	incomeTableName            = env.GetString("INCOME_TABLE_NAME", "")
+
+	guRequest *getUserRequest
+	guOnce    sync.Once
+)
 
 type getUserRequest struct {
 	log          logger.LogAPI
@@ -28,17 +35,32 @@ type getUserRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	guOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
-
-		request.userRepo = users.NewDynamoRepository(dynamoClient)
-		request.incomeRepo = income.NewDynamoRepository(dynamoClient)
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.log = log
 		request.log.SetHandler("get-user")
+
+		dynamoClient := dynamo.InitClient(ctx)
+
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		if err != nil {
+			return
+		}
+
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, incomeTableName)
+		if err != nil {
+			return
+		}
+
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *getUserRequest) finish() {
@@ -50,7 +72,12 @@ func GetUserHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Requ
 		guRequest = new(getUserRequest)
 	}
 
-	guRequest.init(ctx, log)
+	err := guRequest.init(ctx, log)
+	if err != nil {
+		log.Error("get_user_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer guRequest.finish()
 
 	return guRequest.process(ctx, req)

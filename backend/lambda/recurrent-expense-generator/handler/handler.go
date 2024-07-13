@@ -6,20 +6,23 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	expenses_recurring "github.com/JoelD7/money/backend/storage/expenses-recurring"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"sync"
 	"time"
 )
 
 var (
-	awsRegion = env.GetString("AWS_REGION", "")
-	once      sync.Once
+	once sync.Once
+
+	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 )
 
 type CronRequest struct {
@@ -37,7 +40,11 @@ func Handle(ctx context.Context) error {
 	var err error
 
 	stackTrace, ctxError := shared.ExecuteLambda(ctx, func(ctx context.Context) {
-		req.init()
+		err = req.init(ctx)
+		if err != nil {
+			return
+		}
+
 		defer req.finish()
 
 		err = req.Process(ctx)
@@ -51,27 +58,39 @@ func Handle(ctx context.Context) error {
 		})
 	}
 
-	return err
-}
-
-func (req *CronRequest) init() {
-	once.Do(func() {
-		dynamoClient := initDynamoClient()
-		req.Repo = expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient)
-		req.PeriodRepo = period.NewDynamoRepository(dynamoClient)
-		req.ExpensesRepo = expenses.NewDynamoRepository(dynamoClient)
-		req.Log = logger.NewLogger()
-	})
-	req.startingTime = time.Now()
-}
-
-func initDynamoClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if err != nil {
-		panic(err)
+		req.Log.Error("request_error", err, nil)
+
+		return err
 	}
 
-	return dynamodb.NewFromConfig(cfg)
+	return nil
+}
+
+func (req *CronRequest) init(ctx context.Context) error {
+	var err error
+	once.Do(func() {
+		req.Log = logger.NewLogger()
+
+		dynamoClient := dynamo.InitClient(ctx)
+		req.Repo, err = expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
+
+		req.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
+
+		req.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
+	})
+	req.startingTime = time.Now()
+
+	return err
 }
 
 func (req *CronRequest) finish() {

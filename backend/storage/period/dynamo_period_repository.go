@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -17,10 +18,8 @@ import (
 )
 
 const (
-	periodTableName           = "period"
-	uniquePeriodNameTableName = "unique-period-name"
-	defaultPageSize           = 10
-	conditionalFailedKeyword  = "ConditionalCheckFailed"
+	defaultPageSize          = 10
+	conditionalFailedKeyword = "ConditionalCheckFailed"
 )
 
 var (
@@ -28,11 +27,45 @@ var (
 )
 
 type DynamoRepository struct {
-	dynamoClient *dynamodb.Client
+	dynamoClient              *dynamodb.Client
+	periodTableName           string
+	uniquePeriodNameTableName string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, periodTableName, uniquePeriodTableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+
+	periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+
+	err := validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, uniquePeriodTableNameEnv)
+	if err != nil {
+		return nil, fmt.Errorf("initialize period dynamo repository failed: %v", err)
+	}
+
+	d.periodTableName = periodTableName
+	if d.periodTableName == "" {
+		d.periodTableName = periodTableNameEnv
+	}
+
+	d.uniquePeriodNameTableName = uniquePeriodTableName
+	if d.uniquePeriodNameTableName == "" {
+		d.uniquePeriodNameTableName = uniquePeriodTableNameEnv
+	}
+
+	return d, nil
+}
+
+func validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, uniquePeriodTableNameEnv string) error {
+	if periodTableName == "" && periodTableNameEnv == "" {
+		return fmt.Errorf("period table name is required")
+	}
+
+	if uniquePeriodTableName == "" && uniquePeriodTableNameEnv == "" {
+		return fmt.Errorf("unique period table name is required")
+	}
+
+	return nil
 }
 
 func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error) {
@@ -65,13 +98,13 @@ func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Peri
 			{
 				Put: &types.Put{
 					Item:      attrValue,
-					TableName: aws.String(periodTableName),
+					TableName: aws.String(d.periodTableName),
 				},
 			},
 			{
 				Put: &types.Put{
 					Item:                     uPeriodNameAttrValue,
-					TableName:                aws.String(uniquePeriodNameTableName),
+					TableName:                aws.String(d.uniquePeriodNameTableName),
 					ConditionExpression:      expr.Condition(),
 					ExpressionAttributeNames: expr.Names(),
 				},
@@ -132,7 +165,7 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 	transactItems := []types.TransactWriteItem{
 		{
 			Put: &types.Put{
-				TableName:                aws.String(periodTableName),
+				TableName:                aws.String(d.periodTableName),
 				ConditionExpression:      periodTableExpr.Condition(),
 				ExpressionAttributeNames: periodTableExpr.Names(),
 				Item:                     periodAv,
@@ -140,7 +173,7 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 		},
 		{
 			Put: &types.Put{
-				TableName:                aws.String(uniquePeriodNameTableName),
+				TableName:                aws.String(d.uniquePeriodNameTableName),
 				ConditionExpression:      uniquePeriodNameTableExpr.Condition(),
 				ExpressionAttributeNames: uniquePeriodNameTableExpr.Names(),
 				Item:                     uPeriodNameAv,
@@ -238,7 +271,7 @@ func getConditionExpression(item types.TransactWriteItem) string {
 
 func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period string) (*models.Period, error) {
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(periodTableName),
+		TableName: aws.String(d.periodTableName),
 		Key: map[string]types.AttributeValue{
 			"username": &types.AttributeValueMemberS{Value: username},
 			"period":   &types.AttributeValueMemberS{Value: period},
@@ -284,7 +317,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(periodTableName),
+		TableName:                 aws.String(d.periodTableName),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
@@ -327,7 +360,7 @@ func (d *DynamoRepository) GetLastPeriod(ctx context.Context, username string) (
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(periodTableName),
+		TableName:                 aws.String(d.periodTableName),
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
@@ -371,7 +404,7 @@ func (d *DynamoRepository) DeletePeriod(ctx context.Context, periodID, username 
 		TransactItems: []types.TransactWriteItem{
 			{
 				Delete: &types.Delete{
-					TableName: aws.String(periodTableName),
+					TableName: aws.String(d.periodTableName),
 					Key: map[string]types.AttributeValue{
 						"username": &types.AttributeValueMemberS{Value: username},
 						"period":   &types.AttributeValueMemberS{Value: periodID},
@@ -380,7 +413,7 @@ func (d *DynamoRepository) DeletePeriod(ctx context.Context, periodID, username 
 			},
 			{
 				Delete: &types.Delete{
-					TableName: aws.String(uniquePeriodNameTableName),
+					TableName: aws.String(d.uniquePeriodNameTableName),
 					Key: map[string]types.AttributeValue{
 						"name":     &types.AttributeValueMemberS{Value: *period.Name},
 						"username": &types.AttributeValueMemberS{Value: username},
@@ -403,8 +436,8 @@ func (d *DynamoRepository) BatchDeletePeriods(ctx context.Context, periods []*mo
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			periodTableName:           periodWriteRequests,
-			uniquePeriodNameTableName: uniquePeriodWriteRequests,
+			d.periodTableName:           periodWriteRequests,
+			d.uniquePeriodNameTableName: uniquePeriodWriteRequests,
 		},
 	}
 

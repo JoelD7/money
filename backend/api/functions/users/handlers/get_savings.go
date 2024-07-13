@@ -35,16 +35,25 @@ type savingsResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *getSavingsRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *getSavingsRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	gssOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
-		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		if err != nil {
+			return
+		}
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, savingGoalTableName)
+		if err != nil {
+			return
+		}
 		request.log = log
 		request.log.SetHandler("get-savings")
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *getSavingsRequest) finish() {
@@ -56,10 +65,15 @@ func GetSavingsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.R
 		gssRequest = new(getSavingsRequest)
 	}
 
-	gssRequest.init(ctx, log)
+	err := gssRequest.init(ctx, log)
+	if err != nil {
+		log.Error("get_savings_request_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer gssRequest.finish()
 
-	err := gssRequest.prepareRequest(req)
+	err = gssRequest.prepareRequest(req)
 	if err != nil {
 		return req.NewErrorResponse(err), nil
 	}

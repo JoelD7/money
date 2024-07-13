@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -18,8 +19,11 @@ import (
 
 var (
 	errMissingSavingID = apigateway.NewError("missing saving ID", http.StatusBadRequest)
-	gsRequest          *getSavingRequest
-	gsOnce             sync.Once
+
+	savingGoalTableName = env.GetString("SAVING_GOALS_TABLE_NAME", "")
+
+	gsRequest *getSavingRequest
+	gsOnce    sync.Once
 )
 
 type getSavingRequest struct {
@@ -30,16 +34,25 @@ type getSavingRequest struct {
 	savingGoalRepo savingoal.Repository
 }
 
-func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	gsOnce.Do(func() {
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo = savings.NewDynamoRepository(dynamoClient)
-		request.savingGoalRepo = savingoal.NewDynamoRepository(dynamoClient)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		if err != nil {
+			return
+		}
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, savingGoalTableName)
+		if err != nil {
+			return
+		}
 		request.log = log
 		request.log.SetHandler("get-saving")
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *getSavingRequest) finish() {
@@ -51,7 +64,13 @@ func GetSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Re
 		gsRequest = new(getSavingRequest)
 	}
 
-	gsRequest.init(ctx, log)
+	err := gsRequest.init(ctx, log)
+	if err != nil {
+		log.Error("get_saving_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+
+	}
 	defer gsRequest.finish()
 
 	return gsRequest.process(ctx, req)

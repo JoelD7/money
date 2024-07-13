@@ -17,7 +17,7 @@ func TestJoel(t *testing.T) {
 	c := require.New(t)
 
 	ctx := context.Background()
-	dynamoClient := dynamo.InitDynamoClient(ctx)
+	dynamoClient := dynamo.InitClient(ctx)
 
 	logMock := logger.NewLoggerMock(nil)
 	periodMock := period.NewDynamoRepository(dynamoClient)
