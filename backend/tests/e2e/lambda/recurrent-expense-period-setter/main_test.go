@@ -1,10 +1,10 @@
-package expenses
+package recurrent_expense_period_setter
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/JoelD7/money/backend/api/functions/expenses/handlers"
+	"github.com/JoelD7/money/backend/lambda/recurrent-expense-period-setter/handler"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -25,7 +25,7 @@ func TestProcess(t *testing.T) {
 	dynamoClient := utils.InitDynamoClient()
 	ctx := context.Background()
 
-	req := &handlers.PatchRecurrentExpenseRequest{
+	req := &handler.Request{
 		ExpensesRepo: expensesRepo.NewDynamoRepository(dynamoClient),
 		PeriodRepo:   periodRepo.NewDynamoRepository(dynamoClient),
 		Log:          logger.NewConsoleLogger("patch_recurrent_expense_e2e_test"),

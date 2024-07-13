@@ -21,7 +21,6 @@ const (
 	defaultPageSize          = 10
 	nameAttributeName        = "#n"
 	conditionalFailedKeyword = "ConditionalCheckFailed"
-	dynamoDBMaxBatchWrite    = 25
 )
 
 var (
@@ -128,6 +127,9 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
 		entities = append(entities, entity)
 	}
+
+	t := tableName
+	fmt.Println("table name", "{", t, "}")
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
