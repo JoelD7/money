@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -18,8 +19,13 @@ import (
 	"time"
 )
 
-var ceRequest *createExpenseRequest
-var ceOnce sync.Once
+var (
+	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+
+	ceRequest *createExpenseRequest
+	ceOnce    sync.Once
+)
 
 type createExpenseRequest struct {
 	log          logger.LogAPI
@@ -30,15 +36,22 @@ type createExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	ceOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
+
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.log = log
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *createExpenseRequest) finish() {
@@ -50,7 +63,13 @@ func CreateExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		ceRequest = new(createExpenseRequest)
 	}
 
-	ceRequest.init(ctx, log)
+	err := ceRequest.init(ctx, log)
+	if err != nil {
+		log.Error("create_expense_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
+
 	defer ceRequest.finish()
 
 	return ceRequest.process(ctx, req)

@@ -17,8 +17,10 @@ import (
 )
 
 var (
-	awsRegion = env.GetString("AWS_REGION", "")
-	once      sync.Once
+	once sync.Once
+
+	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 )
 
 type CronRequest struct {
@@ -36,7 +38,11 @@ func Handle(ctx context.Context) error {
 	var err error
 
 	stackTrace, ctxError := shared.ExecuteLambda(ctx, func(ctx context.Context) {
-		req.init(ctx)
+		err = req.init(ctx)
+		if err != nil {
+			return
+		}
+
 		defer req.finish()
 
 		err = req.Process(ctx)
@@ -50,18 +56,31 @@ func Handle(ctx context.Context) error {
 		})
 	}
 
-	return err
+	if err != nil {
+		req.Log.Error("request_error", err, nil)
+
+		return err
+	}
+
+	return nil
 }
 
-func (req *CronRequest) init(ctx context.Context) {
+func (req *CronRequest) init(ctx context.Context) error {
+	var err error
 	once.Do(func() {
+		req.Log = logger.NewLogger()
+
 		dynamoClient := dynamo.InitClient(ctx)
 		req.Repo = expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient)
 		req.PeriodRepo = period.NewDynamoRepository(dynamoClient)
-		req.ExpensesRepo = expenses.NewDynamoRepository(dynamoClient)
-		req.Log = logger.NewLogger()
+		req.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
 	})
 	req.startingTime = time.Now()
+
+	return err
 }
 
 func (req *CronRequest) finish() {

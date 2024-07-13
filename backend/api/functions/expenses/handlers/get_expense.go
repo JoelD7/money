@@ -29,15 +29,21 @@ type getExpenseRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	getExpenseOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *getExpenseRequest) finish() {
@@ -49,7 +55,13 @@ func GetExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request)
 		geExpenseRequest = new(getExpenseRequest)
 	}
 
-	geExpenseRequest.init(ctx, log)
+	err := geExpenseRequest.init(ctx, log)
+	if err != nil {
+		log.Error("get_expense_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
+
 	defer geExpenseRequest.finish()
 
 	return geExpenseRequest.process(ctx, req)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	repository "github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/tests/e2e/utils"
@@ -14,10 +15,15 @@ import (
 )
 
 func TestGetAllExpensesBetweenDates(t *testing.T) {
+	var (
+		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+		expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	)
+
 	c := require.New(t)
 
 	dynamoClient := utils.InitDynamoClient()
-	expensesRepo := repository.NewDynamoRepository(dynamoClient)
+	expensesRepo, err := repository.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
 
 	expensesToCreate, err := loadExpenses()
 	c.Nil(err, "failed to load expenses")

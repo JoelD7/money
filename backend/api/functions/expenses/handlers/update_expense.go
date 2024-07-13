@@ -30,16 +30,22 @@ type updateExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *updateExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *updateExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	ueOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
 		request.periodRepo = period.NewDynamoRepository(dynamoClient)
 		request.userRepo = users.NewDynamoRepository(dynamoClient)
 		request.log = log
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *updateExpenseRequest) finish() {
@@ -51,7 +57,12 @@ func UpdateExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		ueRequest = new(updateExpenseRequest)
 	}
 
-	ueRequest.init(ctx, log)
+	err := ueRequest.init(ctx, log)
+	if err != nil {
+		log.Error("update_expense_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer ueRequest.finish()
 
 	return ueRequest.process(ctx, req)

@@ -16,10 +16,13 @@ import (
 	"time"
 )
 
-var awsRegion = env.GetString("AWS_REGION", "")
+var (
+	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 
-var preRequest *Request
-var preOnce sync.Once
+	preRequest *Request
+	preOnce    sync.Once
+)
 
 type Request struct {
 	Log          logger.LogAPI
@@ -29,14 +32,21 @@ type Request struct {
 	PeriodRepo   period.Repository
 }
 
-func (request *Request) init(ctx context.Context) {
+func (request *Request) init(ctx context.Context) error {
+	var err error
+
 	preOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.ExpensesRepo = expenses.NewDynamoRepository(dynamoClient)
+		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		if err != nil {
+			return
+		}
 		request.PeriodRepo = period.NewDynamoRepository(dynamoClient)
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *Request) finish() {

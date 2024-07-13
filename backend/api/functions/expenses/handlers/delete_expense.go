@@ -24,14 +24,19 @@ type deleteExpenseRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
+
 	deOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo = expenses.NewDynamoRepository(dynamoClient)
 		request.log = log
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
 	})
+
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *deleteExpenseRequest) finish() {
@@ -43,7 +48,11 @@ func DeleteExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Reque
 		deRequest = new(deleteExpenseRequest)
 	}
 
-	deRequest.init(ctx, log)
+	err := deRequest.init(ctx, log)
+	if err != nil {
+		log.Error("delete_expense_init_failed", err, []models.LoggerObject{req})
+		return req.NewErrorResponse(err), nil
+	}
 	defer deRequest.finish()
 
 	return deRequest.process(ctx, req)
