@@ -206,3 +206,20 @@ func (d *DynamoRepository) BatchDeleteExpenseRecurring(ctx context.Context, log 
 
 	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
+
+func (d *DynamoRepository) DeleteExpenseRecurring(ctx context.Context, expenseRecurringID, username string) error {
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]types.AttributeValue{
+			"id":       &types.AttributeValueMemberS{Value: expenseRecurringID},
+			"username": &types.AttributeValueMemberS{Value: username},
+		},
+	}
+
+	_, err := d.dynamoClient.DeleteItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("delete expense recurring item failed: %v", err)
+	}
+
+	return nil
+}

@@ -14,4 +14,5 @@ type Repository interface {
 	GetExpenseRecurring(ctx context.Context, expenseRecurringID, username string) (*models.ExpenseRecurring, error)
 
 	BatchDeleteExpenseRecurring(ctx context.Context, log logger.LogAPI, expenseRecurring []*models.ExpenseRecurring) error
+	DeleteExpenseRecurring(ctx context.Context, expenseRecurringID, username string) error
 }

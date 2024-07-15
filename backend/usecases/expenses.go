@@ -25,6 +25,10 @@ type ExpenseManager interface {
 	DeleteExpense(ctx context.Context, expenseID, username string) error
 }
 
+type ExpenseRecurringManager interface {
+	DeleteExpenseRecurring(ctx context.Context, expenseRecurringID, username string) error
+}
+
 func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 		err := validateExpensePeriod(ctx, expense, username, pm)
@@ -288,4 +292,10 @@ func validateExpensePeriod(ctx context.Context, expense *models.Expense, usernam
 	}
 
 	return models.ErrInvalidPeriod
+}
+
+func NewExpenseRecurringEliminator(em ExpenseRecurringManager) func(ctx context.Context, expenseRecurringID, username string) error {
+	return func(ctx context.Context, expenseRecurringID, username string) error {
+		return em.DeleteExpenseRecurring(ctx, expenseRecurringID, username)
+	}
 }

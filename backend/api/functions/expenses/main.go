@@ -16,6 +16,10 @@ func main() {
 			r.Delete("/{expenseID}", handlers.DeleteExpense)
 			r.Get("/", handlers.GetExpenses)
 			r.Post("/", handlers.CreateExpense)
+
+			r.Route("/recurring", func(r *router.Router) {
+				r.Delete("/{expenseRecurringID}", handlers.DeleteExpenseRecurring)
+			})
 		})
 	})
 
