@@ -13,16 +13,25 @@ import (
 	"time"
 )
 
-var (
-	TableName = env.GetString("USERS_TABLE_NAME", "users")
-)
-
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
+	tableName    string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+	tableNameEnv := env.GetString("USERS_TABLE_NAME", "")
+
+	if tableNameEnv == "" && tableName == "" {
+		return nil, fmt.Errorf("initialize income recurring dynamo repository failed: table name is required")
+	}
+
+	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
+	return d, nil
 }
 
 func (d *DynamoRepository) CreateUser(ctx context.Context, u *models.User) error {
@@ -36,7 +45,7 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, u *models.User) error
 	input := &dynamodb.PutItemInput{
 		Item:                item,
 		ConditionExpression: aws.String("attribute_not_exists(username)"),
-		TableName:           aws.String(TableName),
+		TableName:           aws.String(d.tableName),
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
@@ -62,7 +71,7 @@ func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*model
 	}
 
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(TableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"username": userKey,
 		},
@@ -98,7 +107,7 @@ func (d *DynamoRepository) UpdateUser(ctx context.Context, u *models.User) error
 
 	input := &dynamodb.PutItemInput{
 		Item:      updatedItem,
-		TableName: aws.String(TableName),
+		TableName: aws.String(d.tableName),
 	}
 
 	_, err = d.dynamoClient.PutItem(ctx, input)

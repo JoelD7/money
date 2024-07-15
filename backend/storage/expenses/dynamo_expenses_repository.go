@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/storage/shared"
+	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -17,12 +18,12 @@ import (
 )
 
 const (
-	defaultPageSize   = 10
-	nameAttributeName = "#n"
+	defaultPageSize          = 10
+	nameAttributeName        = "#n"
+	conditionalFailedKeyword = "ConditionalCheckFailed"
 )
 
 var (
-	tableName                = env.GetString("EXPENSES_TABLE_NAME", "expenses")
 	periodUserExpenseIDIndex = "period_user-expense_id-index"
 )
 
@@ -38,29 +39,59 @@ type keysPeriodUserIndex struct {
 }
 
 type DynamoRepository struct {
-	dynamoClient *dynamodb.Client
+	dynamoClient               *dynamodb.Client
+	tableName                  string
+	expensesRecurringTableName string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, expensesRecurringTableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+	tableNameEnv := env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableNameEnv := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+
+	err := validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv)
+	if err != nil {
+		return nil, fmt.Errorf("initialize expenses dynamo repository failed: %v", err)
+	}
+
+	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
+	d.expensesRecurringTableName = expensesRecurringTableName
+	if d.expensesRecurringTableName == "" {
+		d.expensesRecurringTableName = expensesRecurringTableNameEnv
+	}
+
+	return d, nil
+}
+
+func validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv string) error {
+	if tableName == "" && tableNameEnv == "" {
+		return fmt.Errorf("table name is required")
+	}
+
+	if expensesRecurringTableName == "" && expensesRecurringTableNameEnv == "" {
+		return fmt.Errorf("expenses recurring table name is required")
+	}
+
+	return nil
 }
 
 func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error) {
 	entity := toExpenseEntity(expense)
 
-	entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
-
-	item, err := attributevalue.MarshalMap(entity)
+	input, err := d.buildTransactWriteItemsInput(entity, expense)
 	if err != nil {
-		return nil, fmt.Errorf("marshal expense failed: %v", err)
+		return nil, err
 	}
 
-	input := &dynamodb.PutItemInput{
-		TableName: aws.String(tableName),
-		Item:      item,
+	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
+	if err != nil && strings.Contains(err.Error(), conditionalFailedKeyword) {
+		return nil, fmt.Errorf("%v: %w", err, models.ErrRecurringExpenseNameTaken)
 	}
 
-	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("put expense failed: %v", err)
 	}
@@ -68,11 +99,100 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 	return toExpenseModel(*entity), nil
 }
 
+func (d *DynamoRepository) buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
+	expenseEnt.PeriodUser = dynamo.BuildPeriodUser(expenseEnt.Username, expenseEnt.Period)
+
+	item, err := attributevalue.MarshalMap(expenseEnt)
+	if err != nil {
+		return nil, fmt.Errorf("marshal expense failed: %v", err)
+	}
+
+	transactItems := []types.TransactWriteItem{
+		{
+			Put: &types.Put{
+				Item:      item,
+				TableName: aws.String(d.tableName),
+			},
+		},
+	}
+
+	if !expense.IsRecurring {
+		return &dynamodb.TransactWriteItemsInput{
+			TransactItems: transactItems,
+		}, nil
+	}
+
+	expenseRecurringEnt := toExpenseRecurringEntity(expense)
+
+	itemRecurring, err := attributevalue.MarshalMap(expenseRecurringEnt)
+	if err != nil {
+		return nil, fmt.Errorf("marshal expense recurring failed: %v", err)
+	}
+
+	condExpr := expression.Name("id").AttributeNotExists().And(expression.Name("username").AttributeNotExists())
+
+	expr, err := expression.NewBuilder().WithCondition(condExpr).Build()
+	if err != nil {
+		return nil, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	transactItems = append(transactItems, types.TransactWriteItem{
+		Put: &types.Put{
+			Item:                     itemRecurring,
+			TableName:                aws.String(d.expensesRecurringTableName),
+			ConditionExpression:      expr.Condition(),
+			ExpressionAttributeNames: expr.Names(),
+		},
+	})
+
+	return &dynamodb.TransactWriteItemsInput{
+		TransactItems: transactItems,
+	}, nil
+}
+
+func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+	entities := make([]*expenseEntity, 0, len(expenses))
+
+	for _, expense := range expenses {
+		entity := toExpenseEntity(expense)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
+		entities = append(entities, entity)
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			d.tableName: getBatchWriteRequests(entities, log),
+		},
+	}
+
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
+}
+
+func getBatchWriteRequests(entities []*expenseEntity, log logger.LogAPI) []types.WriteRequest {
+	writeRequests := make([]types.WriteRequest, 0, len(entities))
+
+	for _, entity := range entities {
+		item, err := attributevalue.MarshalMap(entity)
+		if err != nil {
+			log.Warning("marshal_expense_failed", err, []models.LoggerObject{entity})
+			continue
+		}
+
+		writeRequests = append(writeRequests, types.WriteRequest{
+			PutRequest: &types.PutRequest{
+				Item: item,
+			},
+		})
+	}
+
+	return writeRequests
+}
+
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
 	entity := toExpenseEntity(expense)
 
-	if entity.Period != nil {
-		entity.PeriodUser = shared.BuildPeriodUser(entity.Username, *entity.Period)
+	if entity.Period != "" {
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
 	}
 
 	username, err := attributevalue.Marshal(entity.Username)
@@ -97,7 +217,7 @@ func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Ex
 			"username":   username,
 			"expense_id": expenseID,
 		},
-		TableName:                 aws.String(tableName),
+		TableName:                 aws.String(d.tableName),
 		ConditionExpression:       aws.String("attribute_exists(expense_id)"),
 		ExpressionAttributeValues: attributeValues,
 		UpdateExpression:          updateExpression,
@@ -173,7 +293,7 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 		attrValues[":notes"] = notes
 	}
 
-	if expense.Period != nil {
+	if expense.Period != "" {
 		attrValues[":period"] = period
 		attrValues[":period_user"] = periodUser
 	}
@@ -201,9 +321,27 @@ func getUpdateExpression(attributeValues map[string]types.AttributeValue) *strin
 	return aws.String("SET " + strings.Join(attributes, ", "))
 }
 
+func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+	entities := make([]*expenseEntity, 0, len(expenses))
+
+	for _, expense := range expenses {
+		entity := toExpenseEntity(expense)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
+		entities = append(entities, entity)
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			d.tableName: getBatchWriteRequests(entities, log),
+		},
+	}
+
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
+}
+
 func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"username":   &types.AttributeValueMemberS{Value: username},
 			"expense_id": &types.AttributeValueMemberS{Value: expenseID},
@@ -230,7 +368,7 @@ func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID s
 }
 
 func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, "", startKey, nil, pageSize)
+	input, err := d.buildQueryInput(username, "", startKey, nil, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -239,7 +377,7 @@ func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey s
 }
 
 func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, periodID, startKey, categories, pageSize)
+	input, err := d.buildQueryInput(username, periodID, startKey, categories, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -248,7 +386,7 @@ func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context,
 }
 
 func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, periodID, startKey, nil, pageSize)
+	input, err := d.buildQueryInput(username, periodID, startKey, nil, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -257,7 +395,7 @@ func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, pe
 }
 
 func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := buildQueryInput(username, "", startKey, categories, pageSize)
+	input, err := d.buildQueryInput(username, "", startKey, categories, pageSize)
 	if err != nil {
 		return nil, "", err
 	}
@@ -265,9 +403,62 @@ func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, 
 	return d.performQuery(ctx, input, startKey)
 }
 
+func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error) {
+	userFilter := expression.Name("username").Equal(expression.Value(username))
+	dateFilter := expression.Name("created_date").Between(expression.Value(startDate), expression.Value(endDate))
+	filter := expression.And(userFilter, dateFilter)
+
+	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.ScanInput{
+		TableName:                 aws.String(d.tableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          expr.Filter(),
+		ExclusiveStartKey:         nil,
+	}
+
+	var result *dynamodb.ScanOutput
+	entities := make([]expenseEntity, 0)
+	var itemsInQuery []expenseEntity
+
+	for {
+		itemsInQuery = make([]expenseEntity, 0)
+		result, err = d.dynamoClient.Scan(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+
+		if (result.Items == nil || len(result.Items) == 0) && result.LastEvaluatedKey == nil {
+			break
+		}
+
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &itemsInQuery)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal expenses items failed: %v", err)
+		}
+
+		entities = append(entities, itemsInQuery...)
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+
+		if result.LastEvaluatedKey == nil {
+			break
+		}
+	}
+
+	if len(entities) == 0 {
+		return nil, models.ErrExpensesNotFound
+	}
+
+	return toExpenseModels(entities), nil
+}
+
 func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, username string) error {
 	input := &dynamodb.DeleteItemInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"username":   &types.AttributeValueMemberS{Value: username},
 			"expense_id": &types.AttributeValueMemberS{Value: expenseID},
@@ -282,11 +473,48 @@ func (d *DynamoRepository) DeleteExpense(ctx context.Context, expenseID, usernam
 	return nil
 }
 
-func buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
+func (d *DynamoRepository) BatchDeleteExpenses(ctx context.Context, expenses []*models.Expense) error {
+	writeRequests := make([]types.WriteRequest, 0, len(expenses))
+
+	var usernameAttrValue types.AttributeValue
+	var expenseIDAttrValue types.AttributeValue
+	var err error
+
+	for _, expense := range expenses {
+		usernameAttrValue, err = attributevalue.Marshal(expense.Username)
+		if err != nil {
+			return fmt.Errorf("marshal id key failed: %v", err)
+		}
+
+		expenseIDAttrValue, err = attributevalue.Marshal(expense.ExpenseID)
+		if err != nil {
+			return fmt.Errorf("marshal username key failed: %v", err)
+		}
+
+		writeRequests = append(writeRequests, types.WriteRequest{
+			DeleteRequest: &types.DeleteRequest{
+				Key: map[string]types.AttributeValue{
+					"username":   usernameAttrValue,
+					"expense_id": expenseIDAttrValue,
+				},
+			},
+		})
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			d.tableName: writeRequests,
+		},
+	}
+
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
+}
+
+func (d *DynamoRepository) buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
 	var err error
 
 	input := &dynamodb.QueryInput{
-		TableName: aws.String(tableName),
+		TableName: aws.String(d.tableName),
 		Limit:     getPageSize(pageSize),
 	}
 
@@ -296,7 +524,7 @@ func buildQueryInput(username, periodID, startKey string, categories []string, p
 	if periodID != "" {
 		input.IndexName = aws.String(periodUserExpenseIDIndex)
 
-		periodUser := shared.BuildPeriodUser(username, periodID)
+		periodUser := dynamo.BuildPeriodUser(username, periodID)
 		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
 	}
 
@@ -330,7 +558,7 @@ func setExclusiveStartKey(startKey string, input *dynamodb.QueryInput) error {
 		return nil
 	}
 
-	decodedStartKey, err := shared.DecodePaginationKey(startKey, getPaginationKeyType(input))
+	decodedStartKey, err := dynamo.DecodePaginationKey(startKey, getPaginationKeyType(input))
 	if err != nil {
 		return fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 	}
@@ -405,7 +633,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}
@@ -448,7 +676,7 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 		}
 	}
 
-	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}
@@ -475,7 +703,7 @@ func getPaginatedExpenses(resultSet, itemsInQuery []expenseEntity, input *dynamo
 		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
 	}
 
-	nextKey, err := shared.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, getPaginationKeyType(input))
 	if err != nil {
 		return nil, "", err
 	}

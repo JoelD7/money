@@ -3,6 +3,7 @@ package expenses
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"time"
 )
 
@@ -40,6 +41,11 @@ func (d *DynamoMock) CreateExpense(ctx context.Context, expense *models.Expense)
 	}
 
 	return expense, nil
+}
+
+func (d *DynamoMock) BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+	//TODO implement me
+	return nil
 }
 
 func (d *DynamoMock) UpdateExpense(ctx context.Context, expense *models.Expense) error {
@@ -118,6 +124,21 @@ func (d *DynamoMock) DeleteExpense(ctx context.Context, expenseID, username stri
 	return nil
 }
 
+func (d *DynamoMock) GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error) {
+	//TODO implement me
+	return nil, nil
+}
+
+func (d *DynamoMock) BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+	//TODO implement me
+	return nil
+}
+
+func (d *DynamoMock) BatchDeleteExpenses(ctx context.Context, expenses []*models.Expense) error {
+	//TODO implement me
+	return nil
+}
+
 func GetDummyExpenses() []*models.Expense {
 	return []*models.Expense{
 		{
@@ -128,7 +149,7 @@ func GetDummyExpenses() []*models.Expense {
 			Name:        getStringPtr("Jordan shopping"),
 			Notes:       "",
 			CreatedDate: time.Date(2023, 5, 12, 20, 15, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			Period:      "2023-5",
 			UpdateDate:  time.Time{},
 		},
 		{
@@ -139,7 +160,7 @@ func GetDummyExpenses() []*models.Expense {
 			Name:        getStringPtr("Uber drive"),
 			Notes:       "",
 			CreatedDate: time.Date(2023, 5, 15, 12, 15, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			Period:      "2023-5",
 			UpdateDate:  time.Time{},
 		},
 		{
@@ -150,7 +171,7 @@ func GetDummyExpenses() []*models.Expense {
 			Name:        getStringPtr("Lunch"),
 			Notes:       "",
 			CreatedDate: time.Date(2023, 5, 12, 11, 15, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			Period:      "2023-5",
 			UpdateDate:  time.Time{},
 		},
 	}

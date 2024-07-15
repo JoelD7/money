@@ -16,8 +16,9 @@ type periodEntity struct {
 }
 
 type uniquePeriodNameEntity struct {
-	Name     string `json:"name,omitempty" dynamodbav:"name"`
-	Username string `json:"username,omitempty" dynamodbav:"username"`
+	Name        string    `json:"name,omitempty" dynamodbav:"name"`
+	Username    string    `json:"username,omitempty" dynamodbav:"username"`
+	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
 }
 
 func toPeriodModel(p periodEntity) *models.Period {

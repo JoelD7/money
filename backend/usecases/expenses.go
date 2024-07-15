@@ -4,18 +4,29 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"time"
 )
 
 type ExpenseManager interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
-	UpdateExpense(ctx context.Context, expense *models.Expense) error
+	BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
+
 	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
+	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
+
+	UpdateExpense(ctx context.Context, expense *models.Expense) error
+	BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
+
 	DeleteExpense(ctx context.Context, expenseID, username string) error
+}
+
+type ExpenseRecurringManager interface {
+	DeleteExpenseRecurring(ctx context.Context, expenseRecurringID, username string) error
 }
 
 func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
@@ -35,6 +46,17 @@ func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Con
 		}
 
 		return newExpense, nil
+	}
+}
+
+func NewBatchExpensesCreator(em ExpenseManager, log logger.LogAPI) func(ctx context.Context, expenses []*models.Expense) error {
+	return func(ctx context.Context, expenses []*models.Expense) error {
+		for _, expense := range expenses {
+			expense.ExpenseID = generateDynamoID("EX")
+			expense.CreatedDate = time.Now()
+		}
+
+		return em.BatchCreateExpenses(ctx, log, expenses)
 	}
 }
 
@@ -192,6 +214,36 @@ func NewExpensesDeleter(em ExpenseManager) func(ctx context.Context, expenseID, 
 	}
 }
 
+func NewExpensesPeriodSetter(em ExpenseManager, pm PeriodManager, log logger.LogAPI) func(ctx context.Context, username, periodID string) error {
+	return func(ctx context.Context, username, periodID string) error {
+		period, err := pm.GetPeriod(ctx, username, periodID)
+		if err != nil {
+			return err
+		}
+
+		startDate := period.StartDate.Format(time.DateOnly)
+		endDate := period.EndDate.Format(time.DateOnly)
+
+		expenses, err := em.GetAllExpensesBetweenDates(ctx, username, startDate, endDate)
+		if err != nil {
+			return err
+		}
+
+		for _, expense := range expenses {
+			if expense.Period == "" {
+				expense.Period = period.ID
+			}
+		}
+
+		err = em.BatchUpdateExpenses(ctx, log, expenses)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+}
+
 func setExpensesCategoryNames(user *models.User, expenses []*models.Expense) error {
 	categoryNamesByID := make(map[string]string)
 
@@ -211,7 +263,7 @@ func setExpensesCategoryNames(user *models.User, expenses []*models.Expense) err
 }
 
 func validateExpensePeriod(ctx context.Context, expense *models.Expense, username string, p PeriodManager) error {
-	if expense.Period == nil {
+	if expense.Period == "" {
 		return nil
 	}
 
@@ -234,10 +286,16 @@ func validateExpensePeriod(ctx context.Context, expense *models.Expense, usernam
 	}
 
 	for _, period := range periods {
-		if period.ID == *expense.Period {
+		if period.ID == expense.Period {
 			return nil
 		}
 	}
 
 	return models.ErrInvalidPeriod
+}
+
+func NewExpenseRecurringEliminator(em ExpenseRecurringManager) func(ctx context.Context, expenseRecurringID, username string) error {
+	return func(ctx context.Context, expenseRecurringID, username string) error {
+		return em.DeleteExpenseRecurring(ctx, expenseRecurringID, username)
+	}
 }

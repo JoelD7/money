@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/storage/shared"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
@@ -20,21 +20,33 @@ const (
 )
 
 var (
-	TableName               = env.GetString("INCOME_TABLE_NAME", "income")
 	periodUserIncomeIDIndex = "period_user-income_id-index"
 )
 
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
+	tableName    string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client) *DynamoRepository {
-	return &DynamoRepository{dynamoClient: dynamoClient}
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
+	d := &DynamoRepository{dynamoClient: dynamoClient}
+
+	tableNameEnv := env.GetString("INCOME_TABLE_NAME", "")
+	if tableName == "" && tableNameEnv == "" {
+		return nil, fmt.Errorf("initialize income recurring dynamo repository failed: table name is required")
+	}
+
+	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
+	return d, nil
 }
 
 func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
 	incomeEnt := toIncomeEntity(income)
-	incomeEnt.PeriodUser = shared.BuildPeriodUser(income.Username, *income.Period)
+	incomeEnt.PeriodUser = dynamo.BuildPeriodUser(income.Username, *income.Period)
 
 	incomeAv, err := attributevalue.MarshalMap(incomeEnt)
 	if err != nil {
@@ -49,7 +61,7 @@ func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Inco
 	}
 
 	input := &dynamodb.PutItemInput{
-		TableName:                aws.String(TableName),
+		TableName:                aws.String(d.tableName),
 		Item:                     incomeAv,
 		ConditionExpression:      expr.Condition(),
 		ExpressionAttributeNames: expr.Names(),
@@ -69,7 +81,7 @@ func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Inco
 
 func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error) {
 	input := &dynamodb.GetItemInput{
-		TableName: aws.String(TableName),
+		TableName: aws.String(d.tableName),
 		Key: map[string]types.AttributeValue{
 			"income_id": &types.AttributeValueMemberS{Value: incomeID},
 			"username":  &types.AttributeValueMemberS{Value: username},
@@ -100,13 +112,13 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keysPeriodUserIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysPeriodUserIndex{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
 
-	periodUser := shared.BuildPeriodUser(username, periodID)
+	periodUser := dynamo.BuildPeriodUser(username, periodID)
 
 	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
@@ -116,7 +128,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(TableName),
+		TableName:                 aws.String(d.tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
@@ -145,7 +157,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", err
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodUserIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodUserIndex{})
 	if err != nil {
 		return nil, "", err
 	}
@@ -158,7 +170,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = shared.DecodePaginationKey(startKey, &keys{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keys{})
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -172,7 +184,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 	}
 
 	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(TableName),
+		TableName:                 aws.String(d.tableName),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
@@ -200,7 +212,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 		return nil, "", err
 	}
 
-	nextKey, err := shared.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
 	if err != nil {
 		return nil, "", err
 	}

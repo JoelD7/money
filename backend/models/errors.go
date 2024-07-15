@@ -51,6 +51,12 @@ var (
 	ErrCategoryNameSettingFailed   = errors.New("couldn't set category name for expenses")
 	ErrMissingName                 = errors.New("missing name")
 	ErrMissingExpenseID            = errors.New("missing expense id")
+	ErrMissingRecurringDay         = errors.New("missing recurring day")
+	ErrInvalidRecurringDay         = errors.New("recurring day must be between 1 and 31")
+	ErrRecurringExpenseNameTaken   = errors.New("recurring expense name is taken")
+	ErrRecurringExpensesNotFound   = errors.New("recurring expenses not found")
+	ErrRecurringExpenseNotFound    = errors.New("recurring expense not found")
+	ErrMissingExpenseRecurringID   = errors.New("missing expense recurring id")
 
 	ErrPeriodNotFound                 = errors.New("period not found")
 	ErrPeriodsNotFound                = errors.New("periods not found")

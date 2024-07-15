@@ -2,8 +2,13 @@ package usecases
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/sqs"
+	"github.com/aws/aws-sdk-go/aws"
 	"time"
 )
 
@@ -39,8 +44,40 @@ func NewPeriodCreator(pm PeriodManager, log Logger) func(ctx context.Context, us
 			return nil, err
 		}
 
+		err = sendPeriodToSQS(ctx, newPeriod)
+		if err != nil {
+			log.Error("send_period_to_sqs_failed", err, []models.LoggerObject{newPeriod})
+		}
+
 		return newPeriod, nil
 	}
+}
+
+func sendPeriodToSQS(ctx context.Context, period *models.Period) error {
+	missingExpensePeriodQueueURL := env.GetString("MISSING_EXPENSE_PERIOD_QUEUE_URL", "")
+
+	sdkConfig, err := config.LoadDefaultConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("couldn't initialize SQS client: %w", err)
+	}
+
+	sqsClient := sqs.NewFromConfig(sdkConfig)
+
+	msgBody, err := json.Marshal(&models.MissingExpensePeriodMessage{Period: period.ID, Username: period.Username})
+	if err != nil {
+		return fmt.Errorf("couldn't marshal message body: %w", err)
+	}
+
+	_, err = sqsClient.SendMessage(ctx, &sqs.SendMessageInput{
+		MessageBody: aws.String(string(msgBody)),
+		QueueUrl:    aws.String(missingExpensePeriodQueueURL),
+	})
+
+	if err != nil {
+		return fmt.Errorf("couldn't send message to SQS: %w", err)
+	}
+
+	return nil
 }
 
 func NewPeriodUpdater(pm PeriodManager) func(ctx context.Context, username, periodID string, period *models.Period) (*models.Period, error) {

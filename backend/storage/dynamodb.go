@@ -17,7 +17,7 @@ var (
 	dynamoClient  *dynamodb.Client
 	DefaultClient DynamoAPI
 
-	awsRegion = env.GetString("REGION", "us-east-1")
+	awsRegion = env.GetString("AWS_REGION", "")
 )
 
 func init() {

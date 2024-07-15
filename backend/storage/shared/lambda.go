@@ -16,7 +16,7 @@ import (
 var (
 	// LAMBDA_TIMEOUT is the environment variable that indicates the timeout for the lambda function in seconds.
 	// https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html#configuration-timeout-console
-	lambdaTimeout = env.GetString("LAMBDA_TIMEOUT", "10")
+	lambdaTimeout = env.GetString("LAMBDA_TIMEOUT", "")
 
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)

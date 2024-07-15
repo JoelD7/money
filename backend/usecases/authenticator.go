@@ -32,7 +32,7 @@ const (
 var (
 	accessTokenAudience  = env.GetString("TOKEN_AUDIENCE", "")
 	accessTokenIssuer    = env.GetString("TOKEN_ISSUER", "")
-	accessTokenScope     = env.GetString("TOKEN_SCOPE", "read write")
+	accessTokenScope     = env.GetString("TOKEN_SCOPE", "")
 	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "")
 	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "")
 	kidSecretName        = env.GetString("KID_SECRET", "")
@@ -144,7 +144,11 @@ func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx contex
 	return func(ctx context.Context, username, password string) (*models.User, error) {
 		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
-			logger.Error("user_fetching_failed", err, nil)
+			logger.Error("user_fetching_failed", err, []models.LoggerObject{
+				logger.MapToLoggerObject("auth_request", map[string]interface{}{
+					"s_username": username,
+				}),
+			})
 
 			return nil, err
 		}

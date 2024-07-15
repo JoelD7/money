@@ -4,14 +4,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"net/http"
 	"strings"
 )
@@ -26,7 +25,6 @@ var (
 	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "")
 	publicSecretName  = env.GetString("TOKEN_PUBLIC_SECRET", "")
 	kidSecretName     = env.GetString("KID_SECRET", "")
-	awsRegion         = env.GetString("REGION", "us-east-1")
 )
 
 const (
@@ -51,15 +49,6 @@ func (c *Credentials) LogProperties() map[string]interface{} {
 	return map[string]interface{}{
 		"username": c.Username,
 	}
-}
-
-func initDynamoClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
-	if err != nil {
-		panic(err)
-	}
-
-	return dynamodb.NewFromConfig(cfg)
 }
 
 func getRefreshTokenCookie(request *apigateway.Request) (string, error) {
@@ -106,6 +95,11 @@ func validateCredentials(email, password string) error {
 }
 
 func main() {
+	err := env.LoadEnv(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("loading environment failed: %v", err))
+	}
+
 	route := router.NewRouter()
 
 	route.Route("/auth", func(r *router.Router) {
