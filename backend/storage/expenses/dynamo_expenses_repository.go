@@ -96,7 +96,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 		return nil, fmt.Errorf("put expense failed: %v", err)
 	}
 
-	return expense, nil
+	return toExpenseModel(*entity), nil
 }
 
 func (d *DynamoRepository) buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
