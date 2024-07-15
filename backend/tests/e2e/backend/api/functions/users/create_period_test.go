@@ -17,17 +17,35 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
-func init() {
+var (
+	periodTableName            string
+	uniquePeriodTableName      string
+	expensesTableName          string
+	expensesRecurringTableName string
+)
+
+func TestMain(m *testing.M) {
 	err := env.LoadEnvTesting()
 	if err != nil {
 		panic(err)
 	}
+
+	periodTableName = env.GetString("PERIOD_TABLE_NAME", "")
+	uniquePeriodTableName = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+	expensesTableName = env.GetString("EXPENSES_TABLE_NAME", "")
+	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+
+	os.Exit(m.Run())
 }
 
 func TestProcess(t *testing.T) {
 	c := require.New(t)
+	sqsRetries := 3
+	delay := time.Second * 1
+	backoffFactor := 2
 
 	t.Run("Set period to expenses without period", func(t *testing.T) {
 		username := "e2e_test@gmail.com"
@@ -42,14 +60,18 @@ func TestProcess(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		dynamoClient := dynamo.InitDynamoClient(ctx)
+		dynamoClient := dynamo.InitClient(ctx)
+
+		periodRepo, err := period.NewDynamoRepository(dynamoClient, periodTableName, uniquePeriodTableName)
+		c.Nil(err, "creating period repository failed")
 
 		req := &handlers.CreatePeriodRequest{
-			PeriodRepo: period.NewDynamoRepository(dynamoClient),
+			PeriodRepo: periodRepo,
 			Log:        logger.NewConsoleLogger("create_period_e2e_test"),
 		}
 
-		expensesRepo := expenses.NewDynamoRepository(dynamoClient)
+		expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		c.Nil(err, "creating expenses repository failed")
 
 		expensesList, err := loadExpenses()
 		c.Nil(err, "loading expenses from file failed")
@@ -63,7 +85,7 @@ func TestProcess(t *testing.T) {
 			c.Nil(err, "batch deleting expenses failed")
 
 			p, err := req.PeriodRepo.GetLastPeriod(ctx, username)
-			c.Nil(err, "getting last period failed")
+			c.Nil(err, "couldn't delete created period: getting last period failed")
 
 			err = req.PeriodRepo.DeletePeriod(ctx, p.ID, p.Username)
 			c.Nil(err, "deleting period failed")
@@ -77,9 +99,22 @@ func TestProcess(t *testing.T) {
 		err = json.Unmarshal([]byte(res.Body), &createdPeriod)
 		c.Nil(err, "unmarshalling created period failed")
 
-		result, _, err := expensesRepo.GetExpensesByPeriod(ctx, createdPeriod.Username, createdPeriod.ID, "", 20)
+		var expensesInPeriod []*models.Expense
+
+		for i := 0; i < sqsRetries; i++ {
+			//Wait for SQS to process the message
+			time.Sleep(delay)
+
+			expensesInPeriod, _, err = expensesRepo.GetExpensesByPeriod(ctx, createdPeriod.Username, createdPeriod.ID, "", 20)
+			if expensesInPeriod != nil {
+				break
+			}
+
+			delay *= time.Duration(backoffFactor)
+		}
+
 		c.Nil(err, "getting expenses by period failed")
-		c.Len(result, 18, fmt.Sprint("expected 18 expenses, got ", len(result)))
+		c.Len(expensesInPeriod, 18, fmt.Sprint("expected 18 expenses, got ", len(expensesInPeriod)))
 	})
 }
 

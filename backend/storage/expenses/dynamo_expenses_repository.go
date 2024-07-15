@@ -159,9 +159,6 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 		entities = append(entities, entity)
 	}
 
-	t := tableName
-	fmt.Println("table name", "{", t, "}")
-
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
 			d.tableName: getBatchWriteRequests(entities, log),

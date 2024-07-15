@@ -16,10 +16,6 @@ const (
 	periodPrefix = "PRD"
 )
 
-var (
-	missingExpensePeriodQueueURL = env.GetString("MISSING_EXPENSE_PERIOD_QUEUE_URL", "")
-)
-
 type PeriodManager interface {
 	CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error)
 	UpdatePeriod(ctx context.Context, period *models.Period) error
@@ -58,6 +54,8 @@ func NewPeriodCreator(pm PeriodManager, log Logger) func(ctx context.Context, us
 }
 
 func sendPeriodToSQS(ctx context.Context, period *models.Period) error {
+	missingExpensePeriodQueueURL := env.GetString("MISSING_EXPENSE_PERIOD_QUEUE_URL", "")
+
 	sdkConfig, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("couldn't initialize SQS client: %w", err)

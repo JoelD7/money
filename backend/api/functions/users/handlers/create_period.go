@@ -25,15 +25,21 @@ type CreatePeriodRequest struct {
 	PeriodRepo   period.Repository
 }
 
-func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI) {
+func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI) error {
+	var err error
 	cpOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.PeriodRepo = period.NewDynamoRepository(dynamoClient)
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		if err != nil {
+			return
+		}
 		request.Log = log
 		request.Log.SetHandler("create-period")
 	})
 	request.startingTime = time.Now()
+
+	return err
 }
 
 func (request *CreatePeriodRequest) finish() {
@@ -45,7 +51,12 @@ func CreatePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway
 		cpRequest = new(CreatePeriodRequest)
 	}
 
-	cpRequest.init(ctx, log)
+	err := cpRequest.init(ctx, log)
+	if err != nil {
+		log.Error("create_period_init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
 	defer cpRequest.finish()
 
 	return cpRequest.Process(ctx, req)

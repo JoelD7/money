@@ -39,6 +39,7 @@ func (request *Request) init(ctx context.Context) error {
 
 	preOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
+		request.Log = logger.NewLogger()
 
 		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
 		if err != nil {
@@ -61,20 +62,29 @@ func (request *Request) finish() {
 
 func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 	if preRequest == nil {
-		preRequest = &Request{
-			Log: logger.NewLogger(),
-		}
+		preRequest = &Request{}
 	}
 
-	preRequest.init(ctx)
+	err := preRequest.init(ctx)
+	if err != nil {
+		preRequest.Log.Error("init_failed", err, nil)
+
+		return err
+	}
 	defer preRequest.finish()
 
 	for _, record := range sqsEvent.Records {
-		err := preRequest.ProcessMessage(ctx, models.SQSMessage{SQSMessage: record})
+		err = preRequest.ProcessMessage(ctx, models.SQSMessage{SQSMessage: record})
 		if err != nil {
 			return err
 		}
 	}
+
+	preRequest.Log.Info("message_processing_successful", []models.LoggerObject{
+		preRequest.Log.MapToLoggerObject("message_data", map[string]interface{}{
+			"i_message_count": len(sqsEvent.Records),
+		}),
+	})
 
 	return nil
 }
