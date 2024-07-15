@@ -93,6 +93,33 @@ func getBatchWriteRequests(entities []*ExpenseRecurringEntity, log logger.LogAPI
 	return writeRequests
 }
 
+func (d *DynamoRepository) GetExpenseRecurring(ctx context.Context, expenseRecurringID, username string) (*models.ExpenseRecurring, error) {
+	input := &dynamodb.GetItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]types.AttributeValue{
+			"id":       &types.AttributeValueMemberS{Value: expenseRecurringID},
+			"username": &types.AttributeValueMemberS{Value: username},
+		},
+	}
+
+	result, err := d.dynamoClient.GetItem(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("get expense recurring item failed: %v", err)
+	}
+
+	if result.Item == nil {
+		return nil, models.ErrRecurringExpenseNotFound
+	}
+
+	entity := new(ExpenseRecurringEntity)
+	err = attributevalue.UnmarshalMap(result.Item, entity)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal recurring expense item failed: %v", err)
+	}
+
+	return toExpenseRecurringModel(*entity), nil
+}
+
 func (d *DynamoRepository) ScanExpensesForDay(ctx context.Context, day int) ([]*models.ExpenseRecurring, error) {
 	filter := expression.Name("recurring_day").Equal(expression.Value(day))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
