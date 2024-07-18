@@ -29,22 +29,22 @@ type updateSavingRequest struct {
 	periodRepo     period.Repository
 }
 
-func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	usOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig.SavingsTable, envConfig.PeriodSavingIndexName, envConfig.SavingGoalSavingIndexName)
 		if err != nil {
 			return
 		}
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
 
-		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, savingGoalTableName)
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig.SavingGoalsTable)
 		if err != nil {
 			return
 		}
@@ -60,12 +60,12 @@ func (request *updateSavingRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func UpdateSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if usRequest == nil {
 		usRequest = new(updateSavingRequest)
 	}
 
-	err := usRequest.init(ctx, log)
+	err := usRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("update_saving_init_failed", err, []models.LoggerObject{req})
 

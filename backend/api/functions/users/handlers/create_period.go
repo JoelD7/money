@@ -25,12 +25,12 @@ type CreatePeriodRequest struct {
 	PeriodRepo   period.Repository
 }
 
-func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	cpOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -46,12 +46,12 @@ func (request *CreatePeriodRequest) finish() {
 	request.Log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func CreatePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func CreatePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if cpRequest == nil {
 		cpRequest = new(CreatePeriodRequest)
 	}
 
-	err := cpRequest.init(ctx, log)
+	err := cpRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("create_period_init_failed", err, []models.LoggerObject{req})
 

@@ -3,11 +3,8 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -19,12 +16,6 @@ var (
 	errCookiesNotFound              = apigateway.NewError("cookies not found in request object", http.StatusBadRequest)
 	errMissingRefreshTokenInCookies = apigateway.NewError("missing refresh token in cookies", http.StatusBadRequest)
 	errUserNotFound                 = apigateway.NewError("", http.StatusBadRequest)
-)
-
-var (
-	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "")
-	publicSecretName  = env.GetString("TOKEN_PUBLIC_SECRET", "")
-	kidSecretName     = env.GetString("KID_SECRET", "")
 )
 
 const (
@@ -95,11 +86,6 @@ func validateCredentials(email, password string) error {
 }
 
 func main() {
-	err := env.LoadEnv(context.Background())
-	if err != nil {
-		panic(fmt.Errorf("loading environment failed: %v", err))
-	}
-
 	route := router.NewRouter()
 
 	route.Route("/auth", func(r *router.Router) {

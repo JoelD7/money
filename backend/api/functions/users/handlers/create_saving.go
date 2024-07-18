@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -21,12 +20,6 @@ import (
 var (
 	csRequest *createSavingRequest
 	csOnce    sync.Once
-
-	periodTableNameEnv       = env.GetString("PERIOD_TABLE_NAME", "")
-	uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-	tableName                = env.GetString("SAVINGS_TABLE_NAME", "")
-	periodSavingIndex        = env.GetString("PERIOD_SAVING_INDEX_NAME", "")
-	savingGoalSavingIndex    = env.GetString("SAVING_GOAL_SAVING_INDEX_NAME", "")
 )
 
 type createSavingRequest struct {
@@ -38,18 +31,18 @@ type createSavingRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	csOnce.Do(func() {
 		request.log = log
 		request.log.SetHandler("create-saving")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig.SavingsTable, envConfig.PeriodSavingIndexName, envConfig.SavingGoalSavingIndexName)
 		if err != nil {
 			return
 		}
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -63,12 +56,12 @@ func (request *createSavingRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func CreateSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func CreateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if csRequest == nil {
 		csRequest = new(createSavingRequest)
 	}
 
-	err := csRequest.init(ctx, log)
+	err := csRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("init_create_saving_request_failed", err, []models.LoggerObject{req})
 

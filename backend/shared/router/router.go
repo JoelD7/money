@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"net/http"
@@ -20,8 +21,9 @@ var (
 // Takes the following arguments:
 //  1. context provided by the AWS Lambda runtime,
 //  2. a logger instance, provided by the router so that both the router and the lambda function use the same logger connection,
-//  3. and the request object provided by APIGateway.
-type Handler func(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error)
+//  3. an environment configuration object, so that the lambda function can access the environment variables,
+//  4. and the request object provided by APIGateway.
+type Handler func(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error)
 
 type Router struct {
 	path           string
@@ -109,7 +111,16 @@ func (router *Router) executeHandle(ctx context.Context, request *apigateway.Req
 		}, nil
 	}
 
-	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, router.log, request)
+	envConfig, err := env.LoadEnv(ctx)
+	if err != nil {
+		router.log.Error("router_env_load_failed", err, nil)
+
+		return &apigateway.Response{
+			StatusCode: http.StatusInternalServerError,
+		}, nil
+	}
+
+	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, router.log, envConfig, request)
 }
 
 func (router *Router) Route(path string, fn func(r *Router)) {

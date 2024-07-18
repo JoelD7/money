@@ -33,12 +33,12 @@ type requestTokenHandler struct {
 	secretsManager      secrets.SecretManager
 }
 
-func tokenHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+func tokenHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if req == nil {
 		req = new(requestTokenHandler)
 	}
 
-	err := req.initTokenHandler(ctx, log)
+	err := req.initTokenHandler(ctx, log, envConfig)
 	if err != nil {
 		req.err = err
 		req.log.Error("token_init_failed", err, nil)
@@ -50,12 +50,12 @@ func tokenHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Re
 	return req.processToken(ctx, request)
 }
 
-func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger.LogAPI) error {
+func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	once.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}

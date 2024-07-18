@@ -35,16 +35,16 @@ type savingsResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *getSavingsRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getSavingsRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gssOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig.SavingsTable, envConfig.PeriodSavingIndexName, envConfig.SavingGoalSavingIndexName)
 		if err != nil {
 			return
 		}
-		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, savingGoalTableName)
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig.SavingGoalsTable)
 		if err != nil {
 			return
 		}
@@ -60,12 +60,12 @@ func (request *getSavingsRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetSavingsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetSavingsHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gssRequest == nil {
 		gssRequest = new(getSavingsRequest)
 	}
 
-	err := gssRequest.init(ctx, log)
+	err := gssRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("get_savings_request_init_failed", err, []models.LoggerObject{req})
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
@@ -18,10 +17,6 @@ import (
 )
 
 var (
-	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
-	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	incomeTableName            = env.GetString("INCOME_TABLE_NAME", "")
-
 	guRequest *getUserRequest
 	guOnce    sync.Once
 )
@@ -35,7 +30,7 @@ type getUserRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	guOnce.Do(func() {
 		request.log = log
@@ -43,17 +38,17 @@ func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI) erro
 
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
 
-		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, incomeTableName)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable)
 		if err != nil {
 			return
 		}
 
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable)
 		if err != nil {
 			return
 		}
@@ -67,12 +62,12 @@ func (request *getUserRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetUserHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetUserHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if guRequest == nil {
 		guRequest = new(getUserRequest)
 	}
 
-	err := guRequest.init(ctx, log)
+	err := guRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("get_user_init_failed", err, []models.LoggerObject{req})
 

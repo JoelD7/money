@@ -28,12 +28,12 @@ type requestLogoutHandler struct {
 	invalidTokenManager cache.InvalidTokenManager
 }
 
-func logoutHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+func logoutHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if logoutRequest == nil {
 		logoutRequest = new(requestLogoutHandler)
 	}
 
-	err := logoutRequest.initLogoutHandler(ctx, log)
+	err := logoutRequest.initLogoutHandler(ctx, log, envConfig)
 	if err != nil {
 		logoutRequest.err = err
 
@@ -46,14 +46,14 @@ func logoutHandler(ctx context.Context, log logger.LogAPI, request *apigateway.R
 	return logoutRequest.processLogout(ctx, request)
 }
 
-func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, log logger.LogAPI) error {
+func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	logoutOnce.Do(func() {
 		req.log = log
 		req.log.SetHandler("logout")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}

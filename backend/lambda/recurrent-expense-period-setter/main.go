@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	err := env.LoadEnv(context.Background())
+	_, err := env.LoadEnv(context.Background())
 	if err != nil {
 		panic(err)
 	}

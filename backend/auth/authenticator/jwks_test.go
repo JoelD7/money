@@ -4,12 +4,33 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/stretchr/testify/require"
 	"net/http"
+	"os"
 	"testing"
 )
+
+var (
+	privateSecretName string
+	publicSecretName  string
+	kidSecretName     string
+)
+
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(fmt.Errorf("loading environment failed: %v", err))
+	}
+
+	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "")
+	publicSecretName = env.GetString("TOKEN_PUBLIC_SECRET", "")
+	kidSecretName = env.GetString("KID_SECRET", "")
+
+	os.Exit(m.Run())
+}
 
 func TestJWKSHandler(t *testing.T) {
 	c := require.New(t)

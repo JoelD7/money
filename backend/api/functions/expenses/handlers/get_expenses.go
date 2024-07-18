@@ -35,18 +35,18 @@ type getExpensesRequest struct {
 	pageSize     int
 }
 
-func (request *getExpensesRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getExpensesRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gesOnce.Do(func() {
 		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable)
 		if err != nil {
 			return
 		}
 
-		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -60,12 +60,12 @@ func (request *getExpensesRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetExpenses(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetExpenses(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gesExpensesRequest == nil {
 		gesExpensesRequest = new(getExpensesRequest)
 	}
 
-	err := gesExpensesRequest.init(ctx, log)
+	err := gesExpensesRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("get_expenses_init_failed", err, []models.LoggerObject{req})
 

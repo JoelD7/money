@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -19,10 +18,6 @@ import (
 )
 
 var (
-	tableName                = env.GetString("INCOME_TABLE_NAME", "")
-	periodTableNameEnv       = env.GetString("PERIOD_TABLE_NAME", "")
-	uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-
 	ciRequest *createIncomeRequest
 	ciOnce    sync.Once
 )
@@ -35,17 +30,17 @@ type createIncomeRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	ciOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 		request.log = log
 
-		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable)
 		if err != nil {
 			return
 		}
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -59,12 +54,12 @@ func (request *createIncomeRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func createIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func createIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if ciRequest == nil {
 		ciRequest = new(createIncomeRequest)
 	}
 
-	ciRequest.init(ctx, log)
+	ciRequest.init(ctx, log, envConfig)
 	defer ciRequest.finish()
 
 	return ciRequest.process(ctx, req)

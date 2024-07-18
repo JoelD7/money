@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -20,7 +19,6 @@ import (
 
 var loginRequest *requestLoginHandler
 var loginOnce sync.Once
-var usersTableName = env.GetString("USERS_TABLE_NAME", "")
 
 type requestLoginHandler struct {
 	log            logger.LogAPI
@@ -34,12 +32,12 @@ type accessTokenResponse struct {
 	AccessToken string `json:"accessToken"`
 }
 
-func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+func logInHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if loginRequest == nil {
 		loginRequest = new(requestLoginHandler)
 	}
 
-	err := loginRequest.initLoginHandler(ctx, log)
+	err := loginRequest.initLoginHandler(ctx, log, envConfig)
 	if err != nil {
 		loginRequest.err = err
 		log.Error("login_init_failed", err, []models.LoggerObject{request})
@@ -51,14 +49,14 @@ func logInHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Re
 	return loginRequest.processLogin(ctx, request)
 }
 
-func (req *requestLoginHandler) initLoginHandler(ctx context.Context, log logger.LogAPI) error {
+func (req *requestLoginHandler) initLoginHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	loginOnce.Do(func() {
 		req.log = log
 		req.log.SetHandler("login")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}

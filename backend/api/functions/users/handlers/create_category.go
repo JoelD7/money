@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -20,7 +19,6 @@ import (
 
 var ccRequest *createCategoryRequest
 var ccOnce sync.Once
-var usersTableName = env.GetString("USERS_TABLE_NAME", "")
 
 type createCategoryRequest struct {
 	log          logger.LogAPI
@@ -29,14 +27,14 @@ type createCategoryRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *createCategoryRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *createCategoryRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	ccOnce.Do(func() {
 		request.log = log
 		request.log.SetHandler("create-category")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -50,12 +48,12 @@ func (request *createCategoryRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func CreateCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func CreateCategoryHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if ccRequest == nil {
 		ccRequest = new(createCategoryRequest)
 	}
 
-	err := ccRequest.init(ctx, log)
+	err := ccRequest.init(ctx, log, envConfig)
 	if err != nil {
 		ccRequest.err = err
 

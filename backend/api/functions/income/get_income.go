@@ -23,13 +23,13 @@ type incomeGetRequest struct {
 var once sync.Once
 var request *incomeGetRequest
 
-func (request *incomeGetRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *incomeGetRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	once.Do(func() {
 		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable)
 		if err != nil {
 			return
 		}
@@ -43,12 +43,12 @@ func (request *incomeGetRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func getIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if request == nil {
 		request = new(incomeGetRequest)
 	}
 
-	request.init(ctx, log)
+	request.init(ctx, log, envConfig)
 	defer request.finish()
 
 	return request.process(ctx, req)

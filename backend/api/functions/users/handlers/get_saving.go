@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -20,8 +19,6 @@ import (
 var (
 	errMissingSavingID = apigateway.NewError("missing saving ID", http.StatusBadRequest)
 
-	savingGoalTableName = env.GetString("SAVING_GOALS_TABLE_NAME", "")
-
 	gsRequest *getSavingRequest
 	gsOnce    sync.Once
 )
@@ -34,16 +31,16 @@ type getSavingRequest struct {
 	savingGoalRepo savingoal.Repository
 }
 
-func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, tableName, periodSavingIndex, savingGoalSavingIndex)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig.SavingsTable, envConfig.PeriodSavingIndexName, envConfig.SavingGoalSavingIndexName)
 		if err != nil {
 			return
 		}
-		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, savingGoalTableName)
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig.SavingGoalsTable)
 		if err != nil {
 			return
 		}
@@ -59,12 +56,12 @@ func (request *getSavingRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetSavingHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gsRequest == nil {
 		gsRequest = new(getSavingRequest)
 	}
 
-	err := gsRequest.init(ctx, log)
+	err := gsRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("get_saving_init_failed", err, []models.LoggerObject{req})
 
