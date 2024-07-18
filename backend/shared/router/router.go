@@ -56,8 +56,17 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 		}
 	}()
 
+	envConfig, err := env.LoadEnv(ctx)
+	if err != nil {
+		router.log.Error("router_env_load_failed", err, nil)
+
+		return &apigateway.Response{
+			StatusCode: http.StatusInternalServerError,
+		}, nil
+	}
+
 	stackTrace, ctxErr := shared.ExecuteLambda(ctx, func(ctx context.Context) {
-		res, err = router.executeHandle(ctx, request)
+		res, err = router.executeHandle(ctx, envConfig, request)
 	})
 
 	if ctxErr != nil {
@@ -77,7 +86,7 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 	return
 }
 
-func (router *Router) executeHandle(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
+func (router *Router) executeHandle(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if !router.isRoot() {
 		router.log.Error("router_handle_failed", errRouterIsNotRoot, nil)
 
@@ -105,15 +114,6 @@ func (router *Router) executeHandle(ctx context.Context, request *apigateway.Req
 				}),
 			},
 		)
-
-		return &apigateway.Response{
-			StatusCode: http.StatusInternalServerError,
-		}, nil
-	}
-
-	envConfig, err := env.LoadEnv(ctx)
-	if err != nil {
-		router.log.Error("router_env_load_failed", err, nil)
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
