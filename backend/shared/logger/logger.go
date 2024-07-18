@@ -235,10 +235,6 @@ func (l *Log) write(data []byte) error {
 func (l *Log) Finish() error {
 	l.wg.Wait()
 
-	if l.connection == nil {
-		return nil
-	}
-
 	err := l.bw.Flush()
 	if err != nil {
 		err = fmt.Errorf("error flushing logger buffer: %w", err)
