@@ -2,6 +2,7 @@ package dynamo
 
 import (
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -9,6 +10,8 @@ import (
 
 func TestSplitRequestItems(t *testing.T) {
 	c := require.New(t)
+
+	dynamoDBMaxBatchWrite := env.GetInt("DYNAMODB_MAX_BATCH_WRITE", 25)
 
 	requestItems := map[string][]types.WriteRequest{
 		"table1": buildSampleRequestItems(27),

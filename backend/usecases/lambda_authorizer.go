@@ -21,9 +21,6 @@ import (
 var (
 	invalidJWTErrs = []error{jwt.ErrAudValidation, jwt.ErrExpValidation, jwt.ErrIatValidation, jwt.ErrIssValidation,
 		jwt.ErrJtiValidation, jwt.ErrNbfValidation, jwt.ErrSubValidation}
-
-	jwtAudience = env.GetString("TOKEN_AUDIENCE", "")
-	jwtIssuer   = env.GetString("TOKEN_ISSUER", "")
 )
 
 type JWKSGetter interface {
@@ -141,6 +138,9 @@ func getPublicKeyFromJWKS(ctx context.Context, jwksVal *models.Jwks, secrets Sec
 
 func validateJWTPayload(token string, payload *jwt.Payload, decryptingHash *jwt.RSASHA) error {
 	now := time.Now()
+
+	jwtAudience := env.GetString("TOKEN_AUDIENCE", "")
+	jwtIssuer := env.GetString("TOKEN_ISSUER", "")
 
 	expValidator := jwt.ExpirationTimeValidator(now)
 	issValidator := jwt.IssuerValidator(jwtIssuer)

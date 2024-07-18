@@ -28,10 +28,6 @@ const (
 )
 
 var (
-	logstashServerType = env.GetString("LOGSTASH_TYPE", "")
-	logstashHost       = env.GetString("LOGSTASH_HOST", "")
-	logstashPort       = env.GetString("LOGSTASH_PORT", "")
-
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 
 	once              sync.Once
@@ -172,6 +168,9 @@ func (l *Log) getService() string {
 
 func (l *Log) establishConnection() {
 	l.connTimer = time.NewTimer(connDeadlineIncr)
+
+	logstashHost := env.GetString("LOGSTASH_HOST", "")
+	logstashPort := env.GetString("LOGSTASH_PORT", "")
 
 	go l.closeConnection()
 
