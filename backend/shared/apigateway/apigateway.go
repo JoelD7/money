@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	allowedOrigins    = env.GetString("CORS_ORIGIN", "")
 	allowedOriginsMap = map[string]struct{}{}
 
 	responseByErrors = map[error]Error{
@@ -81,13 +80,6 @@ type Header struct {
 	Value string
 }
 
-func init() {
-	origins := strings.Split(allowedOrigins, ";")
-	for _, origin := range origins {
-		allowedOriginsMap[origin] = struct{}{}
-	}
-}
-
 // NewErrorResponse returns an error response
 func (req *Request) NewErrorResponse(err error) *Response {
 	var knownError *Error
@@ -106,6 +98,9 @@ func (req *Request) NewErrorResponse(err error) *Response {
 
 // NewJSONResponse creates a new JSON response given a serializable `body`
 func (req *Request) NewJSONResponse(statusCode int, body interface{}, headers ...Header) *Response {
+	buildAllowedOriginsMap()
+	allowedOrigins := env.GetString("CORS_ORIGIN", "")
+
 	stdHeaders := map[string]string{
 		"Content-Type":              "application/json",
 		"Cache-Control":             "no-store",
@@ -146,6 +141,19 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}, headers ..
 		StatusCode: statusCode,
 		Body:       string(data),
 		Headers:    stdHeaders,
+	}
+}
+
+func buildAllowedOriginsMap() {
+	if len(allowedOriginsMap) > 0 {
+		return
+	}
+
+	allowedOrigins := env.GetString("CORS_ORIGIN", "")
+
+	origins := strings.Split(allowedOrigins, ";")
+	for _, origin := range origins {
+		allowedOriginsMap[origin] = struct{}{}
 	}
 }
 
