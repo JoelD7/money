@@ -45,6 +45,10 @@ func (r *RedisCache) GetInvalidTokens(ctx context.Context, username string) ([]*
 		return nil, fmt.Errorf("%w:%v", models.ErrInvalidTokensNotFound, err)
 	}
 
+	if err != nil {
+		return nil, fmt.Errorf("get invalid tokens: %v", err)
+	}
+
 	invalidTokens := make([]*models.InvalidToken, 0)
 
 	err = json.Unmarshal([]byte(value), &invalidTokens)
@@ -69,6 +73,10 @@ func (r *RedisCache) AddInvalidToken(ctx context.Context, username, token string
 	invalidTokens, err := r.GetInvalidTokens(ctx, username)
 	if err != nil && !errors.Is(err, models.ErrInvalidTokensNotFound) {
 		return err
+	}
+
+	if err != nil {
+		return fmt.Errorf("add invalid tokens: %v", err)
 	}
 
 	newInvalidTokens := make([]*models.InvalidToken, 0)
