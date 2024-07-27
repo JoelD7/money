@@ -13,15 +13,6 @@ import (
 	"time"
 )
 
-var (
-	batchWriteRetries       = env.GetInt("BATCH_WRITE_RETRIES", 3)
-	batchWriteBaseDelay     = env.GetInt("BATCH_WRITE_BASE_DELAY_IN_MS", 300)
-	batchWriteBackoffFactor = env.GetInt("BATCH_WRITE_BACKOFF_FACTOR", 2)
-	dynamoDBMaxBatchWrite   = env.GetInt("DYNAMODB_MAX_BATCH_WRITE", 25)
-
-	awsRegion = env.GetString("AWS_REGION", "")
-)
-
 // BuildPeriodUser builds a combined string of period and username required to identify an item of certain period and user.
 func BuildPeriodUser(username, period string) *string {
 	p := fmt.Sprintf("%s:%s", period, username)
@@ -100,6 +91,7 @@ func BatchWrite(ctx context.Context, dynamoClient *dynamodb.Client, input *dynam
 func splitRequestItems(requestItems map[string][]types.WriteRequest) []map[string][]types.WriteRequest {
 	var result []map[string][]types.WriteRequest
 	batch := make(map[string][]types.WriteRequest)
+	dynamoDBMaxBatchWrite := env.GetInt("DYNAMODB_MAX_BATCH_WRITE", 25)
 
 	remSlots := dynamoDBMaxBatchWrite               // available slots in batch
 	itemsWoProcess := make([]types.WriteRequest, 0) // items that could not be processed in the current batch
@@ -149,8 +141,11 @@ func splitRequestItems(requestItems map[string][]types.WriteRequest) []map[strin
 func handleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocessedItems map[string][]types.WriteRequest) error {
 	var result *dynamodb.BatchWriteItemOutput
 	var err error
+	batchWriteBaseDelay := env.GetInt("BATCH_WRITE_BASE_DELAY_IN_MS", 300)
 
 	delay := time.Duration(batchWriteBaseDelay) * time.Millisecond
+	batchWriteRetries := env.GetInt("BATCH_WRITE_RETRIES", 3)
+	batchWriteBackoffFactor := env.GetInt("BATCH_WRITE_BACKOFF_FACTOR", 2)
 
 	for i := 0; i < batchWriteRetries; i++ {
 		time.Sleep(delay)
@@ -176,6 +171,8 @@ func handleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocesse
 }
 
 func InitClient(ctx context.Context) *dynamodb.Client {
+	awsRegion := env.GetString("AWS_REGION", "")
+
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
 	if err != nil {
 		panic(err)

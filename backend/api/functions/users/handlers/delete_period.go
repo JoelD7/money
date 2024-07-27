@@ -23,14 +23,14 @@ type deletePeriodRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	dpOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 		request.log = log
 		request.log.SetHandler("delete-period")
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -44,12 +44,12 @@ func (request *deletePeriodRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func DeletePeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func DeletePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if dpRequest == nil {
 		dpRequest = new(deletePeriodRequest)
 	}
 
-	err := dpRequest.init(ctx, log)
+	err := dpRequest.init(ctx, log, envConfig)
 	if err != nil {
 		dpRequest.err = err
 

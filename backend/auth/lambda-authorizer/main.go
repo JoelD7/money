@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
@@ -57,9 +58,6 @@ const (
 )
 
 var (
-	kidSecretName = env.GetString("KID_SECRET", "")
-	awsRegion     = env.GetString("AWS_REGION", "")
-
 	req  *requestInfo
 	once sync.Once
 )
@@ -188,6 +186,7 @@ func (e Effect) String() string {
 func NewAuthorizerResponse(methodArn, principalID string) *AuthorizerResponse {
 	tmp := strings.Split(methodArn, ":")
 	apiGatewayArnTmp := strings.Split(tmp[5], "/")
+	awsRegion := env.GetString("AWS_REGION", "")
 
 	return &AuthorizerResponse{
 		APIGatewayCustomAuthorizerResponse: events.APIGatewayCustomAuthorizerResponse{
@@ -241,5 +240,10 @@ func (r *AuthorizerResponse) DenyMethod(verb HttpVerb, resource string) {
 }
 
 func main() {
+	_, err := env.LoadEnv(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("loading environment failed: %v", err))
+	}
+
 	lambda.Start(handleRequest)
 }

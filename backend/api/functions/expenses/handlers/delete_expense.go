@@ -24,14 +24,14 @@ type deleteExpenseRequest struct {
 	expensesRepo expenses.Repository
 }
 
-func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 
 	deOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.log = log
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable)
 	})
 
 	request.startingTime = time.Now()
@@ -43,12 +43,12 @@ func (request *deleteExpenseRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func DeleteExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func DeleteExpense(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if deRequest == nil {
 		deRequest = new(deleteExpenseRequest)
 	}
 
-	err := deRequest.init(ctx, log)
+	err := deRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("delete_expense_init_failed", err, []models.LoggerObject{req})
 		return req.NewErrorResponse(err), nil

@@ -17,11 +17,6 @@ import (
 )
 
 var (
-	expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
-	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
-	uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-
 	preRequest *Request
 	preOnce    sync.Once
 )
@@ -40,6 +35,11 @@ func (request *Request) init(ctx context.Context) error {
 	preOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 		request.Log = logger.NewLogger()
+
+		expensesTableName := env.GetString("EXPENSES_TABLE_NAME", "")
+		expensesRecurringTableName := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+		periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
+		uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 
 		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
 		if err != nil {

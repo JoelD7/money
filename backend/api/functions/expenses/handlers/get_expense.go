@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -18,10 +17,9 @@ import (
 
 var (
 	errMissingExpenseID = apigateway.NewError("missing expense ID", http.StatusBadRequest)
-	geExpenseRequest    *getExpenseRequest
-	getExpenseOnce      sync.Once
 
-	usersTableName = env.GetString("USERS_TABLE_NAME", "")
+	geExpenseRequest *getExpenseRequest
+	getExpenseOnce   sync.Once
 )
 
 type getExpenseRequest struct {
@@ -32,18 +30,18 @@ type getExpenseRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	getExpenseOnce.Do(func() {
 		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable)
 		if err != nil {
 			return
 		}
 
-		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -57,12 +55,12 @@ func (request *getExpenseRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetExpense(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if geExpenseRequest == nil {
 		geExpenseRequest = new(getExpenseRequest)
 	}
 
-	err := geExpenseRequest.init(ctx, log)
+	err := geExpenseRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("get_expense_init_failed", err, []models.LoggerObject{req})
 

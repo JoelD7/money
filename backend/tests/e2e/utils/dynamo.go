@@ -7,9 +7,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
-var awsRegion = env.GetString("AWS_REGION", "")
-
 func InitDynamoClient() *dynamodb.Client {
+	awsRegion := env.GetString("AWS_REGION", "")
 	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(awsRegion))
 	if err != nil {
 		panic(err)

@@ -33,12 +33,12 @@ type multipleIncomeResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *getMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gmiOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, tableName)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable)
 		if err != nil {
 			return
 		}
@@ -53,12 +53,12 @@ func (request *getMultipleIncomeRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func getMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gmiRequest == nil {
 		gmiRequest = new(getMultipleIncomeRequest)
 	}
 
-	gmiRequest.init(ctx, log)
+	gmiRequest.init(ctx, log, envConfig)
 	defer gmiRequest.finish()
 
 	err := gmiRequest.prepareRequest(req)

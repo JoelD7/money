@@ -21,12 +21,6 @@ var (
 	errUserNotFound                 = apigateway.NewError("", http.StatusBadRequest)
 )
 
-var (
-	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "")
-	publicSecretName  = env.GetString("TOKEN_PUBLIC_SECRET", "")
-	kidSecretName     = env.GetString("KID_SECRET", "")
-)
-
 const (
 	refreshTokenCookieName = "RefreshToken"
 )
@@ -95,7 +89,7 @@ func validateCredentials(email, password string) error {
 }
 
 func main() {
-	err := env.LoadEnv(context.Background())
+	_, err := env.LoadEnv(context.Background())
 	if err != nil {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}

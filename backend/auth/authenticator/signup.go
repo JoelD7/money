@@ -26,12 +26,12 @@ type requestSignUpHandler struct {
 	secretsManager secrets.SecretManager
 }
 
-func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+func signUpHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if signUpRequest == nil {
 		signUpRequest = new(requestSignUpHandler)
 	}
 
-	err := signUpRequest.initSignUpHandler(ctx, log)
+	err := signUpRequest.initSignUpHandler(ctx, log, envConfig)
 	if err != nil {
 		signUpRequest.err = err
 
@@ -44,14 +44,14 @@ func signUpHandler(ctx context.Context, log logger.LogAPI, request *apigateway.R
 	return signUpRequest.processSignUp(ctx, request)
 }
 
-func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, log logger.LogAPI) error {
+func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	signUpOnce.Do(func() {
 		req.log = log
 		req.log.SetHandler("sign-up")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		req.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		req.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}

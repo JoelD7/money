@@ -30,15 +30,6 @@ const (
 )
 
 var (
-	accessTokenAudience  = env.GetString("TOKEN_AUDIENCE", "")
-	accessTokenIssuer    = env.GetString("TOKEN_ISSUER", "")
-	accessTokenScope     = env.GetString("TOKEN_SCOPE", "")
-	privateSecretName    = env.GetString("TOKEN_PRIVATE_SECRET", "")
-	publicSecretName     = env.GetString("TOKEN_PUBLIC_SECRET", "")
-	kidSecretName        = env.GetString("KID_SECRET", "")
-	accessTokenDuration  = env.GetInt("ACCESS_TOKEN_DURATION", 300)
-	refreshTokenDuration = env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
-
 	errInvalidTokenLength = apigateway.NewError("invalid token length", http.StatusUnauthorized)
 )
 
@@ -168,6 +159,11 @@ func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx contex
 func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager, logger Logger) func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 	return func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 		now := time.Now()
+		accessTokenAudience := env.GetString("TOKEN_AUDIENCE", "")
+		accessTokenIssuer := env.GetString("TOKEN_ISSUER", "")
+		accessTokenScope := env.GetString("TOKEN_SCOPE", "")
+		accessTokenDuration := env.GetInt("ACCESS_TOKEN_DURATION", 300)
+		refreshTokenDuration := env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
 
 		accessTokenExpiry := jwt.NumericDate(now.Add(time.Duration(accessTokenDuration) * time.Second))
 
@@ -288,6 +284,8 @@ func generateJWT(secrets SecretManager, payload *jwt.Payload, scope string) (str
 }
 
 func getPrivateKey(secrets SecretManager) (*rsa.PrivateKey, error) {
+	privateSecretName := env.GetString("TOKEN_PRIVATE_SECRET", "")
+
 	privateSecret, err := secrets.GetSecret(context.Background(), privateSecretName)
 	if err != nil {
 		return nil, err
@@ -339,6 +337,9 @@ func validateRefreshToken(user *models.User, refreshToken string) error {
 // NewTokenInvalidator invalidates a user's tokens.
 func NewTokenInvalidator(tokenCache InvalidTokenCache, logger Logger) func(ctx context.Context, user *models.User) error {
 	return func(ctx context.Context, user *models.User) error {
+		accessTokenDuration := env.GetInt("ACCESS_TOKEN_DURATION", 300)
+		refreshTokenDuration := env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
+
 		accessTokenTTL := time.Now().Add(time.Second * time.Duration(accessTokenDuration)).Unix()
 		refreshTokenTTL := time.Now().Add(time.Second * time.Duration(refreshTokenDuration)).Unix()
 
@@ -390,6 +391,8 @@ func GetJsonWebKeySet(ctx context.Context, secrets SecretManager, logger Logger)
 }
 
 func getPublicKey(ctx context.Context, secrets SecretManager) (*rsa.PublicKey, error) {
+	publicSecretName := env.GetString("TOKEN_PUBLIC_SECRET", "")
+
 	publicSecret, err := secrets.GetSecret(ctx, publicSecretName)
 	if err != nil {
 		return nil, err
@@ -412,6 +415,8 @@ func getPublicKey(ctx context.Context, secrets SecretManager) (*rsa.PublicKey, e
 // Is stored in a secret so that the lambda-authorizer can have access to it to verify that the key received is the
 // right one.
 func getKidFromSecret(ctx context.Context, secrets SecretManager) (string, error) {
+	kidSecretName := env.GetString("KID_SECRET", "")
+
 	kidSecret, err := secrets.GetSecret(ctx, kidSecretName)
 	if err != nil {
 		return "", err

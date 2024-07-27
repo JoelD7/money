@@ -32,7 +32,7 @@ type getPeriodsRequest struct {
 	pageSize     int
 }
 
-func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gpsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
@@ -40,7 +40,7 @@ func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI) e
 		request.log = log
 		request.log.SetHandler("get-periods")
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -54,12 +54,12 @@ func (request *getPeriodsRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetPeriodsHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetPeriodsHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gpsRequest == nil {
 		gpsRequest = new(getPeriodsRequest)
 	}
 
-	err := gpsRequest.init(ctx, log)
+	err := gpsRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("get_periods_init_failed", err, []models.LoggerObject{req})
 

@@ -15,7 +15,7 @@ import (
 
 var (
 	ErrInvalidTTL = errors.New("TTL is from a past datetime")
-	redisURL      = env.GetString("REDIS_URL", "")
+	redisURL      string
 )
 
 type RedisCache struct {
@@ -23,6 +23,8 @@ type RedisCache struct {
 }
 
 func NewRedisCache() *RedisCache {
+	redisURL = env.GetString("REDIS_URL", "")
+
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
 		panic(err)

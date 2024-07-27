@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"github.com/JoelD7/money/backend/models"
 	"net/http"
 	"sync"
 	"time"
@@ -23,7 +24,7 @@ type requestJwksHandler struct {
 	secretsManager secrets.SecretManager
 }
 
-func jwksHandler(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+func jwksHandler(ctx context.Context, log logger.LogAPI, _ *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if jwksRequest == nil {
 		jwksRequest = new(requestJwksHandler)
 	}

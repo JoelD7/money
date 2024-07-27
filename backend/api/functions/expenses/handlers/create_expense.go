@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
@@ -20,11 +19,6 @@ import (
 )
 
 var (
-	tableName                  = env.GetString("EXPENSES_TABLE_NAME", "")
-	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
-	uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-
 	ceRequest *createExpenseRequest
 	ceOnce    sync.Once
 )
@@ -38,18 +32,18 @@ type createExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	ceOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 		request.log = log
 
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, tableName, expensesRecurringTableName)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable)
 		if err != nil {
 			return
 		}
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -63,12 +57,12 @@ func (request *createExpenseRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func CreateExpense(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func CreateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if ceRequest == nil {
 		ceRequest = new(createExpenseRequest)
 	}
 
-	err := ceRequest.init(ctx, log)
+	err := ceRequest.init(ctx, log, envConfig)
 	if err != nil {
 		log.Error("create_expense_init_failed", err, []models.LoggerObject{req})
 

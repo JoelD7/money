@@ -14,10 +14,6 @@ import (
 )
 
 var (
-	// LAMBDA_TIMEOUT is the environment variable that indicates the timeout for the lambda function in seconds.
-	// https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html#configuration-timeout-console
-	lambdaTimeout = env.GetString("LAMBDA_TIMEOUT", "")
-
 	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
 	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
@@ -70,6 +66,10 @@ func ExecuteLambda(parentCtx context.Context, handler func(ctx context.Context))
 // getContextWithLambdaTimeout returns a context with a timeout based on the invoking lambda function's timeout and a
 // cancel function to cancel the context(https://pkg.go.dev/context#WithTimeout).
 func getContextWithLambdaTimeout(parentCtx context.Context) (context.Context, context.CancelFunc) {
+	// LAMBDA_TIMEOUT is the environment variable that indicates the timeout for the lambda function in seconds.
+	// https://docs.aws.amazon.com/lambda/latest/dg/configuration-function-common.html#configuration-timeout-console
+	lambdaTimeout := env.GetString("LAMBDA_TIMEOUT", "")
+
 	durationInt, err := strconv.Atoi(lambdaTimeout)
 	if err != nil {
 		errorLogger.Println("Error converting LAMBDA_TIMEOUT to int: ", err)

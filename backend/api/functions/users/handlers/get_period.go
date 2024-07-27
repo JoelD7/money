@@ -25,18 +25,19 @@ type getPeriodRequest struct {
 	usersRepo    users.Repository
 }
 
-func (request *getPeriodRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *getPeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gpOnce.Do(func() {
 		request.log = log
 		request.log.SetHandler("get-period")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
-		request.usersRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+
+		request.usersRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -50,12 +51,12 @@ func (request *getPeriodRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetPeriodHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func GetPeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gpRequest == nil {
 		gpRequest = new(getPeriodRequest)
 	}
 
-	err := gpRequest.init(ctx, log)
+	err := gpRequest.init(ctx, log, envConfig)
 	if err != nil {
 		gpRequest.err = err
 

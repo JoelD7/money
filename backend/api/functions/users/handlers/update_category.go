@@ -31,14 +31,14 @@ type updateCategoryRequest struct {
 	userRepo     users.Repository
 }
 
-func (request *updateCategoryRequest) init(ctx context.Context, log logger.LogAPI) error {
+func (request *updateCategoryRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	ucOnce.Do(func() {
 		request.log = log
 		request.log.SetHandler("update-category")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.userRepo, err = users.NewDynamoRepository(dynamoClient, usersTableName)
+		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -52,12 +52,12 @@ func (request *updateCategoryRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func UpdateCategoryHandler(ctx context.Context, log logger.LogAPI, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdateCategoryHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if ucRequest == nil {
 		ucRequest = new(updateCategoryRequest)
 	}
 
-	err := ucRequest.init(ctx, log)
+	err := ucRequest.init(ctx, log, envConfig)
 	if err != nil {
 		ucRequest.err = err
 
