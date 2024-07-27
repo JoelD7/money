@@ -89,14 +89,14 @@ func validateCredentials(email, password string) error {
 }
 
 func main() {
-	_, err := env.LoadEnv(context.Background())
+	envConfig, err := env.LoadEnv(context.Background())
 	if err != nil {
-		panic(fmt.Errorf("loading environment failed: %v", err))
+		panic(fmt.Errorf("failed to load environment variables: %w", err))
 	}
 
-	route := router.NewRouter()
+	rootRouter := router.NewRouter(envConfig)
 
-	route.Route("/auth", func(r *router.Router) {
+	rootRouter.Route("/auth", func(r *router.Router) {
 		r.Post("/login", logInHandler)
 
 		r.Post("/signup", signUpHandler)
@@ -106,5 +106,5 @@ func main() {
 		r.Post("/logout", logoutHandler)
 	})
 
-	lambda.Start(route.Handle)
+	lambda.Start(rootRouter.Handle)
 }
