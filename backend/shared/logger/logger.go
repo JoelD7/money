@@ -167,12 +167,8 @@ func (l *Log) getService() string {
 }
 
 func (l *Log) establishConnection() {
-	l.connTimer = time.NewTimer(connDeadlineIncr)
-
 	logstashHost := env.GetString("LOGSTASH_HOST", "")
 	logstashPort := env.GetString("LOGSTASH_PORT", "")
-
-	go l.closeConnection()
 
 	once.Do(func() {
 		conn, err := net.DialTimeout("tcp", logstashHost+":"+logstashPort, connectionTimeout)
@@ -184,6 +180,9 @@ func (l *Log) establishConnection() {
 
 		l.bw = bufio.NewWriter(conn)
 		l.connection = conn
+
+		l.connTimer = time.NewTimer(connDeadlineIncr)
+		go l.closeConnection()
 
 		return
 	})
@@ -221,6 +220,10 @@ func (l *Log) write(data []byte) error {
 		return fmt.Errorf("error writing log: %w", err)
 	}
 
+	if l.connTimer == nil {
+		return nil
+	}
+
 	if !l.connTimer.Stop() {
 		<-l.connTimer.C
 	}
@@ -231,7 +234,9 @@ func (l *Log) write(data []byte) error {
 	return err
 }
 
-// Finish sends the buffer's contents to Logstash in a batch
+// Finish sends the remaining buffer's contents to Logstash. When the buffer is full it automatically flushes itself,
+// sending the data it contains to Logstash. Therefore, Finish has to wait for all "data-sending" goroutines to be
+// completed because there may or may not be a Logstash request underway.
 func (l *Log) Finish() error {
 	l.wg.Wait()
 

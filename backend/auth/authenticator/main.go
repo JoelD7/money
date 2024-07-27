@@ -3,8 +3,11 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -86,6 +89,11 @@ func validateCredentials(email, password string) error {
 }
 
 func main() {
+	_, err := env.LoadEnv(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("loading environment failed: %v", err))
+	}
+
 	route := router.NewRouter()
 
 	route.Route("/auth", func(r *router.Router) {
