@@ -9,7 +9,6 @@ import (
 	"github.com/JoelD7/money/backend/shared/restclient"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/storage/cache"
-	"github.com/JoelD7/money/backend/storage/invalidtoken"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -188,8 +187,6 @@ func TestHandlerError(t *testing.T) {
 		secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
 			return "123", nil
 		})
-
-		_ = invalidtoken.InitDynamoMock()
 
 		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
 		c.Nil(err)
