@@ -48,7 +48,13 @@ func getIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.
 		request = new(incomeGetRequest)
 	}
 
-	request.init(ctx, log, envConfig)
+	err := request.init(ctx, log, envConfig)
+	if err != nil {
+		request.log.Error("init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
+
 	defer request.finish()
 
 	return request.process(ctx, req)

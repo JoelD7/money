@@ -58,10 +58,16 @@ func getMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig 
 		gmiRequest = new(getMultipleIncomeRequest)
 	}
 
-	gmiRequest.init(ctx, log, envConfig)
+	err := gmiRequest.init(ctx, log, envConfig)
+	if err != nil {
+		request.log.Error("init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
+
 	defer gmiRequest.finish()
 
-	err := gmiRequest.prepareRequest(req)
+	err = gmiRequest.prepareRequest(req)
 	if err != nil {
 		return req.NewErrorResponse(err), nil
 	}

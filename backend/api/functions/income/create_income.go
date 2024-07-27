@@ -59,7 +59,13 @@ func createIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 		ciRequest = new(createIncomeRequest)
 	}
 
-	ciRequest.init(ctx, log, envConfig)
+	err := ciRequest.init(ctx, log, envConfig)
+	if err != nil {
+		request.log.Error("init_failed", err, []models.LoggerObject{req})
+
+		return req.NewErrorResponse(err), nil
+	}
+
 	defer ciRequest.finish()
 
 	return ciRequest.process(ctx, req)
