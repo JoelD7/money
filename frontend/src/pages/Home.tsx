@@ -1,7 +1,13 @@
-import { Typography, useMediaQuery, useTheme } from "@mui/material";
+import {
+  LinearProgress,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import {
+  BackgroundRefetchErrorSnackbar,
   BalanceCard,
   Button,
   ExpenseCard,
@@ -115,18 +121,30 @@ export function Home() {
     setOpenNewExpense(false);
   }
 
-  if (getUser.isPending) {
+  if (getUser.isPending && user === undefined) {
     return <Loading />;
   }
 
-  if (getUser.isError) {
+  if (getUser.isError && user === undefined) {
     return <Error />;
   }
 
   return (
     <>
+      <BackgroundRefetchErrorSnackbar />
+
       <Navbar />
-      <Grid container spacing={1} justifyContent={"center"}>
+
+      <Grid
+        container
+        spacing={1}
+        justifyContent={"center"}
+        position={"relative"}
+      >
+        <Grid xs={12} position={"absolute"} hidden={!getUser.isFetching}>
+          <LinearProgress />
+        </Grid>
+
         {/*Balance*/}
         <Grid xs={12} sm={6} hidden={mdUp}>
           <BalanceCard remainder={user ? user.remainder : 0} />

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"net/http"
@@ -31,11 +30,13 @@ type Router struct {
 	parent         *Router
 	root           *Router
 	methodHandlers map[string]map[string]Handler
+	envConfig      *models.EnvironmentConfiguration
 }
 
-func NewRouter() *Router {
+func NewRouter(envConfig *models.EnvironmentConfiguration) *Router {
 	return &Router{
-		log: logger.NewLogger(),
+		envConfig: envConfig,
+		log:       logger.NewLogger(),
 		methodHandlers: map[string]map[string]Handler{
 			http.MethodGet:     make(map[string]Handler),
 			http.MethodHead:    make(map[string]Handler),
@@ -56,17 +57,8 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 		}
 	}()
 
-	envConfig, err := env.LoadEnv(ctx)
-	if err != nil {
-		router.log.Error("router_env_load_failed", err, nil)
-
-		return &apigateway.Response{
-			StatusCode: http.StatusInternalServerError,
-		}, nil
-	}
-
 	stackTrace, ctxErr := shared.ExecuteLambda(ctx, func(ctx context.Context) {
-		res, err = router.executeHandle(ctx, envConfig, request)
+		res, err = router.executeHandle(ctx, router.envConfig, request)
 	})
 
 	if ctxErr != nil {

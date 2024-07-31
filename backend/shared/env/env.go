@@ -122,3 +122,9 @@ func GetInt(varName string, defaultValue int) int {
 
 	return intValue
 }
+
+func GetBool(varName string) bool {
+	val, _ := os.LookupEnv(varName)
+
+	return val == "true"
+}
