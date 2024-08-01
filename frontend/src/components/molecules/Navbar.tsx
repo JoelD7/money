@@ -90,9 +90,7 @@ export function Navbar({ children }: NavbarProps) {
         className={
           mdUp
             ? "hidden"
-            : //   mx-[-40px] to override the padding of the parent div. We don't want the navbar to be centered like the
-              //   contents of a page
-              "flex p-4 bg-white-100 flex-row justify-items-center mx-[-40px] mb-2.5"
+            : "flex p-4 bg-white-100 flex-row justify-items-center mb-2.5"
         }
       >
         {children ? children : <Logo />}
@@ -179,7 +177,7 @@ export function Navbar({ children }: NavbarProps) {
         </nav>
       </Drawer>
 
-      <div>
+      <div className={"h-[100%]"}>
         <nav
           style={{ backgroundColor: "white" }}
           className={

@@ -13,11 +13,9 @@ import {
   ExpenseCard,
   ExpensesChart,
   ExpensesTable,
-  Navbar,
   NewExpense,
 } from "../components";
 import { Expense, Period, User } from "../types";
-import json2mq from "json2mq";
 import { useQuery } from "@tanstack/react-query";
 import api from "../api";
 import { Loading } from "./Loading.tsx";
@@ -59,12 +57,6 @@ export function Home() {
 
   const colorsByCategory: Map<string, string> = getColorsByCategory();
   const categoryExpense: CategoryExpense[] = getCategoryExpense();
-
-  const xlCustom = useMediaQuery(
-    json2mq({
-      maxWidth: 2300,
-    }),
-  );
 
   const chartHeight: number = 250;
 
@@ -133,8 +125,6 @@ export function Home() {
     <>
       <BackgroundRefetchErrorSnackbar />
 
-      <Navbar />
-
       <Grid
         container
         spacing={1}
@@ -156,11 +146,11 @@ export function Home() {
         </Grid>
 
         {/*Chart, Current balance and expenses*/}
-        <Grid xs={12} maxWidth={"880px"}>
+        <Grid xs={12} maxWidth={"1200px"}>
           <div>
             <Grid container spacing={1}>
               {/*Chart section*/}
-              <Grid xs={12} md={6} maxWidth={"430px"}>
+              <Grid xs={12} md={6}>
                 <ExpensesChart
                   period={period}
                   categoryExpense={categoryExpense}
@@ -170,7 +160,7 @@ export function Home() {
                 />
               </Grid>
               {/*New expense/income buttons, Current balance and expenses*/}
-              <Grid xs={12} md={6} maxWidth={"430px"}>
+              <Grid xs={12} md={6}>
                 <div>
                   <Grid container mt={"1rem"} spacing={1}>
                     {/*Balance*/}
@@ -210,7 +200,7 @@ export function Home() {
         </Grid>
 
         {/*Latest table*/}
-        <Grid xs={12} maxWidth={xlCustom ? "1200px" : "none"}>
+        <Grid xs={12} maxWidth={"1200px"}>
           <Typography mt={"2rem"} variant={"h4"}>
             Latest
           </Typography>
