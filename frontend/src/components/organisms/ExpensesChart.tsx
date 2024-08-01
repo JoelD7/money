@@ -98,7 +98,7 @@ export function ExpensesChart({
 
         <Grid xs={12} height={chartHeight} style={{ opacity: getOpacity() }}>
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart width={350} height={chartHeight}>
+            <PieChart >
               <Pie
                 data={categoryExpense}
                 label={getCustomLabel}
