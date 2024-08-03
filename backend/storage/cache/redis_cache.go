@@ -72,10 +72,6 @@ func (r *RedisCache) AddInvalidToken(ctx context.Context, username, token string
 
 	invalidTokens, err := r.GetInvalidTokens(ctx, username)
 	if err != nil && !errors.Is(err, models.ErrInvalidTokensNotFound) {
-		return err
-	}
-
-	if err != nil {
 		return fmt.Errorf("add invalid tokens: %v", err)
 	}
 
