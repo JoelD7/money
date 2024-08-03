@@ -1,5 +1,4 @@
 import {
-  LinearProgress,
   Typography,
   useMediaQuery,
   useTheme,
@@ -12,7 +11,7 @@ import {
   Button, Container,
   ExpenseCard,
   ExpensesChart,
-  ExpensesTable, Navbar,
+  ExpensesTable, LinearProgress, Navbar,
   NewExpense,
 } from "../components";
 import { Expense, Period, User } from "../types";
@@ -124,17 +123,14 @@ export function Home() {
   return (
       <Container>
         <BackgroundRefetchErrorSnackbar/>
-
+        <LinearProgress loading={getUser.isFetching || getExpenses.isFetching || getPeriod.isFetching}/>
         <Navbar/>
+
         <Grid
             container
             justifyContent={"center"}
             position={"relative"}
         >
-
-          <Grid xs={12} position={"absolute"} hidden={!getUser.isFetching}>
-            <LinearProgress/>
-          </Grid>
 
           {/*Balance*/}
           <Grid xs={12} sm={6} hidden={mdUp}>
