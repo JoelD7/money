@@ -4,6 +4,7 @@ import { CircularProgress, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { Button } from "../atoms";
 import { Colors } from "../../assets";
+import { useNavigate } from "@tanstack/react-router";
 
 type ExpensesChartProps = {
   categoryExpense: CategoryExpense[];
@@ -21,6 +22,8 @@ export function ExpensesChart({
   isError,
 }: ExpensesChartProps) {
   const RADIAN: number = Math.PI / 180;
+
+  const navigate = useNavigate();
 
   function getCustomLabel({
     cx,
@@ -68,6 +71,16 @@ export function ExpensesChart({
     return isLoading || isError ? 0 : 1;
   }
 
+  function viewPeriodDetails() {
+    const route = `/period/${period ? period.name : "current"}`;
+
+    navigate({ to: route })
+      .then(() => {})
+      .catch((err) => {
+        console.error("Error navigating to /login", err);
+      });
+  }
+
   return (
     <div>
       <Grid
@@ -98,7 +111,7 @@ export function ExpensesChart({
 
         <Grid xs={12} height={chartHeight} style={{ opacity: getOpacity() }}>
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart >
+            <PieChart>
               <Pie
                 data={categoryExpense}
                 label={getCustomLabel}
@@ -140,6 +153,7 @@ export function ExpensesChart({
                     borderRadius: "1rem",
                     height: "fit-content",
                   }}
+                  onClick={() => viewPeriodDetails()}
                 >
                   View details
                 </Button>
