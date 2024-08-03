@@ -8,7 +8,6 @@ import { PersistGate } from "redux-persist/integration/react";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import "dayjs/locale/en-gb";
-import { Navbar } from "../components";
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -78,16 +77,11 @@ function PageContent() {
 
   if (mdUp) {
     return (
-      <div className={"flex"} style={mdUp ? {} : { flexDirection: "column" }}>
-        <div className={"w-[200px]"}>
-          <Navbar />
-        </div>
-
-        <div className={"w-[100%] flex justify-center"}>
-          <div className={"max-w-[1600px] w-[99%]"}>
-            <Outlet />
-          </div>
-        </div>
+      <div
+        className={"flex justify-center"}
+        style={mdUp ? {} : { flexDirection: "column" }}
+      >
+        <Outlet />
       </div>
     );
   }
@@ -97,8 +91,6 @@ function PageContent() {
       className={"flex max-w-[1600px]"}
       style={mdUp ? {} : { flexDirection: "column" }}
     >
-      <Navbar />
-
       <div className={"px-10"}>{<Outlet />}</div>
     </div>
   );
