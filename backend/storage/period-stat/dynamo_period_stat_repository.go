@@ -54,5 +54,9 @@ func (d *DynamoRepository) GetPeriodStat(ctx context.Context, period, username, 
 		return nil, fmt.Errorf("storage: unmarshalling period stat: %v", err)
 	}
 
+	if result.Item == nil {
+		return nil, models.ErrExpenseNotFound
+	}
+
 	return toPeriodStatModel(periodStat), nil
 }
