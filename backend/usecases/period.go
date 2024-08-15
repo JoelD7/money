@@ -25,6 +25,10 @@ type PeriodManager interface {
 	DeletePeriod(ctx context.Context, periodID, username string) error
 }
 
+type PeriodStatManager interface {
+	GetPeriodStat(ctx context.Context, period, username, categoryID string) (*models.PeriodStat, error)
+}
+
 func NewPeriodCreator(pm PeriodManager, log Logger) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 		if period.StartDate.After(period.EndDate) {

@@ -29,7 +29,7 @@ type ExpenseRecurringManager interface {
 	DeleteExpenseRecurring(ctx context.Context, expenseRecurringID, username string) error
 }
 
-func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
+func NewExpenseCreator(em ExpenseManager, pm PeriodManager, psm PeriodStatManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 		err := validateExpensePeriod(ctx, expense, username, pm)
 		if err != nil {
