@@ -1,4 +1,4 @@
-package period_stat
+package expenses
 
 import (
 	"context"
@@ -11,25 +11,25 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-type DynamoRepository struct {
+type PeriodStatDynamoRepository struct {
 	dynamoClient      *dynamodb.Client
 	tableName         string
 	categoryUserIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, categoryUserIndex string) (*DynamoRepository, error) {
+func NewPeriodStatDynamoRepository(dynamoClient *dynamodb.Client, tableName, categoryUserIndex string) (*PeriodStatDynamoRepository, error) {
 	if tableName == "" || categoryUserIndex == "" {
 		return nil, fmt.Errorf("storage: table name and category user index are required")
 	}
 
-	return &DynamoRepository{
+	return &PeriodStatDynamoRepository{
 		dynamoClient:      dynamoClient,
 		tableName:         tableName,
 		categoryUserIndex: categoryUserIndex,
 	}, nil
 }
 
-func (d *DynamoRepository) GetPeriodStat(ctx context.Context, period, username, categoryID string) (*models.PeriodStat, error) {
+func (d *PeriodStatDynamoRepository) GetPeriodStat(ctx context.Context, period, username, categoryID string) (*models.PeriodStat, error) {
 	periodUser := dynamo.BuildPeriodUser(username, period)
 	if periodUser == nil {
 		return nil, fmt.Errorf("storage: unable to build period user")

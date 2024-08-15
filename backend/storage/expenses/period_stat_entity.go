@@ -1,4 +1,4 @@
-package period_stat
+package expenses
 
 import (
 	"github.com/JoelD7/money/backend/models"

@@ -1,4 +1,4 @@
-package period_stat
+package expenses
 
 import (
 	"context"
