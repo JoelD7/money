@@ -31,7 +31,7 @@ func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.log = log
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable, envConfig.PeriodUserExpenseIndex)
 	})
 
 	request.startingTime = time.Now()
