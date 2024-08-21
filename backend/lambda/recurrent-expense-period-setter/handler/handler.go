@@ -40,8 +40,9 @@ func (request *Request) init(ctx context.Context) error {
 		expensesRecurringTableName := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 		periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
 		uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+		periodUserExpenseIndex := env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
 
-		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
 		if err != nil {
 			return
 		}

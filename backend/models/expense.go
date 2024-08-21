@@ -17,3 +17,9 @@ type Expense struct {
 	PeriodUser   *string   `json:"period_user,omitempty"`
 	UpdateDate   time.Time `json:"update_date,omitempty"`
 }
+
+type CategoryExpenseSummary struct {
+	CategoryID string  `json:"category_id"`
+	Total      float64 `json:"total"`
+	Period     string  `json:"period"`
+}
