@@ -98,7 +98,15 @@ func TestLoginHandlerFailed(t *testing.T) {
 	response, err := request.processLogin(ctx, apigwRequest)
 	c.NoError(err)
 	c.Equal(http.StatusInternalServerError, response.StatusCode)
-	c.Equal(apigateway.ErrInternalError.Message, response.Body)
+	c.Contains(response.Body, apigateway.ErrInternalError.Message)
+
+	t.Run("Invalid request body", func(t *testing.T) {
+		apigwRequest.Body = "a"
+		response, err = request.processLogin(ctx, apigwRequest)
+		c.NoError(err)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Contains(response.Body, "Invalid request body")
+	})
 
 	t.Run("User not found", func(t *testing.T) {
 		usersMock.ActivateForceFailure(models.ErrUserNotFound)
@@ -108,14 +116,6 @@ func TestLoginHandlerFailed(t *testing.T) {
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrUserNotFound.Error(), response.Body)
-	})
-
-	t.Run("Invalid request body", func(t *testing.T) {
-		apigwRequest.Body = "a"
-		response, err = request.processLogin(ctx, apigwRequest)
-		c.NoError(err)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Equal(apigateway.ErrInternalError.Message, response.Body)
 	})
 
 	type testCase struct {

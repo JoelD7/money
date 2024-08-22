@@ -122,7 +122,7 @@ func validateLoginInput(request *apigateway.Request) (*Credentials, error) {
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v: %w", err, models.ErrInvalidRequestBody)
 	}
 
 	err = validateCredentials(reqBody.Username, reqBody.Password)
