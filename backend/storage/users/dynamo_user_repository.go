@@ -113,3 +113,20 @@ func (d *DynamoRepository) UpdateUser(ctx context.Context, u *models.User) error
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	return err
 }
+
+func (d *DynamoRepository) DeleteUser(ctx context.Context, username string) error {
+	userKey, err := attributevalue.Marshal(username)
+	if err != nil {
+		return err
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]types.AttributeValue{
+			"username": userKey,
+		},
+	}
+
+	_, err = d.dynamoClient.DeleteItem(ctx, input)
+	return err
+}
