@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"sync"
@@ -24,6 +25,7 @@ type GetExpensesStatsRequest struct {
 	startingTime time.Time
 	err          error
 	ExpensesRepo expenses.Repository
+	UserRepo     users.Repository
 }
 
 func (request *GetExpensesStatsRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
@@ -33,6 +35,11 @@ func (request *GetExpensesStatsRequest) init(ctx context.Context, log logger.Log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable, envConfig.PeriodUserExpenseIndex)
+		if err != nil {
+			return
+		}
+
+		request.UserRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -78,7 +85,7 @@ func (request *GetExpensesStatsRequest) Process(ctx context.Context, req *apigat
 		return req.NewErrorResponse(err), nil
 	}
 
-	getCategoryExpensesSummary := usecases.NewCategoryExpenseSummaryGetter(request.ExpensesRepo)
+	getCategoryExpensesSummary := usecases.NewCategoryExpenseSummaryGetter(request.ExpensesRepo, request.UserRepo)
 	categoryExpenseSummary, err := getCategoryExpensesSummary(ctx, username, periodID)
 	if err != nil {
 		request.Log.Error("get_expenses_stats_failed", err, []models.LoggerObject{req})

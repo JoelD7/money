@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -23,18 +24,23 @@ func TestGetExpensesStats(t *testing.T) {
 	dynamoClient := dynamo.InitClient(ctx)
 
 	username := "e2e_test@gmail.com"
+	periodID := "2021-09"
 
 	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserIndex)
 	c.Nil(err, "creating expenses repository failed")
 
+	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
+	c.Nil(err, "creating users repository failed")
+
 	request := handlers.GetExpensesStatsRequest{
 		ExpensesRepo: expensesRepo,
+		UserRepo:     usersRepo,
 		Log:          logger.NewConsoleLogger("get_expenses_stats_e2e_test"),
 	}
 
 	apigwRequest := &apigateway.Request{
 		PathParameters: map[string]string{
-			"periodID": "2021-09", //should be the same as in the sample json file
+			"periodID": periodID, //should be the same as in the sample json file
 		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
@@ -43,14 +49,25 @@ func TestGetExpensesStats(t *testing.T) {
 		},
 	}
 
+	testUser := &models.User{
+		Username:      username,
+		CurrentPeriod: periodID,
+	}
+
+	err = usersRepo.CreateUser(ctx, testUser)
+	c.Nil(err, "creating user failed")
+
 	expensesList := setupExpenses(c)
 
 	err = expensesRepo.BatchCreateExpenses(ctx, request.Log, expensesList)
 	c.Nil(err, "batch creating expenses failed")
 
-	t.Cleanup(func() {
+	defer t.Cleanup(func() {
 		err = expensesRepo.BatchDeleteExpenses(ctx, expensesList)
 		c.Nil(err, "batch deleting expenses failed")
+
+		err = usersRepo.DeleteUser(ctx, username)
+		c.Nil(err, "deleting user failed")
 	})
 
 	response, err := request.Process(ctx, apigwRequest)
