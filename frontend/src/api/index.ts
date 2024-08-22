@@ -1,6 +1,10 @@
 import { login, logout, signUp } from "./auth.ts";
 import { getUser } from "./money-api.ts";
-import { createExpense, getExpenses } from "./expenses.ts";
+import {
+  createExpense,
+  getCategoryExpenseSummary,
+  getExpenses,
+} from "./expenses.ts";
 import { getPeriod } from "./period.ts";
 
 const api = {
@@ -11,6 +15,7 @@ const api = {
   getExpenses,
   getPeriod,
   createExpense,
+  getCategoryExpenseSummary,
 };
 
 export default api;

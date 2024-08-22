@@ -22,6 +22,14 @@ export type Expense = {
   update_date?: string;
 };
 
+export type CategoryExpenseSummary = {
+    category_id: string;
+    name: string;
+    total: number;
+    period: string;
+    color: string;
+};
+
 export type Expenses = {
   expenses: Expense[];
   next_key: string;

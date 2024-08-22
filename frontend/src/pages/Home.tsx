@@ -13,18 +13,23 @@ import {
   Navbar,
   NewExpense,
 } from "../components";
-import { Expense, Period, User } from "../types";
+import {
+  Category,
+  CategoryExpenseSummary,
+  Expense,
+  Period,
+  User,
+} from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { Colors } from "../assets";
 import { useState } from "react";
-import { useGetExpenses, useGetPeriod, useGetUser } from "./queries.ts";
-
-type CategoryExpense = {
-  category: string;
-  color: string;
-  value: number;
-};
+import {
+  useGetCategoryExpenseSummary,
+  useGetExpenses,
+  useGetPeriod,
+  useGetUser,
+} from "./queries.ts";
 
 export function Home() {
   const theme = useTheme();
@@ -36,63 +41,42 @@ export function Home() {
   const getUser = useGetUser();
   const getExpenses = useGetExpenses();
   const getPeriod = useGetPeriod();
+  const getCategoryExpenseSummary = useGetCategoryExpenseSummary();
 
   const user: User | undefined = getUser.data?.data;
   const expenses: Expense[] | undefined = getExpenses.data?.data.expenses;
   const period: Period | undefined = getPeriod.data?.data;
-
-  const colorsByCategory: Map<string, string> = getColorsByCategory();
-  const categoryExpense: CategoryExpense[] = getCategoryExpense();
+  const categoryExpenseSummary: CategoryExpenseSummary[] | undefined =
+    setAdditionalData(getCategoryExpenseSummary.data?.data, user);
 
   const chartHeight: number = 250;
 
-  function getColorsByCategory(): Map<string, string> {
-    const colorsByCategory: Map<string, string> = new Map<string, string>();
-    if (user && user.categories) {
-      user.categories.forEach((category) => {
-        colorsByCategory.set(category.name, category.color);
-      });
+  function setAdditionalData(
+    categoryExpenseSummary: CategoryExpenseSummary[] | undefined,
+    user: User | undefined,
+  ): CategoryExpenseSummary[] | undefined {
+    if (!categoryExpenseSummary || !user || !user.categories) {
+      return;
     }
 
-    return colorsByCategory;
-  }
-
-  function getCategoryExpense(): CategoryExpense[] {
-    if (!user || !expenses) {
-      return [];
-    }
-
-    const categoryExpense: CategoryExpense[] = [];
-    const totalExpenseByCategory: Map<string, number> = new Map<
-      string,
-      number
-    >();
-
-    expenses.forEach((expense) => {
-      let category = expense.category_name;
-      if (!category) {
-        category = "Other";
-      }
-
-      const curTotal: number | undefined = totalExpenseByCategory.get(category);
-
-      if (curTotal) {
-        totalExpenseByCategory.set(category, curTotal + expense.amount);
-      } else {
-        totalExpenseByCategory.set(category, expense.amount);
-      }
+    const categoryByID: Map<string, Category> = new Map<string, Category>();
+    user.categories.forEach((category) => {
+      categoryByID.set(category.id, category);
     });
 
-    totalExpenseByCategory.forEach((value, key) => {
-      let color = colorsByCategory.get(key);
-      if (!color) {
-        color = Colors.GRAY_DARK;
+    categoryExpenseSummary.forEach((ces) => {
+      const category = categoryByID.get(ces.category_id);
+      if (category) {
+        ces.name = category.name;
+        ces.color = category.color;
+        return;
       }
 
-      categoryExpense.push({ category: key, value: value, color: color });
+      ces.name = "Other";
+      ces.color = Colors.GRAY_DARK;
     });
 
-    return categoryExpense;
+    return categoryExpenseSummary;
   }
 
   function handleClose() {
@@ -136,7 +120,7 @@ export function Home() {
               <Grid xs={12} md={6}>
                 <ExpensesChart
                   period={period}
-                  categoryExpense={categoryExpense}
+                  summary={categoryExpenseSummary ? categoryExpenseSummary : []}
                   chartHeight={chartHeight}
                   isLoading={getUser.isLoading || getExpenses.isLoading}
                   isError={getExpenses.isError}
