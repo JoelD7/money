@@ -23,6 +23,7 @@ type Repository interface {
 	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
 	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
+	GetAllExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error)
 
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"math"
 	"time"
 )
 
@@ -18,6 +19,7 @@ type ExpenseManager interface {
 	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
 	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
+	GetAllExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error)
 
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
@@ -297,5 +299,33 @@ func validateExpensePeriod(ctx context.Context, expense *models.Expense, usernam
 func NewExpenseRecurringEliminator(em ExpenseRecurringManager) func(ctx context.Context, expenseRecurringID, username string) error {
 	return func(ctx context.Context, expenseRecurringID, username string) error {
 		return em.DeleteExpenseRecurring(ctx, expenseRecurringID, username)
+	}
+}
+
+func NewCategoryExpenseSummaryGetter(em ExpenseManager) func(ctx context.Context, username, periodID string) ([]*models.CategoryExpenseSummary, error) {
+	return func(ctx context.Context, username, periodID string) ([]*models.CategoryExpenseSummary, error) {
+		expenses, err := em.GetAllExpensesByPeriod(ctx, username, periodID)
+		if err != nil {
+			return nil, err
+		}
+
+		categoryExpenses := make([]*models.CategoryExpenseSummary, 0)
+		totalExpensesByCategory := make(map[string]float64)
+
+		for _, expense := range expenses {
+			if expense.CategoryID != nil && expense.Amount != nil {
+				totalExpensesByCategory[*expense.CategoryID] += *expense.Amount
+			}
+		}
+
+		for categoryID, total := range totalExpensesByCategory {
+			categoryExpenses = append(categoryExpenses, &models.CategoryExpenseSummary{
+				CategoryID: categoryID,
+				Total:      math.Round(total*100) / 100,
+				Period:     periodID,
+			})
+		}
+
+		return categoryExpenses, nil
 	}
 }

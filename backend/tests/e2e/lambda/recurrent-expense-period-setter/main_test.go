@@ -6,18 +6,26 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/lambda/recurrent-expense-period-setter/handler"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	expensesRepo "github.com/JoelD7/money/backend/storage/expenses"
 	periodRepo "github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/tests/e2e/utils"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
-	"net/http"
 	"os"
 	"testing"
 	"time"
 )
+
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(err)
+	}
+
+	os.Exit(m.Run())
+}
 
 func TestProcess(t *testing.T) {
 	c := require.New(t)
@@ -25,9 +33,23 @@ func TestProcess(t *testing.T) {
 	dynamoClient := utils.InitDynamoClient()
 	ctx := context.Background()
 
+	var (
+		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
+		expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+		periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
+		uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+		periodUserExpenseIndex     = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
+	)
+
+	expensesRepository, err := expensesRepo.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
+	c.Nil(err, "creating expenses repository failed")
+
+	periodRepository, err := periodRepo.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+	c.Nil(err, "creating period repository failed")
+
 	req := &handler.Request{
-		ExpensesRepo: expensesRepo.NewDynamoRepository(dynamoClient),
-		PeriodRepo:   periodRepo.NewDynamoRepository(dynamoClient),
+		ExpensesRepo: expensesRepository,
+		PeriodRepo:   periodRepository,
 		Log:          logger.NewConsoleLogger("patch_recurrent_expense_e2e_test"),
 	}
 
@@ -54,12 +76,9 @@ func TestProcess(t *testing.T) {
 	_, err = req.PeriodRepo.CreatePeriod(ctx, period)
 	c.Nil(err, "creating period failed")
 
-	apigwReq := &apigateway.Request{
-		Body: fmt.Sprintf(`{"period": "%s"}`, period.ID),
-		RequestContext: events.APIGatewayProxyRequestContext{
-			Authorizer: map[string]interface{}{
-				"username": username,
-			},
+	msg := models.SQSMessage{
+		SQSMessage: events.SQSMessage{
+			Body: fmt.Sprintf(`{"period": "%s","username": "%s"}`, period.ID, username),
 		},
 	}
 
@@ -74,9 +93,8 @@ func TestProcess(t *testing.T) {
 		c.Nil(err, "deleting period failed")
 	})
 
-	res, err := req.Process(ctx, apigwReq)
+	err = req.ProcessMessage(ctx, msg)
 	c.Nil(err)
-	c.Equal(http.StatusOK, res.StatusCode)
 
 	result, _, err := req.ExpensesRepo.GetExpensesByPeriod(ctx, period.Username, period.ID, "", 20)
 	c.Nil(err, "getting expenses by period failed")
