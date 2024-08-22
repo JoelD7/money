@@ -22,6 +22,7 @@ import (
 var (
 	expensesTableName          string
 	expensesRecurringTableName string
+	periodUserIndex            string
 )
 
 func TestMain(m *testing.M) {
@@ -32,6 +33,7 @@ func TestMain(m *testing.M) {
 
 	expensesTableName = env.GetString("EXPENSES_TABLE_NAME", "")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	periodUserIndex = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
 
 	os.Exit(m.Run())
 }
@@ -53,7 +55,7 @@ func TestProcess(t *testing.T) {
 		Name:         aws.String("Test Expense"),
 	}
 
-	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserIndex)
 	c.Nil(err, "creating expenses repository failed")
 
 	createdExpense, err := expensesRepo.CreateExpense(ctx, ex)

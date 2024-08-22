@@ -28,6 +28,12 @@ func main() {
 			r.Route("/recurring", func(r *router.Router) {
 				r.Delete("/{expenseRecurringID}", handlers.DeleteExpenseRecurring)
 			})
+
+			r.Route("/stats", func(r *router.Router) {
+				r.Route("/period", func(r *router.Router) {
+					r.Get("/{periodID}", handlers.GetExpensesStats)
+				})
+			})
 		})
 	})
 

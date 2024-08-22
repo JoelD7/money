@@ -36,7 +36,7 @@ func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI, e
 		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable, envConfig.PeriodUserExpenseIndex)
 		if err != nil {
 			return
 		}
