@@ -22,9 +22,9 @@ export function useGetPeriod() {
   });
 }
 
-export function useGetCategoryExpenseSummary(periodID:string="current"){
-    return useQuery({
-        queryKey: ["categoryExpenseSummary"],
-        queryFn: () => api.getCategoryExpenseSummary(periodID),
-    });
+export function useGetCategoryExpenseSummary(periodID: string = "current") {
+  return useQuery({
+    queryKey: ["categoryExpenseSummary"],
+    queryFn: () => api.getCategoryExpenseSummary(periodID),
+  });
 }

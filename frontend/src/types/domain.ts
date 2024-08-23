@@ -23,11 +23,11 @@ export type Expense = {
 };
 
 export type CategoryExpenseSummary = {
-    category_id: string;
-    name: string;
-    total: number;
-    period: string;
-    color: string;
+  category_id: string;
+  name: string;
+  total: number;
+  period: string;
+  color: string;
 };
 
 export type Expenses = {

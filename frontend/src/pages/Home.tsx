@@ -14,7 +14,6 @@ import {
   NewExpense,
 } from "../components";
 import {
-  Category,
   CategoryExpenseSummary,
   Expense,
   Period,
@@ -22,7 +21,6 @@ import {
 } from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
-import { Colors } from "../assets";
 import { useState } from "react";
 import {
   useGetCategoryExpenseSummary,
@@ -30,6 +28,7 @@ import {
   useGetPeriod,
   useGetUser,
 } from "./queries.ts";
+import { utils } from "../utils";
 
 export function Home() {
   const theme = useTheme();
@@ -46,38 +45,9 @@ export function Home() {
   const user: User | undefined = getUser.data?.data;
   const expenses: Expense[] | undefined = getExpenses.data?.data.expenses;
   const period: Period | undefined = getPeriod.data?.data;
-  const categoryExpenseSummary: CategoryExpenseSummary[] | undefined =
-    setAdditionalData(getCategoryExpenseSummary.data?.data, user);
+  const categoryExpenseSummary: CategoryExpenseSummary[] = utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
 
   const chartHeight: number = 250;
-
-  function setAdditionalData(
-    categoryExpenseSummary: CategoryExpenseSummary[] | undefined,
-    user: User | undefined,
-  ): CategoryExpenseSummary[] | undefined {
-    if (!categoryExpenseSummary || !user || !user.categories) {
-      return;
-    }
-
-    const categoryByID: Map<string, Category> = new Map<string, Category>();
-    user.categories.forEach((category) => {
-      categoryByID.set(category.id, category);
-    });
-
-    categoryExpenseSummary.forEach((ces) => {
-      const category = categoryByID.get(ces.category_id);
-      if (category) {
-        ces.name = category.name;
-        ces.color = category.color;
-        return;
-      }
-
-      ces.name = "Other";
-      ces.color = Colors.GRAY_DARK;
-    });
-
-    return categoryExpenseSummary;
-  }
 
   function handleClose() {
     setOpenNewExpense(false);
