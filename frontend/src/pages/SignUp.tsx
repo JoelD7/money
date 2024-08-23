@@ -134,7 +134,6 @@ export function SignUp() {
           <Box
             component="form"
             onSubmit={signUp}
-            height={"100vh"}
             autoComplete="on"
             maxWidth={"645px"}
             margin={"auto"}

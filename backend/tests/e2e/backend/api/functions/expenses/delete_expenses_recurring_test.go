@@ -23,6 +23,7 @@ var (
 	expensesTableName          string
 	expensesRecurringTableName string
 	periodUserIndex            string
+	usersTableName             string
 )
 
 func TestMain(m *testing.M) {
@@ -34,6 +35,7 @@ func TestMain(m *testing.M) {
 	expensesTableName = env.GetString("EXPENSES_TABLE_NAME", "")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 	periodUserIndex = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
+	usersTableName = env.GetString("USERS_TABLE_NAME", "")
 
 	os.Exit(m.Run())
 }

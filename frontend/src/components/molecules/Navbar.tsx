@@ -90,7 +90,7 @@ export function Navbar({ children }: NavbarProps) {
         className={
           mdUp
             ? "hidden"
-            : "flex p-4 bg-white-100 flex-row justify-items-center mb-2.5"
+            : "flex p-4 bg-white-100 flex-row justify-items-center mb-2.5 fixed top-0 z-10 left-0 w-full"
         }
       >
         {children ? children : <Logo />}
@@ -177,7 +177,7 @@ export function Navbar({ children }: NavbarProps) {
         </nav>
       </Drawer>
 
-      <div className={"h-[100%]"}>
+      <div className={"h-[100%] fixed left-0"}>
         <nav
           style={{ backgroundColor: "white" }}
           className={

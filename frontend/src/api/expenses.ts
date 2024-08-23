@@ -1,4 +1,4 @@
-import { Expense, Expenses } from "../types";
+import { CategoryExpenseSummary, Expense, Expenses } from "../types";
 import { keys } from "../utils";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 
@@ -29,6 +29,15 @@ export function getExpenses(
 
 export function createExpense(expense: Expense) {
   return axiosClient.post(API_BASE_URL + "/expenses", expense, {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+    },
+  });
+}
+
+export function getCategoryExpenseSummary(period: string = "current") {
+  return axiosClient.get<CategoryExpenseSummary[]>(API_BASE_URL + `/expenses/stats/period/${period}`, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,

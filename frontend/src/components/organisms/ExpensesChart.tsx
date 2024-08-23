@@ -1,12 +1,17 @@
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { CategoryExpense, Period, RechartsLabelProps } from "../../types";
+import {
+  CategoryExpenseSummary,
+  Period,
+  RechartsLabelProps,
+} from "../../types";
 import { CircularProgress, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { Button } from "../atoms";
 import { Colors } from "../../assets";
+import { useNavigate } from "@tanstack/react-router";
 
 type ExpensesChartProps = {
-  categoryExpense: CategoryExpense[];
+  summary: CategoryExpenseSummary[];
   period?: Period;
   chartHeight: number;
   isLoading: boolean;
@@ -14,13 +19,15 @@ type ExpensesChartProps = {
 };
 
 export function ExpensesChart({
-  categoryExpense,
+  summary,
   chartHeight,
   period,
   isLoading,
   isError,
 }: ExpensesChartProps) {
   const RADIAN: number = Math.PI / 180;
+
+  const navigate = useNavigate();
 
   function getCustomLabel({
     cx,
@@ -68,6 +75,16 @@ export function ExpensesChart({
     return isLoading || isError ? 0 : 1;
   }
 
+  function viewPeriodDetails() {
+    const route = `/period/${period ? period.name : "current"}`;
+
+    navigate({ to: route })
+      .then(() => {})
+      .catch((err) => {
+        console.error("Error navigating to /login", err);
+      });
+  }
+
   return (
     <div>
       <Grid
@@ -98,22 +115,30 @@ export function ExpensesChart({
 
         <Grid xs={12} height={chartHeight} style={{ opacity: getOpacity() }}>
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart >
+            <PieChart>
               <Pie
-                data={categoryExpense}
+                data={summary}
                 label={getCustomLabel}
-                dataKey="value"
-                nameKey="category"
+                dataKey="total"
+                nameKey="name"
                 cx="50%"
                 cy="50%"
                 labelLine={false}
                 fill="#8884d8"
               >
-                {categoryExpense.map((category, index) => (
+                {summary.map((category, index) => (
                   <Cell key={`cell-${index}`} fill={category.color} />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip
+                formatter={(value, name) => [
+                  value.toLocaleString("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }),
+                  name,
+                ]}
+              />
             </PieChart>
           </ResponsiveContainer>
         </Grid>
@@ -121,13 +146,16 @@ export function ExpensesChart({
         <Grid xs={12} style={{ opacity: getOpacity() }}>
           <Grid container width="100%" className="justify-between">
             <Grid xs={6}>
-              {categoryExpense.map((ce) => (
-                <div key={`${ce.category}`} className="flex gap-1 items-center">
+              {summary.map((ce) => (
+                <div
+                  key={`${ce.category_id}`}
+                  className="flex gap-1 items-center"
+                >
                   <div
                     className="rounded-full w-3 h-3"
                     style={{ backgroundColor: ce.color }}
                   />
-                  <Typography color="gray.light">{ce.category}</Typography>
+                  <Typography color="gray.light">{ce.name}</Typography>
                 </div>
               ))}
             </Grid>
@@ -140,6 +168,7 @@ export function ExpensesChart({
                     borderRadius: "1rem",
                     height: "fit-content",
                   }}
+                  onClick={() => viewPeriodDetails()}
                 >
                   View details
                 </Button>

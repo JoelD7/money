@@ -1,33 +1,34 @@
-import {
-  LinearProgress,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from "@mui/material";
+import { Typography, useMediaQuery, useTheme } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import AddIcon from "@mui/icons-material/Add";
 import {
   BackgroundRefetchErrorSnackbar,
   BalanceCard,
   Button,
+  Container,
   ExpenseCard,
   ExpensesChart,
   ExpensesTable,
+  LinearProgress,
+  Navbar,
   NewExpense,
 } from "../components";
-import { Expense, Period, User } from "../types";
-import { useQuery } from "@tanstack/react-query";
-import api from "../api";
+import {
+  CategoryExpenseSummary,
+  Expense,
+  Period,
+  User,
+} from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
-import { Colors } from "../assets";
 import { useState } from "react";
-
-type CategoryExpense = {
-  category: string;
-  color: string;
-  value: number;
-};
+import {
+  useGetCategoryExpenseSummary,
+  useGetExpenses,
+  useGetPeriod,
+  useGetUser,
+} from "./queries.ts";
+import { utils } from "../utils";
 
 export function Home() {
   const theme = useTheme();
@@ -36,78 +37,17 @@ export function Home() {
 
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
-  const getUser = useQuery({
-    queryKey: ["user"],
-    queryFn: () => api.getUser(),
-  });
-
-  const getExpenses = useQuery({
-    queryKey: ["expenses"],
-    queryFn: () => api.getExpenses(),
-  });
-
-  const getPeriod = useQuery({
-    queryKey: ["period"],
-    queryFn: () => api.getPeriod(),
-  });
+  const getUser = useGetUser();
+  const getExpenses = useGetExpenses();
+  const getPeriod = useGetPeriod();
+  const getCategoryExpenseSummary = useGetCategoryExpenseSummary();
 
   const user: User | undefined = getUser.data?.data;
   const expenses: Expense[] | undefined = getExpenses.data?.data.expenses;
   const period: Period | undefined = getPeriod.data?.data;
-
-  const colorsByCategory: Map<string, string> = getColorsByCategory();
-  const categoryExpense: CategoryExpense[] = getCategoryExpense();
+  const categoryExpenseSummary: CategoryExpenseSummary[] = utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
 
   const chartHeight: number = 250;
-
-  function getColorsByCategory(): Map<string, string> {
-    const colorsByCategory: Map<string, string> = new Map<string, string>();
-    if (user && user.categories) {
-      user.categories.forEach((category) => {
-        colorsByCategory.set(category.name, category.color);
-      });
-    }
-
-    return colorsByCategory;
-  }
-
-  function getCategoryExpense(): CategoryExpense[] {
-    if (!user || !expenses) {
-      return [];
-    }
-
-    const categoryExpense: CategoryExpense[] = [];
-    const totalExpenseByCategory: Map<string, number> = new Map<
-      string,
-      number
-    >();
-
-    expenses.forEach((expense) => {
-      let category = expense.category_name;
-      if (!category) {
-        category = "Other";
-      }
-
-      const curTotal: number | undefined = totalExpenseByCategory.get(category);
-
-      if (curTotal) {
-        totalExpenseByCategory.set(category, curTotal + expense.amount);
-      } else {
-        totalExpenseByCategory.set(category, expense.amount);
-      }
-    });
-
-    totalExpenseByCategory.forEach((value, key) => {
-      let color = colorsByCategory.get(key);
-      if (!color) {
-        color = Colors.GRAY_DARK;
-      }
-
-      categoryExpense.push({ category: key, value: value, color: color });
-    });
-
-    return categoryExpense;
-  }
 
   function handleClose() {
     setOpenNewExpense(false);
@@ -122,19 +62,16 @@ export function Home() {
   }
 
   return (
-    <>
+    <Container>
       <BackgroundRefetchErrorSnackbar />
+      <LinearProgress
+        loading={
+          getUser.isFetching || getExpenses.isFetching || getPeriod.isFetching
+        }
+      />
+      <Navbar />
 
-      <Grid
-        container
-        spacing={1}
-        justifyContent={"center"}
-        position={"relative"}
-      >
-        <Grid xs={12} position={"absolute"} hidden={!getUser.isFetching}>
-          <LinearProgress />
-        </Grid>
-
+      <Grid container justifyContent={"center"} position={"relative"}>
         {/*Balance*/}
         <Grid xs={12} sm={6} hidden={mdUp}>
           <BalanceCard remainder={user ? user.remainder : 0} />
@@ -153,7 +90,7 @@ export function Home() {
               <Grid xs={12} md={6}>
                 <ExpensesChart
                   period={period}
-                  categoryExpense={categoryExpense}
+                  summary={categoryExpenseSummary ? categoryExpenseSummary : []}
                   chartHeight={chartHeight}
                   isLoading={getUser.isLoading || getExpenses.isLoading}
                   isError={getExpenses.isError}
@@ -212,6 +149,6 @@ export function Home() {
       </Grid>
 
       <NewExpense open={openNewExpense} onClose={handleClose} />
-    </>
+    </Container>
   );
 }
