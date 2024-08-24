@@ -1,5 +1,11 @@
-import { Category, CategoryExpenseSummary, User } from "../types";
+import {
+  Category,
+  CategoryExpenseSummary,
+  ExpensesSearchParams,
+  User,
+} from "../types";
 import { Colors } from "../assets";
+import { useLocation } from "@tanstack/react-router";
 
 // Sets category name and color to the categoryExpenseSummary object
 export function setAdditionalData(
@@ -28,4 +34,16 @@ export function setAdditionalData(
   });
 
   return categoryExpenseSummary;
+}
+
+export function useExpensesParams(): ExpensesSearchParams {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+
+  const categories: string[] = params.get("categories")?.split(",") || [];
+  const pageSize: number = parseInt(params.get("pageSize") || "10");
+  const startKey: string = params.get("startKey") || "";
+  const period: string = params.get("period") || "current";
+
+  return { pageSize, categories, startKey, period };
 }

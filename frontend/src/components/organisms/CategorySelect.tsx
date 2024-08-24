@@ -12,7 +12,7 @@ import { Category } from "../../types";
 type CategorySelectorProps = {
   categories: Category[];
   label: string;
-  selected: string[];
+  selected: Category[];
   onSelectedUpdate: (selected: Category[]) => void;
   width: string;
   multiple?: boolean;
@@ -27,7 +27,7 @@ export function CategorySelect({
   onSelectedUpdate,
 }: CategorySelectorProps) {
   const labelId: string = uuidv4();
-  const categoryMap: Map<string, Category> = buildCategoryMap();
+  const categoriesByName: Map<string, Category> = buildCategoryMap();
 
   function onSelectedChange(event: SelectChangeEvent<string[]>) {
     const {
@@ -35,7 +35,7 @@ export function CategorySelect({
     } = event;
     const newValue = typeof value === "string" ? value.split(" ") : value;
 
-    const category = newValue.map((value) => categoryMap.get(value) as Category);
+    const category = newValue.map((value) => categoriesByName.get(value) as Category);
     onSelectedUpdate(category);
   }
 
@@ -50,7 +50,7 @@ export function CategorySelect({
   }
 
   function getOptionColor(value: string): string {
-    const category = categoryMap.get(value);
+    const category = categoriesByName.get(value);
     if (category) {
       return category.color
     }
@@ -66,7 +66,7 @@ export function CategorySelect({
           labelId={labelId}
           id={label}
           label={label}
-          value={selected}
+          value={selected.map((category) => category.name)}
           onChange={onSelectedChange}
           multiple={multiple}
           renderValue={(selected) => (

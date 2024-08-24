@@ -7,13 +7,14 @@ import { useState } from "react";
 import { Colors } from "../../assets";
 import { Button } from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
+import {useGetExpenses} from "./queries.ts";
+import {useLocation, useNavigate} from "@tanstack/react-router";
 
 type ExpensesTableProps = {
-  expenses: Expense[];
-  categories: Category[];
+  categories: Category[] | undefined;
 };
 
-export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
+export function ExpensesTable({  categories }: ExpensesTableProps) {
   const gridStyle = {
     "&.MuiDataGrid-root": {
       borderRadius: "1rem",
@@ -28,9 +29,14 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
     },
   };
 
+  const getExpensesQuery = useGetExpenses()
+  const location = useLocation();
+
+  const expenses: Expense[] | undefined = getExpensesQuery.data?.data.expenses;
+
   const colorsByExpense: Map<string, string> = getColorsByExpense();
-  const [filteredExpenses, setFilteredExpenses] = useState<Expense[]>(expenses);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>(getSelectedCategoriesFromURL());
 
   const columns: GridColDef[] = [
     { field: "amount", headerName: "Amount", width: 150 },
@@ -38,6 +44,19 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
     { field: "notes", headerName: "Notes", flex: 1, minWidth: 150 },
     { field: "createdDate", headerName: "Date", width: 200 },
   ];
+
+  const navigate = useNavigate()
+
+  function getSelectedCategoriesFromURL(): Category[]{
+    const params = new URLSearchParams(location.search);
+    const categoryParams: string[] = params.get("categories")?.split(",") || [];
+
+    if (categoryParams.length === 0 || !categories || categories.length === 0){
+      return []
+    }
+
+    return categories.filter((category)=> categoryParams.includes(category.id))
+  }
 
   function getTableRows(expenses: Expense[]): GridRowsProp {
     return expenses.map((expense): GridValidRowModel => {
@@ -94,6 +113,10 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
 
   function getColorsByExpense(): Map<string, string> {
     const colorsByExpense: Map<string, string> = new Map<string, string>();
+    if (!expenses || !categories) {
+      return colorsByExpense;
+    }
+
     expenses.forEach((expense) => {
       categories.forEach((category) => {
         if (category.name === expense.category_name) {
@@ -106,16 +129,17 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
   }
 
   function onCategorySelectedChange() {
-    if (selectedCategories.length === 0) {
-      setFilteredExpenses(expenses);
+    if (!expenses) {
       return;
     }
 
-    const newFilteredExpenses: Expense[] = expenses.filter((expense) => {
-      return selectedCategories.includes(expense.category_name || "");
-    });
+    navigate({
+      to: "/expenses",
+      search: {
+        categories: selectedCategories.map((category) => category.id).join(","),
+      },
+    })
 
-    setFilteredExpenses(newFilteredExpenses);
   }
 
   function clearFilter(): void {
@@ -129,7 +153,7 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
         multiple
         selected={selectedCategories}
         onSelectedUpdate={(selected) => setSelectedCategories(selected)}
-        categories={categories}
+        categories={categories ? categories : []}
         label={"Filter by categories"}
       />
       <div className="flex mt-2">
@@ -149,7 +173,7 @@ export function ExpensesTable({ expenses, categories }: ExpensesTableProps) {
         <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
           <DataGrid
             sx={gridStyle}
-            rows={getTableRows(filteredExpenses)}
+            rows={getTableRows(expenses ? expenses : [])}
             columns={columns}
             slots={{
               cell: customCellComponent,

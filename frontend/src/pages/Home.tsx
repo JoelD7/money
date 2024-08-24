@@ -29,6 +29,7 @@ import {
   useGetUser,
 } from "./queries.ts";
 import { utils } from "../utils";
+import {useSearch} from "@tanstack/react-router";
 
 export function Home() {
   const theme = useTheme();

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../api";
+import { utils } from "../utils";
 
 export function useGetUser() {
   return useQuery({
@@ -9,9 +10,16 @@ export function useGetUser() {
 }
 
 export function useGetExpenses() {
+  const { categories, pageSize, startKey, period } = utils.useExpensesParams();
+
   return useQuery({
-    queryKey: ["expenses"],
-    queryFn: () => api.getExpenses(),
+    queryKey: api.expensesQueryKeys.list(
+        categories,
+        pageSize,
+        startKey,
+        period,
+    ),
+    queryFn: api.getExpenses,
   });
 }
 

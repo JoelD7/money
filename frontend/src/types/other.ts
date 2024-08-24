@@ -1,21 +1,21 @@
 export type RechartsLabelProps = {
-    cx: number
-    cy: number
-    midAngle: number
-    innerRadius: number
-    outerRadius: number
-    percent: number
-    index: number
-}
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  percent: number;
+  index: number;
+};
 
 export type InputError = {
-    username?: string;
-    password?: string;
+  username?: string;
+  password?: string;
 };
 
 export type AccessTokenResponse = {
-    accessToken: string;
-}
+  accessToken: string;
+};
 
 export type CategoryExpense = {
   category: string;
@@ -27,4 +27,11 @@ export type SnackAlert = {
   open: boolean;
   type: "success" | "error";
   message: string;
+};
+
+export type ExpensesSearchParams = {
+  categories: string[];
+  pageSize: number;
+  startKey: string;
+  period: string;
 };
