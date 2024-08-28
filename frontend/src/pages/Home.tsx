@@ -13,23 +13,16 @@ import {
   Navbar,
   NewExpense,
 } from "../components";
-import {
-  CategoryExpenseSummary,
-  Expense,
-  Period,
-  User,
-} from "../types";
+import { CategoryExpenseSummary, Period, User } from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
 import {
   useGetCategoryExpenseSummary,
-  useGetExpenses,
   useGetPeriod,
   useGetUser,
 } from "./queries.ts";
 import { utils } from "../utils";
-import {useSearch} from "@tanstack/react-router";
 
 export function Home() {
   const theme = useTheme();
@@ -39,19 +32,26 @@ export function Home() {
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
   const getUser = useGetUser();
-  const getExpenses = useGetExpenses();
   const getPeriod = useGetPeriod();
   const getCategoryExpenseSummary = useGetCategoryExpenseSummary();
 
   const user: User | undefined = getUser.data?.data;
-  const expenses: Expense[] | undefined = getExpenses.data?.data.expenses;
   const period: Period | undefined = getPeriod.data?.data;
-  const categoryExpenseSummary: CategoryExpenseSummary[] = utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
+  const categoryExpenseSummary: CategoryExpenseSummary[] =
+    utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
 
   const chartHeight: number = 250;
 
   function handleClose() {
     setOpenNewExpense(false);
+  }
+
+  function showRefetchErrorSnackbar() {
+    return (
+      getUser.isRefetchError ||
+      getCategoryExpenseSummary.isRefetchError ||
+      getPeriod.isRefetchError
+    );
   }
 
   if (getUser.isPending && user === undefined) {
@@ -64,12 +64,8 @@ export function Home() {
 
   return (
     <Container>
-      <BackgroundRefetchErrorSnackbar />
-      <LinearProgress
-        loading={
-          getUser.isFetching || getExpenses.isFetching || getPeriod.isFetching
-        }
-      />
+      <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
+      <LinearProgress loading={getUser.isFetching || getPeriod.isFetching} />
       <Navbar />
 
       <Grid container justifyContent={"center"} position={"relative"}>
@@ -93,8 +89,8 @@ export function Home() {
                   period={period}
                   summary={categoryExpenseSummary ? categoryExpenseSummary : []}
                   chartHeight={chartHeight}
-                  isLoading={getUser.isLoading || getExpenses.isLoading}
-                  isError={getExpenses.isError}
+                  isLoading={getUser.isLoading}
+                  isError={getCategoryExpenseSummary.isError}
                 />
               </Grid>
               {/*New expense/income buttons, Current balance and expenses*/}
@@ -143,8 +139,8 @@ export function Home() {
             Latest
           </Typography>
 
-          {expenses && user && user.categories && (
-            <ExpensesTable expenses={expenses} categories={user.categories} />
+          {user && user.categories && (
+            <ExpensesTable categories={user.categories} />
           )}
         </Grid>
       </Grid>
