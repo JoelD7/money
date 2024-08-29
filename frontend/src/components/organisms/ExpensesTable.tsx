@@ -1,11 +1,11 @@
-import { Box, Typography } from "@mui/material";
+import {Box, styled, Typography} from "@mui/material";
 import { DataGrid, GridCell, GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { Category, Expense } from "../../types";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { GridCellProps } from "@mui/x-data-grid/components/cell/GridCell";
 import { useState } from "react";
 import { Colors } from "../../assets";
-import { Button } from "../atoms";
+import {Button, LinearProgress, NoRowsDataGrid} from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
 import {useGetExpenses} from "./queries.ts";
 import {useLocation, useNavigate} from "@tanstack/react-router";
@@ -19,6 +19,7 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
     "&.MuiDataGrid-root": {
       borderRadius: "1rem",
       backgroundColor: "#ffffff",
+      minHeight: "220px"
     },
     "&.MuiDataGrid-root .MuiDataGrid-cellContent": {
       textWrap: "pretty",
@@ -147,40 +148,53 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
   }
 
   return (
-    <div>
-      <CategorySelect
-        width={"700px"}
-        multiple
-        selected={selectedCategories}
-        onSelectedUpdate={(selected) => setSelectedCategories(selected)}
-        categories={categories ? categories : []}
-        label={"Filter by categories"}
-      />
-      <div className="flex mt-2">
-        <Button variant="outlined" onClick={() => onCategorySelectedChange()}>
-          Apply filter
-        </Button>
-        <Button
-          sx={{ marginLeft: "1rem" }}
-          onClick={clearFilter}
-          color={"darkerGray"}
-          variant={"outlined"}
-        >
-          Clear filter
-        </Button>
+      <div>
+        <CategorySelect
+            width={"700px"}
+            multiple
+            selected={selectedCategories}
+            onSelectedUpdate={(selected) => setSelectedCategories(selected)}
+            categories={categories ? categories : []}
+            label={"Filter by categories"}
+        />
+        <div className="flex mt-2">
+          <Button variant="outlined" onClick={() => onCategorySelectedChange()}>
+            Apply filter
+          </Button>
+          <Button
+              sx={{marginLeft: "1rem"}}
+              onClick={clearFilter}
+              color={"darkerGray"}
+              variant={"outlined"}
+          >
+            Clear filter
+          </Button>
+        </div>
+        <div className={"pt-4"}>
+          <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
+            <DataGrid
+                sx={gridStyle}
+                loading={getExpensesQuery.isFetching}
+                slots={{
+                  cell: customCellComponent,
+                  noRowsOverlay: NoRowsDataGrid,
+                }}
+                slotProps={{
+                  noRowsOverlay: {
+                    sx: {
+                      height: "100px",
+                    },
+                  },
+                  loadingOverlay: {
+                    variant: "linear-progress",
+                    noRowsVariant: "skeleton",
+                  },
+                }}
+                rows={getTableRows(expenses ? expenses : [])}
+                columns={columns}
+            />
+          </Box>
+        </div>
       </div>
-      <div className={"pt-4"}>
-        <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
-          <DataGrid
-            sx={gridStyle}
-            rows={getTableRows(expenses ? expenses : [])}
-            columns={columns}
-            slots={{
-              cell: customCellComponent,
-            }}
-          />
-        </Box>
-      </div>
-    </div>
   );
 }

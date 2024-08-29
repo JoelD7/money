@@ -68,7 +68,7 @@ export function Home() {
       <LinearProgress loading={getUser.isFetching || getPeriod.isFetching} />
       <Navbar />
 
-      <Grid container justifyContent={"center"} position={"relative"}>
+      <Grid container justifyContent={"center"} position={"relative"} spacing={1}>
         {/*Balance*/}
         <Grid xs={12} sm={6} hidden={mdUp}>
           <BalanceCard remainder={user ? user.remainder : 0} />
