@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../../api";
 import { utils } from "../../utils";
+import { AxiosError } from "axios";
 
 export function useGetUser() {
   return useQuery({
@@ -20,7 +21,8 @@ export function useGetExpenses() {
       period,
     ),
     queryFn: api.getExpenses,
+    retry: (_, e: AxiosError) => {
+      return e.response ? e.response.status !== 404 : true;
+    },
   });
 }
-
-
