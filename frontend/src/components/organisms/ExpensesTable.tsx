@@ -129,7 +129,7 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
     return colorsByExpense;
   }
 
-  function onCategorySelectedChange() {
+  function applyFilters() {
     if (!expenses && selectedCategories.length === 0) {
       return;
     }
@@ -153,6 +153,10 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
 
   function clearFilter(): void {
     setSelectedCategories([]);
+
+    navigate({
+      to: "/expenses",
+    })
   }
 
   return (
@@ -166,7 +170,7 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
             label={"Filter by categories"}
         />
         <div className="flex mt-2">
-          <Button variant="outlined" onClick={() => onCategorySelectedChange()}>
+          <Button variant="outlined" onClick={applyFilters}>
             Apply filter
           </Button>
           <Button
