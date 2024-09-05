@@ -130,7 +130,7 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
   }
 
   function onCategorySelectedChange() {
-    if (!expenses) {
+    if (!expenses && selectedCategories.length === 0) {
       return;
     }
 
