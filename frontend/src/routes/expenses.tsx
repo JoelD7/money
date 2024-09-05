@@ -9,9 +9,9 @@ function isAuth() {
 }
 
 const expensesSearchSchema = z.object({
-  categories: z.string().default(""),
+  categories: z.string().optional(),
   pageSize: z.number().default(10),
-  startKey: z.string().default(""),
+  startKey: z.string().optional(),
   period: z.string().default("current"),
 });
 

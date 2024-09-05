@@ -1,11 +1,11 @@
-import {Box, styled, Typography} from "@mui/material";
+import {Box, Typography} from "@mui/material";
 import { DataGrid, GridCell, GridColDef, GridRowsProp } from "@mui/x-data-grid";
 import { Category, Expense } from "../../types";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { GridCellProps } from "@mui/x-data-grid/components/cell/GridCell";
 import { useState } from "react";
 import { Colors } from "../../assets";
-import {Button, LinearProgress, NoRowsDataGrid} from "../atoms";
+import {Button, NoRowsDataGrid} from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
 import {useGetExpenses} from "./queries.ts";
 import {useLocation, useNavigate} from "@tanstack/react-router";
@@ -132,6 +132,14 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
   function onCategorySelectedChange() {
     if (!expenses) {
       return;
+    }
+
+    if (selectedCategories.length === 0){
+      navigate({
+        to: "/expenses",
+      })
+
+      return
     }
 
     navigate({

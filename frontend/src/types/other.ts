@@ -30,8 +30,8 @@ export type SnackAlert = {
 };
 
 export type ExpensesSearchParams = {
-  categories: string[];
-  pageSize: number;
-  startKey: string;
-  period: string;
+  categories?: string[];
+  pageSize?: number;
+  startKey?: string;
+  period?: string;
 };

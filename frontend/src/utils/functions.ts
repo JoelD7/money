@@ -11,7 +11,7 @@ import { useLocation } from "@tanstack/react-router";
 export function setAdditionalData(
   categoryExpenseSummary: CategoryExpenseSummary[] | undefined,
   user: User | undefined,
-): CategoryExpenseSummary[]{
+): CategoryExpenseSummary[] {
   if (!categoryExpenseSummary || !user || !user.categories) {
     return [];
   }
@@ -40,10 +40,37 @@ export function useExpensesParams(): ExpensesSearchParams {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
-  const categories: string[] = params.get("categories")?.split(",") || [];
-  const pageSize: number = parseInt(params.get("pageSize") || "10");
-  const startKey: string = params.get("startKey") || "";
-  const period: string = params.get("period") || "current";
+  let categories: string[] = [];
+  let param = params.get("categories")
+  if (param !== null && param !== ""){
+    categories = param.split(",")
+  }
 
-  return { pageSize, categories, startKey, period };
+  let pageSize: number | undefined;
+
+   param = params.get("pageSize");
+  if (param !== null) {
+    pageSize = parseInt(param);
+  }
+
+  let startKey: string | undefined;
+
+  param = params.get("startKey");
+  if (param !== null) {
+    startKey = param;
+  }
+
+  let period: string | undefined;
+
+  param = params.get("period");
+  if (param !== null) {
+    period = param;
+  }
+
+  return {
+    categories,
+    pageSize,
+    startKey,
+    period,
+  };
 }
