@@ -82,29 +82,34 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
   }
 
   function customCellComponent(props: GridCellProps) {
-    const { field, children } = props;
+    const { column, children, ...rest } = props;
+    console.log("props", props)
 
-    return field === "categoryName" ? (
-      <GridCell {...props}>
+    return column.field === "categoryName" ? (
+      <GridCell column={column} {...rest}>
         <Box
-          sx={{
-            backgroundColor: getCellBackgroundColor(String(props.rowId)),
-            padding: "0.25rem 0.5rem",
-            borderRadius: "9999px",
-          }}
+            sx={{
+              backgroundColor: getCellBackgroundColor(String(props.rowId)),
+              padding: "0.25rem 0.5rem",
+              borderRadius: "9999px",
+              borderWidth: "2px",
+              borderColor: "black"
+            }}
         >
+
           <Typography fontSize={"14px"} color={"white.main"}>
-            {props.value}
+            {children}
           </Typography>
         </Box>
       </GridCell>
     ) : (
-      <GridCell {...props}>{children}</GridCell>
+        <GridCell {...props}>{children}</GridCell>
     );
   }
 
   function getCellBackgroundColor(rowID: string): string {
     const color: string | undefined = colorsByExpense.get(rowID);
+    console.log("color", color)
     if (color) {
       return color;
     }
@@ -187,6 +192,8 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
             <DataGrid
                 sx={gridStyle}
                 loading={getExpensesQuery.isFetching}
+                columns={columns}
+                rows={getTableRows(expenses ? expenses : [])}
                 slots={{
                   cell: customCellComponent,
                   noRowsOverlay: NoRowsDataGrid,
@@ -202,8 +209,6 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
                     noRowsVariant: "skeleton",
                   },
                 }}
-                rows={getTableRows(expenses ? expenses : [])}
-                columns={columns}
             />
           </Box>
         </div>
