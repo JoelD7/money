@@ -1,25 +1,29 @@
-import {Box, Typography} from "@mui/material";
-import { DataGrid, GridCell, GridColDef, GridRowsProp } from "@mui/x-data-grid";
+import { Box, Typography } from "@mui/material";
+import {
+  DataGrid,
+  GridColDef,
+  GridRenderCellParams,
+  GridRowsProp,
+} from "@mui/x-data-grid";
 import { Category, Expense } from "../../types";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
-import { GridCellProps } from "@mui/x-data-grid/components/cell/GridCell";
 import { useState } from "react";
 import { Colors } from "../../assets";
-import {Button, NoRowsDataGrid} from "../atoms";
+import { Button, NoRowsDataGrid } from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
-import {useGetExpenses} from "./queries.ts";
-import {useLocation, useNavigate} from "@tanstack/react-router";
+import { useGetExpenses } from "./queries.ts";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
 };
 
-export function ExpensesTable({  categories }: ExpensesTableProps) {
+export function ExpensesTable({ categories }: ExpensesTableProps) {
   const gridStyle = {
     "&.MuiDataGrid-root": {
       borderRadius: "1rem",
       backgroundColor: "#ffffff",
-      minHeight: "220px"
+      minHeight: "220px",
     },
     "&.MuiDataGrid-root .MuiDataGrid-cellContent": {
       textWrap: "pretty",
@@ -30,33 +34,63 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
     },
   };
 
-  const getExpensesQuery = useGetExpenses()
+  const getExpensesQuery = useGetExpenses();
   const location = useLocation();
 
   const expenses: Expense[] | undefined = getExpensesQuery.data?.data.expenses;
 
   const colorsByExpense: Map<string, string> = getColorsByExpense();
 
-  const [selectedCategories, setSelectedCategories] = useState<Category[]>(getSelectedCategoriesFromURL());
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>(
+    getSelectedCategoriesFromURL(),
+  );
+
+  function renderCategoryCell(params: GridRenderCellParams) {
+    const categoryColor = getCellBackgroundColor(String(params.id));
+    return (
+      <div className={"h-full flex items-center justify-center"}>
+        <Box
+          sx={{
+            backgroundColor: categoryColor,
+            padding: "0.25rem 0.5rem",
+            borderRadius: "9999px",
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          <Typography fontSize={"14px"} color={"white.main"}>
+            {params.value}
+          </Typography>
+        </Box>
+      </div>
+    );
+  }
 
   const columns: GridColDef[] = [
     { field: "amount", headerName: "Amount", width: 150 },
-    { field: "categoryName", headerName: "Category", width: 150 },
+    {
+      field: "categoryName",
+      headerName: "Category",
+      width: 150,
+      renderCell: renderCategoryCell,
+    },
     { field: "notes", headerName: "Notes", flex: 1, minWidth: 150 },
     { field: "createdDate", headerName: "Date", width: 200 },
   ];
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
-  function getSelectedCategoriesFromURL(): Category[]{
+  function getSelectedCategoriesFromURL(): Category[] {
     const params = new URLSearchParams(location.search);
     const categoryParams: string[] = params.get("categories")?.split(",") || [];
 
-    if (categoryParams.length === 0 || !categories || categories.length === 0){
-      return []
+    if (categoryParams.length === 0 || !categories || categories.length === 0) {
+      return [];
     }
 
-    return categories.filter((category)=> categoryParams.includes(category.id))
+    return categories.filter((category) =>
+      categoryParams.includes(category.id),
+    );
   }
 
   function getTableRows(expenses: Expense[]): GridRowsProp {
@@ -81,35 +115,9 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
     });
   }
 
-  function customCellComponent(props: GridCellProps) {
-    const { column, children, ...rest } = props;
-    console.log("props", props)
-
-    return column.field === "categoryName" ? (
-      <GridCell column={column} {...rest}>
-        <Box
-            sx={{
-              backgroundColor: getCellBackgroundColor(String(props.rowId)),
-              padding: "0.25rem 0.5rem",
-              borderRadius: "9999px",
-              borderWidth: "2px",
-              borderColor: "black"
-            }}
-        >
-
-          <Typography fontSize={"14px"} color={"white.main"}>
-            {children}
-          </Typography>
-        </Box>
-      </GridCell>
-    ) : (
-        <GridCell {...props}>{children}</GridCell>
-    );
-  }
-
   function getCellBackgroundColor(rowID: string): string {
     const color: string | undefined = colorsByExpense.get(rowID);
-    console.log("color", color)
+    console.log("color", color);
     if (color) {
       return color;
     }
@@ -139,12 +147,12 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
       return;
     }
 
-    if (selectedCategories.length === 0){
+    if (selectedCategories.length === 0) {
       navigate({
         to: "/expenses",
-      })
+      });
 
-      return
+      return;
     }
 
     navigate({
@@ -152,8 +160,7 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
       search: {
         categories: selectedCategories.map((category) => category.id).join(","),
       },
-    })
-
+    });
   }
 
   function clearFilter(): void {
@@ -161,57 +168,56 @@ export function ExpensesTable({  categories }: ExpensesTableProps) {
 
     navigate({
       to: "/expenses",
-    })
+    });
   }
 
   return (
-      <div>
-        <CategorySelect
-            width={"700px"}
-            multiple
-            selected={selectedCategories}
-            onSelectedUpdate={(selected) => setSelectedCategories(selected)}
-            categories={categories ? categories : []}
-            label={"Filter by categories"}
-        />
-        <div className="flex mt-2">
-          <Button variant="outlined" onClick={applyFilters}>
-            Apply filter
-          </Button>
-          <Button
-              sx={{marginLeft: "1rem"}}
-              onClick={clearFilter}
-              color={"darkerGray"}
-              variant={"outlined"}
-          >
-            Clear filter
-          </Button>
-        </div>
-        <div className={"pt-4"}>
-          <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
-            <DataGrid
-                sx={gridStyle}
-                loading={getExpensesQuery.isFetching}
-                columns={columns}
-                rows={getTableRows(expenses ? expenses : [])}
-                slots={{
-                  cell: customCellComponent,
-                  noRowsOverlay: NoRowsDataGrid,
-                }}
-                slotProps={{
-                  noRowsOverlay: {
-                    sx: {
-                      height: "100px",
-                    },
-                  },
-                  loadingOverlay: {
-                    variant: "linear-progress",
-                    noRowsVariant: "skeleton",
-                  },
-                }}
-            />
-          </Box>
-        </div>
+    <div>
+      <CategorySelect
+        width={"700px"}
+        multiple
+        selected={selectedCategories}
+        onSelectedUpdate={(selected) => setSelectedCategories(selected)}
+        categories={categories ? categories : []}
+        label={"Filter by categories"}
+      />
+      <div className="flex mt-2">
+        <Button variant="outlined" onClick={applyFilters}>
+          Apply filter
+        </Button>
+        <Button
+          sx={{ marginLeft: "1rem" }}
+          onClick={clearFilter}
+          color={"darkerGray"}
+          variant={"outlined"}
+        >
+          Clear filter
+        </Button>
       </div>
+      <div className={"pt-4"}>
+        <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
+          <DataGrid
+            sx={gridStyle}
+            loading={getExpensesQuery.isFetching}
+            columns={columns}
+            rows={getTableRows(expenses ? expenses : [])}
+            slots={{
+              noRowsOverlay: NoRowsDataGrid,
+            }}
+            slotProps={{
+              noRowsOverlay: {
+                sx: {
+                  height: "100px",
+                },
+              },
+              loadingOverlay: {
+                variant: "linear-progress",
+                noRowsVariant: "skeleton",
+              },
+            }}
+          />
+        </Box>
+      </div>
+    </div>
   );
 }
