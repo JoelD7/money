@@ -29,7 +29,7 @@ export function Home() {
 
   const [openNewExpense, setOpenNewExpense] = useState<boolean>(false);
 
-  const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
+  const lgUp: boolean = useMediaQuery(theme.breakpoints.up("lg"));
 
   const getUser = useGetUser();
   const getPeriod = useGetPeriod();
@@ -40,7 +40,7 @@ export function Home() {
   const categoryExpenseSummary: CategoryExpenseSummary[] =
     utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
 
-  const chartHeight: number = 250;
+  const chartHeight: number = 350;
 
   function handleClose() {
     setOpenNewExpense(false);
@@ -68,14 +68,14 @@ export function Home() {
       <LinearProgress loading={getUser.isFetching || getPeriod.isFetching} />
       <Navbar />
 
-      <Grid container justifyContent={"center"} position={"relative"} spacing={1}>
+      <Grid container justifyContent={"center"} position={"relative"} spacing={1} marginTop={"20px"}>
         {/*Balance*/}
-        <Grid xs={12} sm={6} hidden={mdUp}>
+        <Grid xs={12} sm={6} hidden={lgUp}>
           <BalanceCard remainder={user ? user.remainder : 0} />
         </Grid>
 
         {/*Expenses*/}
-        <Grid xs={12} sm={6} hidden={mdUp}>
+        <Grid xs={12} sm={6} hidden={lgUp}>
           <ExpenseCard expenses={user ? user.expenses : 0} />
         </Grid>
 
@@ -84,7 +84,7 @@ export function Home() {
           <div>
             <Grid container spacing={1}>
               {/*Chart section*/}
-              <Grid xs={12} md={6}>
+              <Grid xs={12} lg={8}>
                 <ExpensesChart
                   period={period}
                   summary={categoryExpenseSummary ? categoryExpenseSummary : []}
@@ -93,17 +93,18 @@ export function Home() {
                   isError={getCategoryExpenseSummary.isError}
                 />
               </Grid>
+
               {/*New expense/income buttons, Current balance and expenses*/}
-              <Grid xs={12} md={6}>
+              <Grid xs={12} lg={4}>
                 <div>
                   <Grid container mt={"1rem"} spacing={1}>
                     {/*Balance*/}
-                    <Grid xs={12} hidden={!mdUp}>
+                    <Grid xs={12} hidden={!lgUp}>
                       <BalanceCard remainder={user ? user.remainder : 0} />
                     </Grid>
 
                     {/*Expenses*/}
-                    <Grid xs={12} hidden={!mdUp}>
+                    <Grid xs={12} hidden={!lgUp}>
                       <ExpenseCard expenses={user ? user.expenses : 0} />
                     </Grid>
 
