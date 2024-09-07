@@ -4,15 +4,16 @@ import {
   GridColDef,
   GridPaginationModel,
   GridRenderCellParams,
-  GridRowsProp, useGridApiRef,
+  GridRowsProp,
+  useGridApiRef,
 } from "@mui/x-data-grid";
 import { Category, Expense } from "../../types";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
-import { useRef, useState} from "react";
+import { useRef, useState } from "react";
 import { Colors } from "../../assets";
 import { Button, NoRowsDataGrid } from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
-import { useGetExpenses } from "./queries.ts";
+import { useGetExpenses } from "./queries";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 
 type ExpensesTableProps = {
@@ -48,7 +49,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
   const [paginationModel, setPaginationModel] = useState(
     getPaginationFromURL(),
   );
-  const startKeysByPage = useRef<{ [page: number]: string }>({0: ""});
+  const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
 
   function renderCategoryCell(params: GridRenderCellParams) {
     const categoryColor = getCellBackgroundColor(String(params.id));
@@ -199,7 +200,6 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
       };
     }
 
-
     const startKey = getStartKey(newModel);
     if (newModel.page !== paginationModel.page) {
       search = {
@@ -216,8 +216,8 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     });
   }
 
-   function getStartKey(newModel: GridPaginationModel): string | undefined {
-    if (newModel.page === 0){
+  function getStartKey(newModel: GridPaginationModel): string | undefined {
+    if (newModel.page === 0) {
       return undefined;
     }
 
@@ -275,7 +275,8 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
               pagination: {
                 rowCount: -1,
                 paginationModel,
-            }}}
+              },
+            }}
             rows={getTableRows(expenses ? expenses : [])}
             pageSizeOptions={[10, 25, 50]}
             paginationMode="server"
