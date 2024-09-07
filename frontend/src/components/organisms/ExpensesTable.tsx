@@ -4,7 +4,7 @@ import {
   GridColDef,
   GridPaginationModel,
   GridRenderCellParams,
-  GridRowsProp,
+  GridRowsProp, useGridApiRef,
 } from "@mui/x-data-grid";
 import { Category, Expense } from "../../types";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
@@ -48,7 +48,6 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
   const [paginationModel, setPaginationModel] = useState(
     getPaginationFromURL(),
   );
-
   const startKeysByPage = useRef<{ [page: number]: string }>({0: ""});
 
   function renderCategoryCell(params: GridRenderCellParams) {
@@ -167,14 +166,14 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
 
     if (selectedCategories.length === 0) {
       navigate({
-        to: "/expenses",
+        to: "/",
       });
 
       return;
     }
 
     navigate({
-      to: "/expenses",
+      to: "/",
       search: {
         ...location.search,
         categories: selectedCategories.map((category) => category.id).join(","),
@@ -186,7 +185,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     setSelectedCategories([]);
 
     navigate({
-      to: "/expenses",
+      to: "/",
     });
   }
 
@@ -210,7 +209,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     }
 
     navigate({
-      to: "/expenses",
+      to: "/",
       search,
     }).then(() => {
       setPaginationModel(newModel);
@@ -236,6 +235,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     return "";
   }
 
+  const apiRef = useGridApiRef();
   return (
     <div>
       <CategorySelect
@@ -268,15 +268,17 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
         >
           <DataGrid
             sx={gridStyle}
+            apiRef={apiRef}
             loading={getExpensesQuery.isFetching}
             columns={columns}
             initialState={{
               pagination: {
                 rowCount: -1,
+                paginationModel,
             }}}
             rows={getTableRows(expenses ? expenses : [])}
             pageSizeOptions={[10, 25, 50]}
-            paginationMode={"server"}
+            paginationMode="server"
             paginationModel={paginationModel}
             onPaginationModelChange={onPaginationModelChange}
             paginationMeta={{
