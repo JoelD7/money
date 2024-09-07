@@ -2,6 +2,7 @@ import { login, logout, signUp } from "./auth.ts";
 import { getUser } from "./money-api.ts";
 import {
   createExpense,
+  expensesQueryKeys,
   getCategoryExpenseSummary,
   getExpenses,
 } from "./expenses.ts";
@@ -16,6 +17,7 @@ const api = {
   getPeriod,
   createExpense,
   getCategoryExpenseSummary,
+  expensesQueryKeys,
 };
 
 export default api;

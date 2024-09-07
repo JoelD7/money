@@ -2,7 +2,13 @@ import { SyntheticEvent, useEffect, useState } from "react";
 import { Alert, AlertTitle, Snackbar } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function BackgroundRefetchErrorSnackbar() {
+type BackgroundRefetchErrorSnackbarProps = {
+  show: boolean;
+};
+
+export function BackgroundRefetchErrorSnackbar({
+  show,
+}: BackgroundRefetchErrorSnackbarProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -10,7 +16,8 @@ export function BackgroundRefetchErrorSnackbar() {
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
       if (
         event.query.state.fetchStatus === "idle" &&
-        event.query.state.status === "error"
+        event.query.state.status === "error" &&
+        show
       ) {
         setOpen(true);
       }

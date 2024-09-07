@@ -1,11 +1,17 @@
-import { Category, CategoryExpenseSummary, User } from "../types";
+import {
+  Category,
+  CategoryExpenseSummary,
+  ExpensesSearchParams,
+  User,
+} from "../types";
 import { Colors } from "../assets";
+import { useLocation } from "@tanstack/react-router";
 
 // Sets category name and color to the categoryExpenseSummary object
 export function setAdditionalData(
   categoryExpenseSummary: CategoryExpenseSummary[] | undefined,
   user: User | undefined,
-): CategoryExpenseSummary[]{
+): CategoryExpenseSummary[] {
   if (!categoryExpenseSummary || !user || !user.categories) {
     return [];
   }
@@ -28,4 +34,43 @@ export function setAdditionalData(
   });
 
   return categoryExpenseSummary;
+}
+
+export function useExpensesParams(): ExpensesSearchParams {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+
+  let categories: string[] = [];
+  let param = params.get("categories")
+  if (param !== null && param !== ""){
+    categories = param.split(",")
+  }
+
+  let pageSize: number | undefined;
+
+   param = params.get("pageSize");
+  if (param !== null) {
+    pageSize = parseInt(param);
+  }
+
+  let startKey: string | undefined;
+
+  param = params.get("startKey");
+  if (param !== null) {
+    startKey = param;
+  }
+
+  let period: string | undefined;
+
+  param = params.get("period");
+  if (param !== null) {
+    period = param;
+  }
+
+  return {
+    categories,
+    pageSize,
+    startKey,
+    period,
+  };
 }

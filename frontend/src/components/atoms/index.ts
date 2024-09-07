@@ -4,3 +4,4 @@ export { Textarea } from "./Textarea";
 export { Textfield } from "./Textfield";
 export { Logo } from "./Logo";
 export { LinearProgress } from "./LinearProgress";
+export { NoRowsDataGrid } from "./NoRowsDataGrid";

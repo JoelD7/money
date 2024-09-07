@@ -16,4 +16,5 @@ export type {
   InputError,
   CategoryExpense,
   SnackAlert,
+  ExpensesSearchParams,
 } from "./other.ts";
