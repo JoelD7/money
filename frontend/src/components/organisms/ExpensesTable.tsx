@@ -68,6 +68,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
 
   const columns: GridColDef[] = [
     { field: "amount", headerName: "Amount", width: 150 },
+    { field: "name", headerName: "Name", width: 150 },
     {
       field: "categoryName",
       headerName: "Category",
@@ -101,6 +102,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
           style: "currency",
           currency: "USD",
         }).format(expense.amount),
+        name: expense.name,
         categoryName: expense.category_name ? expense.category_name : "-",
         notes: expense.notes ? expense.notes : "-",
         createdDate: new Intl.DateTimeFormat("en-GB", {
@@ -117,7 +119,6 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
 
   function getCellBackgroundColor(rowID: string): string {
     const color: string | undefined = colorsByExpense.get(rowID);
-    console.log("color", color);
     if (color) {
       return color;
     }
