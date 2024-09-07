@@ -2,12 +2,13 @@ import { Box, Typography } from "@mui/material";
 import {
   DataGrid,
   GridColDef,
+  GridPaginationModel,
   GridRenderCellParams,
   GridRowsProp,
 } from "@mui/x-data-grid";
 import { Category, Expense } from "../../types";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
-import { useState } from "react";
+import { useRef, useState} from "react";
 import { Colors } from "../../assets";
 import { Button, NoRowsDataGrid } from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
@@ -44,6 +45,11 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
   const [selectedCategories, setSelectedCategories] = useState<Category[]>(
     getSelectedCategoriesFromURL(),
   );
+  const [paginationModel, setPaginationModel] = useState(
+    getPaginationFromURL(),
+  );
+
+  const startKeysByPage = useRef<{ [page: number]: string }>({0: ""});
 
   function renderCategoryCell(params: GridRenderCellParams) {
     const categoryColor = getCellBackgroundColor(String(params.id));
@@ -92,6 +98,17 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     return categories.filter((category) =>
       categoryParams.includes(category.id),
     );
+  }
+
+  function getPaginationFromURL(): GridPaginationModel {
+    const params = new URLSearchParams(location.search);
+    const pageSize = params.get("pageSize") || "10";
+    const page = params.get("page") || "0";
+
+    return {
+      page: parseInt(page),
+      pageSize: parseInt(pageSize),
+    };
   }
 
   function getTableRows(expenses: Expense[]): GridRowsProp {
@@ -159,6 +176,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     navigate({
       to: "/expenses",
       search: {
+        ...location.search,
         categories: selectedCategories.map((category) => category.id).join(","),
       },
     });
@@ -170,6 +188,52 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     navigate({
       to: "/expenses",
     });
+  }
+
+  function onPaginationModelChange(newModel: GridPaginationModel) {
+    let search = { ...location.search };
+
+    if (newModel.pageSize !== paginationModel.pageSize) {
+      search = {
+        ...search,
+        pageSize: newModel.pageSize,
+      };
+    }
+
+
+    const startKey = getStartKey(newModel);
+    if (newModel.page !== paginationModel.page) {
+      search = {
+        ...search,
+        startKey,
+      };
+    }
+
+    navigate({
+      to: "/expenses",
+      search,
+    }).then(() => {
+      setPaginationModel(newModel);
+    });
+  }
+
+   function getStartKey(newModel: GridPaginationModel): string | undefined {
+    if (newModel.page === 0){
+      return undefined;
+    }
+
+    const mappedKey = startKeysByPage.current[newModel.page];
+    if (mappedKey) {
+      return mappedKey;
+    }
+
+    const nextKey = getExpensesQuery.data?.data.next_key;
+    if (nextKey) {
+      startKeysByPage.current[newModel.page] = nextKey;
+      return nextKey;
+    }
+
+    return "";
   }
 
   return (
@@ -196,12 +260,28 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
         </Button>
       </div>
       <div className={"pt-4"}>
-        <Box boxShadow={"3"} width={"100%"} borderRadius={"1rem"}>
+        <Box
+          boxShadow={"3"}
+          height={"631px"}
+          width={"100%"}
+          borderRadius={"1rem"}
+        >
           <DataGrid
             sx={gridStyle}
             loading={getExpensesQuery.isFetching}
             columns={columns}
+            initialState={{
+              pagination: {
+                rowCount: -1,
+            }}}
             rows={getTableRows(expenses ? expenses : [])}
+            pageSizeOptions={[10, 25, 50]}
+            paginationMode={"server"}
+            paginationModel={paginationModel}
+            onPaginationModelChange={onPaginationModelChange}
+            paginationMeta={{
+              hasNextPage: getExpensesQuery.data?.data.next_key !== "",
+            }}
             slots={{
               noRowsOverlay: NoRowsDataGrid,
             }}
