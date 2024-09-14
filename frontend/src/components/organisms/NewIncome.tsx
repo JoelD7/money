@@ -77,8 +77,6 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
       period: period ? period.period : "",
     };
 
-    ciMutation.mutate(income);
-
     try {
       validationSchema.validateSync(income);
       ciMutation.mutate(income);
