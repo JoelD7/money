@@ -14,7 +14,6 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as SignupImport } from './routes/signup'
 import { Route as LoginImport } from './routes/login'
 import { Route as IndexImport } from './routes/index'
-import { Route as PeriodPeriodIdImport } from './routes/period.$periodId'
 
 // Create/Update Routes
 
@@ -30,11 +29,6 @@ const LoginRoute = LoginImport.update({
 
 const IndexRoute = IndexImport.update({
   path: '/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const PeriodPeriodIdRoute = PeriodPeriodIdImport.update({
-  path: '/period/$periodId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -54,10 +48,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignupImport
       parentRoute: typeof rootRoute
     }
-    '/period/$periodId': {
-      preLoaderRoute: typeof PeriodPeriodIdImport
-      parentRoute: typeof rootRoute
-    }
   }
 }
 
@@ -67,7 +57,6 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute,
   LoginRoute,
   SignupRoute,
-  PeriodPeriodIdRoute,
 ])
 
 /* prettier-ignore-end */
