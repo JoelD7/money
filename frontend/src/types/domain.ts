@@ -73,3 +73,11 @@ export type Period = {
   created_date: string;
   updated_date: string;
 };
+
+export type Income = {
+  amount: number;
+  name: string;
+  period: string;
+  notes: string;
+  created_date: string;
+};
