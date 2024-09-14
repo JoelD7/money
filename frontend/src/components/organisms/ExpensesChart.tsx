@@ -8,7 +8,6 @@ import { CircularProgress, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { Button } from "../atoms";
 import { Colors } from "../../assets";
-import { useNavigate } from "@tanstack/react-router";
 
 type ExpensesChartProps = {
   summary: CategoryExpenseSummary[];
@@ -27,7 +26,7 @@ export function ExpensesChart({
 }: ExpensesChartProps) {
   const RADIAN: number = Math.PI / 180;
 
-  const navigate = useNavigate();
+  const totalExpenses: number = summary.reduce((acc, ce) => acc + ce.total, 0);
 
   function getCustomLabel({
     cx,
@@ -75,16 +74,6 @@ export function ExpensesChart({
     return isLoading || isError ? 0 : 1;
   }
 
-  function viewPeriodDetails() {
-    const route = `/period/${period ? period.name : "current"}`;
-
-    navigate({ to: route })
-      .then(() => {})
-      .catch((err) => {
-        console.error("Error navigating to /login", err);
-      });
-  }
-
   return (
     <div>
       <Grid
@@ -113,68 +102,86 @@ export function ExpensesChart({
           <Typography color="gray.light">{getPeriodDates()}</Typography>
         </Grid>
 
+        {/*Chart and category summary*/}
         <Grid xs={12} height={chartHeight} style={{ opacity: getOpacity() }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={summary}
-                label={getCustomLabel}
-                dataKey="total"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                fill="#8884d8"
-              >
-                {summary.map((category, index) => (
-                  <Cell key={`cell-${index}`} fill={category.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value, name) => [
-                  value.toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }),
-                  name,
-                ]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </Grid>
+          <div className={"h-full"}>
+            <Grid container height={"100%"}>
+              {/*Chart*/}
+              <Grid xs={7}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={summary}
+                      label={getCustomLabel}
+                      dataKey="total"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      fill="#8884d8"
+                    >
+                      {summary.map((category, index) => (
+                        <Cell key={`cell-${index}`} fill={category.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value, name) => [
+                        value.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }),
+                        name,
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Grid>
 
-        <Grid xs={12} style={{ opacity: getOpacity() }}>
-          <Grid container width="100%" className="justify-between">
-            <Grid xs={6}>
-              {summary.map((ce) => (
-                <div
-                  key={`${ce.category_id}`}
-                  className="flex gap-1 items-center"
-                >
-                  <div
-                    className="rounded-full w-3 h-3"
-                    style={{ backgroundColor: ce.color }}
-                  />
-                  <Typography color="gray.light">{ce.name}</Typography>
+              {/*Summary*/}
+              <Grid xs={5}>
+                <div className={"h-full"}>
+                  <Grid container height={"100%"} alignItems={"center"}>
+                    {/*Category data*/}
+                    <Grid xs={8} marginBottom={"50px"}>
+                      {summary.map((category) => (
+                        <div
+                          key={category.category_id}
+                          className="flex gap-1 items-center"
+                        >
+                          <div
+                            className="rounded-full w-3 h-3"
+                            style={{ backgroundColor: category.color }}
+                          />
+                          <Typography sx={{ color: category.color }}>
+                            {Math.round((category.total * 100) / totalExpenses)}
+                            %
+                          </Typography>
+                          <Typography color="gray.light">
+                            {category.name}
+                          </Typography>
+                        </div>
+                      ))}
+                    </Grid>
+
+                    {/*Category total*/}
+                    <Grid xs={4} marginBottom={"50px"}>
+                      {summary.map((category) => (
+                        <Typography
+                          key={category.category_id}
+                          color="gray.light"
+                        >
+                          {new Intl.NumberFormat("en-US", {
+                            style: "currency",
+                            currency: "USD",
+                          }).format(category?.total)}
+                        </Typography>
+                      ))}
+                    </Grid>
+                  </Grid>
                 </div>
-              ))}
-            </Grid>
-            <Grid xs={6}>
-              <Grid container className="items-end h-full">
-                <Button
-                  variant="outlined"
-                  sx={{
-                    textTransform: "capitalize",
-                    borderRadius: "1rem",
-                    height: "fit-content",
-                  }}
-                  onClick={() => viewPeriodDetails()}
-                >
-                  View details
-                </Button>
               </Grid>
             </Grid>
-          </Grid>
+          </div>
         </Grid>
       </Grid>
     </div>
