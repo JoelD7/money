@@ -1,12 +1,14 @@
 import Grid from "@mui/material/Unstable_Grid2";
-import RemoveCircleOutlineOutlinedIcon from "@mui/icons-material/RemoveCircleOutlineOutlined";
-import { Typography } from "@mui/material";
+import ArrowCircleRightOutlinedIcon from "@mui/icons-material/ArrowCircleRightOutlined";
+import { Typography, useMediaQuery, useTheme } from "@mui/material";
 
-type BalanceCardProps = {
-  remainder: number;
+type IncomeCardProps = {
+  income?: number;
 };
 
-export function BalanceCard({ remainder }: BalanceCardProps) {
+export function IncomeCard({ income }: IncomeCardProps) {
+  const theme = useTheme();
+  const xsOnly: boolean = useMediaQuery(theme.breakpoints.only("xs"));
   const customWidth = {
     "&.MuiSvgIcon-root": {
       width: "38px",
@@ -18,6 +20,7 @@ export function BalanceCard({ remainder }: BalanceCardProps) {
     <div>
       <Grid
         container
+        mt={xsOnly ? "0.5rem" : ""}
         borderRadius="1rem"
         p="0.5rem"
         bgcolor="white.main"
@@ -31,19 +34,19 @@ export function BalanceCard({ remainder }: BalanceCardProps) {
             justifyContent="center"
           >
             {/*@ts-ignore*/}
-            <RemoveCircleOutlineOutlinedIcon sx={customWidth} color="black" />
+            <ArrowCircleRightOutlinedIcon sx={customWidth} color="red" />
           </Grid>
         </Grid>
 
         <Grid xs={9}>
           <Typography variant="h6" fontWeight="bold">
-            Balance
+            Income
           </Typography>
-          <Typography lineHeight="unset" variant="h4" color="black">
+          <Typography lineHeight="unset" variant="h4" color="red.main">
             {new Intl.NumberFormat("en-US", {
               style: "currency",
               currency: "USD",
-            }).format(remainder)}
+            }).format(income ? income : 0)}
           </Typography>
         </Grid>
       </Grid>

@@ -1,5 +1,5 @@
 import Grid from "@mui/material/Unstable_Grid2";
-import ArrowCircleDownRoundedIcon from "@mui/icons-material/ArrowCircleDownRounded";
+import ArrowCircleLeftOutlinedIcon from '@mui/icons-material/ArrowCircleLeftOutlined';
 import {Typography, useMediaQuery, useTheme} from "@mui/material";
 
 type ExpenseCardProps = {
@@ -23,7 +23,7 @@ export function ExpenseCard({expenses}: ExpenseCardProps) {
                 <Grid xs={3}>
                     <Grid height="100%" container alignContent="center" justifyContent="center">
                         {/*@ts-ignore*/}
-                        <ArrowCircleDownRoundedIcon sx={customWidth} color="red"/>
+                        <ArrowCircleLeftOutlinedIcon sx={customWidth} color="red"/>
                     </Grid>
                 </Grid>
 
