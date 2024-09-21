@@ -29,7 +29,7 @@ export type SnackAlert = {
   message: string;
 };
 
-export type ExpensesSearchParams = {
+export type TransactionSearchParams = {
   categories?: string[];
   pageSize?: number;
   startKey?: string;

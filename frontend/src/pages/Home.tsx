@@ -9,16 +9,18 @@ import {
   ExpenseCard,
   ExpensesChart,
   ExpensesTable,
+  IncomeCard,
   LinearProgress,
   Navbar,
   NewTransaction,
 } from "../components";
-import { CategoryExpenseSummary, Period, User } from "../types";
+import { CategoryExpenseSummary, IncomeList, Period, User } from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
 import {
   useGetCategoryExpenseSummary,
+  useGetIncome,
   useGetPeriod,
   useGetUser,
 } from "./queries.ts";
@@ -35,11 +37,14 @@ export function Home() {
   const getUser = useGetUser();
   const getPeriod = useGetPeriod();
   const getCategoryExpenseSummary = useGetCategoryExpenseSummary();
+  const getIncome = useGetIncome();
 
   const user: User | undefined = getUser.data?.data;
   const period: Period | undefined = getPeriod.data?.data;
   const categoryExpenseSummary: CategoryExpenseSummary[] =
     utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
+  const incomeList: IncomeList | undefined = getIncome.data?.data;
+  const totalIncome: number = incomeList? incomeList.income.reduce((acc, cur) => acc+cur.amount, 0) : 0;
 
   const chartHeight: number = 350;
 
@@ -80,6 +85,11 @@ export function Home() {
         spacing={1}
         marginTop={"20px"}
       >
+        {/*Income*/}
+        <Grid xs={12} sm={6} hidden={lgUp}>
+          <IncomeCard income={totalIncome} />
+        </Grid>
+
         {/*Balance*/}
         <Grid xs={12} sm={6} hidden={lgUp}>
           <BalanceCard remainder={user ? user.remainder : 0} />
@@ -121,10 +131,12 @@ export function Home() {
 
                     {/*Expenses*/}
                     <Grid xs={12} hidden={!lgUp}>
-                      <ExpenseCard expenses={categoryExpenseSummary.reduce(
+                      <ExpenseCard
+                        expenses={categoryExpenseSummary.reduce(
                           (acc, curr) => acc + curr.total,
                           0,
-                      )} />
+                        )}
+                      />
                     </Grid>
 
                     {/**New expense/income buttons*/}

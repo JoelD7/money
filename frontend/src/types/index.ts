@@ -10,12 +10,12 @@ export type {
   Expenses,
   ExpenseType,
   CategoryExpenseSummary,
-  Income,
+  Income,IncomeList,
 } from "./domain.ts";
 export type {
   RechartsLabelProps,
   InputError,
   CategoryExpense,
   SnackAlert,
-  ExpensesSearchParams,
+  TransactionSearchParams,
 } from "./other.ts";

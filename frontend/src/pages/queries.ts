@@ -11,7 +11,8 @@ export function useGetUser() {
 }
 
 export function useGetExpenses() {
-  const { categories, pageSize, startKey, period } = utils.useExpensesParams();
+  const { categories, pageSize, startKey, period } =
+    utils.useTransactionsParams();
 
   return useQuery({
     queryKey: api.expensesQueryKeys.list(
@@ -41,6 +42,18 @@ export function useGetCategoryExpenseSummary(periodID: string = "current") {
   return useQuery({
     queryKey: ["categoryExpenseSummary"],
     queryFn: () => api.getCategoryExpenseSummary(periodID),
+    retry: (_, e: AxiosError) => {
+      return e.response ? e.response.status !== 404 : true;
+    },
+  });
+}
+
+export function useGetIncome() {
+  const { pageSize, startKey, period } = utils.useTransactionsParams();
+
+  return useQuery({
+    queryKey: api.incomeKeys.list(pageSize, startKey, period),
+    queryFn: api.getIncomeList,
     retry: (_, e: AxiosError) => {
       return e.response ? e.response.status !== 404 : true;
     },

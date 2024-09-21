@@ -74,6 +74,11 @@ export type Period = {
   updated_date: string;
 };
 
+export type IncomeList = {
+  income: Income[]
+  next_key: string;
+}
+
 export type Income = {
   amount: number;
   name: string;

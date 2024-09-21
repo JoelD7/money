@@ -1,7 +1,7 @@
 import {
   Category,
   CategoryExpenseSummary,
-  ExpensesSearchParams,
+  TransactionSearchParams,
   User,
 } from "../types";
 import { Colors } from "../assets";
@@ -36,7 +36,7 @@ export function setAdditionalData(
   return categoryExpenseSummary;
 }
 
-export function useExpensesParams(): ExpensesSearchParams {
+export function useTransactionsParams(): TransactionSearchParams {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 
