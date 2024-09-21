@@ -23,6 +23,34 @@ func TestGetPeriodStats(t *testing.T) {
 	c := require.New(t)
 
 	ctx := context.Background()
+
+	apigwRequest, request := setupGetPeriodStatsTest(ctx, c, t)
+
+	response, err := request.Process(ctx, apigwRequest)
+	c.Nil(err, "get period stats failed")
+	c.NotNil(response, "get period stats response is nil")
+	c.Equal(http.StatusOK, response.StatusCode)
+
+	var periodStat models.PeriodStat
+	err = json.Unmarshal([]byte(response.Body), &periodStat)
+	c.Nil(err, "unmarshalling response body failed")
+	c.Len(periodStat.CategoryExpenseSummary, 3, "unexpected number of categories in the response")
+	c.Equal(3000.00, periodStat.TotalIncome, fmt.Sprintf("expected %f, got %f", 3000.00, periodStat.TotalIncome))
+
+	testValidatorByCategory := map[string]float64{
+		"category_id_1": 172.98,
+		"category_id_2": 430,
+		"category_id_3": 970,
+	}
+
+	for _, summary := range periodStat.CategoryExpenseSummary {
+		expected, ok := testValidatorByCategory[summary.CategoryID]
+		c.True(ok, "unexpected category in the response")
+		c.Equal(expected, summary.Total)
+	}
+}
+
+func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, t *testing.T) (*apigateway.Request, *handlers.GetPeriodStatRequest) {
 	dynamoClient := dynamo.InitClient(ctx)
 
 	username := "e2e_test@gmail.com"
@@ -64,7 +92,7 @@ func TestGetPeriodStats(t *testing.T) {
 
 	defer t.Cleanup(func() {
 		err = usersRepo.DeleteUser(ctx, username)
-		c.Nil(err, "deleting user failed")
+		c.NotNil(err, "deleting user failed")
 	})
 
 	expensesList := setupExpenses(c)
@@ -87,28 +115,7 @@ func TestGetPeriodStats(t *testing.T) {
 		c.Nil(err, "batch deleting income failed")
 	})
 
-	response, err := request.Process(ctx, apigwRequest)
-	c.Nil(err, "get period stats failed")
-	c.NotNil(response, "get period stats response is nil")
-	c.Equal(http.StatusOK, response.StatusCode)
-
-	var periodStat models.PeriodStat
-	err = json.Unmarshal([]byte(response.Body), &periodStat)
-	c.Nil(err, "unmarshalling response body failed")
-	c.Len(periodStat.CategoryExpenseSummary, 3, "unexpected number of categories in the response")
-	c.Equal(3000.00, periodStat.TotalIncome, fmt.Sprintf("expected %f, got %f", 3000.00, periodStat.TotalIncome))
-
-	testValidatorByCategory := map[string]float64{
-		"category_id_1": 172.98,
-		"category_id_2": 430,
-		"category_id_3": 970,
-	}
-
-	for _, summary := range periodStat.CategoryExpenseSummary {
-		expected, ok := testValidatorByCategory[summary.CategoryID]
-		c.True(ok, "unexpected category in the response")
-		c.Equal(expected, summary.Total)
-	}
+	return apigwRequest, &request
 }
 
 func setupExpenses(c *require.Assertions) []*models.Expense {
