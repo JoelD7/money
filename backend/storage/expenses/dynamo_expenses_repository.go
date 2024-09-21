@@ -542,12 +542,12 @@ func (d *DynamoRepository) BatchDeleteExpenses(ctx context.Context, expenses []*
 	for _, expense := range expenses {
 		usernameAttrValue, err = attributevalue.Marshal(expense.Username)
 		if err != nil {
-			return fmt.Errorf("marshal id key failed: %v", err)
+			return fmt.Errorf("marshal username key failed: %v", err)
 		}
 
 		expenseIDAttrValue, err = attributevalue.Marshal(expense.ExpenseID)
 		if err != nil {
-			return fmt.Errorf("marshal username key failed: %v", err)
+			return fmt.Errorf("marshal id key failed: %v", err)
 		}
 
 		writeRequests = append(writeRequests, types.WriteRequest{

@@ -25,6 +25,7 @@ type EnvironmentConfiguration struct {
 	ExpensesTable             string `json:"EXPENSES_TABLE_NAME"`
 	ExpensesRecurringTable    string `json:"EXPENSES_RECURRING_TABLE_NAME"`
 	IncomeTable               string `json:"INCOME_TABLE_NAME"`
+	PeriodUserIncomeIndex     string `json:"PERIOD_USER_INCOME_INDEX"`
 	InvalidTokenTable         string `json:"INVALID_TOKEN_TABLE_NAME"`
 	PeriodTable               string `json:"PERIOD_TABLE_NAME"`
 	UniquePeriodTable         string `json:"UNIQUE_PERIOD_TABLE_NAME"`

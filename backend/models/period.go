@@ -33,3 +33,9 @@ func (period *Period) LogProperties() map[string]interface{} {
 		"s_updated_date": period.UpdatedDate,
 	}
 }
+
+type PeriodStat struct {
+	PeriodID               string                    `json:"period_id"`
+	TotalIncome            float64                   `json:"total_income"`
+	CategoryExpenseSummary []*CategoryExpenseSummary `json:"category_expense_summary"`
+}

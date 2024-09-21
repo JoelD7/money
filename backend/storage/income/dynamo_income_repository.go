@@ -24,21 +24,32 @@ var (
 )
 
 type DynamoRepository struct {
-	dynamoClient *dynamodb.Client
-	tableName    string
+	dynamoClient          *dynamodb.Client
+	tableName             string
+	periodUserIncomeIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string, periodUserIndex string) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
 
 	tableNameEnv := env.GetString("INCOME_TABLE_NAME", "")
 	if tableName == "" && tableNameEnv == "" {
-		return nil, fmt.Errorf("initialize income recurring dynamo repository failed: table name is required")
+		return nil, fmt.Errorf("initialize income dynamo repository failed: table name is required")
+	}
+
+	periodUserEnv := env.GetString("PERIOD_USER_INCOME_INDEX", "")
+	if periodUserIndex == "" && periodUserEnv == "" {
+		return nil, fmt.Errorf("initialize income dynamo repository failed: period user index is required")
 	}
 
 	d.tableName = tableName
 	if d.tableName == "" {
 		d.tableName = tableNameEnv
+	}
+
+	d.periodUserIncomeIndex = periodUserIndex
+	if d.periodUserIncomeIndex == "" {
+		d.periodUserIncomeIndex = periodUserEnv
 	}
 
 	return d, nil
@@ -79,6 +90,44 @@ func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Inco
 	return income, nil
 }
 
+func (d *DynamoRepository) BatchCreateIncome(ctx context.Context, incomes []*models.Income) error {
+	incomeEntities := make([]incomeEntity, 0, len(incomes))
+
+	for _, income := range incomes {
+		incomeEnt := toIncomeEntity(income)
+		incomeEnt.PeriodUser = dynamo.BuildPeriodUser(income.Username, *income.Period)
+		incomeEntities = append(incomeEntities, *incomeEnt)
+	}
+
+	writeRequests := make([]types.WriteRequest, 0, len(incomeEntities))
+
+	for _, incomeEnt := range incomeEntities {
+		incomeAv, err := attributevalue.MarshalMap(incomeEnt)
+		if err != nil {
+			return fmt.Errorf("marshal income attribute value failed: %v", err)
+		}
+
+		writeRequests = append(writeRequests, types.WriteRequest{
+			PutRequest: &types.PutRequest{
+				Item: incomeAv,
+			},
+		})
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			d.tableName: writeRequests,
+		},
+	}
+
+	err := dynamo.BatchWrite(ctx, d.dynamoClient, input)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error) {
 	input := &dynamodb.GetItemInput{
 		TableName: aws.String(d.tableName),
@@ -97,7 +146,7 @@ func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID str
 		return nil, models.ErrIncomeNotFound
 	}
 
-	incomeEnt := new(incomeEntity)
+	incomeEnt := incomeEntity{}
 
 	err = attributevalue.UnmarshalMap(result.Item, incomeEnt)
 	if err != nil {
@@ -150,7 +199,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
-	incomeEntities := new([]*incomeEntity)
+	incomeEntities := make([]incomeEntity, 0, len(result.Items))
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &incomeEntities)
 	if err != nil {
@@ -162,7 +211,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", err
 	}
 
-	return toIncomeModels(*incomeEntities), nextKey, nil
+	return toIncomeModels(incomeEntities), nextKey, nil
 }
 
 func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error) {
@@ -205,7 +254,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 		return nil, "", models.ErrNoMoreItemsToBeRetrieved
 	}
 
-	incomeEntities := make([]*incomeEntity, 0, len(result.Items))
+	incomeEntities := make([]incomeEntity, 0, len(result.Items))
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, &incomeEntities)
 	if err != nil {
@@ -218,6 +267,95 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 	}
 
 	return toIncomeModels(incomeEntities), nextKey, nil
+}
+
+func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error) {
+	periodUser := dynamo.BuildPeriodUser(username, periodID)
+	periodUserCond := expression.Key("period_user").Equal(expression.Value(periodUser))
+
+	expr, err := expression.NewBuilder().WithKeyCondition(periodUserCond).Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(d.tableName),
+		IndexName:                 aws.String(d.periodUserIncomeIndex),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
+	}
+
+	var result *dynamodb.QueryOutput
+	entities := make([]incomeEntity, 0)
+	var itemsInQuery []incomeEntity
+
+	for {
+		itemsInQuery = make([]incomeEntity, 0)
+		result, err = d.dynamoClient.Query(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+
+		if (result.Items == nil || len(result.Items) == 0) && result.LastEvaluatedKey == nil {
+			break
+		}
+
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &itemsInQuery)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal income items failed: %v", err)
+		}
+
+		entities = append(entities, itemsInQuery...)
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+
+		if result.LastEvaluatedKey == nil {
+			break
+		}
+	}
+
+	if len(entities) == 0 {
+		return nil, models.ErrIncomeNotFound
+	}
+
+	return toIncomeModels(entities), nil
+}
+
+func (d *DynamoRepository) BatchDeleteIncome(ctx context.Context, income []*models.Income) error {
+	writeRequests := make([]types.WriteRequest, 0, len(income))
+
+	var usernameAttrValue types.AttributeValue
+	var incomeIDAttrValue types.AttributeValue
+	var err error
+
+	for _, in := range income {
+		usernameAttrValue, err = attributevalue.Marshal(in.Username)
+		if err != nil {
+			return fmt.Errorf("marshal username key failed: %v", err)
+		}
+
+		incomeIDAttrValue, err = attributevalue.Marshal(in.IncomeID)
+		if err != nil {
+			return fmt.Errorf("marshal id key failed: %v", err)
+		}
+
+		writeRequests = append(writeRequests, types.WriteRequest{
+			DeleteRequest: &types.DeleteRequest{
+				Key: map[string]types.AttributeValue{
+					"username":  usernameAttrValue,
+					"income_id": incomeIDAttrValue,
+				},
+			},
+		})
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			d.tableName: writeRequests,
+		},
+	}
+
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
 func getPageSize(pageSize int) *int32 {

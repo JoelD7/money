@@ -38,7 +38,7 @@ func (request *getMultipleIncomeRequest) init(ctx context.Context, log logger.Lo
 	gmiOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable, envConfig.PeriodUserIncomeIndex)
 		if err != nil {
 			return
 		}

@@ -21,5 +21,5 @@ type Expense struct {
 type CategoryExpenseSummary struct {
 	CategoryID string  `json:"category_id"`
 	Total      float64 `json:"total"`
-	Period     string  `json:"period"`
+	Period     string  `json:"period,omitempty"`
 }
