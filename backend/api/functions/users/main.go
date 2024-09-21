@@ -44,9 +44,7 @@ func main() {
 				r.Get("/", handlers.GetPeriodHandler)
 				r.Delete("/", handlers.DeletePeriodHandler)
 
-				r.Route("/stats", func(r *router.Router) {
-					r.Get("/", handlers.GetPeriodStatHandler)
-				})
+				r.Get("/stats", handlers.GetPeriodStatHandler)
 			})
 		})
 	})
