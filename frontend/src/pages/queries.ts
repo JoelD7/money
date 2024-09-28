@@ -37,10 +37,10 @@ export function useGetPeriod() {
   });
 }
 
-export function useGetCategoryExpenseSummary(periodID: string = "current") {
+export function useGetPeriodStats(periodID: string = "current") {
   return useQuery({
-    queryKey: ["categoryExpenseSummary"],
-    queryFn: () => api.getCategoryExpenseSummary(periodID),
+    queryKey: ["periodStats", periodID],
+    queryFn: () => api.getPeriodStats(periodID),
     retry: (_, e: AxiosError) => {
       return e.response ? e.response.status !== 404 : true;
     },

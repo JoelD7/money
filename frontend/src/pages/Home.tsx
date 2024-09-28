@@ -13,12 +13,12 @@ import {
   Navbar,
   NewExpense,
 } from "../components";
-import { CategoryExpenseSummary, Period, User } from "../types";
+import { Period, PeriodStats, User} from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
 import {
-  useGetCategoryExpenseSummary,
+  useGetPeriodStats,
   useGetPeriod,
   useGetUser,
 } from "./queries.ts";
@@ -33,12 +33,12 @@ export function Home() {
 
   const getUser = useGetUser();
   const getPeriod = useGetPeriod();
-  const getCategoryExpenseSummary = useGetCategoryExpenseSummary();
+  const getPeriodStats = useGetPeriodStats();
 
   const user: User | undefined = getUser.data?.data;
   const period: Period | undefined = getPeriod.data?.data;
-  const categoryExpenseSummary: CategoryExpenseSummary[] =
-    utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
+  const periodStats: PeriodStats | undefined =
+    utils.setAdditionalData(getPeriodStats.data?.data, user);
 
   const chartHeight: number = 350;
 
@@ -49,7 +49,7 @@ export function Home() {
   function showRefetchErrorSnackbar() {
     return (
       getUser.isRefetchError ||
-      getCategoryExpenseSummary.isRefetchError ||
+      getPeriodStats.isRefetchError ||
       getPeriod.isRefetchError
     );
   }
@@ -87,10 +87,10 @@ export function Home() {
               <Grid xs={12} lg={8}>
                 <ExpensesChart
                   period={period}
-                  summary={categoryExpenseSummary ? categoryExpenseSummary : []}
+                  summary={periodStats ? periodStats.category_expense_summary : []}
                   chartHeight={chartHeight}
                   isLoading={getUser.isLoading}
-                  isError={getCategoryExpenseSummary.isError}
+                  isError={getPeriodStats.isError}
                 />
               </Grid>
 

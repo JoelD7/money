@@ -3,8 +3,8 @@ import { getUser } from "./money-api.ts";
 import {
   createExpense,
   expensesQueryKeys,
-  getCategoryExpenseSummary,
   getExpenses,
+  getPeriodStats,
 } from "./expenses.ts";
 import { getPeriod } from "./period.ts";
 
@@ -16,7 +16,7 @@ const api = {
   getExpenses,
   getPeriod,
   createExpense,
-  getCategoryExpenseSummary,
+  getPeriodStats,
   expensesQueryKeys,
 };
 

@@ -1,4 +1,4 @@
-import { CategoryExpenseSummary, Expense, Expenses } from "../types";
+import { Expense, Expenses, PeriodStats } from "../types";
 import { keys } from "../utils";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { QueryFunctionContext } from "@tanstack/react-query";
@@ -65,9 +65,9 @@ export function createExpense(expense: Expense) {
   });
 }
 
-export function getCategoryExpenseSummary(period: string = "current") {
-  return axiosClient.get<CategoryExpenseSummary[]>(
-    API_BASE_URL + `/expenses/stats/period/${period}`,
+export function getPeriodStats(period: string = "current") {
+  return axiosClient.get<PeriodStats>(
+    API_BASE_URL + `/periods/${period}/stats`,
     {
       withCredentials: true,
       headers: {
