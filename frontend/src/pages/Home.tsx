@@ -146,7 +146,7 @@ export function Home() {
         </Grid>
       </Grid>
 
-      <NewExpense open={openNewExpense} onClose={handleClose} />
+      <NewExpense user={user} open={openNewExpense} onClose={handleClose} />
     </Container>
   );
 }
