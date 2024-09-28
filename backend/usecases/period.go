@@ -176,6 +176,7 @@ func NewPeriodStatsGetter(em ExpenseManager, im IncomeManager) func(ctx context.
 		}()
 
 		wg.Wait()
+		close(errChan)
 
 		select {
 		case err := <-errChan:
