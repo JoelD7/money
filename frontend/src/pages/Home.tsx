@@ -32,11 +32,12 @@ export function Home() {
   const lgUp: boolean = useMediaQuery(theme.breakpoints.up("lg"));
 
   const getUser = useGetUser();
-  const getPeriod = useGetPeriod();
-  const getPeriodStats = useGetPeriodStats();
-
   const user: User | undefined = getUser.data?.data;
+
+  const getPeriod = useGetPeriod(user);
   const period: Period | undefined = getPeriod.data?.data;
+
+  const getPeriodStats = useGetPeriodStats(user);
   const periodStats: PeriodStats | undefined =
     utils.setAdditionalData(getPeriodStats.data?.data, user);
 
@@ -141,7 +142,7 @@ export function Home() {
           </Typography>
 
           {user && user.categories && (
-            <ExpensesTable categories={user.categories} />
+            <ExpensesTable period={user.current_period} categories={user.categories} />
           )}
         </Grid>
       </Grid>

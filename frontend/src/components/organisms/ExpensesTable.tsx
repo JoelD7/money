@@ -18,9 +18,10 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
+  period: string;
 };
 
-export function ExpensesTable({ categories }: ExpensesTableProps) {
+export function ExpensesTable({ categories, period }: ExpensesTableProps) {
   const gridStyle = {
     "&.MuiDataGrid-root": {
       borderRadius: "1rem",
@@ -36,7 +37,7 @@ export function ExpensesTable({ categories }: ExpensesTableProps) {
     },
   };
 
-  const getExpensesQuery = useGetExpenses();
+  const getExpensesQuery = useGetExpenses(period);
   const location = useLocation();
 
   const expenses: Expense[] | undefined = getExpensesQuery.data?.data.expenses;

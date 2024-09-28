@@ -27,7 +27,7 @@ export function getExpenses({
 }: QueryFunctionContext<ReturnType<(typeof expensesQueryKeys)["list"]>>) {
   const { categories, pageSize, startKey, period } = queryKey[0];
 
-  const paramArr: string[] = []
+  const paramArr: string[] = [];
 
   if (period) {
     paramArr.push(`period=${period}`);
@@ -65,7 +65,7 @@ export function createExpense(expense: Expense) {
   });
 }
 
-export function getPeriodStats(period: string = "current") {
+export function getPeriodStats(period: string) {
   return axiosClient.get<PeriodStats>(
     API_BASE_URL + `/periods/${period}/stats`,
     {
