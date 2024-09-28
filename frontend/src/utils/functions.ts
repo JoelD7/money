@@ -1,19 +1,14 @@
-import {
-  Category,
-  CategoryExpenseSummary,
-  ExpensesSearchParams,
-  User,
-} from "../types";
+import { Category, ExpensesSearchParams, PeriodStats, User } from "../types";
 import { Colors } from "../assets";
-import { useLocation } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router"; // Sets category name and color to the categoryExpenseSummary object
 
 // Sets category name and color to the categoryExpenseSummary object
 export function setAdditionalData(
-  categoryExpenseSummary: CategoryExpenseSummary[] | undefined,
+  periodStats: PeriodStats | undefined,
   user: User | undefined,
-): CategoryExpenseSummary[] {
-  if (!categoryExpenseSummary || !user || !user.categories) {
-    return [];
+): PeriodStats | undefined {
+  if (!periodStats || !user || !user.categories) {
+    return periodStats;
   }
 
   const categoryByID: Map<string, Category> = new Map<string, Category>();
@@ -21,7 +16,7 @@ export function setAdditionalData(
     categoryByID.set(category.id, category);
   });
 
-  categoryExpenseSummary.forEach((ces) => {
+  periodStats.category_expense_summary.forEach((ces) => {
     const category = categoryByID.get(ces.category_id);
     if (category) {
       ces.name = category.name;
@@ -33,7 +28,7 @@ export function setAdditionalData(
     ces.color = Colors.GRAY_DARK;
   });
 
-  return categoryExpenseSummary;
+  return periodStats;
 }
 
 export function useExpensesParams(): ExpensesSearchParams {
@@ -41,14 +36,14 @@ export function useExpensesParams(): ExpensesSearchParams {
   const params = new URLSearchParams(location.search);
 
   let categories: string[] = [];
-  let param = params.get("categories")
-  if (param !== null && param !== ""){
-    categories = param.split(",")
+  let param = params.get("categories");
+  if (param !== null && param !== "") {
+    categories = param.split(",");
   }
 
   let pageSize: number | undefined;
 
-   param = params.get("pageSize");
+  param = params.get("pageSize");
   if (param !== null) {
     pageSize = parseInt(param);
   }

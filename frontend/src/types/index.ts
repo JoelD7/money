@@ -10,6 +10,7 @@ export type {
   Expenses,
   ExpenseType,
   CategoryExpenseSummary,
+  PeriodStats,
 } from "./domain.ts";
 export type {
   RechartsLabelProps,

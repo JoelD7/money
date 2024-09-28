@@ -1,46 +1,45 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../api";
-import { utils } from "../utils";
-import { AxiosError } from "axios";
+import { keys } from "../utils";
+import { AxiosError, AxiosResponse } from "axios";
+import { User } from "../types";
 
 export function useGetUser() {
   return useQuery({
     queryKey: ["user"],
-    queryFn: () => api.getUser(),
-  });
-}
+    queryFn: () => {
+      const result: Promise<AxiosResponse<User>> = api.getUser();
+      result.then((res) => {
+        localStorage.setItem(keys.CURRENT_PERIOD, res.data.current_period);
+      });
 
-export function useGetExpenses() {
-  const { categories, pageSize, startKey, period } = utils.useExpensesParams();
-
-  return useQuery({
-    queryKey: api.expensesQueryKeys.list(
-      categories,
-      pageSize,
-      startKey,
-      period,
-    ),
-    queryFn: api.getExpenses,
-    retry: (_, e: AxiosError) => {
-      return e.response ? e.response.status !== 404 : true;
+      return result;
     },
   });
 }
 
-export function useGetPeriod() {
+export function useGetPeriod(user? :User) {
+  const periodID =
+      user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
+
   return useQuery({
     queryKey: ["period"],
-    queryFn: () => api.getPeriod(),
+    queryFn: () => api.getPeriod(periodID),
+    enabled: periodID !== "",
     retry: (_, e: AxiosError) => {
       return e.response ? e.response.status !== 404 : true;
     },
   });
 }
 
-export function useGetCategoryExpenseSummary(periodID: string = "current") {
+export function useGetPeriodStats(user?: User) {
+  const periodID =
+    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
+  
   return useQuery({
-    queryKey: ["categoryExpenseSummary"],
-    queryFn: () => api.getCategoryExpenseSummary(periodID),
+    queryKey: ["periodStats", periodID],
+    queryFn: () => api.getPeriodStats(periodID),
+    enabled: periodID !== "",
     retry: (_, e: AxiosError) => {
       return e.response ? e.response.status !== 404 : true;
     },

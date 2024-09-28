@@ -29,7 +29,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { CategorySelect } from "./CategorySelect.tsx";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { Button } from "../atoms";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -42,12 +42,14 @@ type ExpenseTypeOption = {
 type NewExpenseDialogProps = {
   onClose: () => void;
   onAlert: (alert?: SnackAlert) => void;
+  user?: User;
   open: boolean;
 };
 
 export function NewExpenseDialog({
   onClose,
   open,
+  user,
   onAlert,
 }: NewExpenseDialogProps) {
   const expenseTypes: ExpenseTypeOption[] = [
@@ -99,13 +101,6 @@ export function NewExpenseDialog({
       }
     },
   });
-
-  const getUser = useQuery({
-    queryKey: ["user"],
-    queryFn: () => api.getUser(),
-  });
-
-  const user: User | undefined = getUser.data?.data;
 
   const validationSchema = yup.object({
     name: yup.string().required("Name is required"),
@@ -229,7 +224,7 @@ export function NewExpenseDialog({
               <div className={"mb-2"}>
                 <CategorySelect
                   categories={user.categories}
-                  selected={category ? [category.name] : []}
+                  selected={category ? [category] : []}
                   onSelectedUpdate={onCategoryChange}
                   width={"400px"}
                   label={"Category(optional)"}

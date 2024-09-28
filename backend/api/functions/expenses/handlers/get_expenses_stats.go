@@ -38,11 +38,6 @@ func (request *GetExpensesStatsRequest) init(ctx context.Context, log logger.Log
 		if err != nil {
 			return
 		}
-
-		request.UserRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
-		if err != nil {
-			return
-		}
 	})
 	request.startingTime = time.Now()
 
@@ -85,7 +80,7 @@ func (request *GetExpensesStatsRequest) Process(ctx context.Context, req *apigat
 		return req.NewErrorResponse(err), nil
 	}
 
-	getCategoryExpensesSummary := usecases.NewCategoryExpenseSummaryGetter(request.ExpensesRepo, request.UserRepo)
+	getCategoryExpensesSummary := usecases.NewCategoryExpenseSummaryGetter(request.ExpensesRepo)
 	categoryExpenseSummary, err := getCategoryExpensesSummary(ctx, username, periodID)
 	if err != nil {
 		request.Log.Error("get_expenses_stats_failed", err, []models.LoggerObject{req})

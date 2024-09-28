@@ -1,14 +1,15 @@
 import { Alert, AlertTitle, capitalize, Snackbar } from "@mui/material";
 import { useState } from "react";
-import { SnackAlert } from "../../types";
+import {SnackAlert, User} from "../../types";
 import { NewExpenseDialog } from "./NewExpenseDialog.tsx";
 
 type NewExpenseProps = {
   open: boolean;
+  user?: User;
   onClose: () => void;
 };
 
-export function NewExpense({ open, onClose }: NewExpenseProps) {
+export function NewExpense({ open, onClose, user }: NewExpenseProps) {
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
     type: "success",
@@ -44,6 +45,7 @@ export function NewExpense({ open, onClose }: NewExpenseProps) {
       <NewExpenseDialog
         key={key}
         open={open}
+        user={user}
         onClose={handleClose}
         onAlert={handleAlert}
       />

@@ -37,10 +37,15 @@ func main() {
 
 		r.Route("/periods", func(r *router.Router) {
 			r.Post("/", handlers.CreatePeriodHandler)
-			r.Put("/{periodID}", handlers.UpdatePeriodHandler)
-			r.Get("/{periodID}", handlers.GetPeriodHandler)
 			r.Get("/", handlers.GetPeriodsHandler)
-			r.Delete("/{periodID}", handlers.DeletePeriodHandler)
+
+			r.Route("/{periodID}", func(r *router.Router) {
+				r.Put("/", handlers.UpdatePeriodHandler)
+				r.Get("/", handlers.GetPeriodHandler)
+				r.Delete("/", handlers.DeletePeriodHandler)
+
+				r.Get("/stats", handlers.GetPeriodStatHandler)
+			})
 		})
 	})
 

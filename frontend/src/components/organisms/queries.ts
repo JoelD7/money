@@ -10,8 +10,13 @@ export function useGetUser() {
   });
 }
 
-export function useGetExpenses() {
-  const { categories, pageSize, startKey, period } = utils.useExpensesParams();
+export function useGetExpenses(periodID: string) {
+  // eslint-disable-next-line prefer-const
+  let { categories, pageSize, startKey, period } = utils.useExpensesParams();
+
+  if (!period){
+    period = periodID;
+  }
 
   return useQuery({
     queryKey: api.expensesQueryKeys.list(
@@ -21,6 +26,7 @@ export function useGetExpenses() {
       period,
     ),
     queryFn: api.getExpenses,
+    enabled: periodID !== "",
     retry: (_, e: AxiosError) => {
       return e.response ? e.response.status !== 404 : true;
     },

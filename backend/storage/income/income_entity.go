@@ -17,7 +17,7 @@ type incomeEntity struct {
 	PeriodUser  *string   `json:"period_user,omitempty" dynamodbav:"period_user"`
 }
 
-func toIncomeModel(i *incomeEntity) *models.Income {
+func toIncomeModel(i incomeEntity) *models.Income {
 	return &models.Income{
 		Username:    i.Username,
 		IncomeID:    i.IncomeID,
@@ -31,7 +31,7 @@ func toIncomeModel(i *incomeEntity) *models.Income {
 	}
 }
 
-func toIncomeModels(is []*incomeEntity) []*models.Income {
+func toIncomeModels(is []incomeEntity) []*models.Income {
 	incomes := make([]*models.Income, len(is))
 	for i, e := range is {
 		incomes[i] = toIncomeModel(e)

@@ -34,7 +34,6 @@ func TestGetExpensesStats(t *testing.T) {
 
 	request := handlers.GetExpensesStatsRequest{
 		ExpensesRepo: expensesRepo,
-		UserRepo:     usersRepo,
 		Log:          logger.NewConsoleLogger("get_expenses_stats_e2e_test"),
 	}
 

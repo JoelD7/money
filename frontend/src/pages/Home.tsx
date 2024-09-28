@@ -13,12 +13,12 @@ import {
   Navbar,
   NewExpense,
 } from "../components";
-import { CategoryExpenseSummary, Period, User } from "../types";
+import { Period, PeriodStats, User} from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
 import {
-  useGetCategoryExpenseSummary,
+  useGetPeriodStats,
   useGetPeriod,
   useGetUser,
 } from "./queries.ts";
@@ -32,13 +32,14 @@ export function Home() {
   const lgUp: boolean = useMediaQuery(theme.breakpoints.up("lg"));
 
   const getUser = useGetUser();
-  const getPeriod = useGetPeriod();
-  const getCategoryExpenseSummary = useGetCategoryExpenseSummary();
-
   const user: User | undefined = getUser.data?.data;
+
+  const getPeriod = useGetPeriod(user);
   const period: Period | undefined = getPeriod.data?.data;
-  const categoryExpenseSummary: CategoryExpenseSummary[] =
-    utils.setAdditionalData(getCategoryExpenseSummary.data?.data, user);
+
+  const getPeriodStats = useGetPeriodStats(user);
+  const periodStats: PeriodStats | undefined =
+    utils.setAdditionalData(getPeriodStats.data?.data, user);
 
   const chartHeight: number = 350;
 
@@ -49,7 +50,7 @@ export function Home() {
   function showRefetchErrorSnackbar() {
     return (
       getUser.isRefetchError ||
-      getCategoryExpenseSummary.isRefetchError ||
+      getPeriodStats.isRefetchError ||
       getPeriod.isRefetchError
     );
   }
@@ -87,10 +88,10 @@ export function Home() {
               <Grid xs={12} lg={8}>
                 <ExpensesChart
                   period={period}
-                  summary={categoryExpenseSummary ? categoryExpenseSummary : []}
+                  summary={periodStats ? periodStats.category_expense_summary : []}
                   chartHeight={chartHeight}
                   isLoading={getUser.isLoading}
-                  isError={getCategoryExpenseSummary.isError}
+                  isError={getPeriodStats.isError}
                 />
               </Grid>
 
@@ -141,12 +142,12 @@ export function Home() {
           </Typography>
 
           {user && user.categories && (
-            <ExpensesTable categories={user.categories} />
+            <ExpensesTable period={user.current_period} categories={user.categories} />
           )}
         </Grid>
       </Grid>
 
-      <NewExpense open={openNewExpense} onClose={handleClose} />
+      <NewExpense user={user} open={openNewExpense} onClose={handleClose} />
     </Container>
   );
 }
