@@ -12,6 +12,7 @@ type IncomeManager interface {
 	GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error)
 	GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error)
 	GetIncomeByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error)
+	GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error)
 }
 
 func NewIncomeCreator(im IncomeManager, pm PeriodManager) func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {

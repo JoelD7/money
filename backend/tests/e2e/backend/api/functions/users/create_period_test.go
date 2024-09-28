@@ -25,6 +25,10 @@ var (
 	uniquePeriodTableName      string
 	expensesTableName          string
 	expensesRecurringTableName string
+	usersTableName             string
+	periodUserIncomeIndex      string
+	periodUserExpenseIndex     string
+	incomeTableName            string
 )
 
 func TestMain(m *testing.M) {
@@ -37,6 +41,10 @@ func TestMain(m *testing.M) {
 	uniquePeriodTableName = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 	expensesTableName = env.GetString("EXPENSES_TABLE_NAME", "")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
+	usersTableName = env.GetString("USERS_TABLE_NAME", "")
+	periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
+	periodUserExpenseIndex = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
+	incomeTableName = env.GetString("INCOME_TABLE_NAME", "")
 
 	os.Exit(m.Run())
 }
@@ -70,7 +78,7 @@ func TestProcess(t *testing.T) {
 			Log:        logger.NewConsoleLogger("create_period_e2e_test"),
 		}
 
-		expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
 		c.Nil(err, "creating expenses repository failed")
 
 		expensesList, err := loadExpenses()

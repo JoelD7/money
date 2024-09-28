@@ -6,8 +6,6 @@ import (
 
 type PeriodType string
 
-const PeriodTypeCurrent PeriodType = "current"
-
 type Period struct {
 	Username    string    `json:"username,omitempty"`
 	ID          string    `json:"period,omitempty"`
@@ -32,4 +30,10 @@ func (period *Period) LogProperties() map[string]interface{} {
 		"s_created_date": period.CreatedDate,
 		"s_updated_date": period.UpdatedDate,
 	}
+}
+
+type PeriodStat struct {
+	PeriodID               string                    `json:"period_id"`
+	TotalIncome            float64                   `json:"total_income"`
+	CategoryExpenseSummary []*CategoryExpenseSummary `json:"category_expense_summary"`
 }

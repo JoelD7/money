@@ -21,6 +21,7 @@ export async function logout(credentials: Credentials) {
     });
 
     localStorage.removeItem(keys.ACCESS_TOKEN);
+    localStorage.removeItem(keys.CURRENT_PERIOD);
     redirectToLogin();
   });
 }

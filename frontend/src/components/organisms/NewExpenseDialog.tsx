@@ -1,7 +1,3 @@
-import { Alert, AlertTitle, capitalize, Snackbar } from "@mui/material";
-import { useState } from "react";
-import {SnackAlert, User} from "../../types";
-import { NewExpenseDialog } from "./NewExpenseDialog.tsx";
 import { FormEvent, useState } from "react";
 import {
   APIError,
@@ -33,7 +29,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { CategorySelect } from "./CategorySelect.tsx";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { Button } from "../atoms";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -43,14 +39,19 @@ type ExpenseTypeOption = {
   value: ExpenseType;
 };
 
-type NewExpenseProps = {
-  open: boolean;
-  user?: User;
+type NewExpenseDialogProps = {
   onClose: () => void;
   onAlert: (alert?: SnackAlert) => void;
+  user?: User;
+  open: boolean;
 };
 
-export function NewExpense({ onClose, open, onAlert }: NewExpenseProps) {
+export function NewExpenseDialog({
+  onClose,
+  open,
+  user,
+  onAlert,
+}: NewExpenseDialogProps) {
   const expenseTypes: ExpenseTypeOption[] = [
     {
       label: "Regular",
@@ -100,13 +101,6 @@ export function NewExpense({ onClose, open, onAlert }: NewExpenseProps) {
       }
     },
   });
-
-  const getUser = useQuery({
-    queryKey: ["user"],
-    queryFn: () => api.getUser(),
-  });
-
-  const user: User | undefined = getUser.data?.data;
 
   const validationSchema = yup.object({
     name: yup.string().required("Name is required"),

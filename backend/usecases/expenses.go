@@ -167,10 +167,6 @@ func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx conte
 			return nil, "", fmt.Errorf("%v", err)
 		}
 
-		if periodID == string(models.PeriodTypeCurrent) {
-			periodID = user.CurrentPeriod
-		}
-
 		expenses, nextKey, err := em.GetExpensesByPeriod(ctx, username, periodID, startKey, pageSize)
 		if err != nil {
 			return nil, "", err
@@ -190,10 +186,6 @@ func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager) f
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
 			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
-		}
-
-		if periodID == string(models.PeriodTypeCurrent) {
-			periodID = user.CurrentPeriod
 		}
 
 		expenses, nextKey, err := em.GetExpensesByPeriodAndCategories(ctx, username, periodID, startKey, categories, pageSize)
@@ -302,17 +294,8 @@ func NewExpenseRecurringEliminator(em ExpenseRecurringManager) func(ctx context.
 	}
 }
 
-func NewCategoryExpenseSummaryGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, periodID string) ([]*models.CategoryExpenseSummary, error) {
+func NewCategoryExpenseSummaryGetter(em ExpenseManager) func(ctx context.Context, username, periodID string) ([]*models.CategoryExpenseSummary, error) {
 	return func(ctx context.Context, username, periodID string) ([]*models.CategoryExpenseSummary, error) {
-		user, err := um.GetUser(ctx, username)
-		if err != nil {
-			return nil, fmt.Errorf("%v", err)
-		}
-
-		if periodID == string(models.PeriodTypeCurrent) {
-			periodID = user.CurrentPeriod
-		}
-
 		expenses, err := em.GetAllExpensesByPeriod(ctx, username, periodID)
 		if err != nil {
 			return nil, err
