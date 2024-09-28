@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go/aws"
 	"math"
+	"sync"
 	"time"
 )
 
@@ -126,37 +127,66 @@ func NewPeriodDeleter(pm PeriodManager) func(ctx context.Context, periodID, user
 
 func NewPeriodStatsGetter(em ExpenseManager, im IncomeManager) func(ctx context.Context, username, periodID string) (*models.PeriodStat, error) {
 	return func(ctx context.Context, username, periodID string) (*models.PeriodStat, error) {
-		income, err := im.GetAllIncomeByPeriod(ctx, username, periodID)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't get income for period: %w", err)
-		}
-
+		wg := sync.WaitGroup{}
+		errChan := make(chan error, 2)
 		totalIncome := 0.0
-		for _, inc := range income {
-			if inc.Amount != nil {
-				totalIncome += *inc.Amount
-			}
-		}
-
-		expenses, err := em.GetAllExpensesByPeriod(ctx, username, periodID)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't get expenses for period: %w", err)
-		}
-
 		categoryExpenseSummary := make([]*models.CategoryExpenseSummary, 0)
-		categoryExpenses := make(map[string]float64)
 
-		for _, expense := range expenses {
-			if expense.CategoryID != nil && expense.Amount != nil {
-				categoryExpenses[*expense.CategoryID] += *expense.Amount
+		wg.Add(1)
+		go func() {
+			defer func() { wg.Done() }()
+
+			income, err := im.GetAllIncomeByPeriod(ctx, username, periodID)
+			if err != nil {
+				errChan <- fmt.Errorf("couldn't get income for period: %w", err)
+				return
 			}
-		}
 
-		for category, amount := range categoryExpenses {
-			categoryExpenseSummary = append(categoryExpenseSummary, &models.CategoryExpenseSummary{
-				CategoryID: category,
-				Total:      math.Round(amount*100) / 100,
-			})
+			for _, inc := range income {
+				if inc.Amount != nil {
+					totalIncome += *inc.Amount
+				}
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer func() { wg.Done() }()
+
+			expenses, err := em.GetAllExpensesByPeriod(ctx, username, periodID)
+			if err != nil {
+				errChan <- fmt.Errorf("couldn't get expenses for period: %w", err)
+				return
+			}
+
+			categoryExpenses := make(map[string]float64)
+
+			for _, expense := range expenses {
+				if expense.CategoryID != nil && expense.Amount != nil {
+					categoryExpenses[*expense.CategoryID] += *expense.Amount
+				}
+			}
+
+			for category, amount := range categoryExpenses {
+				categoryExpenseSummary = append(categoryExpenseSummary, &models.CategoryExpenseSummary{
+					CategoryID: category,
+					Total:      math.Round(amount*100) / 100,
+				})
+			}
+		}()
+
+		wg.Wait()
+
+		select {
+		case err := <-errChan:
+			for e := range errChan {
+				err = fmt.Errorf("%v: %w", err, e)
+			}
+
+			if err != nil {
+				return nil, err
+			}
+		default:
 		}
 
 		return &models.PeriodStat{

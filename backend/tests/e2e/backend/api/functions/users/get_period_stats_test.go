@@ -19,6 +19,10 @@ import (
 	"testing"
 )
 
+type Cleaner interface {
+	Cleanup(f func())
+}
+
 func TestGetPeriodStats(t *testing.T) {
 	c := require.New(t)
 
@@ -50,7 +54,7 @@ func TestGetPeriodStats(t *testing.T) {
 	}
 }
 
-func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, t *testing.T) (*apigateway.Request, *handlers.GetPeriodStatRequest) {
+func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner Cleaner) (*apigateway.Request, *handlers.GetPeriodStatRequest) {
 	dynamoClient := dynamo.InitClient(ctx)
 
 	username := "e2e_test@gmail.com"
@@ -90,9 +94,9 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, t *test
 	err = usersRepo.CreateUser(ctx, testUser)
 	c.Nil(err, "creating user failed")
 
-	defer t.Cleanup(func() {
+	defer cleaner.Cleanup(func() {
 		err = usersRepo.DeleteUser(ctx, username)
-		c.NotNil(err, "deleting user failed")
+		c.Nil(err, "deleting user failed")
 	})
 
 	expensesList := setupExpenses(c)
@@ -100,7 +104,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, t *test
 	err = expensesRepo.BatchCreateExpenses(ctx, request.Log, expensesList)
 	c.Nil(err, "batch creating expenses failed")
 
-	defer t.Cleanup(func() {
+	defer cleaner.Cleanup(func() {
 		err = expensesRepo.BatchDeleteExpenses(ctx, expensesList)
 		c.Nil(err, "batch deleting expenses failed")
 	})
@@ -110,7 +114,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, t *test
 	err = incomeRepo.BatchCreateIncome(ctx, incomeList)
 	c.Nil(err, "batch creating income failed")
 
-	defer t.Cleanup(func() {
+	defer cleaner.Cleanup(func() {
 		err = incomeRepo.BatchDeleteIncome(ctx, incomeList)
 		c.Nil(err, "batch deleting income failed")
 	})
@@ -140,4 +144,38 @@ func setupIncome(c *require.Assertions) []*models.Income {
 	c.Len(incomeList, 3, "unexpected number of income in the sample file")
 
 	return incomeList
+}
+
+func BenchmarkGetPeriodStats(b *testing.B) {
+	c := require.New(b)
+
+	ctx := context.Background()
+
+	apigwRequest, request := setupGetPeriodStatsTest(ctx, c, b)
+
+	for i := 0; i < b.N; i++ {
+		response, err := request.Process(ctx, apigwRequest)
+		c.Nil(err, "get period stats failed")
+		c.NotNil(response, "get period stats response is nil")
+		c.Equal(http.StatusOK, response.StatusCode)
+
+		var periodStat models.PeriodStat
+		err = json.Unmarshal([]byte(response.Body), &periodStat)
+		c.Nil(err, "unmarshalling response body failed")
+		c.Len(periodStat.CategoryExpenseSummary, 3, "unexpected number of categories in the response")
+		c.Equal(3000.00, periodStat.TotalIncome, fmt.Sprintf("expected %f, got %f", 3000.00, periodStat.TotalIncome))
+
+		testValidatorByCategory := map[string]float64{
+			"category_id_1": 172.98,
+			"category_id_2": 430,
+			"category_id_3": 970,
+		}
+
+		for _, summary := range periodStat.CategoryExpenseSummary {
+			expected, ok := testValidatorByCategory[summary.CategoryID]
+			c.True(ok, "unexpected category in the response")
+			c.Equal(expected, summary.Total)
+		}
+	}
+
 }
