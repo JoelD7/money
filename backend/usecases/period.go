@@ -98,18 +98,9 @@ func NewPeriodUpdater(pm PeriodManager) func(ctx context.Context, username, peri
 	}
 }
 
-func NewPeriodGetter(pm PeriodManager, um UserManager) func(ctx context.Context, username, periodID string) (*models.Period, error) {
+func NewPeriodGetter(pm PeriodManager) func(ctx context.Context, username, periodID string) (*models.Period, error) {
 	return func(ctx context.Context, username, periodID string) (*models.Period, error) {
-		if periodID != string(models.PeriodTypeCurrent) {
-			return pm.GetPeriod(ctx, username, periodID)
-		}
-
-		user, err := um.GetUser(ctx, username)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't get current period for user: %w", err)
-		}
-
-		return pm.GetPeriod(ctx, username, user.CurrentPeriod)
+		return pm.GetPeriod(ctx, username, periodID)
 	}
 }
 

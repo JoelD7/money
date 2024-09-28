@@ -7,7 +7,6 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
-	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"sync"
@@ -22,7 +21,6 @@ type getPeriodRequest struct {
 	startingTime time.Time
 	err          error
 	periodRepo   period.Repository
-	usersRepo    users.Repository
 }
 
 func (request *getPeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
@@ -33,11 +31,6 @@ func (request *getPeriodRequest) init(ctx context.Context, log logger.LogAPI, en
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
-		if err != nil {
-			return
-		}
-
-		request.usersRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -86,7 +79,7 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 		return req.NewErrorResponse(err), nil
 	}
 
-	getPeriod := usecases.NewPeriodGetter(request.periodRepo, request.usersRepo)
+	getPeriod := usecases.NewPeriodGetter(request.periodRepo)
 
 	userPeriod, err := getPeriod(ctx, username, periodID)
 	if err != nil {
