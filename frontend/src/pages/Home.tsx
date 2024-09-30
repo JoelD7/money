@@ -18,7 +18,7 @@ import { Period, PeriodStats, User } from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
-import { useGetPeriod, useGetPeriodStats, useGetUser } from "./queries.ts";
+import { useGetPeriod, useGetPeriodStats, useGetUser } from "../queries";
 import { utils } from "../utils";
 
 export function Home() {
@@ -92,12 +92,15 @@ export function Home() {
         marginTop={"20px"}
       >
         {/*Income*/}
-        <Grid xs={12} sm={6} hidden={lgUp}>
-          <IncomeCard loading={true} income={0} />
+        <Grid xs={12} sm={4} hidden={lgUp}>
+          <IncomeCard
+            loading={getPeriodStats.isPending}
+            income={periodStats?.total_income}
+          />
         </Grid>
 
         {/*Balance*/}
-        <Grid xs={12} sm={6} hidden={lgUp}>
+        <Grid xs={12} sm={4} hidden={lgUp}>
           <BalanceCard
             loading={getUser.isPending}
             remainder={user ? user.remainder : 0}
@@ -105,7 +108,7 @@ export function Home() {
         </Grid>
 
         {/*Expenses*/}
-        <Grid xs={12} sm={6} hidden={lgUp}>
+        <Grid xs={12} sm={4} hidden={lgUp}>
           <ExpenseCard
             loading={getPeriodStats.isPending}
             expenses={getPeriodTotalExpenses()}

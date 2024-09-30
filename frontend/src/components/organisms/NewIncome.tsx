@@ -5,12 +5,12 @@ import { FormEvent, useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { Button } from "../atoms";
-import { useMutation } from "@tanstack/react-query";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import * as yup from "yup";
 import { ValidationError } from "yup";
-import { useGetPeriod } from "../../pages/queries.ts";
+import {queryKeys, useGetPeriod} from "../../queries";
 
 type NewIncomeProps = {
   onClose: () => void;
@@ -30,6 +30,8 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
   const getPeriod = useGetPeriod();
   const period: Period | undefined = getPeriod.data?.data;
 
+  const queryClient = useQueryClient()
+
   const ciMutation = useMutation({
     mutationFn: api.createIncome,
     onSuccess: () => {
@@ -39,6 +41,8 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
         message: "Income created successfully",
       });
       onClose();
+
+      queryClient.invalidateQueries({queryKey: [queryKeys.PERIOD_STATS]});
     },
     onError: (error) => {
       if (error) {

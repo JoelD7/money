@@ -3,19 +3,6 @@ import { Income, IncomeList } from "../types";
 import { keys } from "../utils/index.ts";
 import { QueryFunctionContext } from "@tanstack/react-query";
 
-export const incomeKeys = {
-  all: [{ scope: "income" }] as const,
-  list: (pageSize?: number, startKey?: string, period?: string) =>
-    [
-      {
-        ...incomeKeys.all[0],
-        pageSize,
-        startKey,
-        period,
-      },
-    ] as const,
-};
-
 export function createIncome(income: Income) {
   return axiosClient.post(API_BASE_URL + "/income", income, {
     withCredentials: true,
