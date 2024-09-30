@@ -1,4 +1,9 @@
-import { Category, ExpensesSearchParams, PeriodStats, User } from "../types";
+import {
+  Category,
+  TransactionSearchParams,
+  User,
+} from "../types";
+import { PeriodStats } from "../types";
 import { Colors } from "../assets";
 import { useLocation } from "@tanstack/react-router"; // Sets category name and color to the categoryExpenseSummary object
 
@@ -31,7 +36,7 @@ export function setAdditionalData(
   return periodStats;
 }
 
-export function useExpensesParams(): ExpensesSearchParams {
+export function useTransactionsParams(): TransactionSearchParams {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
 

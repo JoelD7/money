@@ -10,6 +10,7 @@ export type {
   Expenses,
   ExpenseType,
   CategoryExpenseSummary,
+  Income,IncomeList,
   PeriodStats,
 } from "./domain.ts";
 export type {
@@ -17,5 +18,5 @@ export type {
   InputError,
   CategoryExpense,
   SnackAlert,
-  ExpensesSearchParams,
+  TransactionSearchParams,
 } from "./other.ts";

@@ -12,7 +12,7 @@ export function useGetUser() {
 
 export function useGetExpenses(periodID: string) {
   // eslint-disable-next-line prefer-const
-  let { categories, pageSize, startKey, period } = utils.useExpensesParams();
+  let { categories, pageSize, startKey, period } = utils.useTransactionsParams();
 
   if (!period){
     period = periodID;

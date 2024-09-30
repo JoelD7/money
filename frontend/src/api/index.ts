@@ -7,6 +7,7 @@ import {
   getPeriodStats,
 } from "./expenses.ts";
 import { getPeriod } from "./period.ts";
+import { createIncome, getIncomeList } from "./income.ts";
 
 const api = {
   signUp,
@@ -18,6 +19,8 @@ const api = {
   createExpense,
   getPeriodStats,
   expensesQueryKeys,
+  createIncome,
+  getIncomeList,
 };
 
 export default api;

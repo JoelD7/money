@@ -1,22 +1,22 @@
 import Grid from "@mui/material/Unstable_Grid2";
-import ArrowCircleLeftOutlinedIcon from "@mui/icons-material/ArrowCircleLeftOutlined";
+import ArrowCircleRightOutlinedIcon from "@mui/icons-material/ArrowCircleRightOutlined";
 import { Typography, useMediaQuery, useTheme } from "@mui/material";
+import { Colors } from "../../assets";
 import { CashFlowSkeleton } from "../atoms";
-import {Colors} from "../../assets";
 
-type ExpenseCardProps = {
-  expenses?: number;
+type IncomeCardProps = {
+  income?: number;
   loading: boolean;
 };
 
-export function ExpenseCard({ expenses, loading }: ExpenseCardProps) {
+export function IncomeCard({ income, loading }: IncomeCardProps) {
   const theme = useTheme();
   const xsOnly: boolean = useMediaQuery(theme.breakpoints.only("xs"));
   const customWidth = {
     "&.MuiSvgIcon-root": {
       width: "38px",
       height: "38px",
-      color: Colors.RED,
+      color: Colors.GREEN,
     },
   };
 
@@ -34,7 +34,6 @@ export function ExpenseCard({ expenses, loading }: ExpenseCardProps) {
           <CashFlowSkeleton />
         ) : (
           <>
-            {" "}
             <Grid xs={3}>
               <Grid
                 height="100%"
@@ -42,18 +41,19 @@ export function ExpenseCard({ expenses, loading }: ExpenseCardProps) {
                 alignContent="center"
                 justifyContent="center"
               >
-                <ArrowCircleLeftOutlinedIcon sx={customWidth} />
+                <ArrowCircleRightOutlinedIcon sx={customWidth} />
               </Grid>
             </Grid>
+
             <Grid xs={9}>
               <Typography variant="h6" fontWeight="bold">
-                Expenses
+                Income
               </Typography>
-              <Typography lineHeight="unset" variant="h4" color="red.main">
+              <Typography lineHeight="unset" variant="h4" color="primary">
                 {new Intl.NumberFormat("en-US", {
                   style: "currency",
                   currency: "USD",
-                }).format(expenses ? expenses : 0)}
+                }).format(income ? income : 0)}
               </Typography>
             </Grid>
           </>

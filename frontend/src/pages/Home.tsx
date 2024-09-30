@@ -9,25 +9,23 @@ import {
   ExpenseCard,
   ExpensesChart,
   ExpensesTable,
+  IncomeCard,
   LinearProgress,
   Navbar,
-  NewExpense,
+  NewTransaction,
 } from "../components";
-import { Period, PeriodStats, User} from "../types";
+import { Period, PeriodStats, User } from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
-import {
-  useGetPeriodStats,
-  useGetPeriod,
-  useGetUser,
-} from "./queries.ts";
+import { useGetPeriod, useGetPeriodStats, useGetUser } from "../queries";
 import { utils } from "../utils";
 
 export function Home() {
   const theme = useTheme();
 
   const [openNewExpense, setOpenNewExpense] = useState<boolean>(false);
+  const [openNewIncome, setOpenNewIncome] = useState<boolean>(false);
 
   const lgUp: boolean = useMediaQuery(theme.breakpoints.up("lg"));
 
@@ -38,13 +36,19 @@ export function Home() {
   const period: Period | undefined = getPeriod.data?.data;
 
   const getPeriodStats = useGetPeriodStats(user);
-  const periodStats: PeriodStats | undefined =
-    utils.setAdditionalData(getPeriodStats.data?.data, user);
+  const periodStats: PeriodStats | undefined = utils.setAdditionalData(
+    getPeriodStats.data?.data,
+    user,
+  );
 
   const chartHeight: number = 350;
 
-  function handleClose() {
+  function handleNewExpenseClose() {
     setOpenNewExpense(false);
+  }
+
+  function handleNewIncomeClose() {
+    setOpenNewIncome(false);
   }
 
   function showRefetchErrorSnackbar() {
@@ -63,21 +67,52 @@ export function Home() {
     return <Error />;
   }
 
+  function getPeriodTotalExpenses() {
+    if (periodStats) {
+      return periodStats.category_expense_summary.reduce(
+        (acc, curr) => acc + curr.total,
+        0,
+      );
+    }
+
+    return 0;
+  }
+
   return (
     <Container>
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
       <LinearProgress loading={getUser.isFetching || getPeriod.isFetching} />
       <Navbar />
 
-      <Grid container justifyContent={"center"} position={"relative"} spacing={1} marginTop={"20px"}>
+      <Grid
+        container
+        justifyContent={"center"}
+        position={"relative"}
+        spacing={1}
+        marginTop={"20px"}
+      >
+        {/*Income*/}
+        <Grid xs={12} sm={4} hidden={lgUp}>
+          <IncomeCard
+            loading={getPeriodStats.isPending}
+            income={periodStats?.total_income}
+          />
+        </Grid>
+
         {/*Balance*/}
-        <Grid xs={12} sm={6} hidden={lgUp}>
-          <BalanceCard remainder={user ? user.remainder : 0} />
+        <Grid xs={12} sm={4} hidden={lgUp}>
+          <BalanceCard
+            loading={getUser.isPending}
+            remainder={user ? user.remainder : 0}
+          />
         </Grid>
 
         {/*Expenses*/}
-        <Grid xs={12} sm={6} hidden={lgUp}>
-          <ExpenseCard expenses={user ? user.expenses : 0} />
+        <Grid xs={12} sm={4} hidden={lgUp}>
+          <ExpenseCard
+            loading={getPeriodStats.isPending}
+            expenses={getPeriodTotalExpenses()}
+          />
         </Grid>
 
         {/*Chart, Current balance and expenses*/}
@@ -88,7 +123,9 @@ export function Home() {
               <Grid xs={12} lg={8}>
                 <ExpensesChart
                   period={period}
-                  summary={periodStats ? periodStats.category_expense_summary : []}
+                  summary={
+                    periodStats ? periodStats.category_expense_summary : []
+                  }
                   chartHeight={chartHeight}
                   isLoading={getUser.isLoading}
                   isError={getPeriodStats.isError}
@@ -99,14 +136,28 @@ export function Home() {
               <Grid xs={12} lg={4}>
                 <div>
                   <Grid container mt={"1rem"} spacing={1}>
+                    {/*Income*/}
+                    <Grid xs={12} hidden={!lgUp}>
+                      <IncomeCard
+                        loading={getPeriodStats.isPending}
+                        income={periodStats?.total_income}
+                      />
+                    </Grid>
+
                     {/*Balance*/}
                     <Grid xs={12} hidden={!lgUp}>
-                      <BalanceCard remainder={user ? user.remainder : 0} />
+                      <BalanceCard
+                        loading={getUser.isPending}
+                        remainder={user ? user.remainder : 0}
+                      />
                     </Grid>
 
                     {/*Expenses*/}
                     <Grid xs={12} hidden={!lgUp}>
-                      <ExpenseCard expenses={user ? user.expenses : 0} />
+                      <ExpenseCard
+                        loading={getPeriodStats.isPending}
+                        expenses={getPeriodTotalExpenses()}
+                      />
                     </Grid>
 
                     {/**New expense/income buttons*/}
@@ -124,6 +175,7 @@ export function Home() {
                         sx={{ marginLeft: "1rem" }}
                         variant={"contained"}
                         startIcon={<AddIcon />}
+                        onClick={() => setOpenNewIncome(true)}
                       >
                         New income
                       </Button>
@@ -142,12 +194,26 @@ export function Home() {
           </Typography>
 
           {user && user.categories && (
-            <ExpensesTable period={user.current_period} categories={user.categories} />
+            <ExpensesTable
+              period={user.current_period}
+              categories={user.categories}
+            />
           )}
         </Grid>
       </Grid>
 
-      <NewExpense user={user} open={openNewExpense} onClose={handleClose} />
+      <NewTransaction
+        type={"expense"}
+        user={user}
+        open={openNewExpense}
+        onClose={handleNewExpenseClose}
+      />
+      <NewTransaction
+        type={"income"}
+        user={user}
+        open={openNewIncome}
+        onClose={handleNewIncomeClose}
+      />
     </Container>
   );
 }
