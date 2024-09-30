@@ -2,6 +2,7 @@ import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { Income, IncomeList } from "../types";
 import { keys } from "../utils/index.ts";
 import { QueryFunctionContext } from "@tanstack/react-query";
+import { incomeKeys } from "../queries";
 
 export function createIncome(income: Income) {
   return axiosClient.post(API_BASE_URL + "/income", income, {
@@ -17,7 +18,7 @@ export function getIncomeList({
 }: QueryFunctionContext<ReturnType<(typeof incomeKeys)["list"]>>) {
   const { pageSize, startKey, period } = queryKey[0];
 
-  const paramArr: string[] = []
+  const paramArr: string[] = [];
 
   if (period) {
     paramArr.push(`period=${period}`);
