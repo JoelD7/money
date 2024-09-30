@@ -1,6 +1,6 @@
 import { Alert, AlertTitle, capitalize, Snackbar } from "@mui/material";
 import { useState } from "react";
-import { SnackAlert } from "../../types";
+import {SnackAlert, User} from "../../types";
 import { NewExpense } from "./NewExpense.tsx";
 import { NewIncome } from "./NewIncome.tsx";
 
@@ -8,9 +8,10 @@ type NewTransactionProps = {
   open: boolean;
   onClose: () => void;
   type: "income" | "expense";
+  user?: User;
 };
 
-export function NewTransaction({ open, onClose, type }: NewTransactionProps) {
+export function NewTransaction({ open, onClose, type , user}: NewTransactionProps) {
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
     type: "success",
@@ -53,6 +54,7 @@ export function NewTransaction({ open, onClose, type }: NewTransactionProps) {
       ) : (
         <NewExpense
           key={key}
+          user={user}
           open={open}
           onClose={handleClose}
           onAlert={handleAlert}

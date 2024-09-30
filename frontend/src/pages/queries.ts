@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import api from "../api";
-import { keys } from "../utils";
+import { keys, utils } from "../utils";
 import { AxiosError, AxiosResponse } from "axios";
 import { User } from "../types";
 
@@ -46,8 +46,13 @@ export function useGetPeriodStats(user?: User) {
   });
 }
 
-export function useGetIncome() {
-  const { pageSize, startKey, period } = utils.useTransactionsParams();
+export function useGetIncome(periodID: string) {
+  // eslint-disable-next-line prefer-const
+  let { pageSize, startKey, period } = utils.useTransactionsParams();
+
+  if (!period){
+    period = periodID;
+  }
 
   return useQuery({
     queryKey: api.incomeKeys.list(pageSize, startKey, period),

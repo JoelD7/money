@@ -14,13 +14,12 @@ import {
   Navbar,
   NewTransaction,
 } from "../components";
-import { Period, PeriodStats, User, IncomeList} from "../types";
+import { Period, PeriodStats, User} from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
 import {
   useGetPeriodStats,
-  useGetIncome,
   useGetPeriod,
   useGetUser,
 } from "./queries.ts";
@@ -37,17 +36,12 @@ export function Home() {
   const getUser = useGetUser();
   const user: User | undefined = getUser.data?.data;
 
-  const getIncome = useGetIncome();
-
   const getPeriod = useGetPeriod(user);
   const period: Period | undefined = getPeriod.data?.data;
 
   const getPeriodStats = useGetPeriodStats(user);
   const periodStats: PeriodStats | undefined =
     utils.setAdditionalData(getPeriodStats.data?.data, user);
-
-  const incomeList: IncomeList | undefined = getIncome.data?.data;
-  const totalIncome: number = incomeList? incomeList.income.reduce((acc, cur) => acc+cur.amount, 0) : 0;
 
   const chartHeight: number = 350;
 
@@ -90,7 +84,7 @@ export function Home() {
       >
         {/*Income*/}
         <Grid xs={12} sm={6} hidden={lgUp}>
-          <IncomeCard income={totalIncome} />
+          <IncomeCard income={periodStats?.total_income} />
         </Grid>
 
         {/*Balance*/}
@@ -101,7 +95,7 @@ export function Home() {
         {/*Expenses*/}
         <Grid xs={12} sm={6} hidden={lgUp}>
           <ExpenseCard
-            expenses={categoryExpenseSummary.reduce(
+            expenses={periodStats?.category_expense_summary.reduce(
               (acc, curr) => acc + curr.total,
               0,
             )}
@@ -135,10 +129,10 @@ export function Home() {
                     {/*Expenses*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <ExpenseCard
-                        expenses={periodStats.category_expense_summary.reduce(
+                        expenses={periodStats ? periodStats.category_expense_summary.reduce(
                           (acc, curr) => acc + curr.total,
                           0,
-                        )}
+                        ): 0}
                       />
                     </Grid>
 
@@ -183,15 +177,16 @@ export function Home() {
 
       <NewTransaction
         type={"expense"}
+        user={user}
         open={openNewExpense}
         onClose={handleNewExpenseClose}
       />
       <NewTransaction
         type={"income"}
+        user={user}
         open={openNewIncome}
         onClose={handleNewIncomeClose}
       />
-      <NewExpense user={user} open={openNewExpense} onClose={handleClose} />
     </Container>
   );
 }
