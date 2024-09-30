@@ -14,15 +14,11 @@ import {
   Navbar,
   NewTransaction,
 } from "../components";
-import { Period, PeriodStats, User} from "../types";
+import { Period, PeriodStats, User } from "../types";
 import { Loading } from "./Loading.tsx";
 import { Error } from "./Error.tsx";
 import { useState } from "react";
-import {
-  useGetPeriodStats,
-  useGetPeriod,
-  useGetUser,
-} from "./queries.ts";
+import { useGetPeriod, useGetPeriodStats, useGetUser } from "./queries.ts";
 import { utils } from "../utils";
 
 export function Home() {
@@ -40,8 +36,10 @@ export function Home() {
   const period: Period | undefined = getPeriod.data?.data;
 
   const getPeriodStats = useGetPeriodStats(user);
-  const periodStats: PeriodStats | undefined =
-    utils.setAdditionalData(getPeriodStats.data?.data, user);
+  const periodStats: PeriodStats | undefined = utils.setAdditionalData(
+    getPeriodStats.data?.data,
+    user,
+  );
 
   const chartHeight: number = 350;
 
@@ -69,6 +67,17 @@ export function Home() {
     return <Error />;
   }
 
+  function getPeriodTotalExpenses() {
+    if (periodStats) {
+      return periodStats.category_expense_summary.reduce(
+        (acc, curr) => acc + curr.total,
+        0,
+      );
+    }
+
+    return 0;
+  }
+
   return (
     <Container>
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
@@ -84,21 +93,22 @@ export function Home() {
       >
         {/*Income*/}
         <Grid xs={12} sm={6} hidden={lgUp}>
-          <IncomeCard income={periodStats?.total_income} />
+          <IncomeCard loading={true} income={0} />
         </Grid>
 
         {/*Balance*/}
         <Grid xs={12} sm={6} hidden={lgUp}>
-          <BalanceCard remainder={user ? user.remainder : 0} />
+          <BalanceCard
+            loading={getUser.isPending}
+            remainder={user ? user.remainder : 0}
+          />
         </Grid>
 
         {/*Expenses*/}
         <Grid xs={12} sm={6} hidden={lgUp}>
           <ExpenseCard
-            expenses={periodStats?.category_expense_summary.reduce(
-              (acc, curr) => acc + curr.total,
-              0,
-            )}
+            loading={getPeriodStats.isPending}
+            expenses={getPeriodTotalExpenses()}
           />
         </Grid>
 
@@ -110,7 +120,9 @@ export function Home() {
               <Grid xs={12} lg={8}>
                 <ExpensesChart
                   period={period}
-                  summary={periodStats ? periodStats.category_expense_summary : []}
+                  summary={
+                    periodStats ? periodStats.category_expense_summary : []
+                  }
                   chartHeight={chartHeight}
                   isLoading={getUser.isLoading}
                   isError={getPeriodStats.isError}
@@ -121,18 +133,27 @@ export function Home() {
               <Grid xs={12} lg={4}>
                 <div>
                   <Grid container mt={"1rem"} spacing={1}>
+                    {/*Income*/}
+                    <Grid xs={12} hidden={!lgUp}>
+                      <IncomeCard
+                        loading={getPeriodStats.isPending}
+                        income={periodStats?.total_income}
+                      />
+                    </Grid>
+
                     {/*Balance*/}
                     <Grid xs={12} hidden={!lgUp}>
-                      <BalanceCard remainder={user ? user.remainder : 0} />
+                      <BalanceCard
+                        loading={getUser.isPending}
+                        remainder={user ? user.remainder : 0}
+                      />
                     </Grid>
 
                     {/*Expenses*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <ExpenseCard
-                        expenses={periodStats ? periodStats.category_expense_summary.reduce(
-                          (acc, curr) => acc + curr.total,
-                          0,
-                        ): 0}
+                        loading={getPeriodStats.isPending}
+                        expenses={getPeriodTotalExpenses()}
                       />
                     </Grid>
 
@@ -170,7 +191,10 @@ export function Home() {
           </Typography>
 
           {user && user.categories && (
-            <ExpensesTable period={user.current_period} categories={user.categories} />
+            <ExpensesTable
+              period={user.current_period}
+              categories={user.categories}
+            />
           )}
         </Grid>
       </Grid>
