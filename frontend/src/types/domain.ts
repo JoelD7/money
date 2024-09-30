@@ -86,6 +86,7 @@ export type IncomeList = {
 }
 
 export type Income = {
+  income_id: string;
   amount: number;
   name: string;
   period: string;

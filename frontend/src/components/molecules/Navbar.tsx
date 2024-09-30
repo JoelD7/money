@@ -9,9 +9,10 @@ import {
 import HomeIcon from "@mui/icons-material/Home";
 import MenuIcon from "@mui/icons-material/Menu";
 import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
+import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
+import SavingsIcon from "@mui/icons-material/Savings";
 import NotificationImportantIcon from "@mui/icons-material/NotificationImportant";
 import LabelIcon from "@mui/icons-material/Label";
-import AutoStoriesIcon from "@mui/icons-material/AutoStories";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { ReactNode, useState } from "react";
@@ -84,6 +85,27 @@ export function Navbar({ children }: NavbarProps) {
     logoutMutation.mutate(credentials);
   }
 
+  function goToHome(){
+    navigate({ to: "/" })
+        .then(() => {})
+        .catch((err) => {
+          console.error("Error navigating to /", err);
+        });
+  }
+
+  function goToIncome(){
+    let route = "/income"
+    if (user){
+        route = `/income?period=${user.current_period}`
+    }
+
+    navigate({ to: route })
+        .then(() => {})
+        .catch((err) => {
+          console.error("Error navigating to /income", err);
+        });
+  }
+
   return (
     <>
       <div
@@ -126,7 +148,7 @@ export function Navbar({ children }: NavbarProps) {
           </div>
 
           <div className="pl-3">
-            <Button sx={buttonStyle} startIcon={<HomeIcon sx={customWidth} />}>
+            <Button sx={buttonStyle} startIcon={<HomeIcon sx={customWidth} />} onClick={ ()=>goToHome() }>
               Home
             </Button>
 
@@ -150,9 +172,17 @@ export function Navbar({ children }: NavbarProps) {
 
             <Button
               sx={buttonStyle}
-              startIcon={<AutoStoriesIcon sx={customWidth} />}
+              startIcon={<SavingsIcon sx={customWidth} />}
             >
               Savings
+            </Button>
+
+            <Button
+                sx={buttonStyle}
+                startIcon={<MonetizationOnIcon sx={customWidth} />}
+                onClick={() => goToIncome()}
+            >
+              Income
             </Button>
           </div>
 
@@ -191,7 +221,7 @@ export function Navbar({ children }: NavbarProps) {
           </div>
 
           <div className="pl-3">
-            <Button sx={buttonStyle} startIcon={<HomeIcon sx={customWidth} />}>
+            <Button sx={buttonStyle} startIcon={<HomeIcon sx={customWidth} />} onClick={ ()=>goToHome() }>
               Home
             </Button>
 
@@ -215,9 +245,17 @@ export function Navbar({ children }: NavbarProps) {
 
             <Button
               sx={buttonStyle}
-              startIcon={<AutoStoriesIcon sx={customWidth} />}
+              startIcon={<SavingsIcon sx={customWidth} />}
             >
               Savings
+            </Button>
+
+            <Button
+                sx={buttonStyle}
+                startIcon={<MonetizationOnIcon sx={customWidth} />}
+                onClick={() => goToIncome()}
+            >
+              Income
             </Button>
           </div>
 

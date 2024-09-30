@@ -10,7 +10,8 @@ export type {
   Expenses,
   ExpenseType,
   CategoryExpenseSummary,
-  Income,IncomeList,
+  Income,
+  IncomeList,
   PeriodStats,
 } from "./domain.ts";
 export type {

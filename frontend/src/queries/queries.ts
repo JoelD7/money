@@ -60,12 +60,12 @@ export function useGetPeriodStats(user?: User) {
   });
 }
 
-export function useGetIncome(periodID: string) {
+export function useGetIncome() {
   // eslint-disable-next-line prefer-const
   let { pageSize, startKey, period } = utils.useTransactionsParams();
 
   if (!period) {
-    period = periodID;
+    period = localStorage.getItem(keys.CURRENT_PERIOD) || "";
   }
 
   return useQuery({
