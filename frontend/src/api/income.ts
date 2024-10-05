@@ -1,9 +1,9 @@
-import { API_BASE_URL, axiosClient } from "./money-api.ts";
-import { Income, IncomeList } from "../types";
-import { keys } from "../utils/index.ts";
-import { QueryFunctionContext } from "@tanstack/react-query";
-import { incomeKeys } from "../queries";
-import { AxiosResponse } from "axios";
+import {API_BASE_URL, axiosClient} from "./money-api.ts";
+import {Income, IncomeList, IncomeListSchema} from "../types";
+import {keys} from "../utils/index.ts";
+import {QueryFunctionContext} from "@tanstack/react-query";
+import {incomeKeys} from "../queries";
+import {AxiosResponse} from "axios";
 
 export function createIncome(income: Income) {
   return axiosClient.post(API_BASE_URL + "/income", income, {
@@ -41,5 +41,5 @@ export async function getIncomeList({
     },
   });
 
-  return res.data
+  return IncomeListSchema.parse(res.data);
 }

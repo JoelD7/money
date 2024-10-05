@@ -1,4 +1,4 @@
-import {Expense, Expenses, PeriodStats} from "../types";
+import {Expense, Expenses, ExpensesSchema, PeriodStats, PeriodStatsSchema} from "../types";
 import {keys} from "../utils";
 import {API_BASE_URL, axiosClient} from "./money-api.ts";
 import {QueryFunctionContext} from "@tanstack/react-query";
@@ -56,7 +56,7 @@ export async function getExpenses({
     },
   });
 
-  return res.data
+  return ExpensesSchema.parse(res.data);
 }
 
 export function createExpense(expense: Expense) {
@@ -79,5 +79,5 @@ export async function getPeriodStats(period: string): Promise<PeriodStats> {
     },
   );
 
-  return res.data;
+  return PeriodStatsSchema.parse(res.data);
 }
