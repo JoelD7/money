@@ -3,6 +3,7 @@ import { Income, IncomeList } from "../types";
 import { keys } from "../utils/index.ts";
 import { QueryFunctionContext } from "@tanstack/react-query";
 import { incomeKeys } from "../queries";
+import { AxiosResponse } from "axios";
 
 export function createIncome(income: Income) {
   return axiosClient.post(API_BASE_URL + "/income", income, {
@@ -13,9 +14,9 @@ export function createIncome(income: Income) {
   });
 }
 
-export function getIncomeList({
+export async function getIncomeList({
   queryKey,
-}: QueryFunctionContext<ReturnType<(typeof incomeKeys)["list"]>>) {
+}: QueryFunctionContext<ReturnType<(typeof incomeKeys)["list"]>>): Promise<IncomeList> {
   const { pageSize, startKey, period } = queryKey[0];
 
   const paramArr: string[] = [];
@@ -33,10 +34,12 @@ export function getIncomeList({
 
   const params: string = paramArr.join("&");
 
-  return axiosClient.get<IncomeList>(API_BASE_URL + `/income?${params}`, {
+  const res: AxiosResponse = await axiosClient.get<IncomeList>(API_BASE_URL + `/income?${params}`, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
     },
   });
+
+  return res.data
 }

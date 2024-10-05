@@ -28,7 +28,7 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
   };
 
   const getPeriod = useGetPeriod();
-  const period: Period | undefined = getPeriod.data?.data;
+  const period: Period | undefined = getPeriod.data;
 
   const queryClient = useQueryClient()
 
@@ -74,6 +74,7 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
   function createIncome(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const income: Income = {
+      income_id: '',
       amount: amount as number,
       name: name,
       created_date: date ? date.format("") : "",

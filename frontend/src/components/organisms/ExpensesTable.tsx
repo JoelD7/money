@@ -40,7 +40,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
   const getExpensesQuery = useGetExpenses(period);
   const location = useLocation();
 
-  const expenses: Expense[] | undefined = getExpensesQuery.data?.data.expenses;
+  const expenses: Expense[] | undefined = getExpensesQuery.data?.expenses;
 
   const colorsByExpense: Map<string, string> = getColorsByExpense();
 
@@ -227,7 +227,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
       return mappedKey;
     }
 
-    const nextKey = getExpensesQuery.data?.data.next_key;
+    const nextKey = getExpensesQuery.data?.next_key;
     if (nextKey) {
       startKeysByPage.current[newModel.page] = nextKey;
       return nextKey;
@@ -284,7 +284,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
             paginationModel={paginationModel}
             onPaginationModelChange={onPaginationModelChange}
             paginationMeta={{
-              hasNextPage: getExpensesQuery.data?.data.next_key !== "",
+              hasNextPage: getExpensesQuery.data?.next_key !== "",
             }}
             slots={{
               noRowsOverlay: NoRowsDataGrid,

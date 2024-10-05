@@ -1,7 +1,8 @@
-import { Expense, Expenses, PeriodStats } from "../types";
-import { keys } from "../utils";
-import { API_BASE_URL, axiosClient } from "./money-api.ts";
-import { QueryFunctionContext } from "@tanstack/react-query";
+import {Expense, Expenses, PeriodStats} from "../types";
+import {keys} from "../utils";
+import {API_BASE_URL, axiosClient} from "./money-api.ts";
+import {QueryFunctionContext} from "@tanstack/react-query";
+import {AxiosResponse} from "axios";
 
 export const expensesQueryKeys = {
   all: [{ scope: "expenses" }] as const,
@@ -22,9 +23,9 @@ export const expensesQueryKeys = {
     ] as const,
 };
 
-export function getExpenses({
+export async function getExpenses({
   queryKey,
-}: QueryFunctionContext<ReturnType<(typeof expensesQueryKeys)["list"]>>) {
+}: QueryFunctionContext<ReturnType<(typeof expensesQueryKeys)["list"]>>): Promise<Expenses> {
   const { categories, pageSize, startKey, period } = queryKey[0];
 
   const paramArr: string[] = [];
@@ -48,12 +49,14 @@ export function getExpenses({
 
   const params: string = paramArr.join("&");
 
-  return axiosClient.get<Expenses>(API_BASE_URL + `/expenses?${params}`, {
+  const res: AxiosResponse = await axiosClient.get<Expenses>(API_BASE_URL + `/expenses?${params}`, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
     },
   });
+
+  return res.data
 }
 
 export function createExpense(expense: Expense) {
@@ -65,8 +68,8 @@ export function createExpense(expense: Expense) {
   });
 }
 
-export function getPeriodStats(period: string) {
-  return axiosClient.get<PeriodStats>(
+export async function getPeriodStats(period: string): Promise<PeriodStats> {
+  const res: AxiosResponse = await axiosClient.get<PeriodStats>(
     API_BASE_URL + `/periods/${period}/stats`,
     {
       withCredentials: true,
@@ -75,4 +78,6 @@ export function getPeriodStats(period: string) {
       },
     },
   );
+
+  return res.data;
 }
