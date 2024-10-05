@@ -1,95 +1,124 @@
-export type User = {
-  username: string;
-  current_period: string;
-  remainder: number;
-  expenses?: number;
-  categories?: Category[];
-};
+import {z} from "zod";
 
-export type ExpenseType = "regular" | "recurring";
+export const CategorySchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    budget: z.number(),
+    color: z.string(),
+});
 
-export type Expense = {
-  expense_id: string;
-  username: string;
-  category_id?: string;
-  category_name?: string;
-  amount: number;
-  name: string;
-  notes?: string;
-  type: ExpenseType;
-  created_date: string;
-  period: string;
-  update_date?: string;
-};
+export type Category = z.infer<typeof CategorySchema>
 
-export type PeriodStats = {
-  period: string;
-  total_income: number;
-  category_expense_summary: CategoryExpenseSummary[];
-};
+export const UserSchema = z.object({
+    username: z.string(),
+    current_period: z.string(),
+    remainder: z.number(),
+    expenses: z.number().optional(),
+    categories: z.array(CategorySchema).optional(),
+});
 
-export type CategoryExpenseSummary = {
-  category_id: string;
-  name: string;
-  total: number;
-  period: string;
-  color: string;
-};
+export type User = z.infer<typeof UserSchema>
 
-export type Expenses = {
-  expenses: Expense[];
-  next_key: string;
-};
+export const ExpenseTypeSchema = z.enum(["regular", "recurring"]);
+export type ExpenseType = z.infer<typeof ExpenseTypeSchema>;
 
-export type Category = {
-  id: string;
-  name: string;
-  budget: number;
-  color: string;
-};
+export const ExpenseSchema = z.object({
+    expense_id: z.string(),
+    username: z.string(),
+    category_id: z.string().optional(),
+    category_name: z.string().optional(),
+    amount: z.number(),
+    name: z.string(),
+    notes: z.string().optional(),
+    type: ExpenseTypeSchema,
+    created_date: z.string(),
+    period: z.string(),
+    update_date: z.string().optional(),
+});
 
-export type SignUpUser = {
-  username: string;
-  password: string;
-  fullname: string;
-};
+export type Expense = z.infer<typeof ExpenseSchema>
 
-export type Credentials = {
-  username: string;
-  password: string;
-};
+export const CategoryExpenseSummarySchema = z.object({
+    category_id: z.string(),
+    name: z.string(),
+    total: z.number(),
+    period: z.string(),
+    color: z.string(),
+});
+
+export type CategoryExpenseSummary = z.infer<typeof CategoryExpenseSummarySchema>
+
+export const PeriodStatsSchema = z.object({
+    period: z.string(),
+    total_income: z.number(),
+    category_expense_summary: z.array(CategoryExpenseSummarySchema),
+});
+
+export type PeriodStats = z.infer<typeof PeriodStatsSchema>
+
+export const ExpensesSchema = z.object({
+    expenses: z.array(ExpenseSchema),
+    next_key: z.string(),
+});
+
+export type Expenses = z.infer<typeof ExpensesSchema>
+
+export const SignUpUserSchema = z.object({
+    username: z.string(),
+    password: z.string(),
+    fullname: z.string(),
+});
+
+export type SignUpUser = z.infer<typeof SignUpUserSchema>
+
+export const CredentialsSchema = z.object({
+    username: z.string(),
+    password: z.string(),
+});
+
+export type Credentials = z.infer<typeof CredentialsSchema>;
 
 export type APIError = {
-  message: string;
-  http_code: number;
+    message: string;
+    http_code: number;
 };
 
-export type AccessToken = {
-  sub: string;
-  exp: number;
-  iat: number;
-};
+export const AccessTokenSchema = z.object({
+    sub: z.string(),
+    exp: z.number(),
+    iat: z.number(),
+});
 
-export type Period = {
-  username: string;
-  period: string;
-  name: string;
-  start_date: string;
-  end_date: string;
-  created_date: string;
-  updated_date: string;
-};
+export type AccessToken = z.infer<typeof AccessTokenSchema>;
 
-export type IncomeList = {
-  income: Income[]
-  next_key: string;
-}
+export const PeriodSchema = z.object({
+    username: z.string(),
+    period: z.string(),
+    name: z.string(),
+    start_date: z.string(),
+    end_date: z.string(),
+    created_date: z.string(),
+    updated_date: z.string(),
+});
 
-export type Income = {
-  income_id: string;
-  amount: number;
-  name: string;
-  period: string;
-  notes: string;
-  created_date: string;
-};
+export const PeriodsSchema = z.array(PeriodSchema);
+
+export type Period = z.infer<typeof PeriodSchema>
+
+export const IncomeSchema = z.object({
+    income_id: z.string(),
+    amount: z.number(),
+    name: z.string(),
+    period: z.string(),
+    notes: z.string(),
+    created_date: z.string(),
+});
+
+export type Income = z.infer<typeof IncomeSchema>
+
+export const IncomeListSchema = z.object({
+    income: z.array(IncomeSchema),
+    next_key: z.string(),
+});
+
+export type IncomeList = z.infer<typeof IncomeListSchema>
