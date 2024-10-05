@@ -5,6 +5,8 @@ import {AxiosError} from "axios";
 import {User} from "../types";
 import {INCOME, PERIOD, PERIOD_STATS, PERIODS, USER} from "./keys";
 
+export const QUERY_RETRIES = 2;
+
 export const incomeKeys = {
     all: [{scope: INCOME}] as const,
     list: (pageSize?: number, startKey?: string, period?: string) =>
@@ -40,7 +42,11 @@ export function useGetPeriod(user?: User) {
         queryKey: [PERIOD],
         queryFn: () => api.getPeriod(periodID),
         enabled: periodID !== "",
-        retry: (_, e: AxiosError) => {
+        retry: (failureCount: number, e: AxiosError) => {
+            if (failureCount > QUERY_RETRIES) {
+                return false;
+            }
+
             return e.response ? e.response.status !== 404 : true;
         },
     });
@@ -49,8 +55,12 @@ export function useGetPeriod(user?: User) {
 export function useGetPeriods() {
     return useQuery({
         queryKey: [PERIODS],
-        queryFn: api.getPeriods,
-        retry: (_, e: AxiosError) => {
+        queryFn: () => api.getPeriods(),
+        retry: (failureCount: number, e: AxiosError) => {
+            if (failureCount > QUERY_RETRIES) {
+                return false;
+            }
+
             return e.response ? e.response.status !== 404 : true;
         },
     });
@@ -64,7 +74,11 @@ export function useGetPeriodStats(user?: User) {
         queryKey: [PERIOD_STATS, periodID],
         queryFn: () => api.getPeriodStats(periodID),
         enabled: periodID !== "",
-        retry: (_, e: AxiosError) => {
+        retry: (failureCount: number, e: AxiosError) => {
+            if (failureCount > QUERY_RETRIES) {
+                return false;
+            }
+
             return e.response ? e.response.status !== 404 : true;
         },
     });
@@ -81,7 +95,11 @@ export function useGetIncome() {
     return useQuery({
         queryKey: incomeKeys.list(pageSize, startKey, period),
         queryFn: api.getIncomeList,
-        retry: (_, e: AxiosError) => {
+        retry: (failureCount: number, e: AxiosError) => {
+            if (failureCount > QUERY_RETRIES) {
+                return false;
+            }
+
             return e.response ? e.response.status !== 404 : true;
         },
     });
