@@ -15,7 +15,7 @@ export function NewTransaction({ open, onClose, type , user}: NewTransactionProp
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
     type: "success",
-    message: "",
+    title: "",
   });
   const [key, setKey] = useState<number>(0);
 
@@ -40,7 +40,7 @@ export function NewTransaction({ open, onClose, type , user}: NewTransactionProp
       >
         <Alert variant={"filled"} severity={alert.type}>
           <AlertTitle>{capitalize(alert.type)}</AlertTitle>
-          {alert.message}
+          {alert.title}
         </Alert>
       </Snackbar>
 

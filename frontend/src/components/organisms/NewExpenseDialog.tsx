@@ -85,7 +85,7 @@ export function NewExpenseDialog({
       onAlert({
         open: true,
         type: "success",
-        message: "Expense created successfully",
+        title: "Expense created successfully",
       });
       onClose();
     },
@@ -96,7 +96,7 @@ export function NewExpenseDialog({
         onAlert({
           open: true,
           type: "error",
-          message: responseError.message as string,
+          title: responseError.message as string,
         });
       }
     },
@@ -137,7 +137,7 @@ export function NewExpenseDialog({
       ceMutation.mutate(expense);
     } catch (e) {
       const err = e as ValidationError;
-      onAlert({ open: true, type: "error", message: err.errors[0] });
+      onAlert({ open: true, type: "error", title: err.errors[0] });
     }
   }
 

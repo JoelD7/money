@@ -80,7 +80,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
       onAlert({
         open: true,
         type: "success",
-        message: "Expense created successfully",
+        title: "Expense created successfully",
       });
       onClose();
     },
@@ -91,7 +91,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
         onAlert({
           open: true,
           type: "error",
-          message: responseError.message as string,
+          title: responseError.message as string,
         });
       }
     },
@@ -132,7 +132,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
       ceMutation.mutate(expense);
     } catch (e) {
       const err = e as ValidationError;
-      onAlert({ open: true, type: "error", message: err.errors[0] });
+      onAlert({ open: true, type: "error", title: err.errors[0] });
     }
   }
 

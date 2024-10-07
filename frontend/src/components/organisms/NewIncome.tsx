@@ -38,7 +38,7 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
       onAlert({
         open: true,
         type: "success",
-        message: "Income created successfully",
+        title: "Income created successfully",
       });
       onClose();
 
@@ -51,7 +51,7 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
         onAlert({
           open: true,
           type: "error",
-          message: responseError.message as string,
+          title: responseError.message as string,
         });
       }
     },
@@ -87,7 +87,7 @@ export function NewIncome({ onClose, open, onAlert }: NewIncomeProps) {
       ciMutation.mutate(income);
     } catch (e) {
       const err = e as ValidationError;
-      onAlert({ open: true, type: "error", message: err.errors[0] });
+      onAlert({ open: true, type: "error", title: err.errors[0] });
     }
   }
 
