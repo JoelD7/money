@@ -1,39 +1,39 @@
 import { Alert, AlertTitle, Snackbar } from "@mui/material";
+import {useState} from "react";
 
 type ErrorSnackbarProps = {
-  open: boolean;
-  message: string;
-  extraDetails?: string;
-  onClose: () => void;
+  openProp: boolean;
+  title: string;
+  message?: string;
 };
 
 export function ErrorSnackbar({
-  open,
+  openProp,
+  title,
   message,
-  extraDetails,
-  onClose,
 }: ErrorSnackbarProps) {
+  const[open, setOpen] = useState<boolean>(openProp)
   return (
     <div>
       <Snackbar
         open={open}
         autoHideDuration={6000}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        onClose={onClose}
+        onClose={()=> setOpen(false)}
       >
         <Alert
-          onClose={onClose}
+          onClose={()=> setOpen(false)}
           severity="error"
           variant="filled"
           sx={{ width: "100%" }}
         >
-          {extraDetails ? (
+          {message ? (
             <>
-              <AlertTitle>{message}</AlertTitle>
-              {extraDetails}
+              <AlertTitle>{title}</AlertTitle>
+              {message}
             </>
           ) : (
-            <>{message}</>
+            <>{title}</>
           )}
         </Alert>
       </Snackbar>
