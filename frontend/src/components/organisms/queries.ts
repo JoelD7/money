@@ -1,14 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import {useQuery} from "@tanstack/react-query";
 import api from "../../api";
-import { utils } from "../../utils";
-import { AxiosError } from "axios";
-
-export function useGetUser() {
-  return useQuery({
-    queryKey: ["user"],
-    queryFn: () => api.getUser(),
-  });
-}
+import {utils} from "../../utils";
+import {AxiosError} from "axios";
 
 export function useGetExpenses(periodID: string) {
   // eslint-disable-next-line prefer-const

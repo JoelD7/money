@@ -59,7 +59,7 @@ export function Navbar({ children }: NavbarProps) {
     refetchOnWindowFocus: false,
   });
 
-  const user: User | undefined = getUserQuery.data?.data;
+  const user: User | undefined = getUserQuery.data;
 
   const dispatch = useDispatch();
   const navigate = useNavigate();

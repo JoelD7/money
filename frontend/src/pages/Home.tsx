@@ -6,6 +6,7 @@ import {
     BalanceCard,
     Button,
     Container,
+    ErrorSnackbar,
     ExpenseCard,
     ExpensesChart,
     ExpensesTable,
@@ -26,6 +27,10 @@ export function Home() {
 
     const [openNewExpense, setOpenNewExpense] = useState<boolean>(false);
     const [openNewIncome, setOpenNewIncome] = useState<boolean>(false);
+    const errSnackbar = {
+        open: true,
+        title: "Error fetching period stats",
+    }
 
     const lgUp: boolean = useMediaQuery(theme.breakpoints.up("lg"));
 
@@ -36,7 +41,10 @@ export function Home() {
     const period: Period | undefined = getPeriod.data;
 
     const getPeriodStats = useGetPeriodStats(user);
-    const periodStats: PeriodStats | undefined = utils.setAdditionalData(getPeriodStats.data, user);
+    const periodStats: PeriodStats | undefined = utils.setAdditionalData(
+        getPeriodStats.data,
+        user,
+    );
 
     const chartHeight: number = 350;
 
@@ -50,9 +58,7 @@ export function Home() {
 
     function showRefetchErrorSnackbar() {
         return (
-            getUser.isRefetchError ||
-            getPeriodStats.isRefetchError ||
-            getPeriod.isRefetchError
+            getUser.isRefetchError || getPeriodStats.isRefetchError || getPeriod.isRefetchError
         );
     }
 
@@ -77,9 +83,17 @@ export function Home() {
 
     return (
         <Container>
+            <Navbar/>
+
             <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()}/>
             <LinearProgress loading={getUser.isFetching || getPeriod.isFetching}/>
-            <Navbar/>
+
+            {getPeriodStats.isError && (
+                <ErrorSnackbar
+                    openProp={errSnackbar.open}
+                    title={errSnackbar.title}
+                />
+            )}
 
             <Grid
                 container
@@ -120,9 +134,7 @@ export function Home() {
                             <Grid xs={12} lg={8}>
                                 <ExpensesChart
                                     period={period}
-                                    summary={
-                                        periodStats ? periodStats.category_expense_summary : []
-                                    }
+                                    summary={periodStats ? periodStats.category_expense_summary : []}
                                     chartHeight={chartHeight}
                                     isLoading={getUser.isLoading}
                                     isError={getPeriodStats.isError}
@@ -191,10 +203,7 @@ export function Home() {
                     </Typography>
 
                     {user && user.categories && (
-                        <ExpensesTable
-                            period={user.current_period}
-                            categories={user.categories}
-                        />
+                        <ExpensesTable period={user.current_period} categories={user.categories}/>
                     )}
                 </Grid>
             </Grid>

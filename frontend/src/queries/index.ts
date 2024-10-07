@@ -8,4 +8,5 @@ export {
   useGetPeriodStats,
   useGetIncome,
   incomeKeys,
+  useGetPeriods,
 } from "./queries";
