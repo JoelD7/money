@@ -40,16 +40,14 @@ export type Expense = z.infer<typeof ExpenseSchema>
 
 export const CategoryExpenseSummarySchema = z.object({
     category_id: z.string(),
-    name: z.string(),
     total: z.number(),
-    period: z.string(),
-    color: z.string(),
+    period: z.string().optional(),
 });
 
 export type CategoryExpenseSummary = z.infer<typeof CategoryExpenseSummarySchema>
 
 export const PeriodStatsSchema = z.object({
-    period: z.string(),
+    period_id: z.string(),
     total_income: z.number(),
     category_expense_summary: z.array(CategoryExpenseSummarySchema),
 });
