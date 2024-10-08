@@ -13,8 +13,8 @@ import { useRef, useState } from "react";
 import { Colors } from "../../assets";
 import { Button, NoRowsDataGrid } from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
-import { useGetExpenses } from "./queries";
 import { useLocation, useNavigate } from "@tanstack/react-router";
+import {useGetExpenses} from "../../queries";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;

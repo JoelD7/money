@@ -1,106 +1,98 @@
 import {useQuery} from "@tanstack/react-query";
 import api from "../api";
 import {keys, utils} from "../utils";
-import {AxiosError} from "axios";
 import {User} from "../types";
 import {INCOME, PERIOD, PERIOD_STATS, PERIODS, USER} from "./keys";
+import {queryRetryFn} from "./common.ts";
 
 export const QUERY_RETRIES = 2;
 
 export const incomeKeys = {
-    all: [{scope: INCOME}] as const,
-    list: (pageSize?: number, startKey?: string, period?: string) =>
-        [
-            {
-                ...incomeKeys.all[0],
-                pageSize,
-                startKey,
-                period,
-            },
-        ] as const,
+  all: [{ scope: INCOME }] as const,
+  list: (pageSize?: number, startKey?: string, period?: string) =>
+    [
+      {
+        ...incomeKeys.all[0],
+        pageSize,
+        startKey,
+        period,
+      },
+    ] as const,
 };
 
 export function useGetUser() {
-    return useQuery({
-        queryKey: [USER],
-        queryFn: () => {
-            const result: Promise<User> = api.getUser();
-            result.then((res) => {
-                localStorage.setItem(keys.CURRENT_PERIOD, res.current_period);
-            });
+  return useQuery({
+    queryKey: [USER],
+    queryFn: () => {
+      const result: Promise<User> = api.getUser();
+      result.then((res) => {
+        localStorage.setItem(keys.CURRENT_PERIOD, res.current_period);
+      });
 
-            return result;
-        },
-    });
+      return result;
+    },
+  });
 }
 
 export function useGetPeriod(user?: User) {
-    const periodID =
-        user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
+  const periodID =
+    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
 
-    return useQuery({
-        queryKey: [PERIOD],
-        queryFn: () => api.getPeriod(periodID),
-        enabled: periodID !== "",
-        retry: (failureCount: number, e: AxiosError) => {
-            if (failureCount > QUERY_RETRIES) {
-                return false;
-            }
-
-            return e.response ? e.response.status !== 404 : true;
-        },
-    });
+  return useQuery({
+    queryKey: [PERIOD],
+    queryFn: () => api.getPeriod(periodID),
+    enabled: periodID !== "",
+    retry: queryRetryFn,
+  });
 }
 
 export function useGetPeriods() {
-    return useQuery({
-        queryKey: [PERIODS],
-        queryFn: () => api.getPeriods(),
-        retry: (failureCount: number, e: AxiosError) => {
-            if (failureCount > QUERY_RETRIES) {
-                return false;
-            }
-
-            return e.response ? e.response.status !== 404 : true;
-        },
-    });
+  return useQuery({
+    queryKey: [PERIODS],
+    queryFn: () => api.getPeriods(),
+    retry: queryRetryFn,
+  });
 }
 
 export function useGetPeriodStats(user?: User) {
-    const periodID =
-        user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
+  const periodID =
+    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
 
-    return useQuery({
-        queryKey: [PERIOD_STATS, periodID],
-        queryFn: () => api.getPeriodStats(periodID),
-        enabled: periodID !== "",
-        retry: (failureCount: number, e: AxiosError) => {
-            if (failureCount > QUERY_RETRIES) {
-                return false;
-            }
-
-            return e.response ? e.response.status !== 404 : true;
-        },
-    });
+  return useQuery({
+    queryKey: [PERIOD_STATS, periodID],
+    queryFn: () => api.getPeriodStats(periodID),
+    enabled: periodID !== "",
+    retry: queryRetryFn,
+  });
 }
 
 export function useGetIncome() {
-    // eslint-disable-next-line prefer-const
-    let {pageSize, startKey, period} = utils.useTransactionsParams();
+  // eslint-disable-next-line prefer-const
+  let { pageSize, startKey, period } = utils.useTransactionsParams();
 
-    if (!period) {
-        period = localStorage.getItem(keys.CURRENT_PERIOD) || "";
-    }
+  if (!period) {
+    period = localStorage.getItem(keys.CURRENT_PERIOD) || "";
+  }
 
-    return useQuery({
-        queryKey: incomeKeys.list(pageSize, startKey, period),
-        queryFn: api.getIncomeList,
-        retry: (failureCount: number, e: AxiosError) => {
-            if (failureCount > QUERY_RETRIES) {
-                return false;
-            }
+  return useQuery({
+    queryKey: incomeKeys.list(pageSize, startKey, period),
+    queryFn: api.getIncomeList,
+    retry: queryRetryFn,
+  });
+}
 
-            return e.response ? e.response.status !== 404 : true;
-        },
-    });
+export function useGetExpenses(periodID: string) {
+  // eslint-disable-next-line prefer-const
+  let { categories, pageSize, startKey, period } = utils.useTransactionsParams();
+
+  if (!period) {
+    period = periodID;
+  }
+
+  return useQuery({
+    queryKey: api.expensesQueryKeys.list(categories, pageSize, startKey, period),
+    queryFn: api.getExpenses,
+    enabled: periodID !== "",
+    retry: queryRetryFn,
+  });
 }
