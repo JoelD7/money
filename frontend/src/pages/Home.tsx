@@ -37,9 +37,6 @@ export function Home() {
     const getUser = useGetUser();
     const user: User | undefined = getUser.data;
 
-    const getPeriod = useGetPeriod(user);
-    const period: Period | undefined = getPeriod.data;
-
     const getPeriodStats = useGetPeriodStats(user);
     const periodStats: PeriodStats | undefined = utils.setAdditionalData(
         getPeriodStats.data,
@@ -58,7 +55,7 @@ export function Home() {
 
     function showRefetchErrorSnackbar() {
         return (
-            getUser.isRefetchError || getPeriodStats.isRefetchError || getPeriod.isRefetchError
+            getUser.isRefetchError || getPeriodStats.isRefetchError
         );
     }
 
@@ -86,7 +83,7 @@ export function Home() {
             <Navbar/>
 
             <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()}/>
-            <LinearProgress loading={getUser.isFetching || getPeriod.isFetching}/>
+            <LinearProgress loading={getUser.isFetching }/>
 
             {getPeriodStats.isError && (
                 <ErrorSnackbar
@@ -133,7 +130,7 @@ export function Home() {
                             {/*Chart section*/}
                             <Grid xs={12} lg={8}>
                                 <ExpensesChart
-                                    period={period}
+                                    user={user}
                                     summary={periodStats ? periodStats.category_expense_summary : []}
                                     chartHeight={chartHeight}
                                     isLoading={getUser.isLoading}
