@@ -42,6 +42,8 @@ export const CategoryExpenseSummarySchema = z.object({
     category_id: z.string(),
     total: z.number(),
     period: z.string().optional(),
+    name: z.string().optional(),
+    color: z.string().optional(),
 });
 
 export type CategoryExpenseSummary = z.infer<typeof CategoryExpenseSummarySchema>
