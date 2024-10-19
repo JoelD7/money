@@ -99,7 +99,10 @@ export const PeriodSchema = z.object({
     updated_date: z.string(),
 });
 
-export const PeriodsSchema = z.array(PeriodSchema);
+export const PeriodsSchema = z.object({
+    periods: z.array(PeriodSchema),
+    next_key: z.string(),
+})
 
 export type Period = z.infer<typeof PeriodSchema>
 

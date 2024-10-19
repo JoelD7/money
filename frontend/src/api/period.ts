@@ -17,7 +17,7 @@ export async function getPeriod(period: string): Promise<Period> {
     return PeriodSchema.parse(res.data);
 }
 
-export async function getPeriods(): Promise<Period[]> {
+export async function getPeriods() {
     const res: AxiosResponse = await axiosClient.get<Period[]>(
         API_BASE_URL + "/periods",
         {
@@ -28,7 +28,11 @@ export async function getPeriods(): Promise<Period[]> {
         },
     );
 
-    return PeriodsSchema.parse(res.data);
+    try {
+        return PeriodsSchema.parse(res.data);
+    } catch (e) {
+        console.error("[money] - Error parsing GET periods response", e)
+    }
 }
 
 // TODO: Update the current period in localstorage after creating a new one
