@@ -48,6 +48,7 @@ export function NewTransaction({ open, onClose, type , user}: NewTransactionProp
         <NewIncome
           key={key}
           open={open}
+          user={user}
           onClose={handleClose}
           onAlert={handleAlert}
         />
