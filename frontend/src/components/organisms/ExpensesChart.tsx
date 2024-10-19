@@ -71,6 +71,10 @@ export function ExpensesChart({
     return isLoading || isError ? 0 : 1;
   }
 
+  function showError(): boolean{
+    return isError || getPeriod.isError
+  }
+
   return (
     <div>
       <Grid
@@ -82,7 +86,7 @@ export function ExpensesChart({
         mt="1rem"
         style={{ position: "relative" }}
       >
-        {isError && (
+        {showError() && (
           <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center z-10 rounded-xl">
             <ChartError />
           </div>

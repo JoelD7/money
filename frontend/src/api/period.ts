@@ -3,7 +3,7 @@ import {keys} from "../utils/index.ts";
 import {API_BASE_URL, axiosClient} from "./money-api.ts";
 import {AxiosResponse} from "axios";
 
-export async function getPeriod(period: string): Promise<Period> {
+export async function getPeriod(period: string) {
     const res: AxiosResponse = await axiosClient.get<Period>(
         API_BASE_URL + `/periods/${period}`,
         {
@@ -14,7 +14,11 @@ export async function getPeriod(period: string): Promise<Period> {
         },
     );
 
-    return PeriodSchema.parse(res.data);
+    try {
+        return PeriodSchema.parse(res.data);
+    } catch (e) {
+        console.error("[money] - Error parsing GET period response", e)
+    }
 }
 
 export async function getPeriods() {
