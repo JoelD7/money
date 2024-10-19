@@ -25,7 +25,7 @@ export const expensesQueryKeys = {
 
 export async function getExpenses({
                                       queryKey,
-                                  }: QueryFunctionContext<ReturnType<(typeof expensesQueryKeys)["list"]>>): Promise<Expenses> {
+                                  }: QueryFunctionContext<ReturnType<(typeof expensesQueryKeys)["list"]>>) {
     const {categories, pageSize, startKey, period} = queryKey[0];
 
     const paramArr: string[] = [];
@@ -56,7 +56,11 @@ export async function getExpenses({
         },
     });
 
-    return ExpensesSchema.parse(res.data);
+    try {
+        return ExpensesSchema.parse(res.data);
+    } catch (e) {
+        console.error("[money] - Error parsing expenses response", e)
+    }
 }
 
 export function createExpense(expense: Expense) {

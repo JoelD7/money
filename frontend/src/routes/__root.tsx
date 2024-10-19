@@ -59,7 +59,7 @@ function Root() {
         <ThemeProvider theme={theme}>
           <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
-              <div className={"bg-zinc-50 h-screen"}>
+              <div className={"bg-zinc-50 h-full pb-14"}>
                 <PageContent />
               </div>
             </PersistGate>

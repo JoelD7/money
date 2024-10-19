@@ -30,7 +30,7 @@ export const ExpenseSchema = z.object({
     amount: z.number(),
     name: z.string(),
     notes: z.string().optional(),
-    type: ExpenseTypeSchema,
+    type: ExpenseTypeSchema.optional(),
     created_date: z.string(),
     period: z.string(),
     update_date: z.string().optional(),

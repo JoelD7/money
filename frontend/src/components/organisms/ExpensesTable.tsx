@@ -15,6 +15,7 @@ import { Button, NoRowsDataGrid } from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {useGetExpenses} from "../../queries";
+import {ErrorSnackbar} from "../molecules";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
@@ -41,6 +42,11 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
   const location = useLocation();
 
   const expenses: Expense[] | undefined = getExpensesQuery.data?.expenses;
+
+  const errSnackbar = {
+    open: true,
+    title: "Error fetching expenses",
+  }
 
   const colorsByExpense: Map<string, string> = getColorsByExpense();
 
@@ -239,6 +245,15 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
   const apiRef = useGridApiRef();
   return (
     <div>
+
+      {getExpensesQuery.isError && (
+          <ErrorSnackbar
+              openProp={errSnackbar.open}
+              title={errSnackbar.title}
+              message={getExpensesQuery.error.message}
+          />
+      )}
+
       <CategorySelect
         width={"700px"}
         multiple
