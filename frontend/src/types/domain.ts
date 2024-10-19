@@ -107,13 +107,14 @@ export const PeriodsSchema = z.object({
 })
 
 export type Period = z.infer<typeof PeriodSchema>
+export type PeriodList = z.infer<typeof PeriodsSchema>
 
 export const IncomeSchema = z.object({
     income_id: z.string(),
     amount: z.number(),
     name: z.string(),
     period: z.string(),
-    notes: z.string(),
+    notes: z.string().optional(),
     created_date: z.string(),
 });
 

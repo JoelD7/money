@@ -6,40 +6,44 @@ import {incomeKeys} from "../queries";
 import {AxiosResponse} from "axios";
 
 export function createIncome(income: Income) {
-  return axiosClient.post(API_BASE_URL + "/income", income, {
-    withCredentials: true,
-    headers: {
-      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
-    },
-  });
+    return axiosClient.post(API_BASE_URL + "/income", income, {
+        withCredentials: true,
+        headers: {
+            Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+        },
+    });
 }
 
 export async function getIncomeList({
-  queryKey,
-}: QueryFunctionContext<ReturnType<(typeof incomeKeys)["list"]>>): Promise<IncomeList> {
-  const { pageSize, startKey, period } = queryKey[0];
+                                        queryKey,
+                                    }: QueryFunctionContext<ReturnType<(typeof incomeKeys)["list"]>>) {
+    const {pageSize, startKey, period} = queryKey[0];
 
-  const paramArr: string[] = [];
+    const paramArr: string[] = [];
 
-  if (period) {
-    paramArr.push(`period=${period}`);
-  }
-  if (pageSize) {
-    paramArr.push(`page_size=${pageSize}`);
-  }
+    if (period) {
+        paramArr.push(`period=${period}`);
+    }
+    if (pageSize) {
+        paramArr.push(`page_size=${pageSize}`);
+    }
 
-  if (startKey && startKey !== "") {
-    paramArr.push(`start_key=${startKey}`);
-  }
+    if (startKey && startKey !== "") {
+        paramArr.push(`start_key=${startKey}`);
+    }
 
-  const params: string = paramArr.join("&");
+    const params: string = paramArr.join("&");
 
-  const res: AxiosResponse = await axiosClient.get<IncomeList>(API_BASE_URL + `/income?${params}`, {
-    withCredentials: true,
-    headers: {
-      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
-    },
-  });
+    const res: AxiosResponse = await axiosClient.get<IncomeList>(API_BASE_URL + `/income?${params}`, {
+        withCredentials: true,
+        headers: {
+            Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+        },
+    });
 
-  return IncomeListSchema.parse(res.data);
+    try {
+        return IncomeListSchema.parse(res.data);
+    } catch (e) {
+        console.error("[money] - Error parsing GET income response", e)
+    }
 }

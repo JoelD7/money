@@ -13,6 +13,7 @@ export type {
     Income,
     IncomeList,
     PeriodStats,
+    PeriodList,
 } from "./domain.ts";
 export type {
     RechartsLabelProps,
