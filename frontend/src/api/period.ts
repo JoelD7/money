@@ -18,6 +18,7 @@ export async function getPeriod(period: string) {
         return PeriodSchema.parse(res.data);
     } catch (e) {
         console.error("[money] - Error parsing GET period response", e)
+        return Promise.reject(e)
     }
 }
 
@@ -36,6 +37,7 @@ export async function getPeriods() {
         return PeriodsSchema.parse(res.data);
     } catch (e) {
         console.error("[money] - Error parsing GET periods response", e)
+        return Promise.reject(e)
     }
 }
 

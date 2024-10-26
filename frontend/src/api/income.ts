@@ -45,5 +45,6 @@ export async function getIncomeList({
         return IncomeListSchema.parse(res.data);
     } catch (e) {
         console.error("[money] - Error parsing GET income response", e)
+        return Promise.reject(e)
     }
 }
