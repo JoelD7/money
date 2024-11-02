@@ -22,9 +22,11 @@ export async function getPeriod(period: string) {
     }
 }
 
-export async function getPeriods() {
+export async function getPeriods(nextKey: string) {
+    const url = nextKey ? API_BASE_URL + `/periods?start_key=${nextKey}` : API_BASE_URL + "/periods";
+
     const res: AxiosResponse = await axiosClient.get<Period[]>(
-        API_BASE_URL + "/periods",
+        url,
         {
             withCredentials: true,
             headers: {

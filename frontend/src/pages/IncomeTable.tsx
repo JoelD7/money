@@ -1,12 +1,13 @@
-import {FormControl, InputLabel, MenuItem, Select, Typography,} from "@mui/material";
+import {CircularProgress, FormControl, InputLabel, MenuItem, Select, Typography,} from "@mui/material";
 import {BackgroundRefetchErrorSnackbar, Container, ErrorSnackbar, Navbar, NoRowsDataGrid,} from "../components";
 import {useGetIncome, useGetPeriods} from "../queries";
 import {Income, IncomeList, Period, PeriodList} from "../types";
 import {DataGrid, GridColDef, GridPaginationModel, GridRowsProp,} from "@mui/x-data-grid";
-import {useRef, useState} from "react";
+import React, {useRef, useState} from "react";
 import {useLocation, useNavigate} from "@tanstack/react-router";
 import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
 import {v4 as uuidv4} from "uuid";
+import {InfiniteData} from "@tanstack/react-query";
 
 export function IncomeTable() {
     const gridStyle = {
@@ -53,18 +54,19 @@ export function IncomeTable() {
     const getPeriods = useGetPeriods();
     const periods: Period[] = getPeriodArray(getPeriods.data)
 
-    function getPeriodArray(data: PeriodList | undefined): Period[] {
-        if (data) {
-            const arr = new Array<Period>()
-            for (let i = 0; i < data.periods.length; i++) {
-                arr.push(data.periods[i])
-            }
-
-            console.log("arr.length", arr.length)
-            return Array.of(...arr)
+    function getPeriodArray(data?: InfiniteData<PeriodList>): Period[] {
+        if (!data || !data.pages) {
+            return new Array<Period>()
         }
 
-        return new Array<Period>()
+        const arr = new Array<Period>()
+        data.pages.forEach((page) => {
+            page.periods.forEach((period) => {
+                arr.push(period)
+            })
+        })
+
+        return Array.of(...arr)
     }
 
     const columns: GridColDef[] = [
@@ -163,8 +165,13 @@ export function IncomeTable() {
         return false;
     }
 
-    console.log("Array.isArray(periods)", Array.isArray(periods))
-    console.log("periods.length", periods.length)
+    function fetchPeriods(e: React.UIEvent<HTMLDivElement>) {
+        const target = e.currentTarget;
+        const isAtBottom = target.scrollHeight - Math.ceil(target.scrollTop) === target.clientHeight;
+        if (isAtBottom && getPeriods.hasNextPage && !getPeriods.isFetching) {
+            getPeriods.fetchNextPage()
+        }
+    }
 
     return (
         <Container>
@@ -193,26 +200,38 @@ export function IncomeTable() {
                 Income
             </Typography>
 
-           {/* Period selector*/}
-           <div className={"pb-2"}>
-               <FormControl sx={{background: "white", width: "140px"}}>
-                   <InputLabel id={labelId}>Period</InputLabel>
+            {/* Period selector*/}
+            <div className={"pb-2"}>
+                <FormControl sx={{width: '150px'}}>
+                    <InputLabel id={labelId}>Period</InputLabel>
 
-                   <Select
-                       labelId={labelId}
-                       id={"Period"}
-                       label={"Period"}
-                       value={selectedPeriod}
-                       onChange={(e) => setSelectedPeriod(e.target.value)}
-                   >
-                       {Array.isArray(periods) && periods.map((p) => (
-                           <MenuItem key={p.period} id={p.name} value={p.name}>
-                               {p.name}
-                           </MenuItem>
-                       ))}
-                   </Select>
-               </FormControl>
-           </div>
+                    <Select
+                        labelId={labelId}
+                        id={"Period"}
+                        MenuProps={{
+                            PaperProps: {
+                                onScroll: fetchPeriods,
+                                sx: {
+                                    maxHeight: 150,
+                                }
+                            }
+                        }}
+                        label={"Period"}
+                        value={selectedPeriod}
+                        onChange={(e) => setSelectedPeriod(e.target.value)}
+                    >
+                        {Array.isArray(periods) && periods.map((p) => (
+                            <MenuItem key={p.period} id={p.name} value={p.name}>
+                                {p.name}
+                            </MenuItem>
+                        ))}
+                        {getPeriods.isFetchingNextPage &&
+                            <MenuItem key={'loading'} id={'loading'} value={'loading'}>
+                                <CircularProgress sx={{margin: 'auto'}}/>
+                            </MenuItem>}
+                    </Select>
+                </FormControl>
+            </div>
 
             <div style={{height: "631px"}}>
                 <DataGrid
