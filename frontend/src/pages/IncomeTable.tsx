@@ -60,11 +60,29 @@ export function IncomeTable() {
         }
 
         const arr = new Array<Period>()
+        let includedSelected = false
+
         data.pages.forEach((page) => {
             page.periods.forEach((period) => {
+                if (period.name === selectedPeriod) {
+                    includedSelected = true
+                }
+
                 arr.push(period)
             })
         })
+
+        if (selectedPeriod !== "" && !includedSelected) {
+            arr.push({
+                name: selectedPeriod,
+                period: selectedPeriod,
+                created_date: "",
+                end_date: "",
+                start_date: "",
+                updated_date: "",
+                username: ""
+            })
+        }
 
         return Array.of(...arr)
     }
@@ -217,7 +235,7 @@ export function IncomeTable() {
                             }
                         }}
                         label={"Period"}
-                        value={selectedPeriod}
+                        value={periods.length > 0 ? selectedPeriod : ""}
                         onChange={(e) => setSelectedPeriod(e.target.value)}
                     >
                         {Array.isArray(periods) && periods.map((p) => (
