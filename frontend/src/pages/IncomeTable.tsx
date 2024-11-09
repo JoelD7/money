@@ -188,7 +188,28 @@ export function IncomeTable() {
         const isAtBottom = target.scrollHeight - Math.ceil(target.scrollTop) === target.clientHeight;
         if (isAtBottom && getPeriods.hasNextPage && !getPeriods.isFetching) {
             getPeriods.fetchNextPage()
+                .catch((e) => {
+                    console.error("[money] - Fetch next periods page failed: ", e)
+                })
         }
+    }
+
+    function onSelectedPeriodChange(newPeriod: string) {
+        if (selectedPeriod === newPeriod) {
+            return
+        }
+
+        navigate({
+            to: "/income",
+            search: {
+                ...location.search,
+                period: newPeriod,
+            },
+        }).catch((e) => {
+            console.error("[money] - Navigating to /income failed: ", e)
+        })
+
+        setSelectedPeriod(newPeriod)
     }
 
     return (
@@ -236,7 +257,7 @@ export function IncomeTable() {
                         }}
                         label={"Period"}
                         value={periods.length > 0 ? selectedPeriod : ""}
-                        onChange={(e) => setSelectedPeriod(e.target.value)}
+                        onChange={(e) => onSelectedPeriodChange(e.target.value)}
                     >
                         {Array.isArray(periods) && periods.map((p) => (
                             <MenuItem key={p.period} id={p.name} value={p.name}>
