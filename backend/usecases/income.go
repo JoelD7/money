@@ -15,6 +15,12 @@ type IncomeManager interface {
 	GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error)
 }
 
+type IncomePeriodCache interface {
+	AddIncomePeriods(ctx context.Context, username string, periods []string)
+	GetIncomePeriods(ctx context.Context, username string) ([]string, error)
+	DeleteIncomePeriods(ctx context.Context, username string, periods ...string)
+}
+
 func NewIncomeCreator(im IncomeManager, pm PeriodManager) func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
 	return func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
 		err := validateIncomePeriod(ctx, username, income, pm)

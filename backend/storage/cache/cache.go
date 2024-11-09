@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	keyPrefix = "invalid_tokens:"
+	invalidTokenKeyPrefix  = "invalid_tokens"
+	incomePeriodsKeyPrefix = "income_periods"
 )
 
 type InvalidTokenManager interface {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/redis/go-redis/v9"
+	"strings"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
@@ -38,7 +39,7 @@ func NewRedisCache() *RedisCache {
 }
 
 func (r *RedisCache) GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error) {
-	key := keyPrefix + username
+	key := buildKey(invalidTokenKeyPrefix, username)
 
 	value, err := r.client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
@@ -68,7 +69,7 @@ func (r *RedisCache) AddInvalidToken(ctx context.Context, username, token string
 		return ErrInvalidTTL
 	}
 
-	key := keyPrefix + username
+	key := buildKey(invalidTokenKeyPrefix, username)
 
 	invalidTokens, err := r.GetInvalidTokens(ctx, username)
 	if err != nil && !errors.Is(err, models.ErrInvalidTokensNotFound) {
@@ -97,4 +98,49 @@ func (r *RedisCache) AddInvalidToken(ctx context.Context, username, token string
 	}
 
 	return nil
+}
+
+func (r *RedisCache) AddIncomePeriods(ctx context.Context, username string, periods []string) error {
+	key := buildKey(incomePeriodsKeyPrefix, username)
+
+	_, err := r.client.SAdd(ctx, key, periods).Result()
+	if err != nil {
+		return fmt.Errorf("cache: add income periods: %v", err)
+	}
+
+	return nil
+}
+
+func (r *RedisCache) GetIncomePeriods(ctx context.Context, username string) ([]string, error) {
+	key := buildKey(incomePeriodsKeyPrefix, username)
+
+	periods, err := r.client.SMembers(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		return nil, fmt.Errorf("%w:%v", models.ErrIncomePeriodsNotFound, err)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("cache: get income periods: %v", err)
+	}
+
+	if len(periods) == 0 {
+		return nil, models.ErrIncomePeriodsNotFound
+	}
+
+	return periods, nil
+}
+
+func (r *RedisCache) DeleteIncomePeriods(ctx context.Context, username string, periods ...string) error {
+	key := buildKey(incomePeriodsKeyPrefix, username)
+
+	_, err := r.client.SRem(ctx, key, periods).Result()
+	if err != nil {
+		return fmt.Errorf("cache: delete income periods: %v", err)
+	}
+
+	return nil
+}
+
+func buildKey(keyPrefix string, keys ...string) string {
+	return keyPrefix + ":" + strings.Join(keys, ":")
 }
