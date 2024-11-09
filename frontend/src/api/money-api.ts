@@ -1,9 +1,10 @@
-import { AccessToken, User } from "../types";
-import axios, { AxiosError } from "axios";
-import { keys } from "../utils";
+import {AccessToken, User} from "../types";
+import axios, {AxiosError, AxiosResponse} from "axios";
+import {keys} from "../utils";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
-import { redirectToLogin, retryableRequest } from "./utils.ts";
-import { logout } from "./auth.ts";
+import {redirectToLogin, retryableRequest} from "./utils.ts";
+import {logout} from "./auth.ts";
+import {UserSchema} from "../types/domain.ts";
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
@@ -22,13 +23,15 @@ createAuthRefreshInterceptor(axiosClient, refreshAuthInterceptor, {
   pauseInstanceWhileRefreshing: true,
 });
 
-export function getUser() {
-  return axiosClient.get<User>(API_BASE_URL + "/users", {
+export async function getUser(): Promise<User> {
+  const res: AxiosResponse = await axiosClient.get<User>(API_BASE_URL + "/users", {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
     },
-  });
+  })
+
+  return UserSchema.parse(res.data);
 }
 
 async function refreshToken() {

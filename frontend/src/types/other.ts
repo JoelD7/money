@@ -26,7 +26,8 @@ export type CategoryExpense = {
 export type SnackAlert = {
   open: boolean;
   type: "success" | "error";
-  message: string;
+  title: string;
+  message?: string;
 };
 
 export type TransactionSearchParams = {

@@ -13,8 +13,9 @@ import { useRef, useState } from "react";
 import { Colors } from "../../assets";
 import { Button, NoRowsDataGrid } from "../atoms";
 import { CategorySelect } from "./CategorySelect.tsx";
-import { useGetExpenses } from "./queries";
 import { useLocation, useNavigate } from "@tanstack/react-router";
+import {useGetExpenses} from "../../queries";
+import {ErrorSnackbar} from "../molecules";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
@@ -40,7 +41,12 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
   const getExpensesQuery = useGetExpenses(period);
   const location = useLocation();
 
-  const expenses: Expense[] | undefined = getExpensesQuery.data?.data.expenses;
+  const expenses: Expense[] | undefined = getExpensesQuery.data?.expenses;
+
+  const errSnackbar = {
+    open: true,
+    title: "Error fetching expenses",
+  }
 
   const colorsByExpense: Map<string, string> = getColorsByExpense();
 
@@ -227,7 +233,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
       return mappedKey;
     }
 
-    const nextKey = getExpensesQuery.data?.data.next_key;
+    const nextKey = getExpensesQuery.data?.next_key;
     if (nextKey) {
       startKeysByPage.current[newModel.page] = nextKey;
       return nextKey;
@@ -239,6 +245,15 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
   const apiRef = useGridApiRef();
   return (
     <div>
+
+      {getExpensesQuery.isError && (
+          <ErrorSnackbar
+              openProp={errSnackbar.open}
+              title={errSnackbar.title}
+              message={getExpensesQuery.error.message}
+          />
+      )}
+
       <CategorySelect
         width={"700px"}
         multiple
@@ -284,7 +299,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
             paginationModel={paginationModel}
             onPaginationModelChange={onPaginationModelChange}
             paginationMeta={{
-              hasNextPage: getExpensesQuery.data?.data.next_key !== "",
+              hasNextPage: getExpensesQuery.data?.next_key !== "",
             }}
             slots={{
               noRowsOverlay: NoRowsDataGrid,

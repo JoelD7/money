@@ -3,3 +3,4 @@ export { SignUp } from "./SignUp";
 export { Login } from "./Login";
 export { Error } from "./Error";
 export { Loading } from "./Loading";
+export { IncomeTable } from "./IncomeTable.tsx";
