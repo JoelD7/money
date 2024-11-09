@@ -13,4 +13,5 @@ type Repository interface {
 	GetIncomeByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error)
 	GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error)
 	BatchDeleteIncome(ctx context.Context, income []*models.Income) error
+	GetAllIncomePeriods(ctx context.Context, username string) ([]string, error)
 }

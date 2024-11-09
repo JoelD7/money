@@ -13,6 +13,7 @@ type IncomeManager interface {
 	GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error)
 	GetIncomeByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error)
 	GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error)
+	GetAllIncomePeriods(ctx context.Context, username string) ([]string, error)
 }
 
 type IncomePeriodCache interface {
