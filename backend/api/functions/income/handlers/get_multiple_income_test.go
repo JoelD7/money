@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -21,7 +21,7 @@ func TestGetIncomeByPeriod(t *testing.T) {
 	ctx := context.Background()
 	incomeMock := income.NewDynamoMock()
 
-	request := &getMultipleIncomeRequest{
+	request := &GetMultipleIncomeRequest{
 		log:        logMock,
 		incomeRepo: incomeMock,
 	}
