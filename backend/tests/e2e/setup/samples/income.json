@@ -1,0 +1,112 @@
+[
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN1lVnB1tCaSpyQLDEUswM",
+    "amount": 750,
+    "created_date": "2024-09-10T10:15:32.824395016Z",
+    "name": "income 1",
+    "notes": "monthly income",
+    "period": "2023-7",
+    "period_user": "2023-7:test@gmail.com",
+    "updated_date": "2024-09-10T10:20:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN2lVnB1tCaSpyQLDEUswM",
+    "amount": 600,
+    "created_date": "2024-09-11T11:25:32.824395016Z",
+    "name": "income 2",
+    "notes": "",
+    "period": "2023-7",
+    "period_user": "2023-7:test@gmail.com",
+    "updated_date": "2024-09-11T11:30:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN3lVnB1tCaSpyQLDEUswM",
+    "amount": 450,
+    "created_date": "2024-09-12T12:35:32.824395016Z",
+    "name": "income 3",
+    "notes": "bonus income",
+    "period": "2023-7",
+    "period_user": "2023-7:test@gmail.com",
+    "updated_date": "2024-09-12T12:40:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN4lVnB1tCaSpyQLDEUswM",
+    "amount": 920,
+    "created_date": "2024-09-13T13:45:32.824395016Z",
+    "name": "income 4",
+    "notes": "extra income",
+    "period": "2023-8",
+    "period_user": "2023-8:test@gmail.com",
+    "updated_date": "2024-09-13T13:50:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN5lVnB1tCaSpyQLDEUswM",
+    "amount": 700,
+    "created_date": "2024-09-14T14:55:32.824395016Z",
+    "name": "income 5",
+    "notes": "",
+    "period": "2023-8",
+    "period_user": "2023-8:test@gmail.com",
+    "updated_date": "2024-09-14T15:00:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN6lVnB1tCaSpyQLDEUswM",
+    "amount": 500,
+    "created_date": "2024-09-15T15:05:32.824395016Z",
+    "name": "income 6",
+    "notes": "gift",
+    "period": "2023-8",
+    "period_user": "2023-8:test@gmail.com",
+    "updated_date": "2024-09-15T15:10:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN7lVnB1tCaSpyQLDEUswM",
+    "amount": 830,
+    "created_date": "2024-09-16T16:15:32.824395016Z",
+    "name": "income 7",
+    "notes": "freelance",
+    "period": "2023-9",
+    "period_user": "2023-9:test@gmail.com",
+    "updated_date": "2024-09-16T16:20:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN8lVnB1tCaSpyQLDEUswM",
+    "amount": 960,
+    "created_date": "2024-09-17T17:25:32.824395016Z",
+    "name": "income 8",
+    "notes": "",
+    "period": "2023-9",
+    "period_user": "2023-9:test@gmail.com",
+    "updated_date": "2024-09-17T17:30:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN9lVnB1tCaSpyQLDEUswM",
+    "amount": 675,
+    "created_date": "2024-09-18T18:35:32.824395016Z",
+    "name": "income 9",
+    "notes": "salary",
+    "period": "2023-9",
+    "period_user": "2023-9:test@gmail.com",
+    "updated_date": "2024-09-18T18:40:00Z"
+  },
+  {
+    "username": "e2e_test@gmail.com",
+    "income_id": "IN10lVnB1tCaSpyQLDEUswM",
+    "amount": 780,
+    "created_date": "2024-09-19T19:45:32.824395016Z",
+    "name": "income 10",
+    "notes": "",
+    "period": "2023-9",
+    "period_user": "2023-9:test@gmail.com",
+    "updated_date": "2024-09-19T19:50:00Z"
+  }
+]
