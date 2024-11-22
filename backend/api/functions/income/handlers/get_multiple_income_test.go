@@ -22,14 +22,14 @@ func TestGetIncomeByPeriod(t *testing.T) {
 	incomeMock := income.NewDynamoMock()
 
 	request := &GetMultipleIncomeRequest{
-		log:        logMock,
-		incomeRepo: incomeMock,
+		Log:        logMock,
+		IncomeRepo: incomeMock,
 	}
 
 	err := request.prepareRequest(apigwRequest)
 	c.NoError(err)
 
-	response, err := request.routeToHandlers(ctx, apigwRequest)
+	response, err := request.RouteToHandlers(ctx, apigwRequest)
 	c.NoError(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 }

@@ -116,7 +116,7 @@ func NewPeriodDeleter(pm PeriodManager) func(ctx context.Context, periodID, user
 	}
 }
 
-func NewPeriodStatsGetter(em ExpenseManager, im IncomeManager) func(ctx context.Context, username, periodID string) (*models.PeriodStat, error) {
+func NewPeriodStatsGetter(em ExpenseManager, im IncomeRepository) func(ctx context.Context, username, periodID string) (*models.PeriodStat, error) {
 	return func(ctx context.Context, username, periodID string) (*models.PeriodStat, error) {
 		wg := sync.WaitGroup{}
 		errChan := make(chan error, 2)
