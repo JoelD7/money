@@ -8,7 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	repo "github.com/JoelD7/money/backend/storage/expenses-recurring"
-	"github.com/JoelD7/money/backend/tests/e2e/utils"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -20,7 +20,7 @@ func TestScanExpensesForDay(t *testing.T) {
 
 	var err error
 
-	dynamoClient := utils.InitDynamoClient()
+	dynamoClient := setup.InitDynamoClient()
 	expensesRecurringTableName := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 
 	repository, err := repo.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)

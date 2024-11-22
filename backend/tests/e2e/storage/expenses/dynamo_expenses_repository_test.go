@@ -8,7 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	repository "github.com/JoelD7/money/backend/storage/expenses"
-	"github.com/JoelD7/money/backend/tests/e2e/utils"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -23,7 +23,7 @@ func TestGetAllExpensesBetweenDates(t *testing.T) {
 
 	c := require.New(t)
 
-	dynamoClient := utils.InitDynamoClient()
+	dynamoClient := setup.InitDynamoClient()
 	expensesRepo, err := repository.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
 
 	expensesToCreate, err := loadExpenses()

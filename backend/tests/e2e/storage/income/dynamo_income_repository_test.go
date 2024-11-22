@@ -6,7 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/income"
-	"github.com/JoelD7/money/backend/tests/e2e/utils"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -29,7 +29,7 @@ func TestGetAllIncomePeriods(t *testing.T) {
 		periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
 	)
 
-	dynamoClient := utils.InitDynamoClient()
+	dynamoClient := setup.InitDynamoClient()
 	ctx := context.Background()
 	username := "e2e_test@mail.com"
 

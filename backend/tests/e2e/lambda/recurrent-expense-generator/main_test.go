@@ -12,7 +12,7 @@ import (
 	"github.com/JoelD7/money/backend/storage/expenses"
 	expenses_recurring "github.com/JoelD7/money/backend/storage/expenses-recurring"
 	"github.com/JoelD7/money/backend/storage/period"
-	"github.com/JoelD7/money/backend/tests/e2e/utils"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
@@ -62,7 +62,7 @@ func TestCron(t *testing.T) {
 	c := require.New(t)
 
 	ctx := context.Background()
-	dynamoClient := utils.InitDynamoClient()
+	dynamoClient := setup.InitDynamoClient()
 	log := logger.NewConsoleLogger("e2e-recurring-expense-generator")
 
 	repo, err := expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
@@ -92,8 +92,8 @@ func TestCron(t *testing.T) {
 
 	baseTime := time.Now()
 
-	err = setup(baseTime, req, &recExpenses, &periods)
-	c.Nil(err, "failed to setup test")
+	err = setupTestData(baseTime, req, &recExpenses, &periods)
+	c.Nil(err, "failed to setupTestData test")
 	c.NotEmpty(recExpenses, "recurring expenses array is empty")
 
 	err = req.Process(ctx)
@@ -109,7 +109,7 @@ func TestCron(t *testing.T) {
 	}
 }
 
-func setup(baseTime time.Time, req *handler.CronRequest, recExpenses *[]*models.ExpenseRecurring, periods *[]*models.Period) error {
+func setupTestData(baseTime time.Time, req *handler.CronRequest, recExpenses *[]*models.ExpenseRecurring, periods *[]*models.Period) error {
 	re, err := setupRecurringExpenses(baseTime, req)
 	if err != nil {
 		return err
