@@ -50,6 +50,15 @@ var (
 	}
 )
 
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(err)
+	}
+
+	os.Exit(m.Run())
+}
+
 func TestCron(t *testing.T) {
 	var (
 		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")

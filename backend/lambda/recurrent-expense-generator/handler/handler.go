@@ -83,7 +83,7 @@ func (req *CronRequest) init(ctx context.Context) error {
 			return
 		}
 
-		req.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName)
+		req.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, "")
 		if err != nil {
 			return
 		}
