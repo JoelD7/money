@@ -34,14 +34,17 @@ func TestProcess(t *testing.T) {
 	ctx := context.Background()
 
 	var (
-		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
-		expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-		periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
-		uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-		periodUserExpenseIndex     = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
+		periodTableNameEnv       = env.GetString("PERIOD_TABLE_NAME", "")
+		uniquePeriodTableNameEnv = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+		envConfig                = &models.EnvironmentConfiguration{
+			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
+			ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+			PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+			UsersTable:             env.GetString("USERS_TABLE_NAME", ""),
+		}
 	)
 
-	expensesRepository, err := expensesRepo.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
+	expensesRepository, err := expensesRepo.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating expenses repository failed")
 
 	periodRepository, err := periodRepo.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)

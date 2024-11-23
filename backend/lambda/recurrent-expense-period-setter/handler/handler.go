@@ -36,13 +36,18 @@ func (request *Request) init(ctx context.Context) error {
 		dynamoClient := dynamo.InitClient(ctx)
 		request.Log = logger.NewLogger()
 
-		expensesTableName := env.GetString("EXPENSES_TABLE_NAME", "")
-		expensesRecurringTableName := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 		periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
 		uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-		periodUserExpenseIndex := env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
 
-		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
+		envConfig := &models.EnvironmentConfiguration{
+			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
+			ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+			PeriodTable:            env.GetString("PERIOD_TABLE_NAME", ""),
+			UniquePeriodTable:      env.GetString("UNIQUE_PERIOD_TABLE_NAME", ""),
+			PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+		}
+
+		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

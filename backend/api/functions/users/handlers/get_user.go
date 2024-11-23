@@ -48,7 +48,7 @@ func (request *getUserRequest) init(ctx context.Context, log logger.LogAPI, envC
 			return
 		}
 
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable, envConfig.PeriodUserExpenseIndex)
+		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

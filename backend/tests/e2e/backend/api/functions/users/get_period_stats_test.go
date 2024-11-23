@@ -64,7 +64,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 	username := "e2e_test@gmail.com"
 	periodID := "2021-09"
 
-	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
+	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating expenses repository failed")
 
 	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
@@ -162,7 +162,7 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 	incomeRepo, err := income.NewDynamoRepository(dynamoClient, incomeTableName, periodUserIncomeIndex)
 	c.Nil(err, "creating income repository failed")
 
-	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
+	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating expenses repository failed")
 
 	apigwRequest := &apigateway.Request{

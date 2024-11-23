@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -39,47 +38,34 @@ type DynamoRepository struct {
 	tableName                  string
 	expensesRecurringTableName string
 	periodUserIndex            string
+	periodUserCreatedDateIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, expensesRecurringTableName, periodUserIndex string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
-	tableNameEnv := env.GetString("EXPENSES_TABLE_NAME", "")
-	expensesRecurringTableNameEnv := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	periodUserIndexEnv := env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
 
-	err := validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv, periodUserIndex, periodUserIndexEnv)
+	err := validateParams(envConfig)
 	if err != nil {
 		return nil, fmt.Errorf("initialize expenses dynamo repository failed: %v", err)
 	}
 
-	d.tableName = tableName
-	if d.tableName == "" {
-		d.tableName = tableNameEnv
-	}
-
-	d.expensesRecurringTableName = expensesRecurringTableName
-	if d.expensesRecurringTableName == "" {
-		d.expensesRecurringTableName = expensesRecurringTableNameEnv
-	}
-
-	d.periodUserIndex = periodUserIndex
-	if d.periodUserIndex == "" {
-		d.periodUserIndex = periodUserIndexEnv
-	}
+	d.tableName = envConfig.ExpensesTable
+	d.expensesRecurringTableName = envConfig.ExpensesRecurringTable
+	d.periodUserIndex = envConfig.PeriodUserExpenseIndex
 
 	return d, nil
 }
 
-func validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv, periodUserIndex, periodUserIndexEnv string) error {
-	if tableName == "" && tableNameEnv == "" {
+func validateParams(envConfig *models.EnvironmentConfiguration) error {
+	if envConfig.ExpensesTable == "" {
 		return fmt.Errorf("table name is required")
 	}
 
-	if expensesRecurringTableName == "" && expensesRecurringTableNameEnv == "" {
+	if envConfig.ExpensesRecurringTable == "" {
 		return fmt.Errorf("expenses recurring table name is required")
 	}
 
-	if periodUserIndex == "" && periodUserIndexEnv == "" {
+	if envConfig.PeriodUserExpenseIndex == "" {
 		return fmt.Errorf("period user index is required")
 	}
 

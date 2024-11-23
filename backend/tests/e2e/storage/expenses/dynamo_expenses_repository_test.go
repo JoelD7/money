@@ -16,15 +16,18 @@ import (
 
 func TestGetAllExpensesBetweenDates(t *testing.T) {
 	var (
-		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
-		expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-		periodUserExpenseIndex     = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
+		envConfig = &models.EnvironmentConfiguration{
+			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
+			ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+			PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+			UsersTable:             env.GetString("USERS_TABLE_NAME", ""),
+		}
 	)
 
 	c := require.New(t)
 
 	dynamoClient := setup.InitDynamoClient()
-	expensesRepo, err := repository.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
+	expensesRepo, err := repository.NewDynamoRepository(dynamoClient, envConfig)
 
 	expensesToCreate, err := loadExpenses()
 	c.Nil(err, "failed to load expenses")
