@@ -27,7 +27,7 @@ type PeriodManager interface {
 	DeletePeriod(ctx context.Context, periodID, username string) error
 }
 
-func NewPeriodCreator(pm PeriodManager, log Logger) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
+func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, log Logger) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 		if period.StartDate.After(period.EndDate) {
 			return nil, models.ErrStartDateShouldBeBeforeEndDate
@@ -44,6 +44,13 @@ func NewPeriodCreator(pm PeriodManager, log Logger) func(ctx context.Context, us
 			log.Error("create_period_failed", err, []models.LoggerObject{period})
 
 			return nil, err
+		}
+
+		err = cache.AddIncomePeriods(ctx, username, []string{periodID})
+		if err != nil {
+			log.Error("add_income_periods_failed", err, []models.LoggerObject{period})
+
+			return nil, fmt.Errorf("couldn't add income periods to cache: %w", err)
 		}
 
 		err = sendPeriodToSQS(ctx, newPeriod)
@@ -110,8 +117,13 @@ func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username, star
 	}
 }
 
-func NewPeriodDeleter(pm PeriodManager) func(ctx context.Context, periodID, username string) error {
+func NewPeriodDeleter(pm PeriodManager, cache IncomePeriodCacheManager) func(ctx context.Context, periodID, username string) error {
 	return func(ctx context.Context, periodID, username string) error {
+		err := cache.DeleteIncomePeriods(ctx, username, periodID)
+		if err != nil {
+			return fmt.Errorf("couldn't delete income periods from cache: %w", err)
+		}
+
 		return pm.DeletePeriod(ctx, periodID, username)
 	}
 }

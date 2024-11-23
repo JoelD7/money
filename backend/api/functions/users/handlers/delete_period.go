@@ -5,6 +5,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
@@ -21,6 +22,7 @@ type deletePeriodRequest struct {
 	startingTime time.Time
 	err          error
 	periodRepo   period.Repository
+	cacheManager cache.IncomePeriodCacheManager
 }
 
 func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
@@ -34,6 +36,8 @@ func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI,
 		if err != nil {
 			return
 		}
+
+		request.cacheManager = cache.NewRedisCache()
 	})
 	request.startingTime = time.Now()
 
@@ -79,7 +83,7 @@ func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway
 		return req.NewErrorResponse(err), nil
 	}
 
-	deletePeriod := usecases.NewPeriodDeleter(request.periodRepo)
+	deletePeriod := usecases.NewPeriodDeleter(request.periodRepo, request.cacheManager)
 
 	err = deletePeriod(ctx, periodID, username)
 	if err != nil {
