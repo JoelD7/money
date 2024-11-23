@@ -23,13 +23,13 @@ type getPeriodsResponse struct {
 }
 
 type getPeriodsRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
-	periodRepo   period.Repository
 	username     string
-	startKey     string
-	pageSize     int
+
+	log        logger.LogAPI
+	periodRepo period.Repository
+	apigateway.QueryParameters
 }
 
 func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
@@ -78,7 +78,7 @@ func (request *getPeriodsRequest) process(ctx context.Context, req *apigateway.R
 
 	getPeriods := usecases.NewPeriodsGetter(request.periodRepo)
 
-	userPeriods, nextKey, err := getPeriods(ctx, request.username, request.startKey, request.pageSize)
+	userPeriods, nextKey, err := getPeriods(ctx, request.username, request.StartKey, request.PageSize)
 	if err != nil {
 		request.err = err
 		request.log.Error("get_periods_failed", request.err, []models.LoggerObject{req})
@@ -115,7 +115,7 @@ func (request *getPeriodsRequest) prepareRequest(req *apigateway.Request) error 
 		return err
 	}
 
-	request.startKey, request.pageSize, err = getRequestQueryParams(req)
+	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
 		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
 
