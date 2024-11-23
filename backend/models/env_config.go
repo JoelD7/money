@@ -21,19 +21,20 @@ type EnvironmentConfiguration struct {
 	TokenScope           string `json:"TOKEN_SCOPE"`
 	LambdaTimeout        string `json:"LAMBDA_TIMEOUT"`
 
-	UsersTable                string `json:"USERS_TABLE_NAME"`
-	ExpensesTable             string `json:"EXPENSES_TABLE_NAME"`
-	ExpensesRecurringTable    string `json:"EXPENSES_RECURRING_TABLE_NAME"`
-	IncomeTable               string `json:"INCOME_TABLE_NAME"`
-	PeriodUserIncomeIndex     string `json:"PERIOD_USER_INCOME_INDEX"`
-	InvalidTokenTable         string `json:"INVALID_TOKEN_TABLE_NAME"`
-	PeriodTable               string `json:"PERIOD_TABLE_NAME"`
-	UniquePeriodTable         string `json:"UNIQUE_PERIOD_TABLE_NAME"`
-	SavingsTable              string `json:"SAVINGS_TABLE_NAME"`
-	PeriodSavingIndexName     string `json:"PERIOD_SAVING_INDEX_NAME"`
-	PeriodUserExpenseIndex    string `json:"PERIOD_USER_EXPENSE_INDEX"`
-	SavingGoalSavingIndexName string `json:"SAVING_GOAL_SAVING_INDEX_NAME"`
-	SavingGoalsTable          string `json:"SAVING_GOALS_TABLE_NAME"`
+	UsersTable                 string `json:"USERS_TABLE_NAME"`
+	ExpensesTable              string `json:"EXPENSES_TABLE_NAME"`
+	ExpensesRecurringTable     string `json:"EXPENSES_RECURRING_TABLE_NAME"`
+	IncomeTable                string `json:"INCOME_TABLE_NAME"`
+	PeriodUserIncomeIndex      string `json:"PERIOD_USER_INCOME_INDEX"`
+	InvalidTokenTable          string `json:"INVALID_TOKEN_TABLE_NAME"`
+	PeriodTable                string `json:"PERIOD_TABLE_NAME"`
+	UniquePeriodTable          string `json:"UNIQUE_PERIOD_TABLE_NAME"`
+	SavingsTable               string `json:"SAVINGS_TABLE_NAME"`
+	PeriodSavingIndexName      string `json:"PERIOD_SAVING_INDEX_NAME"`
+	PeriodUserExpenseIndex     string `json:"PERIOD_USER_EXPENSE_INDEX"`
+	SavingGoalSavingIndexName  string `json:"SAVING_GOAL_SAVING_INDEX_NAME"`
+	SavingGoalsTable           string `json:"SAVING_GOALS_TABLE_NAME"`
+	PeriodUserCreatedDateIndex string `json:"PERIOD_USER_CREATED_DATE_INDEX"`
 
 	BatchWriteRetries       int `json:"BATCH_WRITE_RETRIES"`
 	BatchWriteBaseDelayInMs int `json:"BATCH_WRITE_BASE_DELAY_IN_MS"`
