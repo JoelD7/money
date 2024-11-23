@@ -60,7 +60,19 @@ export function IncomeTable() {
         {field: "name", headerName: "Name", width: 150},
         {field: "period", headerName: "Period", width: 150},
         {field: "notes", headerName: "Notes", flex: 1, minWidth: 150},
-        {field: "createdDate", headerName: "Date", width: 200},
+        {
+            field: "createdDate", headerName: "Date", width: 200,
+            valueFormatter: (params) => {
+                return new Intl.DateTimeFormat("en-GB", {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "numeric",
+                }).format(params)
+            }
+        },
     ];
 
     function getCurrentPeriodFromURL(): string {
@@ -135,14 +147,7 @@ export function IncomeTable() {
                 name: inc.name,
                 notes: inc.notes ? inc.notes : "-",
                 period: inc.period,
-                createdDate: new Intl.DateTimeFormat("en-GB", {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "numeric",
-                }).format(new Date(inc.created_date)),
+                createdDate: new Date(inc.created_date),
             };
         });
     }
