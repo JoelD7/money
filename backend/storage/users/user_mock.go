@@ -83,6 +83,11 @@ func (d *DynamoMock) UpdateUser(ctx context.Context, user *models.User) error {
 	return nil
 }
 
+func (d *DynamoMock) DeleteUser(ctx context.Context, username string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 // ActivateForceFailure makes any of the Dynamo operations fail with the specified error.
 // This invocation should always be followed by a deferred call to DeactivateForceFailure so that no other tests are
 // affected by this behavior.
