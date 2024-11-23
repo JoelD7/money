@@ -123,6 +123,7 @@ export type Income = z.infer<typeof IncomeSchema>
 export const IncomeListSchema = z.object({
     income: z.array(IncomeSchema),
     next_key: z.string(),
+    periods: z.array(z.string()).optional(),
 });
 
 export type IncomeList = z.infer<typeof IncomeListSchema>

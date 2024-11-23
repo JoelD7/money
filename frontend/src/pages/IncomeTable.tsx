@@ -1,13 +1,12 @@
-import {CircularProgress, FormControl, InputLabel, MenuItem, Select, Typography,} from "@mui/material";
+import {FormControl, InputLabel, MenuItem, Select, Typography,} from "@mui/material";
 import {BackgroundRefetchErrorSnackbar, Container, ErrorSnackbar, Navbar, NoRowsDataGrid,} from "../components";
-import {useGetIncome, useGetPeriods} from "../queries";
-import {Income, IncomeList, Period, PeriodList} from "../types";
+import {useGetIncome} from "../queries";
+import {Income, IncomeList} from "../types";
 import {DataGrid, GridColDef, GridPaginationModel, GridRowsProp,} from "@mui/x-data-grid";
-import React, {useRef, useState} from "react";
+import {useRef, useState} from "react";
 import {useLocation, useNavigate} from "@tanstack/react-router";
 import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
 import {v4 as uuidv4} from "uuid";
-import {InfiniteData} from "@tanstack/react-query";
 
 export function IncomeTable() {
     const gridStyle = {
@@ -26,11 +25,6 @@ export function IncomeTable() {
     };
 
     const labelId: string = uuidv4();
-
-    const periodErrSnackbar = {
-        open: true,
-        title: "Error fetching periods. Refresh the page to try again",
-    }
 
     const incomeListErrSnackbar = {
         open: true,
@@ -51,40 +45,14 @@ export function IncomeTable() {
     const getIncome = useGetIncome();
     const incomeList: IncomeList | undefined = getIncome.data;
 
-    const getPeriods = useGetPeriods();
-    const periods: Period[] = getPeriodArray(getPeriods.data)
+    const periods: string[] = getPeriodArray()
 
-    function getPeriodArray(data?: InfiniteData<PeriodList>): Period[] {
-        if (!data || !data.pages) {
-            return new Array<Period>()
+    function getPeriodArray(): string[] {
+        if (!incomeList) {
+            return []
         }
 
-        const arr = new Array<Period>()
-        let includedSelected = false
-
-        data.pages.forEach((page) => {
-            page.periods.forEach((period) => {
-                if (period.name === selectedPeriod) {
-                    includedSelected = true
-                }
-
-                arr.push(period)
-            })
-        })
-
-        if (selectedPeriod !== "" && !includedSelected) {
-            arr.push({
-                name: selectedPeriod,
-                period: selectedPeriod,
-                created_date: "",
-                end_date: "",
-                start_date: "",
-                updated_date: "",
-                username: ""
-            })
-        }
-
-        return Array.of(...arr)
+        return incomeList.periods ? incomeList.periods : []
     }
 
     const columns: GridColDef[] = [
@@ -183,17 +151,6 @@ export function IncomeTable() {
         return false;
     }
 
-    function fetchPeriods(e: React.UIEvent<HTMLDivElement>) {
-        const target = e.currentTarget;
-        const isAtBottom = target.scrollHeight - Math.ceil(target.scrollTop) === target.clientHeight;
-        if (isAtBottom && getPeriods.hasNextPage && !getPeriods.isFetching) {
-            getPeriods.fetchNextPage()
-                .catch((e) => {
-                    console.error("[money] - Fetch next periods page failed: ", e)
-                })
-        }
-    }
-
     function onSelectedPeriodChange(newPeriod: string) {
         if (selectedPeriod === newPeriod) {
             return
@@ -216,14 +173,6 @@ export function IncomeTable() {
         <Container>
             <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()}/>
             <Navbar/>
-
-            {getPeriods.isError && (
-                <ErrorSnackbar
-                    openProp={periodErrSnackbar.open}
-                    title={periodErrSnackbar.title}
-                    message={getPeriods.error.message}
-                />
-            )}
 
             {
                 getIncome.isError && incomeList === undefined && (
@@ -249,7 +198,6 @@ export function IncomeTable() {
                         id={"Period"}
                         MenuProps={{
                             PaperProps: {
-                                onScroll: fetchPeriods,
                                 sx: {
                                     maxHeight: 150,
                                 }
@@ -260,14 +208,10 @@ export function IncomeTable() {
                         onChange={(e) => onSelectedPeriodChange(e.target.value)}
                     >
                         {Array.isArray(periods) && periods.map((p) => (
-                            <MenuItem key={p.period} id={p.name} value={p.name}>
-                                {p.name}
+                            <MenuItem key={p} id={p} value={p}>
+                                {p}
                             </MenuItem>
                         ))}
-                        {getPeriods.isFetchingNextPage &&
-                            <MenuItem key={'loading'} id={'loading'} value={'loading'}>
-                                <CircularProgress sx={{margin: 'auto'}}/>
-                            </MenuItem>}
                     </Select>
                 </FormControl>
             </div>

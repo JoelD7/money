@@ -11,6 +11,26 @@ type DynamoMock struct {
 	mockedIncome []*models.Income
 }
 
+func (d *DynamoMock) BatchCreateIncome(ctx context.Context, incomes []*models.Income) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d *DynamoMock) GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d *DynamoMock) BatchDeleteIncome(ctx context.Context, income []*models.Income) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d *DynamoMock) GetAllIncomePeriods(ctx context.Context, username string) ([]string, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewDynamoMock() *DynamoMock {
 	return &DynamoMock{
 		mockedErr:    nil,

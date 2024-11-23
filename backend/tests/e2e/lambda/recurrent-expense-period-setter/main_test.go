@@ -10,7 +10,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	expensesRepo "github.com/JoelD7/money/backend/storage/expenses"
 	periodRepo "github.com/JoelD7/money/backend/storage/period"
-	"github.com/JoelD7/money/backend/tests/e2e/utils"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -30,7 +30,7 @@ func TestMain(m *testing.M) {
 func TestProcess(t *testing.T) {
 	c := require.New(t)
 
-	dynamoClient := utils.InitDynamoClient()
+	dynamoClient := setup.InitDynamoClient()
 	ctx := context.Background()
 
 	var (
@@ -67,7 +67,7 @@ func TestProcess(t *testing.T) {
 
 	period := &models.Period{
 		ID:        "test-period",
-		Name:      utils.StringPtr("test-period"),
+		Name:      setup.StringPtr("test-period"),
 		Username:  username,
 		StartDate: startDate,
 		EndDate:   endDate,

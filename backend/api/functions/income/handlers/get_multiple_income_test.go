@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -21,15 +21,15 @@ func TestGetIncomeByPeriod(t *testing.T) {
 	ctx := context.Background()
 	incomeMock := income.NewDynamoMock()
 
-	request := &getMultipleIncomeRequest{
-		log:        logMock,
-		incomeRepo: incomeMock,
+	request := &GetMultipleIncomeRequest{
+		Log:        logMock,
+		IncomeRepo: incomeMock,
 	}
 
 	err := request.prepareRequest(apigwRequest)
 	c.NoError(err)
 
-	response, err := request.routeToHandlers(ctx, apigwRequest)
+	response, err := request.RouteToHandlers(ctx, apigwRequest)
 	c.NoError(err)
 	c.Equal(http.StatusOK, response.StatusCode)
 }

@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func (request *incomeGetRequest) finish() {
 	request.log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func getIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func GetIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if request == nil {
 		request = new(incomeGetRequest)
 	}

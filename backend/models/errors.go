@@ -76,4 +76,5 @@ var (
 	ErrMissingIncomeID = errors.New("missing income id")
 
 	ErrNoMoreItemsToBeRetrieved = errors.New("no more items to be retrieved")
+	ErrIncomePeriodsNotFound    = errors.New("income periods not found")
 )

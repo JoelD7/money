@@ -321,6 +321,74 @@ func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username, p
 	return toIncomeModels(entities), nil
 }
 
+func (d *DynamoRepository) GetAllIncomePeriods(ctx context.Context, username string) ([]string, error) {
+	keyCond := expression.Key("username").Equal(expression.Value(username))
+	projection := expression.NamesList(expression.Name("period"))
+
+	expr, err := expression.NewBuilder().WithKeyCondition(keyCond).WithProjection(projection).Build()
+	if err != nil {
+		return nil, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(d.tableName),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+		KeyConditionExpression:    expr.KeyCondition(),
+		ProjectionExpression:      expr.Projection(),
+	}
+
+	var result *dynamodb.QueryOutput
+	entities := make([]incomeEntity, 0)
+	var itemsInQuery []incomeEntity
+
+	for {
+		itemsInQuery = make([]incomeEntity, 0)
+		result, err = d.dynamoClient.Query(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("query income periods failed: %v", err)
+		}
+
+		if (result.Items == nil || len(result.Items) == 0) && result.LastEvaluatedKey == nil {
+			break
+		}
+
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &itemsInQuery)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal income items failed: %v", err)
+		}
+
+		entities = append(entities, itemsInQuery...)
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+
+		if result.LastEvaluatedKey == nil {
+			break
+		}
+	}
+
+	if len(entities) == 0 {
+		return nil, models.ErrIncomeNotFound
+	}
+
+	periods := make([]string, 0, len(entities))
+	existsMap := make(map[string]struct{})
+	var exists bool
+
+	for _, entity := range entities {
+		if entity.Period == nil {
+			continue
+		}
+
+		_, exists = existsMap[*entity.Period]
+		if !exists {
+			periods = append(periods, *entity.Period)
+			existsMap[*entity.Period] = struct{}{}
+		}
+	}
+
+	return periods, nil
+}
+
 func (d *DynamoRepository) BatchDeleteIncome(ctx context.Context, income []*models.Income) error {
 	writeRequests := make([]types.WriteRequest, 0, len(income))
 

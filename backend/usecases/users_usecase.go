@@ -28,7 +28,7 @@ type IDGenerator interface {
 	GenerateID(prefix string) string
 }
 
-func NewUserGetter(u UserManager, i IncomeManager, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
+func NewUserGetter(u UserManager, i IncomeRepository, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
@@ -107,7 +107,7 @@ func getAllExpensesForPeriod(ctx context.Context, username string, period string
 	return expenses, nil
 }
 
-func getAllIncomeForPeriod(ctx context.Context, username string, period string, i IncomeManager) ([]*models.Income, error) {
+func getAllIncomeForPeriod(ctx context.Context, username string, period string, i IncomeRepository) ([]*models.Income, error) {
 	income, nextKey, err := i.GetIncomeByPeriod(ctx, username, period, "", 10)
 	if err != nil {
 		return nil, fmt.Errorf("get all user income failed: %w", err)

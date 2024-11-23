@@ -12,6 +12,7 @@ import (
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/users"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -25,10 +26,6 @@ const (
 	incomeStatsWrongUser   = "./samples/income_stats_wrong_user.json"
 	expensesStatsWrongUser = "./samples/expenses_stats_wrong_user.json"
 )
-
-type Cleaner interface {
-	Cleanup(f func())
-}
 
 func TestGetPeriodStats(t *testing.T) {
 	c := require.New(t)
@@ -61,7 +58,7 @@ func TestGetPeriodStats(t *testing.T) {
 	}
 }
 
-func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner Cleaner) (*apigateway.Request, *handlers.GetPeriodStatRequest) {
+func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner setup.Cleaner) (*apigateway.Request, *handlers.GetPeriodStatRequest) {
 	dynamoClient := dynamo.InitClient(ctx)
 
 	username := "e2e_test@gmail.com"
@@ -112,7 +109,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 	return apigwRequest, &request
 }
 
-func setupExpenses(ctx context.Context, file string, c *require.Assertions, expensesRepo expenses.Repository, cleaner Cleaner) {
+func setupExpenses(ctx context.Context, file string, c *require.Assertions, expensesRepo expenses.Repository, cleaner setup.Cleaner) {
 	log := logger.NewConsoleLogger("e2e-testing")
 
 	data, err := os.ReadFile(file)
@@ -132,7 +129,7 @@ func setupExpenses(ctx context.Context, file string, c *require.Assertions, expe
 	})
 }
 
-func setupIncome(ctx context.Context, file string, c *require.Assertions, incomeRepo income.Repository, cleaner Cleaner) {
+func setupIncome(ctx context.Context, file string, c *require.Assertions, incomeRepo income.Repository, cleaner setup.Cleaner) {
 	data, err := os.ReadFile(file)
 	c.Nil(err, "reading income sample file failed")
 

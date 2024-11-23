@@ -80,6 +80,7 @@ func getEnvironmentConfig() *models.EnvironmentConfiguration {
 	}
 }
 
+// LoadEnvTesting loads the environment variables from the .env file for testing purposes.
 func LoadEnvTesting() error {
 	//Currently, it appears that godotenv doesn't support loading files using relative paths. This is why we need to use
 	//absolute paths to load the .env file.

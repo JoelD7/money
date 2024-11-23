@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
@@ -23,6 +24,7 @@ type CreatePeriodRequest struct {
 	startingTime time.Time
 	err          error
 	PeriodRepo   period.Repository
+	CacheManager cache.IncomePeriodCacheManager
 }
 
 func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
@@ -34,6 +36,8 @@ func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI,
 		if err != nil {
 			return
 		}
+
+		request.CacheManager = cache.NewRedisCache()
 		request.Log = log
 		request.Log.SetHandler("create-period")
 	})
@@ -79,7 +83,7 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 		return req.NewErrorResponse(err), nil
 	}
 
-	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.Log)
+	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.CacheManager, request.Log)
 
 	createdPeriod, err := createPeriod(ctx, username, periodModel)
 	if err != nil {
