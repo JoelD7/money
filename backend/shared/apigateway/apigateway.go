@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-lambda-go/events"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -41,7 +42,7 @@ var (
 		models.ErrMissingCategoryColor:           {HTTPCode: http.StatusBadRequest, Message: "Missing category color"},
 		models.ErrMissingCategoryBudget:          {HTTPCode: http.StatusBadRequest, Message: "Missing category budget"},
 		models.ErrInvalidBudget:                  {HTTPCode: http.StatusBadRequest, Message: "Invalid budget"},
-		models.ErrCategoryNameAlreadyExists:      {HTTPCode: http.StatusBadRequest, Message: "Category name already exists"},
+		models.ErrCategoryNameAlreadyExists:      {HTTPCode: http.StatusBadRequest, Message: "Categories name already exists"},
 		models.ErrMissingAmount:                  {HTTPCode: http.StatusBadRequest, Message: "Missing amount"},
 		models.ErrInvalidSavingAmount:            {HTTPCode: http.StatusBadRequest, Message: "Invalid amount"},
 		models.ErrSavingNotFound:                 {HTTPCode: http.StatusNotFound, Message: "Not found"},
@@ -218,4 +219,26 @@ func GetUsernameFromContext(req *Request) (string, error) {
 	}
 
 	return username, nil
+}
+
+func (req *Request) GetQueryParameters() (QueryParameters, error) {
+	pageSizeParam := 0
+	var err error
+
+	if req.QueryStringParameters["page_size"] != "" {
+		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
+		if err != nil {
+			return QueryParameters{}, models.ErrInvalidPageSize
+		}
+	}
+
+	return QueryParameters{
+		Categories:   req.MultiValueQueryStringParameters["category"],
+		Period:       req.QueryStringParameters["period"],
+		StartKey:     req.QueryStringParameters["start_key"],
+		PageSize:     pageSizeParam,
+		SortBy:       req.QueryStringParameters["sort_by"],
+		SortType:     req.QueryStringParameters["sort_order"],
+		SavingGoalID: req.QueryStringParameters["saving_goal_id"],
+	}, nil
 }

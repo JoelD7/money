@@ -11,7 +11,6 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -25,14 +24,15 @@ type expensesResponse struct {
 }
 
 type getExpensesRequest struct {
+	username string
+	apigateway.QueryParameters
+
 	log          logger.LogAPI
-	startingTime time.Time
-	err          error
 	expensesRepo expenses.Repository
 	userRepo     users.Repository
-	username     string
-	startKey     string
-	pageSize     int
+
+	startingTime time.Time
+	err          error
 }
 
 func (request *getExpensesRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
@@ -102,7 +102,7 @@ func (request *getExpensesRequest) prepareRequest(req *apigateway.Request) error
 		return err
 	}
 
-	request.startKey, request.pageSize, err = getRequestParams(req)
+	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
 		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
 
@@ -112,33 +112,16 @@ func (request *getExpensesRequest) prepareRequest(req *apigateway.Request) error
 	return nil
 }
 
-func getRequestParams(req *apigateway.Request) (string, int, error) {
-	pageSizeParam := 0
-	var err error
-
-	if req.QueryStringParameters["page_size"] != "" {
-		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
-		if err != nil {
-			return "", 0, err
-		}
-	}
-
-	return req.QueryStringParameters["start_key"], pageSizeParam, nil
-}
-
 func (request *getExpensesRequest) routeToHandlers(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	_, categoryOk := req.MultiValueQueryStringParameters["category"]
-	_, periodOk := req.QueryStringParameters["period"]
-
-	if categoryOk && !periodOk {
+	if len(request.Categories) > 0 && request.Period == "" {
 		return request.getByCategories(ctx, req)
 	}
 
-	if !categoryOk && periodOk {
+	if len(request.Categories) == 0 && request.Period != "" {
 		return request.getByPeriod(ctx, req)
 	}
 
-	if categoryOk && periodOk {
+	if len(request.Categories) > 0 && request.Period != "" {
 		return request.getByCategoriesAndPeriod(ctx, req)
 	}
 
@@ -146,11 +129,9 @@ func (request *getExpensesRequest) routeToHandlers(ctx context.Context, req *api
 }
 
 func (request *getExpensesRequest) getByCategories(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	categories, _ := req.MultiValueQueryStringParameters["category"]
-
 	getExpensesByCategory := usecases.NewExpensesByCategoriesGetter(request.expensesRepo, request.userRepo)
 
-	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.username, request.startKey, categories, request.pageSize)
+	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.username, request.StartKey, request.Categories, request.PageSize)
 	if err != nil {
 		request.log.Error("get_expenses_by_category_failed", err, []models.LoggerObject{req})
 
@@ -164,11 +145,9 @@ func (request *getExpensesRequest) getByCategories(ctx context.Context, req *api
 }
 
 func (request *getExpensesRequest) getByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	period, _ := req.QueryStringParameters["period"]
-
 	getExpensesByPeriod := usecases.NewExpensesByPeriodGetter(request.expensesRepo, request.userRepo)
 
-	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.username, period, request.startKey, request.pageSize)
+	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.username, request.Period, request.StartKey, request.PageSize)
 	if err != nil {
 		request.log.Error("get_expenses_by_period_failed", err, []models.LoggerObject{req})
 
@@ -182,12 +161,9 @@ func (request *getExpensesRequest) getByPeriod(ctx context.Context, req *apigate
 }
 
 func (request *getExpensesRequest) getByCategoriesAndPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	categories, _ := req.MultiValueQueryStringParameters["category"]
-	period, _ := req.QueryStringParameters["period"]
-
 	getExpensesByPeriodAndCategories := usecases.NewExpensesByPeriodAndCategoriesGetter(request.expensesRepo, request.userRepo)
 
-	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.username, period, request.startKey, categories, request.pageSize)
+	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.username, request.Period, request.StartKey, request.Categories, request.PageSize)
 	if err != nil {
 		request.log.Error("get_expenses_by_period_and_categories_failed", err, []models.LoggerObject{req})
 
@@ -203,7 +179,7 @@ func (request *getExpensesRequest) getByCategoriesAndPeriod(ctx context.Context,
 func (request *getExpensesRequest) getAll(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getExpenses := usecases.NewExpensesGetter(request.expensesRepo, request.userRepo)
 
-	userExpenses, nextKey, err := getExpenses(ctx, request.username, request.startKey, request.pageSize)
+	userExpenses, nextKey, err := getExpenses(ctx, request.username, request.StartKey, request.PageSize)
 	if err != nil {
 		request.log.Error("get_expenses_failed", err, []models.LoggerObject{req})
 
