@@ -70,6 +70,8 @@ var (
 		models.ErrInvalidRecurringDay:            {HTTPCode: http.StatusBadRequest, Message: "Recurring day must be between 1 and 31"},
 		models.ErrRecurringExpenseNameTaken:      {HTTPCode: http.StatusBadRequest, Message: "Recurring expense name is taken"},
 		models.ErrRecurringExpensesNotFound:      {HTTPCode: http.StatusNotFound, Message: "Recurring expenses not found"},
+		models.ErrInvalidSortOrder:               {HTTPCode: http.StatusBadRequest, Message: "Invalid sort order. The sort order must be either 'asc' or 'desc'"},
+		models.ErrInvalidSortBy:                  {HTTPCode: http.StatusBadRequest, Message: "Invalid sort by"},
 	}
 )
 

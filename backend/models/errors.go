@@ -71,6 +71,8 @@ var (
 	ErrMissingPeriodStartDate         = errors.New("missing period start date")
 	ErrMissingPeriodCreatedDate       = errors.New("missing period created date")
 	ErrMissingPeriodUpdatedDate       = errors.New("missing period updated date")
+	ErrInvalidSortOrder               = errors.New("invalid sort order")
+	ErrInvalidSortBy                  = errors.New("invalid sort by")
 
 	ErrExistingIncome  = errors.New("this income already exists")
 	ErrMissingIncomeID = errors.New("missing income id")
