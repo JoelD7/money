@@ -109,6 +109,16 @@ func (request *getExpensesRequest) prepareRequest(req *apigateway.Request) error
 		return err
 	}
 
+	err = validate.SortBy(request.SortBy)
+	if err != nil {
+		return err
+	}
+
+	err = validate.SortOrder(request.SortOrder)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
