@@ -22,10 +22,12 @@ func BuildPeriodUser(username, period string) *string {
 // EncodePaginationKey encodes the last evaluated key returned by Dynamo in a string format to be used in the next query
 // as the start key.
 // The "keyType" parameter should be a pointer to a struct that maps ot the primary key of the table or index in question.
-func EncodePaginationKey(lastKey map[string]types.AttributeValue, keyType interface{}) (string, error) {
+func EncodePaginationKey(lastKey map[string]types.AttributeValue) (string, error) {
 	if len(lastKey) == 0 {
 		return "", nil
 	}
+
+	var keyType interface{}
 
 	err := attributevalue.UnmarshalMap(lastKey, &keyType)
 	if err != nil {
@@ -45,11 +47,13 @@ func EncodePaginationKey(lastKey map[string]types.AttributeValue, keyType interf
 // DecodePaginationKey parses the start key string into a map of attribute values to be used as ExclusiveStartKey in a paginated
 // query.
 // The "keyType" parameter should be a pointer to a struct that maps ot the primary key of the table or index in question.
-func DecodePaginationKey(startKey string, keyType interface{}) (map[string]types.AttributeValue, error) {
+func DecodePaginationKey(startKey string) (map[string]types.AttributeValue, error) {
 	decoded, err := base64.URLEncoding.DecodeString(startKey)
 	if err != nil {
 		return nil, fmt.Errorf("decoding last key: %v", err)
 	}
+
+	var keyType interface{}
 
 	err = json.Unmarshal(decoded, &keyType)
 	if err != nil {

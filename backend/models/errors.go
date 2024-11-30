@@ -79,4 +79,7 @@ var (
 
 	ErrNoMoreItemsToBeRetrieved = errors.New("no more items to be retrieved")
 	ErrIncomePeriodsNotFound    = errors.New("income periods not found")
+	// ErrIndexKeysNotFound error when a DynamoDB index is not included in the map used to build the LastEvaluatedKey.
+	// This is important as it breaks pagination.
+	ErrIndexKeysNotFound = errors.New("index keys not found")
 )

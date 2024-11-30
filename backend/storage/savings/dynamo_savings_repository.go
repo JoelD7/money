@@ -101,7 +101,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keys{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -143,7 +143,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}
@@ -156,7 +156,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysPeriodIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -201,7 +201,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}
@@ -214,7 +214,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysSavingGoalIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -257,7 +257,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", fmt.Errorf("unmarshal savings items failed: %v", err)
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keysSavingGoalIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}
@@ -273,7 +273,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 	resultSet := make([]savingEntity, 0)
 
 	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysSavingGoalIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -327,7 +327,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		}
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey)
 	if err != nil {
 		return nil, "", err
 	}
@@ -354,7 +354,7 @@ func getPaginatedSavings(resultSet, itemsInQuery []savingEntity, input *dynamodb
 		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, &keysSavingGoalIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey)
 	if err != nil {
 		return nil, "", err
 	}

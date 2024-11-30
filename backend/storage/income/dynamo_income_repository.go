@@ -161,7 +161,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keysPeriodUserIndex{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -206,7 +206,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", err
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keysPeriodUserIndex{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}
@@ -219,7 +219,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 	var err error
 
 	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keys{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -261,7 +261,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 		return nil, "", err
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}
