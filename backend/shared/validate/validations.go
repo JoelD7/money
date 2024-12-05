@@ -12,11 +12,6 @@ var (
 	validSortBy = map[string]struct{}{
 		"created_date": {},
 	}
-
-	validSortOrder = map[models.SortOrder]struct{}{
-		models.SortOrderAscending:  {},
-		models.SortOrderDescending: {},
-	}
 )
 
 func Email(email string) error {
@@ -49,10 +44,10 @@ func SortBy(sortBy string) error {
 	return nil
 }
 
-func SortOrder(sortOrder models.SortOrder) error {
-	if _, ok := validSortOrder[sortOrder]; !ok {
-		return models.ErrInvalidSortOrder
+func SortType(sortType string) error {
+	if sortType == string(models.SortOrderDescending) || sortType == string(models.SortOrderAscending) {
+		return nil
 	}
 
-	return nil
+	return models.ErrInvalidSortOrder
 }

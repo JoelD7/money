@@ -1,4 +1,4 @@
-package apigateway
+package models
 
 type QueryParameters struct {
 	Categories   []string
@@ -9,3 +9,10 @@ type QueryParameters struct {
 	SortType     string
 	SavingGoalID string
 }
+
+type SortOrder string
+
+const (
+	SortOrderAscending  SortOrder = "asc"
+	SortOrderDescending SortOrder = "desc"
+)

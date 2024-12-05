@@ -13,13 +13,13 @@ type ExpenseManager interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
 	BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
 
-	GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error)
-	GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error)
-	GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
-	GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error)
+	GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
 	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
-	GetAllExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error)
+	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error)
 
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
@@ -118,14 +118,14 @@ func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Contex
 	}
 }
 
-func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
+func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
 			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
 		}
 
-		expenses, nextKey, err := em.GetExpenses(ctx, username, startKey, pageSize)
+		expenses, nextKey, err := em.GetExpenses(ctx, username, params)
 		if err != nil {
 			return nil, "", err
 		}
@@ -139,14 +139,14 @@ func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Conte
 	}
 }
 
-func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	return func(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
 			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
 		}
 
-		expenses, nextKey, err := em.GetExpensesByCategory(ctx, username, startKey, categories, pageSize)
+		expenses, nextKey, err := em.GetExpensesByCategory(ctx, username, params)
 		if err != nil {
 			return nil, "", err
 		}
@@ -160,14 +160,14 @@ func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx c
 	}
 }
 
-func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	return func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
+func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v", err)
 		}
 
-		expenses, nextKey, err := em.GetExpensesByPeriod(ctx, username, periodID, startKey, pageSize)
+		expenses, nextKey, err := em.GetExpensesByPeriod(ctx, username, params)
 		if err != nil {
 			return nil, "", err
 		}
@@ -181,14 +181,14 @@ func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx conte
 	}
 }
 
-func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	return func(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
 			return nil, "", fmt.Errorf("%w: %v", models.ErrCategoryNameSettingFailed, err)
 		}
 
-		expenses, nextKey, err := em.GetExpensesByPeriodAndCategories(ctx, username, periodID, startKey, categories, pageSize)
+		expenses, nextKey, err := em.GetExpensesByPeriodAndCategories(ctx, username, params)
 		if err != nil {
 			return nil, "", err
 		}
@@ -296,7 +296,7 @@ func NewExpenseRecurringEliminator(em ExpenseRecurringManager) func(ctx context.
 
 func NewCategoryExpenseSummaryGetter(em ExpenseManager) func(ctx context.Context, username, periodID string) ([]*models.CategoryExpenseSummary, error) {
 	return func(ctx context.Context, username, periodID string) ([]*models.CategoryExpenseSummary, error) {
-		expenses, err := em.GetAllExpensesByPeriod(ctx, username, periodID)
+		expenses, err := em.GetAllExpensesByPeriod(ctx, username, &models.QueryParameters{Period: periodID})
 		if err != nil {
 			return nil, err
 		}

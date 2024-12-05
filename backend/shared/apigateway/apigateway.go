@@ -223,18 +223,18 @@ func GetUsernameFromContext(req *Request) (string, error) {
 	return username, nil
 }
 
-func (req *Request) GetQueryParameters() (QueryParameters, error) {
+func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 	pageSizeParam := 0
 	var err error
 
 	if req.QueryStringParameters["page_size"] != "" {
 		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
 		if err != nil {
-			return QueryParameters{}, models.ErrInvalidPageSize
+			return &models.QueryParameters{}, models.ErrInvalidPageSize
 		}
 	}
 
-	return QueryParameters{
+	return &models.QueryParameters{
 		Categories:   req.MultiValueQueryStringParameters["category"],
 		Period:       req.QueryStringParameters["period"],
 		StartKey:     req.QueryStringParameters["start_key"],

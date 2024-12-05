@@ -359,40 +359,40 @@ func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID s
 	return toExpenseModel(*entity), nil
 }
 
-func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, "", startKey, nil, pageSize)
+func (d *DynamoRepository) GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, "", params.StartKey, nil, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
-func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, periodID, startKey, categories, pageSize)
+func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, params.Period, params.StartKey, params.Categories, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
-func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, periodID, startKey, nil, pageSize)
+func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, params.Period, params.StartKey, nil, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
-func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, "", startKey, categories, pageSize)
+func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, "", params.StartKey, params.Categories, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
 func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error) {
@@ -448,8 +448,8 @@ func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, usern
 	return toExpenseModels(entities), nil
 }
 
-func (d *DynamoRepository) GetAllExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error) {
-	periodUser := dynamo.BuildPeriodUser(username, periodID)
+func (d *DynamoRepository) GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error) {
+	periodUser := dynamo.BuildPeriodUser(username, params.Period)
 	periodUserCond := expression.Key("period_user").Equal(expression.Value(periodUser))
 
 	expr, err := expression.NewBuilder().WithKeyCondition(periodUserCond).Build()
