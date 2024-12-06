@@ -26,7 +26,7 @@ type GetMultipleIncomeRequest struct {
 	PageSize     int
 	IncomeRepo   income.Repository
 	CacheManager cache.IncomePeriodCacheManager
-	apigateway.QueryParameters
+	*models.QueryParameters
 }
 
 type MultipleIncomeResponse struct {
@@ -119,7 +119,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 
 	getIncomeByPeriod := usecases.NewIncomeByPeriodGetter(request.IncomeRepo, request.CacheManager)
 
-	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, period, request.StartKey, request.PageSize)
+	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
 		request.Log.Error("get_income_by_period_failed", err, []models.LoggerObject{req})
@@ -138,7 +138,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 func (request *GetMultipleIncomeRequest) getAllIncome(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getAllIncome := usecases.NewAllIncomeGetter(request.IncomeRepo, request.CacheManager)
 
-	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.StartKey, request.PageSize)
+	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
 		request.Log.Error("get_all_income_failed", err, []models.LoggerObject{req})

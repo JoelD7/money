@@ -156,18 +156,18 @@ func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID str
 	return toIncomeModel(incomeEnt), nil
 }
 
-func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error) {
+func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 
-	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
+	if params.StartKey != "" {
+		decodedStartKey, err = dynamo.DecodePaginationKey(params.StartKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
 
-	periodUser := dynamo.BuildPeriodUser(username, periodID)
+	periodUser := dynamo.BuildPeriodUser(username, params.Period)
 
 	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
 
@@ -182,7 +182,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
 		IndexName:                 aws.String(periodUserIncomeIDIndex),
-		Limit:                     getPageSize(pageSize),
+		Limit:                     getPageSize(params.PageSize),
 		ExclusiveStartKey:         decodedStartKey,
 	}
 
@@ -191,7 +191,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 		return nil, "", err
 	}
 
-	if (result.Items == nil || len(result.Items) == 0) && startKey == "" {
+	if (result.Items == nil || len(result.Items) == 0) && params.StartKey == "" {
 		return nil, "", models.ErrIncomeNotFound
 	}
 
@@ -214,12 +214,12 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username, peri
 	return toIncomeModels(incomeEntities), nextKey, nil
 }
 
-func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error) {
+func (d *DynamoRepository) GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 
-	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
+	if params.StartKey != "" {
+		decodedStartKey, err = dynamo.DecodePaginationKey(params.StartKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -237,7 +237,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		KeyConditionExpression:    expr.Condition(),
-		Limit:                     getPageSize(pageSize),
+		Limit:                     getPageSize(params.PageSize),
 		ExclusiveStartKey:         decodedStartKey,
 	}
 
@@ -246,7 +246,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 		return nil, "", err
 	}
 
-	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
+	if result.Items == nil || len(result.Items) == 0 && params.StartKey == "" {
 		return nil, "", models.ErrIncomeNotFound
 	}
 
@@ -269,8 +269,8 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username, startKey 
 	return toIncomeModels(incomeEntities), nextKey, nil
 }
 
-func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error) {
-	periodUser := dynamo.BuildPeriodUser(username, periodID)
+func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error) {
+	periodUser := dynamo.BuildPeriodUser(username, params.Period)
 	periodUserCond := expression.Key("period_user").Equal(expression.Value(periodUser))
 
 	expr, err := expression.NewBuilder().WithKeyCondition(periodUserCond).Build()
