@@ -38,7 +38,7 @@ func (request *GetPeriodStatRequest) init(ctx context.Context, log logger.LogAPI
 			return
 		}
 
-		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig.ExpensesTable, envConfig.ExpensesRecurringTable, envConfig.PeriodUserExpenseIndex)
+		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

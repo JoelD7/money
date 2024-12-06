@@ -20,10 +20,10 @@ import (
 )
 
 var (
-	expensesTableName          string
 	expensesRecurringTableName string
-	periodUserIndex            string
 	usersTableName             string
+
+	envConfig *models.EnvironmentConfiguration
 )
 
 func TestMain(m *testing.M) {
@@ -32,10 +32,14 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	expensesTableName = env.GetString("EXPENSES_TABLE_NAME", "")
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	periodUserIndex = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
 	usersTableName = env.GetString("USERS_TABLE_NAME", "")
+	envConfig = &models.EnvironmentConfiguration{
+		ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
+		ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+		PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+		UsersTable:             env.GetString("USERS_TABLE_NAME", ""),
+	}
 
 	os.Exit(m.Run())
 }
@@ -57,7 +61,7 @@ func TestProcess(t *testing.T) {
 		Name:         aws.String("Test Expense"),
 	}
 
-	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserIndex)
+	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating expenses repository failed")
 
 	createdExpense, err := expensesRepo.CreateExpense(ctx, ex)

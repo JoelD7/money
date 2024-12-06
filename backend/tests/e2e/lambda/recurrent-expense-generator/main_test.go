@@ -50,13 +50,26 @@ var (
 	}
 )
 
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(err)
+	}
+
+	os.Exit(m.Run())
+}
+
 func TestCron(t *testing.T) {
 	var (
-		expensesTableName          = env.GetString("EXPENSES_TABLE_NAME", "")
 		expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 		periodTableNameEnv         = env.GetString("PERIOD_TABLE_NAME", "")
 		uniquePeriodTableNameEnv   = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-		periodUserExpenseIndex     = env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
+		envConfig                  = &models.EnvironmentConfiguration{
+			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
+			ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+			PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+			UsersTable:             env.GetString("USERS_TABLE_NAME", ""),
+		}
 	)
 
 	c := require.New(t)
@@ -71,7 +84,7 @@ func TestCron(t *testing.T) {
 	periodRepo, err := period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
 	c.Nil(err, "failed to create period repository")
 
-	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserExpenseIndex)
+	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "failed to create expenses repository")
 
 	req := &handler.CronRequest{

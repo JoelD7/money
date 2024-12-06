@@ -26,7 +26,7 @@ func TestGetExpensesStats(t *testing.T) {
 	username := "e2e_test@gmail.com"
 	periodID := "2021-09"
 
-	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, expensesTableName, expensesRecurringTableName, periodUserIndex)
+	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating expenses repository failed")
 
 	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)

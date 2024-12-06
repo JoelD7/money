@@ -77,6 +77,7 @@ func getEnvironmentConfig() *models.EnvironmentConfiguration {
 		BatchWriteBaseDelayInMs:      GetInt("BATCH_WRITE_BASE_DELAY_IN_MS", 300),
 		BatchWriteBackoffFactor:      GetInt("BATCH_WRITE_BACKOFF_FACTOR", 2),
 		DynamodbMaxBatchWrite:        GetInt("DYNAMODB_MAX_BATCH_WRITE", 25),
+		PeriodUserCreatedDateIndex:   GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
 	}
 }
 

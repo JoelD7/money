@@ -71,10 +71,15 @@ var (
 	ErrMissingPeriodStartDate         = errors.New("missing period start date")
 	ErrMissingPeriodCreatedDate       = errors.New("missing period created date")
 	ErrMissingPeriodUpdatedDate       = errors.New("missing period updated date")
+	ErrInvalidSortOrder               = errors.New("invalid sort order")
+	ErrInvalidSortBy                  = errors.New("invalid sort by")
 
 	ErrExistingIncome  = errors.New("this income already exists")
 	ErrMissingIncomeID = errors.New("missing income id")
 
 	ErrNoMoreItemsToBeRetrieved = errors.New("no more items to be retrieved")
 	ErrIncomePeriodsNotFound    = errors.New("income periods not found")
+	// ErrIndexKeysNotFound error when a DynamoDB index is not included in the map used to build the LastEvaluatedKey.
+	// This is important as it breaks pagination.
+	ErrIndexKeysNotFound = errors.New("index keys not found")
 )

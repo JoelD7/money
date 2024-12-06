@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -11,7 +10,6 @@ import (
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -28,6 +26,7 @@ type GetMultipleIncomeRequest struct {
 	PageSize     int
 	IncomeRepo   income.Repository
 	CacheManager cache.IncomePeriodCacheManager
+	apigateway.QueryParameters
 }
 
 type MultipleIncomeResponse struct {
@@ -91,7 +90,7 @@ func (request *GetMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 
 	request.Username = username
 
-	request.StartKey, request.PageSize, err = getRequestQueryParams(req)
+	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
 		request.Log.Error("get_request_params_failed", err, []models.LoggerObject{req})
 
@@ -99,21 +98,6 @@ func (request *GetMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 	}
 
 	return nil
-}
-
-func getRequestQueryParams(req *apigateway.Request) (string, int, error) {
-	pageSizeParam := 0
-	var err error
-
-	if req.QueryStringParameters["page_size"] != "" {
-		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
-	}
-
-	if err != nil || pageSizeParam < 0 {
-		return "", 0, fmt.Errorf("%w: %v", models.ErrInvalidPageSize, err)
-	}
-
-	return req.QueryStringParameters["start_key"], pageSizeParam, nil
 }
 
 func (request *GetMultipleIncomeRequest) RouteToHandlers(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {

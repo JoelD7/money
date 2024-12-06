@@ -116,6 +116,11 @@ func (d *DynamoMock) GetExpense(ctx context.Context, username, expenseID string)
 	return d.mockedExpenses[0], nil
 }
 
+func (d *DynamoMock) GetAllExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (d *DynamoMock) DeleteExpense(ctx context.Context, expenseID, username string) error {
 	if d.mockedErr != nil {
 		return d.mockedErr

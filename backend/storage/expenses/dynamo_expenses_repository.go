@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -23,63 +22,49 @@ const (
 	conditionalFailedKeyword = "ConditionalCheckFailed"
 )
 
-type keys struct {
-	ExpenseID string `json:"expense_id" dynamodbav:"expense_id"`
-	Username  string `json:"username" dynamodbav:"username"`
-}
-
-type keysPeriodUserIndex struct {
-	ExpenseID  string `json:"expense_id" dynamodbav:"expense_id"`
-	Username   string `json:"username,omitempty" dynamodbav:"username"`
-	PeriodUser string `json:"period_user,omitempty" dynamodbav:"period_user"`
-}
+var (
+	//All indices must include "expense_id" and "username" even when they aren't keys of the index, because they are
+	//the main table's primary key and we get a validation error from Dynamo otherwise.
+	keysByIndex = map[string][]string{
+		"period_user-created_date-index": {"expense_id", "username", "period_user", "created_date"},
+		"period_user-expense_id-index":   {"expense_id", "username", "period_user", "expense_id"},
+		"username-created_date-index":    {"expense_id", "username", "created_date"},
+	}
+)
 
 type DynamoRepository struct {
 	dynamoClient               *dynamodb.Client
 	tableName                  string
 	expensesRecurringTableName string
 	periodUserIndex            string
+	periodUserCreatedDateIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, expensesRecurringTableName, periodUserIndex string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
-	tableNameEnv := env.GetString("EXPENSES_TABLE_NAME", "")
-	expensesRecurringTableNameEnv := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	periodUserIndexEnv := env.GetString("PERIOD_USER_EXPENSE_INDEX", "")
 
-	err := validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv, periodUserIndex, periodUserIndexEnv)
+	err := validateParams(envConfig)
 	if err != nil {
 		return nil, fmt.Errorf("initialize expenses dynamo repository failed: %v", err)
 	}
 
-	d.tableName = tableName
-	if d.tableName == "" {
-		d.tableName = tableNameEnv
-	}
-
-	d.expensesRecurringTableName = expensesRecurringTableName
-	if d.expensesRecurringTableName == "" {
-		d.expensesRecurringTableName = expensesRecurringTableNameEnv
-	}
-
-	d.periodUserIndex = periodUserIndex
-	if d.periodUserIndex == "" {
-		d.periodUserIndex = periodUserIndexEnv
-	}
+	d.tableName = envConfig.ExpensesTable
+	d.expensesRecurringTableName = envConfig.ExpensesRecurringTable
+	d.periodUserIndex = envConfig.PeriodUserExpenseIndex
 
 	return d, nil
 }
 
-func validateParams(tableName, expensesRecurringTableName, tableNameEnv, expensesRecurringTableNameEnv, periodUserIndex, periodUserIndexEnv string) error {
-	if tableName == "" && tableNameEnv == "" {
+func validateParams(envConfig *models.EnvironmentConfiguration) error {
+	if envConfig.ExpensesTable == "" {
 		return fmt.Errorf("table name is required")
 	}
 
-	if expensesRecurringTableName == "" && expensesRecurringTableNameEnv == "" {
+	if envConfig.ExpensesRecurringTable == "" {
 		return fmt.Errorf("expenses recurring table name is required")
 	}
 
-	if periodUserIndex == "" && periodUserIndexEnv == "" {
+	if envConfig.PeriodUserExpenseIndex == "" {
 		return fmt.Errorf("period user index is required")
 	}
 
@@ -374,40 +359,40 @@ func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID s
 	return toExpenseModel(*entity), nil
 }
 
-func (d *DynamoRepository) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, "", startKey, nil, pageSize)
+func (d *DynamoRepository) GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, "", params.StartKey, nil, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
-func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, periodID, startKey, categories, pageSize)
+func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, params.Period, params.StartKey, params.Categories, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
-func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, periodID, startKey, nil, pageSize)
+func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, params.Period, params.StartKey, nil, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
-func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, "", startKey, categories, pageSize)
+func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	input, err := d.buildQueryInput(username, "", params.StartKey, params.Categories, params.PageSize)
 	if err != nil {
 		return nil, "", err
 	}
 
-	return d.performQuery(ctx, input, startKey)
+	return d.performQuery(ctx, input, params.StartKey)
 }
 
 func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error) {
@@ -463,8 +448,8 @@ func (d *DynamoRepository) GetAllExpensesBetweenDates(ctx context.Context, usern
 	return toExpenseModels(entities), nil
 }
 
-func (d *DynamoRepository) GetAllExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error) {
-	periodUser := dynamo.BuildPeriodUser(username, periodID)
+func (d *DynamoRepository) GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error) {
+	periodUser := dynamo.BuildPeriodUser(username, params.Period)
 	periodUserCond := expression.Key("period_user").Equal(expression.Value(periodUser))
 
 	expr, err := expression.NewBuilder().WithKeyCondition(periodUserCond).Build()
@@ -617,7 +602,7 @@ func (d *DynamoRepository) setExclusiveStartKey(startKey string, input *dynamodb
 		return nil
 	}
 
-	decodedStartKey, err := dynamo.DecodePaginationKey(startKey, d.getPaginationKeyType(input))
+	decodedStartKey, err := dynamo.DecodePaginationKey(startKey)
 	if err != nil {
 		return fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 	}
@@ -625,22 +610,6 @@ func (d *DynamoRepository) setExclusiveStartKey(startKey string, input *dynamodb
 	input.ExclusiveStartKey = decodedStartKey
 
 	return nil
-}
-
-// getPaginationKeyType returns the type of the key to be used in the pagination according to the index being queried.
-// If there isn't an index being queried, the key type corresponding to the main table is used.
-func (d *DynamoRepository) getPaginationKeyType(input *dynamodb.QueryInput) interface{} {
-	indexName := ""
-	if input.IndexName != nil {
-		indexName = *input.IndexName
-	}
-
-	switch indexName {
-	case d.periodUserIndex:
-		return &keysPeriodUserIndex{}
-	default:
-		return &keys{}
-	}
 }
 
 func buildCategoriesConditionFilter(categories []string) expression.ConditionBuilder {
@@ -692,7 +661,7 @@ func (d *DynamoRepository) performQuery(ctx context.Context, input *dynamodb.Que
 		return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, d.getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}
@@ -704,6 +673,7 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 	retrievedItems := 0
 	resultSet := make([]expenseEntity, 0)
 	var result *dynamodb.QueryOutput
+	var acumItems []map[string]types.AttributeValue
 	var err error
 
 	for {
@@ -723,19 +693,24 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 
 		retrievedItems += len(result.Items)
 
-		// should we implement custom pagination?
+		// This asks: should we implement custom pagination?
 		if retrievedItems >= int(*input.Limit) {
-			return d.getPaginatedExpenses(resultSet, itemsInQuery, input)
+			return d.getPaginatedExpenses(acumItems, result.Items, input)
 		}
 
-		resultSet = append(resultSet, itemsInQuery...)
+		acumItems = append(acumItems, result.Items...)
 
 		if result.LastEvaluatedKey == nil {
 			break
 		}
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, d.getPaginationKeyType(input))
+	err = attributevalue.UnmarshalListOfMaps(acumItems, &resultSet)
+	if err != nil {
+		return nil, "", fmt.Errorf("unmarshal expenses items failed: %v", err)
+	}
+
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey)
 	if err != nil {
 		return nil, "", err
 	}
@@ -751,64 +726,64 @@ func (d *DynamoRepository) performQueryWithFilter(ctx context.Context, input *dy
 	return toExpenseModels(resultSet), nextKey, nil
 }
 
-func (d *DynamoRepository) getPaginatedExpenses(resultSet, itemsInQuery []expenseEntity, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
+func (d *DynamoRepository) getPaginatedExpenses(acumItems, itemsInQuery []map[string]types.AttributeValue, input *dynamodb.QueryInput) ([]*models.Expense, string, error) {
 	var err error
 
-	copyUpto := getCopyUpto(itemsInQuery, resultSet, input)
-	resultSet = append(resultSet, itemsInQuery[0:copyUpto]...)
+	copyUpto := getCopyUpto(itemsInQuery, acumItems, input)
+	acumItems = append(acumItems, itemsInQuery[0:copyUpto]...)
 
-	input.ExclusiveStartKey, err = d.getAttributeValuePK(resultSet[len(resultSet)-1], input)
+	input.ExclusiveStartKey, err = d.buildCustomExclusiveStartKey(acumItems[len(acumItems)-1], input)
 	if err != nil {
-		return nil, "", fmt.Errorf("get attribute value pk failed: %v", err)
+		return nil, "", fmt.Errorf("getting expenses failed: %v", err)
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey, d.getPaginationKeyType(input))
+	nextKey, err := dynamo.EncodePaginationKey(input.ExclusiveStartKey)
 	if err != nil {
 		return nil, "", err
 	}
 
-	if len(resultSet) == 0 {
+	if len(acumItems) == 0 {
 		return nil, "", models.ErrExpensesNotFound
 	}
 
-	return toExpenseModels(resultSet), nextKey, nil
+	var expenseEntites []expenseEntity
+
+	err = attributevalue.UnmarshalListOfMaps(acumItems, &expenseEntites)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return toExpenseModels(expenseEntites), nextKey, nil
+}
+
+func (d *DynamoRepository) buildCustomExclusiveStartKey(lastEvaluatedKey map[string]types.AttributeValue, input *dynamodb.QueryInput) (map[string]types.AttributeValue, error) {
+	if lastEvaluatedKey == nil {
+		return nil, nil
+	}
+
+	exclusiveStartKey := make(map[string]types.AttributeValue)
+
+	keys, ok := keysByIndex[*input.IndexName]
+	if !ok {
+		return nil, models.ErrIndexKeysNotFound
+	}
+
+	for _, key := range keys {
+		exclusiveStartKey[key] = lastEvaluatedKey[key]
+	}
+
+	return exclusiveStartKey, nil
 }
 
 // getCopyUpto returns the index up to which we can copy the items from the current query result to the list of items to
 // return. This ensures that the total quantity of requested items, as indicated by the pageSize parameter, is satisfied.
-func getCopyUpto(itemsInQuery []expenseEntity, expensesEntities []expenseEntity, input *dynamodb.QueryInput) int {
+func getCopyUpto(itemsInQuery, expensesEntities []map[string]types.AttributeValue, input *dynamodb.QueryInput) int {
 	limitAccumulatedDiff := int(math.Abs(float64(int(*input.Limit) - len(expensesEntities))))
 	if len(itemsInQuery) < limitAccumulatedDiff {
 		return len(itemsInQuery)
 	}
 
 	return limitAccumulatedDiff
-}
-
-func (d *DynamoRepository) getAttributeValuePK(item expenseEntity, input *dynamodb.QueryInput) (map[string]types.AttributeValue, error) {
-	if input.IndexName != nil && *input.IndexName == d.periodUserIndex {
-		expenseKeys := struct {
-			ExpenseID  string `json:"expense_id" dynamodbav:"expense_id"`
-			Username   string `json:"username,omitempty" dynamodbav:"username"`
-			PeriodUser string `json:"period_user,omitempty" dynamodbav:"period_user"`
-		}{
-			ExpenseID:  item.ExpenseID,
-			Username:   item.Username,
-			PeriodUser: *item.PeriodUser,
-		}
-
-		return attributevalue.MarshalMap(expenseKeys)
-	}
-
-	expenseKeys := struct {
-		ExpenseID string `json:"expense_id" dynamodbav:"expense_id"`
-		Username  string `json:"username,omitempty" dynamodbav:"username"`
-	}{
-		ExpenseID: item.ExpenseID,
-		Username:  item.Username,
-	}
-
-	return attributevalue.MarshalMap(expenseKeys)
 }
 
 func getPageSize(pageSize int) *int32 {

@@ -310,7 +310,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	var decodedStartKey map[string]types.AttributeValue
 
 	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey, &keys{})
+		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -341,7 +341,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("unmarshal periods failed: %v", err)
 	}
 
-	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey, &keys{})
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
 	if err != nil {
 		return nil, "", err
 	}

@@ -20,14 +20,13 @@ var gssRequest *getSavingsRequest
 var gssOnce sync.Once
 
 type getSavingsRequest struct {
+	username       string
 	log            logger.LogAPI
 	startingTime   time.Time
 	err            error
 	savingsRepo    savings.Repository
 	savingGoalRepo savingoal.Repository
-	username       string
-	startKey       string
-	pageSize       int
+	apigateway.QueryParameters
 }
 
 type savingsResponse struct {
@@ -102,7 +101,7 @@ func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error 
 		return err
 	}
 
-	request.startKey, request.pageSize, err = getRequestQueryParams(req)
+	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
 		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
 
@@ -134,7 +133,7 @@ func (request *getSavingsRequest) routeToHandlers(ctx context.Context, req *apig
 func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getSavings := usecases.NewSavingsGetter(request.savingsRepo, request.savingGoalRepo, request.log)
 
-	userSavings, nextKey, err := getSavings(ctx, request.username, request.startKey, request.pageSize)
+	userSavings, nextKey, err := getSavings(ctx, request.username, request.StartKey, request.PageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{
 			req,
@@ -161,7 +160,7 @@ func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, re
 
 	getSavingsByPeriod := usecases.NewSavingByPeriodGetter(request.savingsRepo, request.savingGoalRepo, request.log)
 
-	userSavings, nextKey, err := getSavingsByPeriod(ctx, request.username, request.startKey, period, request.pageSize)
+	userSavings, nextKey, err := getSavingsByPeriod(ctx, request.username, request.StartKey, period, request.PageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
 
@@ -186,7 +185,7 @@ func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context
 
 	getSavingsBySavingGoal := usecases.NewSavingBySavingGoalGetter(request.savingsRepo, request.savingGoalRepo, request.log)
 
-	userSavings, nextKey, err := getSavingsBySavingGoal(ctx, request.startKey, savingGoal, request.pageSize)
+	userSavings, nextKey, err := getSavingsBySavingGoal(ctx, request.StartKey, savingGoal, request.PageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
 
@@ -212,7 +211,7 @@ func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx contex
 
 	getSavingsBySavingGoalAndPeriod := usecases.NewSavingBySavingGoalAndPeriodGetter(request.savingsRepo, request.savingGoalRepo, request.log)
 
-	userSavings, nextKey, err := getSavingsBySavingGoalAndPeriod(ctx, request.startKey, savingGoal, period, request.pageSize)
+	userSavings, nextKey, err := getSavingsBySavingGoalAndPeriod(ctx, request.StartKey, savingGoal, period, request.PageSize)
 	if err != nil {
 		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
 
