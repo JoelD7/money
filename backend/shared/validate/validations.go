@@ -45,7 +45,7 @@ func SortBy(sortBy string) error {
 }
 
 func SortType(sortType string) error {
-	if sortType == string(models.SortOrderDescending) || sortType == string(models.SortOrderAscending) {
+	if sortType == string(models.SortOrderDescending) || sortType == string(models.SortOrderAscending) || sortType == "" {
 		return nil
 	}
 
