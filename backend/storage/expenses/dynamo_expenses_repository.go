@@ -38,6 +38,7 @@ type DynamoRepository struct {
 	expensesRecurringTableName string
 	periodUserIndex            string
 	periodUserCreatedDateIndex string
+	usernameCreatedDateIndex   string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -51,6 +52,8 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.tableName = envConfig.ExpensesTable
 	d.expensesRecurringTableName = envConfig.ExpensesRecurringTable
 	d.periodUserIndex = envConfig.PeriodUserExpenseIndex
+	d.periodUserCreatedDateIndex = envConfig.PeriodUserCreatedDateIndex
+	d.usernameCreatedDateIndex = envConfig.UsernameCreatedDateIndex
 
 	return d, nil
 }
@@ -66,6 +69,14 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.PeriodUserExpenseIndex == "" {
 		return fmt.Errorf("period user index is required")
+	}
+
+	if envConfig.PeriodUserCreatedDateIndex == "" {
+		return fmt.Errorf("period user created date index is required")
+	}
+
+	if envConfig.UsernameCreatedDateIndex == "" {
+		return fmt.Errorf("username created date index is required")
 	}
 
 	return nil
@@ -360,7 +371,7 @@ func (d *DynamoRepository) GetExpense(ctx context.Context, username, expenseID s
 }
 
 func (d *DynamoRepository) GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, "", params.StartKey, nil, params.PageSize)
+	input, err := d.buildQueryInput(username, params)
 	if err != nil {
 		return nil, "", err
 	}
@@ -369,7 +380,7 @@ func (d *DynamoRepository) GetExpenses(ctx context.Context, username string, par
 }
 
 func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, params.Period, params.StartKey, params.Categories, params.PageSize)
+	input, err := d.buildQueryInput(username, params)
 	if err != nil {
 		return nil, "", err
 	}
@@ -378,7 +389,7 @@ func (d *DynamoRepository) GetExpensesByPeriodAndCategories(ctx context.Context,
 }
 
 func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, params.Period, params.StartKey, nil, params.PageSize)
+	input, err := d.buildQueryInput(username, params)
 	if err != nil {
 		return nil, "", err
 	}
@@ -387,7 +398,7 @@ func (d *DynamoRepository) GetExpensesByPeriod(ctx context.Context, username str
 }
 
 func (d *DynamoRepository) GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
-	input, err := d.buildQueryInput(username, "", params.StartKey, params.Categories, params.PageSize)
+	input, err := d.buildQueryInput(username, params)
 	if err != nil {
 		return nil, "", err
 	}
@@ -554,33 +565,25 @@ func (d *DynamoRepository) BatchDeleteExpenses(ctx context.Context, expenses []*
 	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
-func (d *DynamoRepository) buildQueryInput(username, periodID, startKey string, categories []string, pageSize int) (*dynamodb.QueryInput, error) {
+func (d *DynamoRepository) buildQueryInput(username string, params *models.QueryParameters) (*dynamodb.QueryInput, error) {
 	var err error
 
 	input := &dynamodb.QueryInput{
 		TableName: aws.String(d.tableName),
-		Limit:     getPageSize(pageSize),
+		Limit:     getPageSize(params.PageSize),
 	}
 
-	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
+	keyConditionEx := d.setQueryIndex(input, username, params)
 
-	// Query the period_user-expense_id-index
-	if periodID != "" {
-		input.IndexName = aws.String(d.periodUserIndex)
-
-		periodUser := dynamo.BuildPeriodUser(username, periodID)
-		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
-	}
-
-	err = d.setExclusiveStartKey(startKey, input)
+	err = d.setExclusiveStartKey(params.StartKey, input)
 	if err != nil {
 		return nil, err
 	}
 
 	conditionBuilder := expression.NewBuilder().WithCondition(keyConditionEx)
 
-	if categories != nil || len(categories) > 0 {
-		filterCondition := buildCategoriesConditionFilter(categories)
+	if params.Categories != nil || len(params.Categories) > 0 {
+		filterCondition := buildCategoriesConditionFilter(params.Categories)
 		conditionBuilder = conditionBuilder.WithFilter(filterCondition)
 	}
 
@@ -595,6 +598,29 @@ func (d *DynamoRepository) buildQueryInput(username, periodID, startKey string, 
 	input.FilterExpression = expr.Filter()
 
 	return input, nil
+}
+
+// setQueryIndex sets the index to be used in the query based on the sorting and filter parameters. Returns a key
+// condition expression formed with the index's primary key.
+func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.ConditionBuilder {
+	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
+
+	if params.Period != "" {
+		input.IndexName = aws.String(d.periodUserIndex)
+
+		periodUser := dynamo.BuildPeriodUser(username, params.Period)
+		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
+	}
+
+	if params.Period != "" && params.SortBy == models.SortCreatedDate {
+		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
+	}
+
+	if params.SortBy == models.SortCreatedDate {
+		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
+	}
+
+	return keyConditionEx
 }
 
 func (d *DynamoRepository) setExclusiveStartKey(startKey string, input *dynamodb.QueryInput) error {

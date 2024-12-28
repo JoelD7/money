@@ -10,7 +10,7 @@ const emailRegex = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9
 
 var (
 	validSortBy = map[string]struct{}{
-		"created_date": {},
+		models.SortCreatedDate: {},
 	}
 )
 
