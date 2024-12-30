@@ -78,6 +78,8 @@ func getEnvironmentConfig() *models.EnvironmentConfiguration {
 		BatchWriteBackoffFactor:      GetInt("BATCH_WRITE_BACKOFF_FACTOR", 2),
 		DynamodbMaxBatchWrite:        GetInt("DYNAMODB_MAX_BATCH_WRITE", 25),
 		PeriodUserCreatedDateIndex:   GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
+		PeriodUserExpenseIndex:       GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+		UsernameCreatedDateIndex:     GetString("USERNAME_CREATED_DATE_INDEX", ""),
 	}
 }
 

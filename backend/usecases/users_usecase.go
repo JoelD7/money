@@ -88,7 +88,7 @@ func NewUserGetter(u UserManager, i IncomeRepository, e ExpenseManager) func(ctx
 }
 
 func getAllExpensesForPeriod(ctx context.Context, username string, period string, e ExpenseManager) ([]*models.Expense, error) {
-	expenses, nextKey, err := e.GetExpensesByPeriod(ctx, username, period, "", 10)
+	expenses, nextKey, err := e.GetExpensesByPeriod(ctx, username, &models.QueryParameters{Period: period, PageSize: 10})
 	if err != nil {
 		return nil, fmt.Errorf("get all user expenses failed: %w", err)
 	}
@@ -96,7 +96,7 @@ func getAllExpensesForPeriod(ctx context.Context, username string, period string
 	expensesPage := make([]*models.Expense, 0)
 
 	for nextKey != "" {
-		expensesPage, nextKey, err = e.GetExpensesByPeriod(ctx, username, period, nextKey, 10)
+		expensesPage, nextKey, err = e.GetExpensesByPeriod(ctx, username, &models.QueryParameters{Period: period, PageSize: 10, StartKey: nextKey})
 		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
 			return nil, fmt.Errorf("get all user expenses failed: %w", err)
 		}
