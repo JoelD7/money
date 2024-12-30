@@ -139,7 +139,7 @@ func NewPeriodStatsGetter(em ExpenseManager, im IncomeRepository) func(ctx conte
 		go func() {
 			defer func() { wg.Done() }()
 
-			income, err := im.GetAllIncomeByPeriod(ctx, username, periodID)
+			income, err := im.GetAllIncomeByPeriod(ctx, username, &models.QueryParameters{Period: periodID})
 			if err != nil {
 				errChan <- fmt.Errorf("couldn't get income for period: %w", err)
 				return

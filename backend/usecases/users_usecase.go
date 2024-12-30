@@ -108,7 +108,7 @@ func getAllExpensesForPeriod(ctx context.Context, username string, period string
 }
 
 func getAllIncomeForPeriod(ctx context.Context, username string, period string, i IncomeRepository) ([]*models.Income, error) {
-	income, nextKey, err := i.GetIncomeByPeriod(ctx, username, period, "", 10)
+	income, nextKey, err := i.GetIncomeByPeriod(ctx, username, &models.QueryParameters{Period: period})
 	if err != nil {
 		return nil, fmt.Errorf("get all user income failed: %w", err)
 	}
@@ -116,7 +116,7 @@ func getAllIncomeForPeriod(ctx context.Context, username string, period string, 
 	incomePage := make([]*models.Income, 0)
 
 	for nextKey != "" {
-		incomePage, nextKey, err = i.GetIncomeByPeriod(ctx, username, period, nextKey, 10)
+		incomePage, nextKey, err = i.GetIncomeByPeriod(ctx, username, &models.QueryParameters{Period: period, StartKey: nextKey})
 		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
 			return nil, fmt.Errorf("get all user income failed: %w", err)
 		}

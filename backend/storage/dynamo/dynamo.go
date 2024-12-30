@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -183,4 +184,20 @@ func InitClient(ctx context.Context) *dynamodb.Client {
 	}
 
 	return dynamodb.NewFromConfig(cfg)
+}
+
+// SetExclusiveStartKey sets the ExclusiveStartKey in a DynamoDB query input based on the provided startKey string.
+func SetExclusiveStartKey(startKey string, input *dynamodb.QueryInput) error {
+	if startKey == "" {
+		return nil
+	}
+
+	decodedStartKey, err := DecodePaginationKey(startKey)
+	if err != nil {
+		return fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
+	}
+
+	input.ExclusiveStartKey = decodedStartKey
+
+	return nil
 }

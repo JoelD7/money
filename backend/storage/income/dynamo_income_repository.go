@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -19,40 +18,48 @@ const (
 	conditionFailedEx = "ConditionalCheckFailedException"
 )
 
-var (
-	periodUserIncomeIDIndex = "period_user-income_id-index"
-)
-
 type DynamoRepository struct {
-	dynamoClient          *dynamodb.Client
-	tableName             string
-	periodUserIncomeIndex string
+	dynamoClient               *dynamodb.Client
+	tableName                  string
+	periodUserIncomeIndex      string
+	periodUserCreatedDateIndex string
+	usernameCreatedDateIndex   string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
 
-	tableNameEnv := env.GetString("INCOME_TABLE_NAME", "")
-	if tableName == "" && tableNameEnv == "" {
-		return nil, fmt.Errorf("initialize income dynamo repository failed: table name is required")
+	err := validateParams(envConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize income dynamo repository: %v", err)
 	}
 
-	periodUserEnv := env.GetString("PERIOD_USER_INCOME_INDEX", "")
-	if periodUserIndex == "" && periodUserEnv == "" {
-		return nil, fmt.Errorf("initialize income dynamo repository failed: period user index is required")
-	}
-
-	d.tableName = tableName
-	if d.tableName == "" {
-		d.tableName = tableNameEnv
-	}
-
-	d.periodUserIncomeIndex = periodUserIndex
-	if d.periodUserIncomeIndex == "" {
-		d.periodUserIncomeIndex = periodUserEnv
-	}
+	d.tableName = envConfig.IncomeTable
+	d.periodUserIncomeIndex = envConfig.PeriodUserIncomeIndex
+	d.periodUserCreatedDateIndex = envConfig.PeriodUserCreatedDateIndex
+	d.usernameCreatedDateIndex = envConfig.UsernameCreatedDateIndex
 
 	return d, nil
+}
+
+func validateParams(envConfig *models.EnvironmentConfiguration) error {
+	if envConfig.IncomeTable == "" {
+		return fmt.Errorf("income table name is required")
+	}
+
+	if envConfig.PeriodUserIncomeIndex == "" {
+		return fmt.Errorf("period user income index is required")
+	}
+
+	if envConfig.PeriodUserCreatedDateIndex == "" {
+		return fmt.Errorf("period user created date index is required")
+	}
+
+	if envConfig.UsernameCreatedDateIndex == "" {
+		return fmt.Errorf("username created date index is required")
+	}
+
+	return nil
 }
 
 func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
@@ -157,33 +164,9 @@ func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID str
 }
 
 func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
-	var decodedStartKey map[string]types.AttributeValue
-	var err error
-
-	if params.StartKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(params.StartKey)
-		if err != nil {
-			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
-		}
-	}
-
-	periodUser := dynamo.BuildPeriodUser(username, params.Period)
-
-	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	input, err := d.buildQueryInput(username, params, nil)
 	if err != nil {
 		return nil, "", err
-	}
-
-	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(d.tableName),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.Condition(),
-		IndexName:                 aws.String(periodUserIncomeIDIndex),
-		Limit:                     getPageSize(params.PageSize),
-		ExclusiveStartKey:         decodedStartKey,
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -215,30 +198,9 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username strin
 }
 
 func (d *DynamoRepository) GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
-	var decodedStartKey map[string]types.AttributeValue
-	var err error
-
-	if params.StartKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(params.StartKey)
-		if err != nil {
-			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
-		}
-	}
-
-	nameEx := expression.Name("username").Equal(expression.Value(username))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+	input, err := d.buildQueryInput(username, params, nil)
 	if err != nil {
 		return nil, "", err
-	}
-
-	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(d.tableName),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.Condition(),
-		Limit:                     getPageSize(params.PageSize),
-		ExclusiveStartKey:         decodedStartKey,
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -270,20 +232,9 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username string, pa
 }
 
 func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error) {
-	periodUser := dynamo.BuildPeriodUser(username, params.Period)
-	periodUserCond := expression.Key("period_user").Equal(expression.Value(periodUser))
-
-	expr, err := expression.NewBuilder().WithKeyCondition(periodUserCond).Build()
+	input, err := d.buildQueryInput(username, params, nil)
 	if err != nil {
 		return nil, err
-	}
-
-	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(d.tableName),
-		IndexName:                 aws.String(d.periodUserIncomeIndex),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.KeyCondition(),
 	}
 
 	var result *dynamodb.QueryOutput
@@ -322,20 +273,9 @@ func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username st
 }
 
 func (d *DynamoRepository) GetAllIncomePeriods(ctx context.Context, username string) ([]string, error) {
-	keyCond := expression.Key("username").Equal(expression.Value(username))
-	projection := expression.NamesList(expression.Name("period"))
-
-	expr, err := expression.NewBuilder().WithKeyCondition(keyCond).WithProjection(projection).Build()
+	input, err := d.buildQueryInput(username, nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("build expression failed: %v", err)
-	}
-
-	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(d.tableName),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.KeyCondition(),
-		ProjectionExpression:      expr.Projection(),
+		return nil, err
 	}
 
 	var result *dynamodb.QueryOutput
@@ -387,6 +327,64 @@ func (d *DynamoRepository) GetAllIncomePeriods(ctx context.Context, username str
 	}
 
 	return periods, nil
+}
+
+func (d *DynamoRepository) buildQueryInput(username string, params *models.QueryParameters, projection *expression.ProjectionBuilder) (*dynamodb.QueryInput, error) {
+	if params == nil {
+		params = &models.QueryParameters{}
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(d.tableName),
+		Limit:     getPageSize(params.PageSize),
+	}
+
+	err := dynamo.SetExclusiveStartKey(params.StartKey, input)
+	if err != nil {
+		return nil, err
+	}
+
+	keyCondition := d.setQueryIndex(input, username, params)
+	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyCondition)
+
+	if projection != nil {
+		conditionBuilder.WithProjection(*projection)
+	}
+
+	expr, err := conditionBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input.ExpressionAttributeNames = expr.Names()
+	input.ExpressionAttributeValues = expr.Values()
+	input.KeyConditionExpression = expr.KeyCondition()
+	input.ProjectionExpression = expr.Projection()
+
+	return input, nil
+}
+
+// setQueryIndex sets the index to be used in the query based on the sorting and filter parameters. Returns a key
+// condition expression formed with the index's primary key.
+func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.KeyConditionBuilder {
+	keyConditionEx := expression.Key("username").Equal(expression.Value(username))
+
+	if params.Period != "" {
+		input.IndexName = aws.String(d.periodUserIncomeIndex)
+
+		periodUser := dynamo.BuildPeriodUser(username, params.Period)
+		keyConditionEx = expression.Key("period_user").Equal(expression.Value(periodUser))
+	}
+
+	if params.SortBy == models.SortCreatedDate {
+		input.IndexName = aws.String(d.usernameCreatedDateIndex)
+	}
+
+	if params.Period != "" && params.SortBy == models.SortCreatedDate {
+		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
+	}
+
+	return keyConditionEx
 }
 
 func (d *DynamoRepository) BatchDeleteIncome(ctx context.Context, income []*models.Income) error {
