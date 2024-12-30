@@ -573,6 +573,10 @@ func (d *DynamoRepository) buildQueryInput(username string, params *models.Query
 		Limit:     getPageSize(params.PageSize),
 	}
 
+	if params.SortType == string(models.SortOrderDescending) {
+		input.ScanIndexForward = aws.Bool(false)
+	}
+
 	keyConditionEx := d.setQueryIndex(input, username, params)
 
 	err = d.setExclusiveStartKey(params.StartKey, input)
@@ -612,11 +616,11 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
 	}
 
-	if params.Period != "" && params.SortBy == models.SortCreatedDate {
-		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
+	if params.SortBy == models.SortCreatedDate {
+		input.IndexName = aws.String(d.usernameCreatedDateIndex)
 	}
 
-	if params.SortBy == models.SortCreatedDate {
+	if params.Period != "" && params.SortBy == models.SortCreatedDate {
 		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
 	}
 
