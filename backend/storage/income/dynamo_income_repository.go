@@ -29,7 +29,7 @@ type DynamoRepository struct {
 	periodUserIncomeIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string, periodUserIndex string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
 
 	tableNameEnv := env.GetString("INCOME_TABLE_NAME", "")

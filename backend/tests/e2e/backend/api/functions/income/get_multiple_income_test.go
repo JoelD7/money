@@ -45,7 +45,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	ctx := context.Background()
 	dynamoClient := dynamo.InitClient(ctx)
 
-	repo, err := income.NewDynamoRepository(dynamoClient, incomeTableName, periodUserIncomeIndex)
+	repo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
 	c.Nil(err, "creating income repository failed")
 
 	userRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
@@ -95,7 +95,7 @@ func BenchmarkGetMultipleIncome(t *testing.B) {
 	ctx := context.Background()
 	dynamoClient := dynamo.InitClient(ctx)
 
-	repo, err := income.NewDynamoRepository(dynamoClient, incomeTableName, periodUserIncomeIndex)
+	repo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
 	c.Nil(err, "creating income repository failed")
 
 	userRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)

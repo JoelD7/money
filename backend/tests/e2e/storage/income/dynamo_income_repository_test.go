@@ -33,7 +33,7 @@ func TestGetAllIncomePeriods(t *testing.T) {
 	ctx := context.Background()
 	username := "e2e_test@mail.com"
 
-	incomeRepo, err := income.NewDynamoRepository(dynamoClient, incomeTableName, periodUserIncomeIndex)
+	incomeRepo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
 	c.Nil(err, "failed to create income repository")
 
 	setupIncome(ctx, "samples/income.json", c, incomeRepo, t)

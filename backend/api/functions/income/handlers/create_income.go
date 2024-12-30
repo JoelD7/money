@@ -36,7 +36,7 @@ func (request *createIncomeRequest) init(ctx context.Context, log logger.LogAPI,
 		dynamoClient := dynamo.InitClient(ctx)
 		request.log = log
 
-		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable, envConfig.PeriodUserIncomeIndex)
+		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

@@ -33,7 +33,7 @@ func (request *GetPeriodStatRequest) init(ctx context.Context, log logger.LogAPI
 		request.Log.SetHandler("get-period-stat")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.IncomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable, envConfig.PeriodUserIncomeIndex)
+		request.IncomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
