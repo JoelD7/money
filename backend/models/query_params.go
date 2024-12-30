@@ -15,4 +15,6 @@ type SortOrder string
 const (
 	SortOrderAscending  SortOrder = "asc"
 	SortOrderDescending SortOrder = "desc"
+
+	SortCreatedDate = "created_date"
 )

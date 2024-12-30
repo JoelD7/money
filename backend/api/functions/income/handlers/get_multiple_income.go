@@ -26,7 +26,7 @@ type GetMultipleIncomeRequest struct {
 	PageSize     int
 	IncomeRepo   income.Repository
 	CacheManager cache.IncomePeriodCacheManager
-	apigateway.QueryParameters
+	*models.QueryParameters
 }
 
 type MultipleIncomeResponse struct {
