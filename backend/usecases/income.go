@@ -10,10 +10,11 @@ import (
 
 type IncomeRepository interface {
 	CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error)
+
 	GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error)
-	GetAllIncome(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, error)
-	GetIncomeByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, error)
-	GetAllIncomeByPeriod(ctx context.Context, username, periodID string) ([]*models.Income, error)
+	GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
+	GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
+	GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error)
 	GetAllIncomePeriods(ctx context.Context, username string) ([]string, error)
 }
 
@@ -49,14 +50,14 @@ func NewIncomeGetter(im IncomeRepository) func(ctx context.Context, username, in
 	}
 }
 
-func NewIncomeByPeriodGetter(repository IncomeRepository, cache IncomePeriodCacheManager) func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, []string, error) {
-	return func(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Income, string, []string, error) {
+func NewIncomeByPeriodGetter(repository IncomeRepository, cache IncomePeriodCacheManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
 		incomePeriods, err := getIncomePeriods(ctx, username, repository, cache)
 		if err != nil {
 			return nil, "", nil, err
 		}
 
-		income, nextKey, err := repository.GetIncomeByPeriod(ctx, username, periodID, startKey, pageSize)
+		income, nextKey, err := repository.GetIncomeByPeriod(ctx, username, params)
 		if err != nil {
 			return nil, "", nil, err
 		}
@@ -86,14 +87,14 @@ func getIncomePeriods(ctx context.Context, username string, repository IncomeRep
 	return incomePeriods, nil
 }
 
-func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, []string, error) {
-	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Income, string, []string, error) {
+func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
 		incomePeriods, err := getIncomePeriods(ctx, username, repository, cache)
 		if err != nil {
 			return nil, "", nil, err
 		}
 
-		income, nextKey, err := repository.GetAllIncome(ctx, username, startKey, pageSize)
+		income, nextKey, err := repository.GetAllIncome(ctx, username, params)
 		if err != nil {
 			return nil, "", nil, err
 		}

@@ -46,7 +46,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 
 	err := validateParams(envConfig)
 	if err != nil {
-		return nil, fmt.Errorf("initialize expenses dynamo repository failed: %v", err)
+		return nil, fmt.Errorf("failed to initialize expenses dynamo repository: %v", err)
 	}
 
 	d.tableName = envConfig.ExpensesTable
@@ -579,7 +579,7 @@ func (d *DynamoRepository) buildQueryInput(username string, params *models.Query
 
 	keyConditionEx := d.setQueryIndex(input, username, params)
 
-	err = d.setExclusiveStartKey(params.StartKey, input)
+	err = dynamo.SetExclusiveStartKey(params.StartKey, input)
 	if err != nil {
 		return nil, err
 	}

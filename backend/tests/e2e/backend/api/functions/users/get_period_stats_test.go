@@ -70,7 +70,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
 	c.Nil(err, "creating users repository failed")
 
-	incomeRepo, err := income.NewDynamoRepository(dynamoClient, incomeTableName, periodUserIncomeIndex)
+	incomeRepo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
 	c.Nil(err, "creating income repository failed")
 
 	request := handlers.GetPeriodStatRequest{
@@ -159,7 +159,7 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
 	c.Nil(err, "creating users repository failed")
 
-	incomeRepo, err := income.NewDynamoRepository(dynamoClient, incomeTableName, periodUserIncomeIndex)
+	incomeRepo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
 	c.Nil(err, "creating income repository failed")
 
 	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)

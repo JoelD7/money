@@ -38,13 +38,14 @@ type MultipleIncomeResponse struct {
 func (request *GetMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gmiOnce.Do(func() {
+		request.Log = log
+
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.IncomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig.IncomeTable, envConfig.PeriodUserIncomeIndex)
+		request.IncomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
-		request.Log = log
 
 		request.CacheManager = cache.NewRedisCache()
 	})
@@ -64,7 +65,7 @@ func GetMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig 
 
 	err := gmiRequest.init(ctx, log, envConfig)
 	if err != nil {
-		request.log.Error("init_failed", err, []models.LoggerObject{req})
+		gmiRequest.Log.Error("init_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -119,7 +120,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 
 	getIncomeByPeriod := usecases.NewIncomeByPeriodGetter(request.IncomeRepo, request.CacheManager)
 
-	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, period, request.StartKey, request.PageSize)
+	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
 		request.Log.Error("get_income_by_period_failed", err, []models.LoggerObject{req})
@@ -138,7 +139,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 func (request *GetMultipleIncomeRequest) getAllIncome(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getAllIncome := usecases.NewAllIncomeGetter(request.IncomeRepo, request.CacheManager)
 
-	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.StartKey, request.PageSize)
+	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
 		request.Log.Error("get_all_income_failed", err, []models.LoggerObject{req})
