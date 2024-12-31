@@ -38,13 +38,14 @@ type MultipleIncomeResponse struct {
 func (request *GetMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gmiOnce.Do(func() {
+		request.Log = log
+
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.IncomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
-		request.Log = log
 
 		request.CacheManager = cache.NewRedisCache()
 	})
@@ -64,7 +65,7 @@ func GetMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig 
 
 	err := gmiRequest.init(ctx, log, envConfig)
 	if err != nil {
-		request.log.Error("init_failed", err, []models.LoggerObject{req})
+		gmiRequest.Log.Error("init_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}

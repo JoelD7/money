@@ -339,6 +339,10 @@ func (d *DynamoRepository) buildQueryInput(username string, params *models.Query
 		Limit:     getPageSize(params.PageSize),
 	}
 
+	if params.SortType == string(models.SortOrderDescending) {
+		input.ScanIndexForward = aws.Bool(false)
+	}
+
 	err := dynamo.SetExclusiveStartKey(params.StartKey, input)
 	if err != nil {
 		return nil, err
