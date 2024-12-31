@@ -115,7 +115,7 @@ func TestProcess(t *testing.T) {
 			//Wait for SQS to process the message
 			time.Sleep(delay)
 
-			expensesInPeriod, _, err = expensesRepo.GetExpensesByPeriod(ctx, createdPeriod.Username, createdPeriod.ID, "", 20)
+			expensesInPeriod, _, err = expensesRepo.GetExpensesByPeriod(ctx, createdPeriod.Username, &models.QueryParameters{Period: createdPeriod.ID, PageSize: 20})
 			if expensesInPeriod != nil {
 				break
 			}

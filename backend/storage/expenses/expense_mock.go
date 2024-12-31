@@ -56,7 +56,7 @@ func (d *DynamoMock) UpdateExpense(ctx context.Context, expense *models.Expense)
 	return nil
 }
 
-func (d *DynamoMock) GetExpenses(ctx context.Context, username, startKey string, pageSize int) ([]*models.Expense, string, error) {
+func (d *DynamoMock) GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 	if d.mockedErr != nil {
 		return nil, "", d.mockedErr
 	}
@@ -68,7 +68,7 @@ func (d *DynamoMock) GetExpenses(ctx context.Context, username, startKey string,
 	return d.mockedExpenses, "", nil
 }
 
-func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, username, periodID, startKey string, pageSize int) ([]*models.Expense, string, error) {
+func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 	if d.mockedErr != nil {
 		return nil, "", d.mockedErr
 	}
@@ -80,7 +80,7 @@ func (d *DynamoMock) GetExpensesByPeriod(ctx context.Context, username, periodID
 	return d.mockedExpenses, "", nil
 }
 
-func (d *DynamoMock) GetExpensesByPeriodAndCategories(ctx context.Context, username, periodID, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+func (d *DynamoMock) GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 	if d.mockedErr != nil {
 		return nil, "", d.mockedErr
 	}
@@ -92,7 +92,7 @@ func (d *DynamoMock) GetExpensesByPeriodAndCategories(ctx context.Context, usern
 	return d.mockedExpenses, "", nil
 }
 
-func (d *DynamoMock) GetExpensesByCategory(ctx context.Context, username, startKey string, categories []string, pageSize int) ([]*models.Expense, string, error) {
+func (d *DynamoMock) GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 	if d.mockedErr != nil {
 		return nil, "", d.mockedErr
 	}
@@ -116,7 +116,7 @@ func (d *DynamoMock) GetExpense(ctx context.Context, username, expenseID string)
 	return d.mockedExpenses[0], nil
 }
 
-func (d *DynamoMock) GetAllExpensesByPeriod(ctx context.Context, username, periodID string) ([]*models.Expense, error) {
+func (d *DynamoMock) GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error) {
 	//TODO implement me
 	panic("implement me")
 }

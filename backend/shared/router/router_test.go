@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"fmt"
+	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/stretchr/testify/require"
@@ -15,7 +16,7 @@ var endpoint = "/users/categories/number"
 func TestHandle(t *testing.T) {
 	c := require.New(t)
 
-	rootRouter := NewRouter()
+	rootRouter := NewRouter(&models.EnvironmentConfiguration{})
 	ctx := context.Background()
 
 	rootRouter.Route("/", func(r *Router) {
@@ -74,7 +75,7 @@ func TestHandle(t *testing.T) {
 func TestHandleError(t *testing.T) {
 	c := require.New(t)
 
-	rootRouter := NewRouter()
+	rootRouter := NewRouter(&models.EnvironmentConfiguration{})
 	ctx := context.Background()
 
 	subRouter := &Router{
@@ -94,7 +95,7 @@ func TestHandleError(t *testing.T) {
 	c.Equal(http.StatusText(http.StatusInternalServerError), response.Body)
 	c.ErrorIs(err, errRouterIsNotRoot)
 
-	rootRouter = NewRouter()
+	rootRouter = NewRouter(&models.EnvironmentConfiguration{})
 
 	rootRouter.Route("/users", func(r *Router) {
 		r.Post("/dummy", dummyHandler())
@@ -108,7 +109,7 @@ func TestHandleError(t *testing.T) {
 func TestRoute(t *testing.T) {
 	c := require.New(t)
 
-	rootRouter := NewRouter()
+	rootRouter := NewRouter(&models.EnvironmentConfiguration{})
 
 	rootRouter.Route("/", func(r *Router) {
 		r.Route("/users", func(r *Router) {
@@ -133,7 +134,7 @@ func TestRoute(t *testing.T) {
 	_, ok = rootRouter.methodHandlers[http.MethodDelete][endpoint]
 	c.True(ok)
 
-	rootRouter = NewRouter()
+	rootRouter = NewRouter(&models.EnvironmentConfiguration{})
 	rootRouter.Route("/", func(r *Router) {
 		r.Route("/users", func(r *Router) {
 			r.Route("/{userID}", func(r *Router) {
@@ -186,13 +187,13 @@ func TestPanics(t *testing.T) {
 	})
 
 	c.PanicsWithValue(fmt.Sprintf("This router is a root router. The pattern of a root routers should be '/', but is '%s'", endpoint), func() {
-		rootRouter = NewRouter()
+		rootRouter = NewRouter(&models.EnvironmentConfiguration{})
 		rootRouter.Get(endpoint, dummyHandler())
 	})
 }
 
 func dummyRouter() *Router {
-	rootRouter := NewRouter()
+	rootRouter := NewRouter(&models.EnvironmentConfiguration{})
 
 	rootRouter.Route("/", func(r *Router) {
 		r.Route("/users", func(r *Router) {
@@ -206,7 +207,7 @@ func dummyRouter() *Router {
 }
 
 func dummyHandler() Handler {
-	return func(ctx context.Context, log logger.LogAPI, request *apigateway.Request) (*apigateway.Response, error) {
+	return func(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 		return &apigateway.Response{
 			Body: fmt.Sprintf("Method: %s, Endpoint: %s", request.HTTPMethod, request.Resource),
 		}, nil
