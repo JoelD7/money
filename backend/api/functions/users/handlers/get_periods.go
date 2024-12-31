@@ -29,7 +29,7 @@ type getPeriodsRequest struct {
 
 	log        logger.LogAPI
 	periodRepo period.Repository
-	apigateway.QueryParameters
+	*models.QueryParameters
 }
 
 func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {

@@ -26,7 +26,7 @@ type getSavingsRequest struct {
 	err            error
 	savingsRepo    savings.Repository
 	savingGoalRepo savingoal.Repository
-	apigateway.QueryParameters
+	*models.QueryParameters
 }
 
 type savingsResponse struct {
