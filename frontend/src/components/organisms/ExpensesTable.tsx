@@ -313,6 +313,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
                         apiRef={apiRef}
                         loading={getExpensesQuery.isFetching}
                         columns={columns}
+                        sortingMode={"server"}
                         onSortModelChange={(model) => onSortModelChange(model)}
                         initialState={{
                             pagination: {
