@@ -11,6 +11,8 @@ export const expensesQueryKeys = {
         pageSize?: number,
         startKey?: string,
         period?: string,
+        sortBy?: string,
+        sortOrder?: string,
     ) =>
         [
             {
@@ -19,6 +21,8 @@ export const expensesQueryKeys = {
                 startKey,
                 period,
                 categories,
+                sortBy,
+                sortOrder,
             },
         ] as const,
 };
@@ -26,7 +30,7 @@ export const expensesQueryKeys = {
 export async function getExpenses({
                                       queryKey,
                                   }: QueryFunctionContext<ReturnType<(typeof expensesQueryKeys)["list"]>>) {
-    const {categories, pageSize, startKey, period} = queryKey[0];
+    const {categories, pageSize, startKey, period, sortBy, sortOrder} = queryKey[0];
 
     const paramArr: string[] = [];
 
@@ -45,6 +49,14 @@ export async function getExpenses({
 
     if (startKey && startKey !== "") {
         paramArr.push(`start_key=${startKey}`);
+    }
+
+    if (sortBy && sortBy !== "") {
+        paramArr.push(`sort_by=${sortBy}`);
+    }
+
+    if (sortOrder && sortOrder !== "") {
+        paramArr.push(`sort_order=${sortOrder}`);
     }
 
     const params: string = paramArr.join("&");

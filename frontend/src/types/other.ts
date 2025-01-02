@@ -35,4 +35,6 @@ export type TransactionSearchParams = {
   pageSize?: number;
   startKey?: string;
   period?: string;
+  sortBy?: string;
+  sortOrder?: string;
 };

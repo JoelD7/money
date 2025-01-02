@@ -5,6 +5,7 @@ import {
     GridPaginationModel,
     GridRenderCellParams,
     GridRowsProp,
+    GridSortModel,
     useGridApiRef,
 } from "@mui/x-data-grid";
 import {Category, Expense} from "../../types";
@@ -247,6 +248,22 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         return "";
     }
 
+    function onSortModelChange(model: GridSortModel) {
+        const search = {...location.search};
+
+        model.forEach((item) => {
+            console.log(item.field, item.sort)
+            navigate({
+                to: "/",
+                search: {
+                    ...search, sortBy: item.field, sortOrder: item.sort
+                },
+            })
+
+            return
+        })
+    }
+
     const apiRef = useGridApiRef();
     return (
         <div>
@@ -292,6 +309,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
                         apiRef={apiRef}
                         loading={getExpensesQuery.isFetching}
                         columns={columns}
+                        onSortModelChange={(model) => onSortModelChange(model)}
                         initialState={{
                             pagination: {
                                 rowCount: -1,

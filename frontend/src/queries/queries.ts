@@ -87,14 +87,14 @@ export function useGetIncome() {
 
 export function useGetExpenses(periodID: string) {
     // eslint-disable-next-line prefer-const
-    let {categories, pageSize, startKey, period} = utils.useTransactionsParams();
+    let {categories, pageSize, startKey, period, sortOrder, sortBy} = utils.useTransactionsParams();
 
     if (!period) {
         period = periodID;
     }
 
     return useQuery({
-        queryKey: api.expensesQueryKeys.list(categories, pageSize, startKey, period),
+        queryKey: api.expensesQueryKeys.list(categories, pageSize, startKey, period, sortBy, sortOrder),
         queryFn: api.getExpenses,
         enabled: periodID !== "",
         retry: queryRetryFn,
