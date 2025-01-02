@@ -33,12 +33,14 @@ var (
 )
 
 type DynamoRepository struct {
-	dynamoClient               *dynamodb.Client
-	tableName                  string
-	expensesRecurringTableName string
-	periodUserIndex            string
-	periodUserCreatedDateIndex string
-	usernameCreatedDateIndex   string
+	dynamoClient                 *dynamodb.Client
+	tableName                    string
+	expensesRecurringTableName   string
+	periodUserIndex              string
+	periodUserCreatedDateIndex   string
+	usernameCreatedDateIndex     string
+	periodUserNameExpenseIDIndex string
+	periodUserAmountIndex        string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -54,6 +56,8 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.periodUserIndex = envConfig.PeriodUserExpenseIndex
 	d.periodUserCreatedDateIndex = envConfig.PeriodUserCreatedDateIndex
 	d.usernameCreatedDateIndex = envConfig.UsernameCreatedDateIndex
+	d.periodUserNameExpenseIDIndex = envConfig.PeriodUserNameExpenseIDIndex
+	d.periodUserAmountIndex = envConfig.PeriodUserAmountIndex
 
 	return d, nil
 }
@@ -77,6 +81,14 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.UsernameCreatedDateIndex == "" {
 		return fmt.Errorf("username created date index is required")
+	}
+
+	if envConfig.PeriodUserNameExpenseIDIndex == "" {
+		return fmt.Errorf("period user name expense id index is required")
+	}
+
+	if envConfig.PeriodUserAmountIndex == "" {
+		return fmt.Errorf("period user amount index is required")
 	}
 
 	return nil
@@ -608,20 +620,28 @@ func (d *DynamoRepository) buildQueryInput(username string, params *models.Query
 // condition expression formed with the index's primary key.
 func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.ConditionBuilder {
 	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
+	periodUser := dynamo.BuildPeriodUser(username, params.Period)
 
 	if params.Period != "" {
 		input.IndexName = aws.String(d.periodUserIndex)
 
-		periodUser := dynamo.BuildPeriodUser(username, params.Period)
 		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
 	}
 
-	if params.SortBy == models.SortCreatedDate {
+	if params.SortBy == string(models.SortParamCreatedDate) {
 		input.IndexName = aws.String(d.usernameCreatedDateIndex)
 	}
 
-	if params.Period != "" && params.SortBy == models.SortCreatedDate {
+	if params.Period != "" && params.SortBy == string(models.SortParamCreatedDate) {
 		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
+	}
+
+	if params.Period != "" && params.SortBy == string(models.SortParamAmount) {
+		input.IndexName = aws.String(d.periodUserAmountIndex)
+	}
+
+	if params.Period != "" && params.SortBy == string(models.SortParamName) {
+		input.IndexName = aws.String(d.periodUserNameExpenseIDIndex)
 	}
 
 	return keyConditionEx

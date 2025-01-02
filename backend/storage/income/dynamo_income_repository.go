@@ -380,11 +380,11 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 		keyConditionEx = expression.Key("period_user").Equal(expression.Value(periodUser))
 	}
 
-	if params.SortBy == models.SortCreatedDate {
+	if params.SortBy == string(models.SortParamCreatedDate) {
 		input.IndexName = aws.String(d.usernameCreatedDateIndex)
 	}
 
-	if params.Period != "" && params.SortBy == models.SortCreatedDate {
+	if params.Period != "" && params.SortBy == string(models.SortParamCreatedDate) {
 		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
 	}
 

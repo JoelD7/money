@@ -1,10 +1,12 @@
 package expenses
 
 import (
-	"github.com/JoelD7/money/backend/models"
-	er "github.com/JoelD7/money/backend/storage/expenses-recurring"
 	"strings"
 	"time"
+
+	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/storage/dynamo"
+	er "github.com/JoelD7/money/backend/storage/expenses-recurring"
 )
 
 type expenseEntity struct {
@@ -18,6 +20,9 @@ type expenseEntity struct {
 	Period      string    `json:"period,omitempty" dynamodbav:"period"`
 	PeriodUser  *string   `json:"period_user,omitempty" dynamodbav:"period_user"`
 	UpdateDate  time.Time `json:"update_date,omitempty" dynamodbav:"update_date"`
+	// AmountKey is a special attribute used to sort expenses by amount. It's composed of a padded-string of the amount
+	// plus the expense id.
+	AmountKey string `json:"amount_key,omitempty" dynamodbav:"amount_key"`
 }
 
 func toExpenseEntity(e *models.Expense) *expenseEntity {
@@ -29,6 +34,7 @@ func toExpenseEntity(e *models.Expense) *expenseEntity {
 		CreatedDate: e.CreatedDate,
 		Period:      e.Period,
 		UpdateDate:  e.UpdateDate,
+		AmountKey:   dynamo.BuildAmountKey(*e.Amount, e.ExpenseID),
 	}
 
 	if e.Amount != nil {

@@ -10,7 +10,9 @@ const emailRegex = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9
 
 var (
 	validSortBy = map[string]struct{}{
-		models.SortCreatedDate: {},
+		string(models.SortParamCreatedDate): {},
+		string(models.SortParamAmount):      {},
+		string(models.SortParamName):        {},
 	}
 )
 
@@ -37,7 +39,7 @@ func Amount(amount *float64) error {
 }
 
 func SortBy(sortBy string) error {
-	if _, ok := validSortBy[sortBy]; !ok {
+	if _, ok := validSortBy[sortBy]; !ok && sortBy != "" {
 		return models.ErrInvalidSortBy
 	}
 

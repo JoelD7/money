@@ -20,6 +20,13 @@ func BuildPeriodUser(username, period string) *string {
 	return &p
 }
 
+// BuildAmountKey builds the amount sort key, which is a combined string of the amount and the item ID.
+// Example -> Input: 1234.56, abc123 -> Output: 000001234.56:abc123
+func BuildAmountKey(amount float64, id string) string {
+	amountStr := fmt.Sprintf("%0.2f", amount)
+	return fmt.Sprintf("%012s:%s", amountStr, id)
+}
+
 // EncodePaginationKey encodes the last evaluated key returned by Dynamo in a string format to be used in the next query
 // as the start key.
 // The "keyType" parameter should be a pointer to a struct that maps ot the primary key of the table or index in question.
