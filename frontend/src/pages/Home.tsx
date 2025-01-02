@@ -15,11 +15,11 @@ import {
     Navbar,
     NewTransaction,
 } from "../components";
-import {Period, PeriodStats, User} from "../types";
+import {PeriodStats, User} from "../types";
 import {Loading} from "./Loading.tsx";
 import {Error} from "./Error.tsx";
 import {useState} from "react";
-import {useGetPeriod, useGetPeriodStats, useGetUser} from "../queries";
+import {useGetPeriodStats, useGetUser} from "../queries";
 import {utils} from "../utils";
 
 export function Home() {
