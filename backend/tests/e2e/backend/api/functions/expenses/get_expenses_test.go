@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"net/http"
 	"testing"
 	"time"
@@ -42,21 +43,11 @@ func TestGetByPeriod(t *testing.T) {
 		CurrentPeriod: periodID,
 	}
 
-	err = usersRepo.CreateUser(ctx, testUser)
+	err = setup.CreateUser(ctx, usersRepo, testUser, t)
 	c.Nil(err, "creating user failed")
 
-	expensesList := setupExpenses(c)
-
-	err = expensesRepo.BatchCreateExpenses(ctx, ger.Log, expensesList)
-	c.Nil(err, "batch creating expenses failed")
-
-	defer t.Cleanup(func() {
-		err = expensesRepo.BatchDeleteExpenses(ctx, expensesList)
-		c.Nil(err, "batch deleting expenses failed")
-
-		err = usersRepo.DeleteUser(ctx, username)
-		c.Nil(err, "deleting user failed")
-	})
+	_, err = setup.CreateExpensesEntries(ctx, expensesRepo, "", t)
+	c.Nil(err, "creating expenses failed")
 
 	apigwReq := new(apigateway.Request)
 

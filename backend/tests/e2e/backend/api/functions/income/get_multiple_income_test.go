@@ -15,15 +15,20 @@ import (
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 )
 
 var (
-	incomeTableName       string
-	periodUserIncomeIndex string
-	usersTableName        string
+	incomeTableName             string
+	periodUserIncomeIndex       string
+	usersTableName              string
+	periodUserNameIncomeIDIndex string
+	periodUserAmountIndex       string
+	periodUserCreatedDateIndex  string
+	usernameCreatedDateIndex    string
 )
 
 func TestMain(m *testing.M) {
@@ -35,6 +40,10 @@ func TestMain(m *testing.M) {
 	incomeTableName = env.GetString("INCOME_TABLE_NAME", "")
 	periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
 	usersTableName = env.GetString("USERS_TABLE_NAME", "")
+	periodUserNameIncomeIDIndex = env.GetString("PERIOD_USER_NAME_INCOME_ID_INDEX", "")
+	periodUserAmountIndex = env.GetString("PERIOD_USER_AMOUNT_INDEX", "")
+	periodUserCreatedDateIndex = env.GetString("PERIOD_USER_CREATED_DATE_INDEX", "")
+	usernameCreatedDateIndex = env.GetString("USERNAME_CREATED_DATE_INDEX", "")
 
 	os.Exit(m.Run())
 }
@@ -45,7 +54,16 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	ctx := context.Background()
 	dynamoClient := dynamo.InitClient(ctx)
 
-	repo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
+	envConfig := &models.EnvironmentConfiguration{
+		IncomeTable:                 incomeTableName,
+		PeriodUserIncomeIndex:       periodUserIncomeIndex,
+		PeriodUserNameIncomeIDIndex: periodUserNameIncomeIDIndex,
+		PeriodUserAmountIndex:       periodUserAmountIndex,
+		PeriodUserCreatedDateIndex:  periodUserCreatedDateIndex,
+		UsernameCreatedDateIndex:    usernameCreatedDateIndex,
+	}
+
+	repo, err := income.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating income repository failed")
 
 	userRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
@@ -87,6 +105,94 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	c.Len(response.Income, 10)
 	c.NotEmpty(response.NextKey)
 	c.Len(response.Periods, 6)
+
+	t.Run("Sort by name  ASC", func(t *testing.T) {
+		request.QueryParameters = &models.QueryParameters{
+			SortBy: "name",
+			Period: "2023-7",
+		}
+
+		res, err = request.RouteToHandlers(ctx, apigwRequest)
+		c.Nil(err, "get multiple income failed")
+
+		err = json.Unmarshal([]byte(res.Body), &response)
+		c.Nil(err, "unmarshalling response failed")
+
+		expected := []*models.Income{
+			{
+				Username:   "e2e_test@gmail.com",
+				IncomeID:   "IN1lVnB1tCaSpyQLDEUswM",
+				Amount:     aws.Float64(750),
+				Name:       aws.String("income 1"),
+				Period:     aws.String("2023-7"),
+				PeriodUser: aws.String("2023-7:test@gmail.com"),
+			},
+			{
+				Username:   "e2e_test@gmail.com",
+				IncomeID:   "IN2lVnB1tCaSpyQLDEUswM",
+				Amount:     aws.Float64(600),
+				Name:       aws.String("income 2"),
+				Period:     aws.String("2023-7"),
+				PeriodUser: aws.String("2023-7:test@gmail.com"),
+			},
+			{
+				Username:   "e2e_test@gmail.com",
+				IncomeID:   "IN3lVnB1tCaSpyQLDEUswM",
+				Amount:     aws.Float64(450),
+				Name:       aws.String("income 3"),
+				Period:     aws.String("2023-7"),
+				PeriodUser: aws.String("2023-7:test@gmail.com"),
+			},
+		}
+
+		for i, inc := range response.Income {
+			c.Equal(expected[i].IncomeID, inc.IncomeID)
+		}
+	})
+
+	t.Run("Sort by amount  ASC", func(t *testing.T) {
+		request.QueryParameters = &models.QueryParameters{
+			SortBy: "amount",
+			Period: "2023-7",
+		}
+
+		res, err = request.RouteToHandlers(ctx, apigwRequest)
+		c.Nil(err, "get multiple income failed")
+
+		err = json.Unmarshal([]byte(res.Body), &response)
+		c.Nil(err, "unmarshalling response failed")
+
+		expected := []*models.Income{
+			{
+				Username:   "e2e_test@gmail.com",
+				IncomeID:   "IN3lVnB1tCaSpyQLDEUswM",
+				Amount:     aws.Float64(450),
+				Name:       aws.String("income 3"),
+				Period:     aws.String("2023-7"),
+				PeriodUser: aws.String("2023-7:test@gmail.com"),
+			},
+			{
+				Username:   "e2e_test@gmail.com",
+				IncomeID:   "IN2lVnB1tCaSpyQLDEUswM",
+				Amount:     aws.Float64(600),
+				Name:       aws.String("income 2"),
+				Period:     aws.String("2023-7"),
+				PeriodUser: aws.String("2023-7:test@gmail.com"),
+			},
+			{
+				Username:   "e2e_test@gmail.com",
+				IncomeID:   "IN1lVnB1tCaSpyQLDEUswM",
+				Amount:     aws.Float64(750),
+				Name:       aws.String("income 1"),
+				Period:     aws.String("2023-7"),
+				PeriodUser: aws.String("2023-7:test@gmail.com"),
+			},
+		}
+
+		for i, inc := range response.Income {
+			c.Equal(expected[i].IncomeID, inc.IncomeID)
+		}
+	})
 }
 
 func BenchmarkGetMultipleIncome(t *testing.B) {

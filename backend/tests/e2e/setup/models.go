@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/users"
 	"os"
@@ -80,5 +82,42 @@ func CreateIncomeEntries(ctx context.Context, repo income.Repository, source str
 	}
 
 	incomeCreated = true
+	return
+}
+
+func CreateExpensesEntries(ctx context.Context, repo expenses.Repository, source string, cleaner Cleaner) (entries []*models.Expense, err error) {
+	expensesCreated := false
+
+	if source == "" {
+		source = samplesDir + "/expenses.json"
+	}
+
+	defer cleaner.Cleanup(func() {
+		if !expensesCreated {
+			return
+		}
+
+		err = repo.BatchDeleteExpenses(ctx, entries)
+	})
+
+	data, err := os.ReadFile(source)
+	if err != nil {
+		err = fmt.Errorf("cannot create test expenses entries: %v", err)
+		return
+	}
+
+	err = json.Unmarshal(data, &entries)
+	if err != nil {
+		err = fmt.Errorf("cannot create test expenses entries: %v", err)
+		return
+	}
+
+	err = repo.BatchCreateExpenses(ctx, logger.NewConsoleLogger("e2e-expenses"), entries)
+	if err != nil {
+		err = fmt.Errorf("cannot create test expenses entries: %v", err)
+		return
+	}
+
+	expensesCreated = true
 	return
 }

@@ -14,7 +14,7 @@ import (
 
 func main() {
 	// Keep this call commented to avoid accidental executions
-	run()
+	//run()
 }
 
 func run() {
