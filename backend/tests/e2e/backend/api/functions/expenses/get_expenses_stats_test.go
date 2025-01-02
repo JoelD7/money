@@ -10,10 +10,10 @@ import (
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/users"
+	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
-	"os"
 	"testing"
 )
 
@@ -53,21 +53,11 @@ func TestGetExpensesStats(t *testing.T) {
 		CurrentPeriod: periodID,
 	}
 
-	err = usersRepo.CreateUser(ctx, testUser)
+	err = setup.CreateUser(ctx, usersRepo, testUser, t)
 	c.Nil(err, "creating user failed")
 
-	expensesList := setupExpenses(c)
-
-	err = expensesRepo.BatchCreateExpenses(ctx, request.Log, expensesList)
-	c.Nil(err, "batch creating expenses failed")
-
-	defer t.Cleanup(func() {
-		err = expensesRepo.BatchDeleteExpenses(ctx, expensesList)
-		c.Nil(err, "batch deleting expenses failed")
-
-		err = usersRepo.DeleteUser(ctx, username)
-		c.Nil(err, "deleting user failed")
-	})
+	_, err = setup.CreateExpensesEntries(ctx, expensesRepo, "", t)
+	c.Nil(err, "creating expenses failed")
 
 	response, err := request.Process(ctx, apigwRequest)
 	c.Nil(err, "get expenses stats failed")
@@ -90,16 +80,4 @@ func TestGetExpensesStats(t *testing.T) {
 		c.True(ok, "unexpected category in the response")
 		c.Equal(expected, summary.Total)
 	}
-}
-
-func setupExpenses(c *require.Assertions) []*models.Expense {
-	data, err := os.ReadFile("./samples/expenses.json")
-	c.Nil(err, "reading expenses sample file failed")
-
-	var expensesList []*models.Expense
-	err = json.Unmarshal(data, &expensesList)
-
-	c.Len(expensesList, 13, "unexpected number of expenses in the sample file")
-
-	return expensesList
 }
