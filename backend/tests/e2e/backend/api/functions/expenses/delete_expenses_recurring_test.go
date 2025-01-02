@@ -35,10 +35,14 @@ func TestMain(m *testing.M) {
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 	usersTableName = env.GetString("USERS_TABLE_NAME", "")
 	envConfig = &models.EnvironmentConfiguration{
-		ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
-		ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
-		PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
-		UsersTable:             env.GetString("USERS_TABLE_NAME", ""),
+		ExpensesTable:                env.GetString("EXPENSES_TABLE_NAME", ""),
+		ExpensesRecurringTable:       env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+		PeriodUserExpenseIndex:       env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+		UsersTable:                   env.GetString("USERS_TABLE_NAME", ""),
+		PeriodUserCreatedDateIndex:   env.GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
+		UsernameCreatedDateIndex:     env.GetString("USERNAME_CREATED_DATE_INDEX", ""),
+		PeriodUserNameExpenseIDIndex: env.GetString("PERIOD_USER_NAME_EXPENSE_ID_INDEX", ""),
+		PeriodUserAmountIndex:        env.GetString("PERIOD_USER_AMOUNT_INDEX", ""),
 	}
 
 	os.Exit(m.Run())

@@ -1,10 +1,12 @@
 package expenses
 
 import (
-	"github.com/JoelD7/money/backend/models"
-	er "github.com/JoelD7/money/backend/storage/expenses-recurring"
 	"strings"
 	"time"
+
+	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/storage/dynamo"
+	er "github.com/JoelD7/money/backend/storage/expenses-recurring"
 )
 
 type expenseEntity struct {
@@ -18,17 +20,24 @@ type expenseEntity struct {
 	Period      string    `json:"period,omitempty" dynamodbav:"period"`
 	PeriodUser  *string   `json:"period_user,omitempty" dynamodbav:"period_user"`
 	UpdateDate  time.Time `json:"update_date,omitempty" dynamodbav:"update_date"`
+	// AmountKey is a special attribute used to sort expenses by amount. It's composed of a padded-string of the amount
+	// plus the expense id.
+	AmountKey string `json:"amount_key,omitempty" dynamodbav:"amount_key"`
+	// NameExpenseID is a special attribute used to sort expenses by name. It's composed of the name plus the expense id.
+	NameExpenseID string `json:"name_expense_id,omitempty" dynamodbav:"name_expense_id"`
 }
 
 func toExpenseEntity(e *models.Expense) *expenseEntity {
 	entity := &expenseEntity{
-		ExpenseID:   e.ExpenseID,
-		Username:    e.Username,
-		CategoryID:  e.CategoryID,
-		Notes:       e.Notes,
-		CreatedDate: e.CreatedDate,
-		Period:      e.Period,
-		UpdateDate:  e.UpdateDate,
+		ExpenseID:     e.ExpenseID,
+		Username:      e.Username,
+		CategoryID:    e.CategoryID,
+		Notes:         e.Notes,
+		CreatedDate:   e.CreatedDate,
+		Period:        e.Period,
+		UpdateDate:    e.UpdateDate,
+		AmountKey:     dynamo.BuildAmountKey(*e.Amount, e.ExpenseID),
+		NameExpenseID: dynamo.BuildNameKey(*e.Name, e.ExpenseID),
 	}
 
 	if e.Amount != nil {

@@ -11,10 +11,13 @@ type QueryParameters struct {
 }
 
 type SortOrder string
+type SortParam string
 
 const (
 	SortOrderAscending  SortOrder = "asc"
 	SortOrderDescending SortOrder = "desc"
 
-	SortCreatedDate = "created_date"
+	SortParamCreatedDate SortParam = "created_date"
+	SortParamAmount      SortParam = "amount"
+	SortParamName        SortParam = "name"
 )

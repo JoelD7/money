@@ -15,38 +15,38 @@ import (
 	"time"
 )
 
-var gesExpensesRequest *getExpensesRequest
+var gesExpensesRequest *GetExpensesRequest
 var gesOnce sync.Once
 
-type expensesResponse struct {
+type ExpensesResponse struct {
 	Expenses []*models.Expense `json:"expenses"`
 	NextKey  string            `json:"next_key"`
 }
 
-type getExpensesRequest struct {
-	username string
+type GetExpensesRequest struct {
+	Username string
 	*models.QueryParameters
 
-	log          logger.LogAPI
-	expensesRepo expenses.Repository
-	userRepo     users.Repository
+	Log          logger.LogAPI
+	ExpensesRepo expenses.Repository
+	UserRepo     users.Repository
 
 	startingTime time.Time
 	err          error
 }
 
-func (request *getExpensesRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *GetExpensesRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gesOnce.Do(func() {
-		request.log = log
+		request.Log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
+		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
 
-		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
+		request.UserRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 		if err != nil {
 			return
 		}
@@ -56,13 +56,13 @@ func (request *getExpensesRequest) init(ctx context.Context, log logger.LogAPI, 
 	return err
 }
 
-func (request *getExpensesRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+func (request *GetExpensesRequest) finish() {
+	request.Log.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
 func GetExpenses(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gesExpensesRequest == nil {
-		gesExpensesRequest = new(getExpensesRequest)
+		gesExpensesRequest = new(GetExpensesRequest)
 	}
 
 	err := gesExpensesRequest.init(ctx, log, envConfig)
@@ -81,21 +81,21 @@ func GetExpenses(ctx context.Context, log logger.LogAPI, envConfig *models.Envir
 	return gesExpensesRequest.routeToHandlers(ctx, req)
 }
 
-func (request *getExpensesRequest) prepareRequest(req *apigateway.Request) error {
+func (request *GetExpensesRequest) prepareRequest(req *apigateway.Request) error {
 	var err error
 
-	request.username, err = apigateway.GetUsernameFromContext(req)
+	request.Username, err = apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
 
 		return err
 	}
 
-	err = validate.Email(request.username)
+	err = validate.Email(request.Username)
 	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{
-			request.log.MapToLoggerObject("user_data", map[string]interface{}{
-				"s_username": request.username,
+		request.Log.Error("invalid_username", err, []models.LoggerObject{
+			request.Log.MapToLoggerObject("user_data", map[string]interface{}{
+				"s_username": request.Username,
 			}),
 		})
 
@@ -104,7 +104,7 @@ func (request *getExpensesRequest) prepareRequest(req *apigateway.Request) error
 
 	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
-		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_request_params_failed", err, []models.LoggerObject{req})
 
 		return err
 	}
@@ -122,13 +122,13 @@ func (request *getExpensesRequest) prepareRequest(req *apigateway.Request) error
 	return nil
 }
 
-func (request *getExpensesRequest) routeToHandlers(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+func (request *GetExpensesRequest) routeToHandlers(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	if len(request.Categories) > 0 && request.Period == "" {
 		return request.getByCategories(ctx, req)
 	}
 
 	if len(request.Categories) == 0 && request.Period != "" {
-		return request.getByPeriod(ctx, req)
+		return request.GetByPeriod(ctx, req)
 	}
 
 	if len(request.Categories) > 0 && request.Period != "" {
@@ -138,65 +138,65 @@ func (request *getExpensesRequest) routeToHandlers(ctx context.Context, req *api
 	return request.getAll(ctx, req)
 }
 
-func (request *getExpensesRequest) getByCategories(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpensesByCategory := usecases.NewExpensesByCategoriesGetter(request.expensesRepo, request.userRepo)
+func (request *GetExpensesRequest) getByCategories(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	getExpensesByCategory := usecases.NewExpensesByCategoriesGetter(request.ExpensesRepo, request.UserRepo)
 
-	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.log.Error("get_expenses_by_category_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_by_category_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &ExpensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil
 }
 
-func (request *getExpensesRequest) getByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpensesByPeriod := usecases.NewExpensesByPeriodGetter(request.expensesRepo, request.userRepo)
+func (request *GetExpensesRequest) GetByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	getExpensesByPeriod := usecases.NewExpensesByPeriodGetter(request.ExpensesRepo, request.UserRepo)
 
-	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.log.Error("get_expenses_by_period_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_by_period_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &ExpensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil
 }
 
-func (request *getExpensesRequest) getByCategoriesAndPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpensesByPeriodAndCategories := usecases.NewExpensesByPeriodAndCategoriesGetter(request.expensesRepo, request.userRepo)
+func (request *GetExpensesRequest) getByCategoriesAndPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	getExpensesByPeriodAndCategories := usecases.NewExpensesByPeriodAndCategoriesGetter(request.ExpensesRepo, request.UserRepo)
 
-	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.log.Error("get_expenses_by_period_and_categories_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_by_period_and_categories_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &ExpensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil
 }
 
-func (request *getExpensesRequest) getAll(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpenses := usecases.NewExpensesGetter(request.expensesRepo, request.userRepo)
+func (request *GetExpensesRequest) getAll(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	getExpenses := usecases.NewExpensesGetter(request.ExpensesRepo, request.UserRepo)
 
-	userExpenses, nextKey, err := getExpenses(ctx, request.username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpenses(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.log.Error("get_expenses_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_failed", err, []models.LoggerObject{req})
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	return req.NewJSONResponse(http.StatusOK, &expensesResponse{
+	return req.NewJSONResponse(http.StatusOK, &ExpensesResponse{
 		Expenses: userExpenses,
 		NextKey:  nextKey,
 	}), nil
