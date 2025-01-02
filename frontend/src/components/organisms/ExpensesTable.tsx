@@ -252,7 +252,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         const search = {...location.search};
 
         model.forEach((item) => {
-            if (search.sortOrder !== item.sort) {
+            if (search.sortOrder !== item.sort || search.sortBy !== item.field) {
                 //In this case the page order changes, so we need to reset this map
                 startKeysByPage.current = {0: ""};
             }
