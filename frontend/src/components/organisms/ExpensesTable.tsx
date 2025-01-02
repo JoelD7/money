@@ -84,14 +84,15 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         {field: "amount", headerName: "Amount", width: 150},
         {field: "name", headerName: "Name", width: 150},
         {
-            field: "categoryName",
+            field: "category_name",
             headerName: "Category",
             width: 150,
             renderCell: renderCategoryCell,
+            sortable: false,
         },
-        {field: "notes", headerName: "Notes", flex: 1, minWidth: 150},
+        {field: "notes", headerName: "Notes", flex: 1, minWidth: 150, sortable: false},
         {
-            field: "createdDate", headerName: "Date", width: 200,
+            field: "created_date", headerName: "Date", width: 200,
             valueFormatter: (params) => {
                 return new Intl.DateTimeFormat("en-GB", {
                     weekday: "short",
@@ -140,9 +141,9 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
                     currency: "USD",
                 }).format(expense.amount),
                 name: expense.name,
-                categoryName: expense.category_name ? expense.category_name : "-",
+                category_name: expense.category_name ? expense.category_name : "-",
                 notes: expense.notes ? expense.notes : "-",
-                createdDate: new Date(expense.created_date),
+                created_date: new Date(expense.created_date),
             };
         });
     }
