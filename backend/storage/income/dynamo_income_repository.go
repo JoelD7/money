@@ -19,11 +19,13 @@ const (
 )
 
 type DynamoRepository struct {
-	dynamoClient               *dynamodb.Client
-	tableName                  string
-	periodUserIncomeIndex      string
-	periodUserCreatedDateIndex string
-	usernameCreatedDateIndex   string
+	dynamoClient                *dynamodb.Client
+	tableName                   string
+	periodUserIncomeIndex       string
+	periodUserCreatedDateIndex  string
+	usernameCreatedDateIndex    string
+	periodUserNameIncomeIDIndex string
+	periodUserAmountIndex       string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -38,6 +40,8 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.periodUserIncomeIndex = envConfig.PeriodUserIncomeIndex
 	d.periodUserCreatedDateIndex = envConfig.PeriodUserCreatedDateIndex
 	d.usernameCreatedDateIndex = envConfig.UsernameCreatedDateIndex
+	d.periodUserNameIncomeIDIndex = envConfig.PeriodUserNameIncomeIDIndex
+	d.periodUserAmountIndex = envConfig.PeriodUserAmountIndex
 
 	return d, nil
 }
@@ -57,6 +61,14 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.UsernameCreatedDateIndex == "" {
 		return fmt.Errorf("username created date index is required")
+	}
+
+	if envConfig.PeriodUserNameIncomeIDIndex == "" {
+		return fmt.Errorf("period user name income id index is required")
+	}
+
+	if envConfig.PeriodUserAmountIndex == "" {
+		return fmt.Errorf("period user amount index is required")
 	}
 
 	return nil
@@ -386,6 +398,14 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 
 	if params.Period != "" && params.SortBy == string(models.SortParamCreatedDate) {
 		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
+	}
+
+	if params.Period != "" && params.SortBy == string(models.SortParamAmount) {
+		input.IndexName = aws.String(d.periodUserAmountIndex)
+	}
+
+	if params.Period != "" && params.SortBy == string(models.SortParamName) {
+		input.IndexName = aws.String(d.periodUserNameIncomeIDIndex)
 	}
 
 	return keyConditionEx

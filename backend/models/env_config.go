@@ -36,8 +36,9 @@ type EnvironmentConfiguration struct {
 	SavingGoalsTable             string `json:"SAVING_GOALS_TABLE_NAME"`
 	PeriodUserCreatedDateIndex   string `json:"PERIOD_USER_CREATED_DATE_INDEX"`
 	UsernameCreatedDateIndex     string `json:"USERNAME_CREATED_DATE_INDEX"`
-	PeriodUserNameExpenseIDIndex string `json:"USERNAME_NAME_EXPENSE_ID_INDEX"`
-	PeriodUserAmountIndex        string `json:"USERNAME_AMOUNT_INDEX"`
+	PeriodUserNameExpenseIDIndex string `json:"PERIOD_USER_NAME_EXPENSE_ID_INDEX"`
+	PeriodUserAmountIndex        string `json:"PERIOD_USER_AMOUNT_INDEX"`
+	PeriodUserNameIncomeIDIndex  string `json:"PERIOD_USER_NAME_INCOME_ID_INDEX"`
 
 	BatchWriteRetries       int `json:"BATCH_WRITE_RETRIES"`
 	BatchWriteBaseDelayInMs int `json:"BATCH_WRITE_BASE_DELAY_IN_MS"`

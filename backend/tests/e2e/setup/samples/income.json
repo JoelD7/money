@@ -8,7 +8,9 @@
     "notes": "monthly income",
     "period": "2023-7",
     "period_user": "2023-7:test@gmail.com",
-    "updated_date": "2024-09-10T10:20:00Z"
+    "updated_date": "2024-09-10T10:20:00Z",
+    "amount_key": "000750.00:IN1lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 1:IN1lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -19,7 +21,9 @@
     "notes": "",
     "period": "2023-7",
     "period_user": "2023-7:test@gmail.com",
-    "updated_date": "2024-09-11T11:30:00Z"
+    "updated_date": "2024-09-11T11:30:00Z",
+    "amount_key": "000600.00:IN2lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 2:IN2lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -30,7 +34,9 @@
     "notes": "bonus income",
     "period": "2023-7",
     "period_user": "2023-7:test@gmail.com",
-    "updated_date": "2024-09-12T12:40:00Z"
+    "updated_date": "2024-09-12T12:40:00Z",
+    "amount_key": "000450.00:IN3lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 3:IN3lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -41,7 +47,9 @@
     "notes": "extra income",
     "period": "2023-8",
     "period_user": "2023-8:test@gmail.com",
-    "updated_date": "2024-09-13T13:50:00Z"
+    "updated_date": "2024-09-13T13:50:00Z",
+    "amount_key": "000920.00:IN4lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 4:IN4lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -52,7 +60,9 @@
     "notes": "",
     "period": "2023-8",
     "period_user": "2023-8:test@gmail.com",
-    "updated_date": "2024-09-14T15:00:00Z"
+    "updated_date": "2024-09-14T15:00:00Z",
+    "amount_key": "000700.00:IN5lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 5:IN5lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -63,7 +73,9 @@
     "notes": "gift",
     "period": "2023-8",
     "period_user": "2023-8:test@gmail.com",
-    "updated_date": "2024-09-15T15:10:00Z"
+    "updated_date": "2024-09-15T15:10:00Z",
+    "amount_key": "000500.00:IN6lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 6:IN6lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -74,7 +86,9 @@
     "notes": "freelance",
     "period": "2023-9",
     "period_user": "2023-9:test@gmail.com",
-    "updated_date": "2024-09-16T16:20:00Z"
+    "updated_date": "2024-09-16T16:20:00Z",
+    "amount_key": "000830.00:IN7lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 7:IN7lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -85,7 +99,9 @@
     "notes": "",
     "period": "2023-88",
     "period_user": "2023-88:test@gmail.com",
-    "updated_date": "2024-09-17T17:30:00Z"
+    "updated_date": "2024-09-17T17:30:00Z",
+    "amount_key": "000960.00:IN8lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 8:IN8lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -96,7 +112,9 @@
     "notes": "salary",
     "period": "2023-99",
     "period_user": "2023-99:test@gmail.com",
-    "updated_date": "2024-09-18T18:40:00Z"
+    "updated_date": "2024-09-18T18:40:00Z",
+    "amount_key": "000675.00:IN9lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 9:IN9lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -107,7 +125,9 @@
     "notes": "",
     "period": "2023-9",
     "period_user": "2023-9:test@gmail.com",
-    "updated_date": "2024-09-19T19:50:00Z"
+    "updated_date": "2024-09-19T19:50:00Z",
+    "amount_key": "000780.00:IN10lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 10:IN10lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -118,7 +138,9 @@
     "notes": "",
     "period": "2023-11",
     "period_user": "2023-11:test@gmail.com",
-    "updated_date": "2024-09-19T19:50:00Z"
+    "updated_date": "2024-09-19T19:50:00Z",
+    "amount_key": "000780.00:IN11lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 11:IN11lVnB1tCaSpyQLDEUswM"
   },
   {
     "username": "e2e_test@gmail.com",
@@ -129,6 +151,8 @@
     "notes": "",
     "period": "2023-11",
     "period_user": "2023-11:test@gmail.com",
-    "updated_date": "2024-09-19T19:50:00Z"
+    "updated_date": "2024-09-19T19:50:00Z",
+    "amount_key": "009078.00:IN12lVnB1tCaSpyQLDEUswM",
+    "name_income_id": "income 12:IN12lVnB1tCaSpyQLDEUswM"
   }
 ]
