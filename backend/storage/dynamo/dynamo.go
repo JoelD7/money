@@ -27,6 +27,11 @@ func BuildAmountKey(amount float64, id string) string {
 	return fmt.Sprintf("%012s:%s", amountStr, id)
 }
 
+// BuildNameKey builds the name sort key, which is a combined string of the name and the item ID.
+func BuildNameKey(name, id string) string {
+	return fmt.Sprintf("%s:%s", name, id)
+}
+
 // EncodePaginationKey encodes the last evaluated key returned by Dynamo in a string format to be used in the next query
 // as the start key.
 // The "keyType" parameter should be a pointer to a struct that maps ot the primary key of the table or index in question.

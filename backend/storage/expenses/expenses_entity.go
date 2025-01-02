@@ -23,18 +23,21 @@ type expenseEntity struct {
 	// AmountKey is a special attribute used to sort expenses by amount. It's composed of a padded-string of the amount
 	// plus the expense id.
 	AmountKey string `json:"amount_key,omitempty" dynamodbav:"amount_key"`
+	// NameExpenseID is a special attribute used to sort expenses by name. It's composed of the name plus the expense id.
+	NameExpenseID string `json:"name_expense_id,omitempty" dynamodbav:"name_expense_id"`
 }
 
 func toExpenseEntity(e *models.Expense) *expenseEntity {
 	entity := &expenseEntity{
-		ExpenseID:   e.ExpenseID,
-		Username:    e.Username,
-		CategoryID:  e.CategoryID,
-		Notes:       e.Notes,
-		CreatedDate: e.CreatedDate,
-		Period:      e.Period,
-		UpdateDate:  e.UpdateDate,
-		AmountKey:   dynamo.BuildAmountKey(*e.Amount, e.ExpenseID),
+		ExpenseID:     e.ExpenseID,
+		Username:      e.Username,
+		CategoryID:    e.CategoryID,
+		Notes:         e.Notes,
+		CreatedDate:   e.CreatedDate,
+		Period:        e.Period,
+		UpdateDate:    e.UpdateDate,
+		AmountKey:     dynamo.BuildAmountKey(*e.Amount, e.ExpenseID),
+		NameExpenseID: dynamo.BuildNameKey(*e.Name, e.ExpenseID),
 	}
 
 	if e.Amount != nil {

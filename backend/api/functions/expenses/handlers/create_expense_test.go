@@ -125,7 +125,7 @@ func TestHandlerFailure(t *testing.T) {
 		logMock.Output.Reset()
 	})
 
-	t.Run("Get username from context failed", func(t *testing.T) {
+	t.Run("Get Username from context failed", func(t *testing.T) {
 		apigwRequest.RequestContext.Authorizer = nil
 		defer func() { apigwRequest = getCreateExpenseRequest(periodMock) }()
 

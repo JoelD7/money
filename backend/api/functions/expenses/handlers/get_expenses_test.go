@@ -20,10 +20,10 @@ func TestGetExpensesSuccess(t *testing.T) {
 	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
-	request := &getExpensesRequest{
-		log:          logMock,
-		expensesRepo: expensesMock,
-		userRepo:     usersMock,
+	request := &GetExpensesRequest{
+		Log:          logMock,
+		ExpensesRepo: expensesMock,
+		UserRepo:     usersMock,
 	}
 
 	apigwRequest := getGetExpensesRequest()
