@@ -22,9 +22,20 @@ func run() {
 	ctx := context.Background()
 
 	dynamoClient := dynamo.InitClient(ctx)
-	envConfig, err := env.LoadEnv(ctx)
+	err := env.LoadEnvTesting()
 	if err != nil {
 		panic(fmt.Errorf("loading environment variables failed: %v", err))
+	}
+
+	envConfig := &models.EnvironmentConfiguration{
+		ExpensesTable:                env.GetString("EXPENSES_TABLE_NAME", ""),
+		ExpensesRecurringTable:       env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+		PeriodUserExpenseIndex:       env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+		UsersTable:                   env.GetString("USERS_TABLE_NAME", ""),
+		PeriodUserCreatedDateIndex:   env.GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
+		UsernameCreatedDateIndex:     env.GetString("USERNAME_CREATED_DATE_INDEX", ""),
+		PeriodUserNameExpenseIDIndex: env.GetString("PERIOD_USER_NAME_EXPENSE_ID_INDEX", ""),
+		PeriodUserAmountIndex:        env.GetString("PERIOD_USER_AMOUNT_INDEX", ""),
 	}
 
 	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
@@ -32,7 +43,7 @@ func run() {
 		panic(fmt.Errorf("creating expenses repository failed: %v", err))
 	}
 
-	data, err := os.ReadFile("./samples/expenses.json")
+	data, err := os.ReadFile("/Users/joelfabian/go/src/github.com/JoelD7/money/backend/storage/test-data/expenses/expenses.json")
 	if err != nil {
 		panic(fmt.Errorf("reading expenses file failed: %w", err))
 	}
