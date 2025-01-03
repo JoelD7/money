@@ -2,7 +2,7 @@ import {FormControl, InputLabel, MenuItem, Select, Typography,} from "@mui/mater
 import {BackgroundRefetchErrorSnackbar, Container, ErrorSnackbar, Navbar, NoRowsDataGrid,} from "../components";
 import {useGetIncome} from "../queries";
 import {Income, IncomeList} from "../types";
-import {DataGrid, GridColDef, GridPaginationModel, GridRowsProp,} from "@mui/x-data-grid";
+import {DataGrid, GridColDef, GridPaginationModel, GridRowsProp, GridSortModel,} from "@mui/x-data-grid";
 import {useRef, useState} from "react";
 import {useLocation, useNavigate} from "@tanstack/react-router";
 import {GridValidRowModel} from "@mui/x-data-grid/models/gridRows";
@@ -58,10 +58,10 @@ export function IncomeTable() {
     const columns: GridColDef[] = [
         {field: "amount", headerName: "Amount", width: 150},
         {field: "name", headerName: "Name", width: 150},
-        {field: "period", headerName: "Period", width: 150},
-        {field: "notes", headerName: "Notes", flex: 1, minWidth: 150},
+        {field: "period", headerName: "Period", width: 150, sortable: false},
+        {field: "notes", headerName: "Notes", flex: 1, minWidth: 150, sortable: false},
         {
-            field: "createdDate", headerName: "Date", width: 200,
+            field: "created_date", headerName: "Date", width: 200,
             valueFormatter: (params) => {
                 return new Intl.DateTimeFormat("en-GB", {
                     weekday: "short",
@@ -147,7 +147,7 @@ export function IncomeTable() {
                 name: inc.name,
                 notes: inc.notes ? inc.notes : "-",
                 period: inc.period,
-                createdDate: new Date(inc.created_date),
+                created_date: new Date(inc.created_date),
             };
         });
     }
@@ -172,6 +172,26 @@ export function IncomeTable() {
         })
 
         setSelectedPeriod(newPeriod)
+    }
+
+    function onSortModelChange(model: GridSortModel) {
+        const search = {...location.search};
+
+        model.forEach((item) => {
+            if (search.sortOrder !== item.sort || search.sortBy !== item.field) {
+                //In this case the page order changes, so we need to reset this map
+                startKeysByPage.current = {0: ""};
+            }
+
+            navigate({
+                to: "/income",
+                search: {
+                    ...search, sortBy: item.field, sortOrder: item.sort
+                },
+            })
+
+            return
+        })
     }
 
     return (
@@ -226,6 +246,8 @@ export function IncomeTable() {
                     sx={gridStyle}
                     loading={getIncome.isFetching}
                     columns={columns}
+                    sortingMode={"server"}
+                    onSortModelChange={(model)=> onSortModelChange(model)}
                     initialState={{
                         pagination: {
                             rowCount: -1,

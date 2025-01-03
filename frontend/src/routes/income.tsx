@@ -8,6 +8,8 @@ const incomeSearchSchema = z.object({
   pageSize: z.number().default(10),
   startKey: z.string().optional(),
   period: z.string().default(localStorage.getItem(keys.CURRENT_PERIOD) || ""),
+  sortBy: z.enum(["created_date", "name", "amount"]).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
 });
 
 export const Route = createFileRoute("/income")({

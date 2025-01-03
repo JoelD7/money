@@ -9,13 +9,15 @@ export const QUERY_RETRIES = 2;
 
 export const incomeKeys = {
     all: [{scope: INCOME}] as const,
-    list: (pageSize?: number, startKey?: string, period?: string) =>
+    list: (pageSize?: number, startKey?: string, period?: string, sortOrder?:string, sortBy?:string) =>
         [
             {
                 ...incomeKeys.all[0],
                 pageSize,
                 startKey,
                 period,
+                sortOrder,
+                sortBy,
             },
         ] as const,
 };
@@ -72,14 +74,14 @@ export function useGetPeriodStats(user?: User) {
 
 export function useGetIncome() {
     // eslint-disable-next-line prefer-const
-    let {pageSize, startKey, period} = utils.useTransactionsParams();
+    let { pageSize, startKey, period, sortOrder, sortBy} = utils.useTransactionsParams();
 
     if (!period) {
         period = localStorage.getItem(keys.CURRENT_PERIOD) || "";
     }
 
     return useQuery({
-        queryKey: incomeKeys.list(pageSize, startKey, period),
+        queryKey: incomeKeys.list(pageSize, startKey, period, sortOrder, sortBy),
         queryFn: api.getIncomeList,
         retry: queryRetryFn,
     });
