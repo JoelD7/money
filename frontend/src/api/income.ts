@@ -17,7 +17,7 @@ export function createIncome(income: Income) {
 export async function getIncomeList({
                                         queryKey,
                                     }: QueryFunctionContext<ReturnType<(typeof incomeKeys)["list"]>>) {
-    const {pageSize, startKey, period} = queryKey[0];
+    const {pageSize, startKey, period, sortOrder, sortBy} = queryKey[0];
 
     const paramArr: string[] = [];
 
@@ -30,6 +30,14 @@ export async function getIncomeList({
 
     if (startKey && startKey !== "") {
         paramArr.push(`start_key=${startKey}`);
+    }
+
+    if (sortBy && sortBy !== "") {
+        paramArr.push(`sort_by=${sortBy}`);
+    }
+
+    if (sortOrder && sortOrder !== "") {
+        paramArr.push(`sort_order=${sortOrder}`);
     }
 
     const params: string = paramArr.join("&");

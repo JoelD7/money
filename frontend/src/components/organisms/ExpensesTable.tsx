@@ -5,6 +5,7 @@ import {
     GridPaginationModel,
     GridRenderCellParams,
     GridRowsProp,
+    GridSortModel,
     useGridApiRef,
 } from "@mui/x-data-grid";
 import {Category, Expense} from "../../types";
@@ -83,14 +84,15 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         {field: "amount", headerName: "Amount", width: 150},
         {field: "name", headerName: "Name", width: 150},
         {
-            field: "categoryName",
+            field: "category_name",
             headerName: "Category",
             width: 150,
             renderCell: renderCategoryCell,
+            sortable: false,
         },
-        {field: "notes", headerName: "Notes", flex: 1, minWidth: 150},
+        {field: "notes", headerName: "Notes", flex: 1, minWidth: 150, sortable: false},
         {
-            field: "createdDate", headerName: "Date", width: 200,
+            field: "created_date", headerName: "Date", width: 200,
             valueFormatter: (params) => {
                 return new Intl.DateTimeFormat("en-GB", {
                     weekday: "short",
@@ -139,9 +141,9 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
                     currency: "USD",
                 }).format(expense.amount),
                 name: expense.name,
-                categoryName: expense.category_name ? expense.category_name : "-",
+                category_name: expense.category_name ? expense.category_name : "-",
                 notes: expense.notes ? expense.notes : "-",
-                createdDate: new Date(expense.created_date),
+                created_date: new Date(expense.created_date),
             };
         });
     }
@@ -247,6 +249,26 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         return "";
     }
 
+    function onSortModelChange(model: GridSortModel) {
+        const search = {...location.search};
+
+        model.forEach((item) => {
+            if (search.sortOrder !== item.sort || search.sortBy !== item.field) {
+                //In this case the page order changes, so we need to reset this map
+                startKeysByPage.current = {0: ""};
+            }
+
+            navigate({
+                to: "/",
+                search: {
+                    ...search, sortBy: item.field, sortOrder: item.sort
+                },
+            })
+
+            return
+        })
+    }
+
     const apiRef = useGridApiRef();
     return (
         <div>
@@ -292,6 +314,8 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
                         apiRef={apiRef}
                         loading={getExpensesQuery.isFetching}
                         columns={columns}
+                        sortingMode={"server"}
+                        onSortModelChange={(model) => onSortModelChange(model)}
                         initialState={{
                             pagination: {
                                 rowCount: -1,
