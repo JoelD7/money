@@ -36,13 +36,13 @@ var (
 )
 
 type LogAPI interface {
-	Info(eventName string, objects []models.LoggerObject)
-	Warning(eventName string, err error, objects []models.LoggerObject)
-	Error(eventName string, err error, objects []models.LoggerObject)
-	Critical(eventName string, objects []models.LoggerObject)
+	Info(eventName string, fields ...models.LoggerField)
+	Warning(eventName string, err error, fields ...models.LoggerField)
+	Error(eventName string, err error, fields ...models.LoggerField)
+	Critical(eventName string, fields ...models.LoggerField)
 	LogLambdaTime(startingTime time.Time, err error, panic interface{})
 	Finish() error
-	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
+	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField
 	SetHandler(handler string)
 }
 
@@ -57,12 +57,12 @@ type Log struct {
 }
 
 type LogData struct {
-	Service   string                            `json:"service,omitempty"`
-	Level     string                            `json:"level,omitempty"`
-	Error     string                            `json:"error,omitempty"`
-	Event     string                            `json:"event,omitempty"`
-	LogObject map[string]map[string]interface{} `json:"properties,omitempty"`
-	Timestamp string                            `json:"@timestamp,omitempty"`
+	Service   string                 `json:"service,omitempty"`
+	Level     string                 `json:"level,omitempty"`
+	Error     string                 `json:"error,omitempty"`
+	Event     string                 `json:"event,omitempty"`
+	LogObject map[string]interface{} `json:"properties,omitempty"`
+	Timestamp string                 `json:"@timestamp,omitempty"`
 }
 
 func NewLogger() LogAPI {
@@ -82,50 +82,50 @@ func (l *Log) SetHandler(handler string) {
 	}
 }
 
-func (l *Log) Info(eventName string, objects []models.LoggerObject) {
+func (l *Log) Info(eventName string, fields ...models.LoggerField) {
 	l.wg.Add(1)
-	go l.sendLog(infoLevel, eventName, nil, objects)
+	go l.sendLog(infoLevel, eventName, nil, fields)
 }
 
-func (l *Log) Warning(eventName string, err error, objects []models.LoggerObject) {
+func (l *Log) Warning(eventName string, err error, fields ...models.LoggerField) {
 	l.wg.Add(1)
-	go l.sendLog(warningLevel, eventName, err, objects)
+	go l.sendLog(warningLevel, eventName, err, fields)
 }
 
-func (l *Log) Error(eventName string, err error, objects []models.LoggerObject) {
+func (l *Log) Error(eventName string, err error, fields ...models.LoggerField) {
 	l.wg.Add(1)
-	go l.sendLog(errLevel, eventName, err, objects)
+	go l.sendLog(errLevel, eventName, err, fields)
 }
 
 func (l *Log) LogLambdaTime(startingTime time.Time, err error, panicErr interface{}) {
 	duration := time.Since(startingTime).Seconds()
-	durationData := l.MapToLoggerObject("duration_data", map[string]interface{}{
+	durationData := map[string]interface{}{
 		"f_duration": duration,
-	})
+	}
 
 	if panicErr != nil {
 		panicObject := getPanicObject(panicErr)
 
-		l.Critical("lambda_panicked", []models.LoggerObject{durationData, panicObject})
+		l.Critical("lambda_panicked", Any("duration_data", durationData), panicObject)
 		return
 	}
 
 	if err != nil {
-		l.Error("lambda_execution_finished", err, []models.LoggerObject{durationData})
+		l.Error("lambda_execution_finished", err, Any("duration_data", durationData))
 	}
 
-	l.Info("lambda_execution_finished", []models.LoggerObject{durationData})
+	l.Info("lambda_execution_finished", Any("duration_data", durationData))
 }
 
-func (l *Log) Critical(eventName string, objects []models.LoggerObject) {
+func (l *Log) Critical(eventName string, fields ...models.LoggerField) {
 	l.wg.Add(1)
-	go l.sendLog(panicLevel, eventName, nil, objects)
+	go l.sendLog(panicLevel, eventName, nil, fields)
 }
 
-func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) {
+func (l *Log) sendLog(level logLevel, eventName string, errToLog error, fields []models.LoggerField) {
 	defer l.wg.Done()
 
-	data := l.getLogDataAsBytes(level, eventName, errToLog, objects)
+	data := l.getLogDataAsBytes(level, eventName, errToLog, fields)
 
 	err := l.write(data)
 	if err != nil {
@@ -135,12 +135,12 @@ func (l *Log) sendLog(level logLevel, eventName string, errToLog error, objects 
 	}
 }
 
-func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) []byte {
+func (l *Log) getLogDataAsBytes(level logLevel, eventName string, errToLog error, fields []models.LoggerField) []byte {
 	logData := &LogData{
 		Service:   l.getService(),
 		Event:     eventName,
 		Level:     string(level),
-		LogObject: getLogObjects(objects),
+		LogObject: getLogObjects(fields),
 		Timestamp: time.Now().Format(timestampLayout),
 	}
 
@@ -250,32 +250,35 @@ func (l *Log) Finish() error {
 	return nil
 }
 
-func (l *Log) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject {
-	return &ObjectWrapper{
-		name:       name,
-		properties: m,
-	}
+func (l *Log) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField {
+	return Any(name, m)
 }
 
 // getLogObjects transforms the logger objects to a serializable representation.
-func getLogObjects(objects []models.LoggerObject) map[string]map[string]interface{} {
-	lObjects := make(map[string]map[string]interface{})
+func getLogObjects(objects []models.LoggerField) map[string]interface{} {
+	lObjects := make(map[string]interface{})
+
+	var value interface{}
+	var err error
 
 	for _, object := range objects {
-		lObjects[object.LogName()] = object.LogProperties()
+		value, err = object.GetValue()
+		if err != nil {
+			errorLogger.Println(fmt.Errorf("logger: error getting value for object %s: %w", object.GetKey(), err))
+			continue
+		}
+
+		lObjects[object.GetKey()] = value
 	}
 
 	return lObjects
 }
 
-func getPanicObject(panic interface{}) models.LoggerObject {
+func getPanicObject(panic interface{}) models.LoggerField {
 	clean := stackCleaner.FindAll(debug.Stack(), -1)
 
-	return &ObjectWrapper{
-		name: "panic",
-		properties: map[string]interface{}{
-			"s_message": fmt.Sprintf("%v", panic),
-			"s_trace":   string(bytes.Join(clean, []byte("\n\n"))),
-		},
-	}
+	return Any("panic", map[string]interface{}{
+		"s_message": fmt.Sprintf("%v", panic),
+		"s_trace":   string(bytes.Join(clean, []byte("\n\n"))),
+	})
 }
