@@ -78,7 +78,7 @@ func TestGetLogDataAsBytes(t *testing.T) {
 		c.Contains(string(data), `"properties":{"key":"value"}`)
 	})
 
-	t.Run("Struct field user", func(t *testing.T) {
+	t.Run("Struct field - implemented interface", func(t *testing.T) {
 		user := models.User{
 			FullName:      "John Doe",
 			Username:      "johndoe123",
@@ -115,5 +115,17 @@ func TestGetLogDataAsBytes(t *testing.T) {
 		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, []models.LoggerField{nil})
 		c.NotNil(data)
 		c.Contains(string(data), `"event":"test_event"`)
+	})
+
+	t.Run("Struct field", func(t *testing.T) {
+		type authRequestBody struct {
+			Username string
+			Password string
+		}
+
+		fields[0] = models.Any("request_body", authRequestBody{"username", "password"})
+		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
+		c.NotNil(data)
+		fmt.Println(string(data))
 	})
 }
