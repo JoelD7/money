@@ -262,6 +262,12 @@ func getLogObjects(objects []models.LoggerField) map[string]interface{} {
 	var err error
 
 	for _, object := range objects {
+		//If a caller pases "nil" as a logger field to one of the logging methods(Info, Error, etc), because is a var arg,
+		//it will be converted to an LoggerField array with one element, which is nil.
+		if object == nil {
+			continue
+		}
+
 		value, err = object.GetValue()
 		if err != nil {
 			errorLogger.Println(fmt.Errorf("logger: error getting value for object %s: %w", object.GetKey(), err))

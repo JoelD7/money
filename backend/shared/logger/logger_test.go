@@ -111,4 +111,9 @@ func TestGetLogDataAsBytes(t *testing.T) {
 		c.Contains(string(data), `"properties":{"key":["value1","value2"]}`)
 	})
 
+	t.Run("Nil field", func(t *testing.T) {
+		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, []models.LoggerField{nil})
+		c.NotNil(data)
+		c.Contains(string(data), `"event":"test_event"`)
+	})
 }
