@@ -62,7 +62,7 @@ func GetExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Enviro
 
 	err := geExpenseRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("get_expense_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_expense_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -75,25 +75,25 @@ func GetExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Enviro
 func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	expenseID, ok := req.PathParameters["expenseID"]
 	if !ok || expenseID == "" {
-		request.log.Error("missing_expense_id", errMissingExpenseID, []models.LoggerObject{req})
+		request.log.Error("missing_expense_id", errMissingExpenseID, req)
 
 		return req.NewErrorResponse(errMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{
-			request.log.MapToLoggerObject("user_data", map[string]interface{}{
+		request.log.Error("invalid_username", err,
+			models.Any("user_data", map[string]interface{}{
 				"s_username": username,
 			}),
-		})
+		)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -102,7 +102,7 @@ func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.R
 
 	expense, err := getExpense(ctx, username, expenseID)
 	if err != nil {
-		request.log.Error("get_expense_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_expense_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

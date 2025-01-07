@@ -54,7 +54,7 @@ func GetCategoriesHandler(ctx context.Context, log logger.LogAPI, envConfig *mod
 	if err != nil {
 		gcRequest.err = err
 
-		log.Error("get_categories_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_categories_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 
@@ -68,14 +68,14 @@ func (request *getCategoriesRequest) process(ctx context.Context, req *apigatewa
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{req})
+		request.log.Error("invalid_username", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -85,7 +85,7 @@ func (request *getCategoriesRequest) process(ctx context.Context, req *apigatewa
 	categories, err := getCategories(ctx, username)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_categories_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_categories_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

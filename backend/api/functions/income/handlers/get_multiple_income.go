@@ -65,7 +65,7 @@ func GetMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig 
 
 	err := gmiRequest.init(ctx, log, envConfig)
 	if err != nil {
-		gmiRequest.Log.Error("init_failed", err, []models.LoggerObject{req})
+		gmiRequest.Log.Error("init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -84,7 +84,7 @@ func (request *GetMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_username_failed", nil, []models.LoggerObject{req})
+		request.Log.Error("get_username_failed", nil, req)
 
 		return err
 	}
@@ -93,7 +93,7 @@ func (request *GetMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 
 	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
-		request.Log.Error("get_request_params_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_request_params_failed", err, req)
 
 		return err
 	}
@@ -114,7 +114,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 	if period == "" {
 		request.err = models.ErrMissingPeriod
 
-		request.Log.Error("missing_period", nil, []models.LoggerObject{req})
+		request.Log.Error("missing_period", nil, req)
 		return req.NewErrorResponse(models.ErrMissingPeriod), nil
 	}
 
@@ -123,7 +123,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_income_by_period_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_income_by_period_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 
@@ -142,7 +142,7 @@ func (request *GetMultipleIncomeRequest) getAllIncome(ctx context.Context, req *
 	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_all_income_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_all_income_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 

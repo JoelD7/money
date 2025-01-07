@@ -46,11 +46,11 @@ func Handle(ctx context.Context) error {
 	})
 
 	if ctxError != nil {
-		req.Log.Error("request_timeout", ctxError, []models.LoggerObject{
-			req.Log.MapToLoggerObject("stack", map[string]interface{}{
+		req.Log.Error("request_timeout", ctxError,
+			models.Any("stack", map[string]interface{}{
 				"s_trace": stackTrace,
 			}),
-		})
+		)
 	}
 
 	if err != nil {
@@ -116,11 +116,11 @@ func (req *CronRequest) Process(ctx context.Context) error {
 	recExpenses, err := req.Repo.ScanExpensesForDay(ctx, day)
 	if err != nil {
 		req.err = err
-		req.Log.Error("scan_expenses_for_day_failed", err, []models.LoggerObject{
-			req.Log.MapToLoggerObject("run_information", map[string]interface{}{
+		req.Log.Error("scan_expenses_for_day_failed", err,
+			models.Any("run_information", map[string]interface{}{
 				"i_day": day,
 			}),
-		})
+		)
 
 		return err
 	}
@@ -133,11 +133,11 @@ func (req *CronRequest) Process(ctx context.Context) error {
 	for username, userRecurringExpenses := range recExpensesByUser {
 		err = req.createExpenses(ctx, username, userRecurringExpenses)
 		if err != nil {
-			req.Log.Error("create_expenses_failed", err, []models.LoggerObject{
-				req.Log.MapToLoggerObject("run_information", map[string]interface{}{
+			req.Log.Error("create_expenses_failed", err,
+				models.Any("run_information", map[string]interface{}{
 					"s_username": username,
 				}),
-			})
+			)
 		}
 	}
 

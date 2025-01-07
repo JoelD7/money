@@ -63,7 +63,7 @@ func GetSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.
 
 	err := gsRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("get_saving_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_saving_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 
@@ -76,25 +76,25 @@ func GetSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.
 func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	savingID, ok := req.PathParameters["savingID"]
 	if !ok {
-		request.log.Error("missing_saving_id", errMissingSavingID, []models.LoggerObject{req})
+		request.log.Error("missing_saving_id", errMissingSavingID, req)
 
 		return req.NewErrorResponse(errMissingSavingID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{
+		request.log.Error("invalid_username", err,
 			request.log.MapToLoggerObject("user_data", map[string]interface{}{
 				"s_username": username,
 			}),
-		})
+		)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -103,13 +103,13 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 
 	saving, err := getSaving(ctx, username, savingID)
 	if errors.Is(err, models.ErrSavingGoalNameSettingFailed) {
-		request.log.Error("get_saving_goal_name_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_saving_goal_name_failed", err, req)
 
 		return req.NewJSONResponse(http.StatusOK, saving), nil
 	}
 
 	if err != nil {
-		request.log.Error("get_saving_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

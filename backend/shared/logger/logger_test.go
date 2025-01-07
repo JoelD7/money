@@ -57,7 +57,7 @@ func TestInfo(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		time.Sleep(time.Millisecond * 1000)
-		logger.Info(fmt.Sprintf("test_event_emitted_%d", i+1), Any("user", user))
+		logger.Info(fmt.Sprintf("test_event_emitted_%d", i+1), models.Any("user", user))
 	}
 }
 
@@ -72,7 +72,7 @@ func TestGetLogDataAsBytes(t *testing.T) {
 	fields := make([]models.LoggerField, 1)
 
 	t.Run("String field", func(t *testing.T) {
-		fields[0] = Any("key", "value")
+		fields[0] = models.Any("key", "value")
 		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
 		c.NotNil(data)
 		c.Contains(string(data), `"properties":{"key":"value"}`)
@@ -91,21 +91,21 @@ func TestGetLogDataAsBytes(t *testing.T) {
 			Remainder:     1500.0,
 		}
 
-		fields[0] = Any("user", user)
+		fields[0] = models.Any("user", user)
 		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
 		c.NotNil(data)
 		c.Contains(string(data), `"properties":{"user":{"full_name":"John Doe","username":"johndoe123","created_date":"2025-01-05T20:40:56Z","updated_date":"2025-01-05T20:40:56Z","current_period":"2025-01","remainder":1500}`)
 	})
 
 	t.Run("Map field", func(t *testing.T) {
-		fields[0] = Any("key", map[string]interface{}{"subkey": "value"})
+		fields[0] = models.Any("key", map[string]interface{}{"subkey": "value"})
 		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
 		c.NotNil(data)
 		c.Contains(string(data), `"properties":{"key":{"subkey":"value"}}`)
 	})
 
 	t.Run("Array field", func(t *testing.T) {
-		fields[0] = Any("key", []string{"value1", "value2"})
+		fields[0] = models.Any("key", []string{"value1", "value2"})
 		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
 		c.NotNil(data)
 		c.Contains(string(data), `"properties":{"key":["value1","value2"]}`)

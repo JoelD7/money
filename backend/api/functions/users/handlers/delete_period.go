@@ -57,7 +57,7 @@ func DeletePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 	if err != nil {
 		dpRequest.err = err
 
-		log.Error("delete_period_init_failed", err, []models.LoggerObject{req})
+		log.Error("delete_period_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 
@@ -70,7 +70,7 @@ func DeletePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	periodID, ok := req.PathParameters["periodID"]
 	if !ok || periodID == "" {
-		request.log.Error("missing_period_id", nil, []models.LoggerObject{req})
+		request.log.Error("missing_period_id", nil, req)
 
 		return req.NewErrorResponse(models.ErrMissingPeriodID), nil
 	}
@@ -78,7 +78,7 @@ func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -87,7 +87,7 @@ func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway
 
 	err = deletePeriod(ctx, periodID, username)
 	if err != nil {
-		request.log.Error("delete_period_failed", err, []models.LoggerObject{req})
+		request.log.Error("delete_period_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

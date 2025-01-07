@@ -57,7 +57,7 @@ func CreatePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 
 	err := cpRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("create_period_init_failed", err, []models.LoggerObject{req})
+		log.Error("create_period_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -70,7 +70,7 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 	periodModel, err := request.validateCreateRequestBody(req)
 	if err != nil {
 		request.err = err
-		request.Log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
+		request.Log.Error("validate_request_body_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -78,7 +78,7 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -88,7 +88,7 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 	createdPeriod, err := createPeriod(ctx, username, periodModel)
 	if err != nil {
 		request.err = err
-		request.Log.Error("create_period_failed", err, []models.LoggerObject{req})
+		request.Log.Error("create_period_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

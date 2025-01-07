@@ -67,7 +67,7 @@ func GetExpenses(ctx context.Context, log logger.LogAPI, envConfig *models.Envir
 
 	err := gesExpensesRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("get_expenses_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_expenses_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -86,25 +86,25 @@ func (request *GetExpensesRequest) prepareRequest(req *apigateway.Request) error
 
 	request.Username, err = apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.Log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_user_email_from_context_failed", err, req)
 
 		return err
 	}
 
 	err = validate.Email(request.Username)
 	if err != nil {
-		request.Log.Error("invalid_username", err, []models.LoggerObject{
-			request.Log.MapToLoggerObject("user_data", map[string]interface{}{
+		request.Log.Error("invalid_username", err,
+			models.Any("user_data", map[string]interface{}{
 				"s_username": request.Username,
 			}),
-		})
+		)
 
 		return err
 	}
 
 	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
-		request.Log.Error("get_request_params_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_request_params_failed", err, req)
 
 		return err
 	}
@@ -143,7 +143,7 @@ func (request *GetExpensesRequest) getByCategories(ctx context.Context, req *api
 
 	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.Log.Error("get_expenses_by_category_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_by_category_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -159,7 +159,7 @@ func (request *GetExpensesRequest) GetByPeriod(ctx context.Context, req *apigate
 
 	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.Log.Error("get_expenses_by_period_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_by_period_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -175,7 +175,7 @@ func (request *GetExpensesRequest) getByCategoriesAndPeriod(ctx context.Context,
 
 	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.Log.Error("get_expenses_by_period_and_categories_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_by_period_and_categories_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -191,7 +191,7 @@ func (request *GetExpensesRequest) getAll(ctx context.Context, req *apigateway.R
 
 	userExpenses, nextKey, err := getExpenses(ctx, request.Username, request.QueryParameters)
 	if err != nil {
-		request.Log.Error("get_expenses_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

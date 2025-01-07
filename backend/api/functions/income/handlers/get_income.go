@@ -50,7 +50,7 @@ func GetIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.
 
 	err := request.init(ctx, log, envConfig)
 	if err != nil {
-		request.log.Error("init_failed", err, []models.LoggerObject{req})
+		request.log.Error("init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -65,7 +65,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 	if !ok || incomeID == "" {
 		request.err = models.ErrMissingIncomeID
 
-		request.log.Error("missing_income_id", nil, []models.LoggerObject{req})
+		request.log.Error("missing_income_id", nil, req)
 		return req.NewErrorResponse(models.ErrMissingIncomeID), nil
 	}
 
@@ -73,7 +73,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 	if err != nil {
 		request.err = err
 
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_username_from_context_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 
@@ -83,7 +83,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 	if err != nil {
 		request.err = err
 
-		request.log.Error("get_income_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_income_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 

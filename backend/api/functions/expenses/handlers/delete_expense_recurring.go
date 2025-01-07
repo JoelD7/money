@@ -50,7 +50,7 @@ func DeleteExpenseRecurring(ctx context.Context, log logger.LogAPI, envConfig *m
 
 	err := derRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("delete_expense_init_failed", err, []models.LoggerObject{req})
+		log.Error("delete_expense_init_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 	defer derRequest.finish()
@@ -61,14 +61,14 @@ func DeleteExpenseRecurring(ctx context.Context, log logger.LogAPI, envConfig *m
 func (request *DeleteExpenseRecurringRequest) Process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	expenseRecurringID, ok := req.PathParameters["expenseRecurringID"]
 	if !ok || expenseRecurringID == "" {
-		request.Log.Error("missing_expense_recurring_id", nil, []models.LoggerObject{req})
+		request.Log.Error("missing_expense_recurring_id", nil, req)
 
 		return req.NewErrorResponse(models.ErrMissingExpenseRecurringID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.Log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -77,7 +77,7 @@ func (request *DeleteExpenseRecurringRequest) Process(ctx context.Context, req *
 
 	err = deleteExpenseRecurring(ctx, expenseRecurringID, username)
 	if err != nil {
-		request.Log.Error("delete_expense_recurring_failed", err, []models.LoggerObject{req})
+		request.Log.Error("delete_expense_recurring_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 

@@ -63,7 +63,7 @@ func CreateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 
 	err := csRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("init_create_saving_request_failed", err, []models.LoggerObject{req})
+		log.Error("init_create_saving_request_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -75,14 +75,14 @@ func CreateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 func (request *createSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	userSaving, err := validateBody(req)
 	if err != nil {
-		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
+		request.log.Error("validate_request_body_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -91,7 +91,7 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 
 	saving, err := createSaving(ctx, username, userSaving)
 	if err != nil {
-		request.log.Error("create_saving_failed", err, []models.LoggerObject{req})
+		request.log.Error("create_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

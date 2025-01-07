@@ -189,7 +189,7 @@ func getBatchWriteRequests(entities []*expenseEntity, log logger.LogAPI) []types
 	for _, entity := range entities {
 		item, err := attributevalue.MarshalMap(entity)
 		if err != nil {
-			log.Warning("marshal_expense_failed", err, []models.LoggerObject{entity})
+			log.Warning("marshal_expense_failed", err, models.Any("expense_entity", entity))
 			continue
 		}
 

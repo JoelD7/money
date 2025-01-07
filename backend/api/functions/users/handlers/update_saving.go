@@ -67,7 +67,7 @@ func UpdateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 
 	err := usRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("update_saving_init_failed", err, []models.LoggerObject{req})
+		log.Error("update_saving_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -79,7 +79,7 @@ func UpdateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 func (request *updateSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	userSaving, err := request.validateUpdateInputs(req)
 	if err != nil {
-		request.log.Error("update_input_validation_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_input_validation_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -88,7 +88,7 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 
 	saving, err := updateSaving(ctx, userSaving.Username, userSaving)
 	if err != nil {
-		request.log.Error("update_saving_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

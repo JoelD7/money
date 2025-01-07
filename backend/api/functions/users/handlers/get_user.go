@@ -69,7 +69,7 @@ func GetUserHandler(ctx context.Context, log logger.LogAPI, envConfig *models.En
 
 	err := guRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("get_user_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_user_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -81,7 +81,7 @@ func GetUserHandler(ctx context.Context, log logger.LogAPI, envConfig *models.En
 func (request *getUserRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -90,19 +90,19 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 
 	user, err := getUser(ctx, username)
 	if user != nil && user.CurrentPeriod == "" {
-		request.log.Warning("user_has_no_period_set", nil, []models.LoggerObject{req})
+		request.log.Warning("user_has_no_period_set", nil, req)
 	}
 
 	if errors.Is(err, models.ErrIncomeNotFound) || errors.Is(err, models.ErrExpensesNotFound) {
 		request.err = err
-		request.log.Warning("user_remainder_could_not_be_calculated", err, []models.LoggerObject{req})
+		request.log.Warning("user_remainder_could_not_be_calculated", err, req)
 
 		return req.NewJSONResponse(http.StatusOK, user), nil
 	}
 
 	if errors.Is(err, models.ErrUserNotFound) {
 		request.err = err
-		request.log.Error("user_not_found", err, []models.LoggerObject{req})
+		request.log.Error("user_not_found", err, req)
 
 		return req.NewErrorResponse(errors.New("user not found")), nil
 	}

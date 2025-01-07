@@ -64,7 +64,7 @@ func CreateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 
 	err := ceRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("create_expense_init_failed", err, []models.LoggerObject{req})
+		log.Error("create_expense_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -77,14 +77,14 @@ func CreateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 func (request *createExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	expense, err := validateInput(req, username)
 	if err != nil {
-		request.log.Error("validate_input_failed", err, []models.LoggerObject{req})
+		request.log.Error("validate_input_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -93,7 +93,7 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	newExpense, err := createExpense(ctx, username, expense)
 	if err != nil {
-		request.log.Error("create_expense_failed", err, []models.LoggerObject{req})
+		request.log.Error("create_expense_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

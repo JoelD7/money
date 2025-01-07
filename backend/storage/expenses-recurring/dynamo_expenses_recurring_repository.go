@@ -79,7 +79,7 @@ func getBatchWriteRequests(entities []*ExpenseRecurringEntity, log logger.LogAPI
 	for _, entity := range entities {
 		item, err := attributevalue.MarshalMap(entity)
 		if err != nil {
-			log.Warning("marshal_recurring_expense_failed", err, []models.LoggerObject{entity})
+			log.Warning("marshal_recurring_expense_failed", err, models.Any("expense_recurring_entity", entity))
 			continue
 		}
 

@@ -12,7 +12,7 @@ type LogMock struct {
 }
 
 func (l *LogMock) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField {
-	return Any(name, m)
+	return models.Any(name, m)
 }
 
 // NewLoggerMock mocks the logger client. This is important to prevent unit tests from sending logs.

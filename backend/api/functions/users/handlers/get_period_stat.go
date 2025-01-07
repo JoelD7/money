@@ -62,7 +62,7 @@ func GetPeriodStatHandler(ctx context.Context, log logger.LogAPI, envConfig *mod
 	if err != nil {
 		gpstRequest.err = err
 
-		log.Error("get_period_stat_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_period_stat_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -73,7 +73,7 @@ func GetPeriodStatHandler(ctx context.Context, log logger.LogAPI, envConfig *mod
 func (request *GetPeriodStatRequest) Process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	periodID, ok := req.PathParameters["periodID"]
 	if !ok || periodID == "" {
-		request.Log.Error("missing_period_id", nil, []models.LoggerObject{req})
+		request.Log.Error("missing_period_id", nil, req)
 
 		return req.NewErrorResponse(models.ErrMissingPeriodID), nil
 	}
@@ -81,7 +81,7 @@ func (request *GetPeriodStatRequest) Process(ctx context.Context, req *apigatewa
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -90,7 +90,7 @@ func (request *GetPeriodStatRequest) Process(ctx context.Context, req *apigatewa
 
 	periodStats, err := getPeriodStats(ctx, username, periodID)
 	if err != nil {
-		request.Log.Error("get_period_stats_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_period_stats_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

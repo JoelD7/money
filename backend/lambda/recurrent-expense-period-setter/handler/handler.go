@@ -86,11 +86,9 @@ func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 	}
 
-	preRequest.Log.Info("message_processing_successful", []models.LoggerObject{
-		preRequest.Log.MapToLoggerObject("message_data", map[string]interface{}{
-			"i_message_count": len(sqsEvent.Records),
-		}),
-	})
+	preRequest.Log.Info("message_processing_successful", models.Any("message_data", map[string]interface{}{
+		"i_message_count": len(sqsEvent.Records),
+	}))
 
 	return nil
 }
@@ -98,7 +96,7 @@ func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 func (request *Request) ProcessMessage(ctx context.Context, record models.SQSMessage) error {
 	msgBody, err := validateMessageBody(record)
 	if err != nil {
-		request.Log.Error("validate_request_body_failed", err, []models.LoggerObject{record})
+		request.Log.Error("validate_request_body_failed", err, models.Any("record", record))
 
 		return err
 	}
@@ -107,7 +105,7 @@ func (request *Request) ProcessMessage(ctx context.Context, record models.SQSMes
 
 	err = updateExpensesWoPeriod(ctx, msgBody.Username, msgBody.Period)
 	if err != nil {
-		request.Log.Error("patch_recurrent_expenses_failed", err, []models.LoggerObject{record})
+		request.Log.Error("patch_recurrent_expenses_failed", err, models.Any("record", record))
 
 		return err
 	}

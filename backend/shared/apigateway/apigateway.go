@@ -160,11 +160,11 @@ func buildAllowedOriginsMap() {
 	}
 }
 
-func (req *Request) LogName() string {
+func (req *Request) GetKey() string {
 	return "http_request"
 }
 
-func (req *Request) LogProperties() map[string]interface{} {
+func (req *Request) GetValue() (interface{}, error) {
 	authorizer := map[string]interface{}{
 		"s_event_id":        req.RequestContext.Authorizer["event_id"],
 		"s_username":        req.RequestContext.Authorizer["username"],
@@ -185,7 +185,7 @@ func (req *Request) LogProperties() map[string]interface{} {
 		"s_method":                       req.HTTPMethod,
 		"s_path":                         req.Path,
 		"s_body":                         req.Body,
-	}
+	}, nil
 }
 
 func paramsToString(params map[string]string) string {

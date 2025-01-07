@@ -106,15 +106,15 @@ func (l *Log) LogLambdaTime(startingTime time.Time, err error, panicErr interfac
 	if panicErr != nil {
 		panicObject := getPanicObject(panicErr)
 
-		l.Critical("lambda_panicked", Any("duration_data", durationData), panicObject)
+		l.Critical("lambda_panicked", models.Any("duration_data", durationData), panicObject)
 		return
 	}
 
 	if err != nil {
-		l.Error("lambda_execution_finished", err, Any("duration_data", durationData))
+		l.Error("lambda_execution_finished", err, models.Any("duration_data", durationData))
 	}
 
-	l.Info("lambda_execution_finished", Any("duration_data", durationData))
+	l.Info("lambda_execution_finished", models.Any("duration_data", durationData))
 }
 
 func (l *Log) Critical(eventName string, fields ...models.LoggerField) {
@@ -251,7 +251,7 @@ func (l *Log) Finish() error {
 }
 
 func (l *Log) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField {
-	return Any(name, m)
+	return models.Any(name, m)
 }
 
 // getLogObjects transforms the logger objects to a serializable representation.
@@ -277,7 +277,7 @@ func getLogObjects(objects []models.LoggerField) map[string]interface{} {
 func getPanicObject(panic interface{}) models.LoggerField {
 	clean := stackCleaner.FindAll(debug.Stack(), -1)
 
-	return Any("panic", map[string]interface{}{
+	return models.Any("panic", map[string]interface{}{
 		"s_message": fmt.Sprintf("%v", panic),
 		"s_trace":   string(bytes.Join(clean, []byte("\n\n"))),
 	})

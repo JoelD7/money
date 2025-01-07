@@ -9,16 +9,16 @@ type MissingExpensePeriodMessage struct {
 	Username string `json:"username"`
 }
 
-// SQSMessage represents a message from an SQS event. This custom type exists to be able to implement the LoggerObject interface.
+// SQSMessage represents a message from an SQS event. This custom type exists to be able to implement the LoggerField interface.
 type SQSMessage struct {
 	events.SQSMessage
 }
 
-func (s SQSMessage) LogName() string {
+func (s SQSMessage) Key() string {
 	return "sqs_message"
 }
 
-func (s SQSMessage) LogProperties() map[string]interface{} {
+func (s SQSMessage) Value() map[string]interface{} {
 	return map[string]interface{}{
 		"s_message_id":                s.MessageId,
 		"s_receipt_handle":            s.ReceiptHandle,
