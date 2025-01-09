@@ -62,11 +62,9 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 	})
 
 	if ctxErr != nil {
-		router.log.Error("request_timeout", ctxErr, []models.LoggerObject{
-			router.log.MapToLoggerObject("stack", map[string]interface{}{
-				"s_trace": stackTrace,
-			}),
-		})
+		router.log.Error("request_timeout", ctxErr, models.Any("stack", map[string]interface{}{
+			"s_trace": stackTrace,
+		}))
 
 		res = &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
@@ -90,21 +88,19 @@ func (router *Router) executeHandle(ctx context.Context, envConfig *models.Envir
 
 	if _, ok := router.methodHandlers[request.HTTPMethod][request.Resource]; !ok {
 		router.log.Error("router_handle_failed", errPathNotDefined,
-			[]models.LoggerObject{
-				router.log.MapToLoggerObject("router_data", map[string]interface{}{
-					"s_path": router.path,
-				}),
-				router.log.MapToLoggerObject("request", map[string]interface{}{
-					"s_method":   request.HTTPMethod,
-					"s_resource": request.Resource,
-				}), router.log.MapToLoggerObject("router_data", map[string]interface{}{
-					"s_path": router.path,
-				}),
-				router.log.MapToLoggerObject("request", map[string]interface{}{
-					"s_method":   request.HTTPMethod,
-					"s_resource": request.Resource,
-				}),
-			},
+			models.Any("router_data", map[string]interface{}{
+				"s_path": router.path,
+			}),
+			models.Any("request", map[string]interface{}{
+				"s_method":   request.HTTPMethod,
+				"s_resource": request.Resource,
+			}), models.Any("router_data", map[string]interface{}{
+				"s_path": router.path,
+			}),
+			models.Any("request", map[string]interface{}{
+				"s_method":   request.HTTPMethod,
+				"s_resource": request.Resource,
+			}),
 		)
 
 		return &apigateway.Response{

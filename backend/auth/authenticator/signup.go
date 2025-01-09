@@ -35,7 +35,7 @@ func signUpHandler(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 	if err != nil {
 		signUpRequest.err = err
 
-		signUpRequest.log.Error("sign_up_init_failed", err, []models.LoggerObject{request})
+		signUpRequest.log.Error("sign_up_init_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -70,7 +70,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 	reqBody, err := validateSingUpInput(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
+		req.log.Error("validate_input_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -80,7 +80,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 	err = saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
 	if err != nil {
 		req.err = err
-		req.log.Error("save_new_user_failed", err, []models.LoggerObject{request})
+		req.log.Error("save_new_user_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}

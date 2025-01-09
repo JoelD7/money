@@ -106,12 +106,12 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	})
 
 	if ctxError != nil {
-		req.log.Error("request_timeout", ctxError, []models.LoggerObject{
+		req.log.Error("request_timeout", ctxError,
 			req.getEventAsLoggerObject(event),
-			req.log.MapToLoggerObject("stack", map[string]interface{}{
+			models.Any("stack", map[string]interface{}{
 				"s_trace": stackTrace,
 			}),
-		})
+		)
 	}
 
 	return
@@ -124,13 +124,13 @@ func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCust
 
 	subject, err := verifyToken(ctx, token)
 	if errors.Is(err, models.ErrUnauthorized) || errors.Is(err, models.ErrInvalidToken) {
-		req.log.Error("request_unauthorized", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+		req.log.Error("request_unauthorized", err, req.getEventAsLoggerObject(event))
 
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
 	if err != nil {
-		req.log.Error("token_verification_failed", err, []models.LoggerObject{req.getEventAsLoggerObject(event)})
+		req.log.Error("token_verification_failed", err, req.getEventAsLoggerObject(event))
 
 		return events.APIGatewayCustomAuthorizerResponse{}, err
 	}
@@ -144,8 +144,8 @@ func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCust
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }
 
-func (req *requestInfo) getEventAsLoggerObject(event events.APIGatewayCustomAuthorizerRequest) models.LoggerObject {
-	return req.log.MapToLoggerObject("authorizer_request", map[string]interface{}{
+func (req *requestInfo) getEventAsLoggerObject(event events.APIGatewayCustomAuthorizerRequest) models.LoggerField {
+	return models.Any("authorizer_request", map[string]interface{}{
 		"s_type":       event.Type,
 		"s_method_arn": event.MethodArn,
 	})

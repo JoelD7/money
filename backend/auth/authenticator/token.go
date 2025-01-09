@@ -120,7 +120,7 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 
 	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
-	req.log.Info("new_tokens_issued_successfully", []models.LoggerObject{user})
+	req.log.Info("new_tokens_issued_successfully", user)
 
 	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }

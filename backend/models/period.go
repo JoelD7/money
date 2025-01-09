@@ -16,11 +16,11 @@ type Period struct {
 	UpdatedDate time.Time `json:"updated_date,omitempty"`
 }
 
-func (period *Period) LogName() string {
+func (period *Period) Key() string {
 	return "period"
 }
 
-func (period *Period) LogProperties() map[string]interface{} {
+func (period *Period) Value() map[string]interface{} {
 	return map[string]interface{}{
 		"s_username":     period.Username,
 		"s_period_id":    period.ID,

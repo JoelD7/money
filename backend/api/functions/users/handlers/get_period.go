@@ -53,7 +53,7 @@ func GetPeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *models.
 	if err != nil {
 		gpRequest.err = err
 
-		log.Error("get_period_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_period_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -66,7 +66,7 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 	periodID, ok := req.PathParameters["periodID"]
 	if !ok || periodID == "" {
 		request.err = models.ErrMissingPeriodID
-		request.log.Error("missing_period_id", request.err, []models.LoggerObject{req})
+		request.log.Error("missing_period_id", request.err, req)
 
 		return req.NewErrorResponse(models.ErrMissingPeriodID), nil
 	}
@@ -74,7 +74,7 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_username_from_context_failed", request.err, []models.LoggerObject{req})
+		request.log.Error("get_username_from_context_failed", request.err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -84,7 +84,7 @@ func (request *getPeriodRequest) process(ctx context.Context, req *apigateway.Re
 	userPeriod, err := getPeriod(ctx, username, periodID)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_period_failed", request.err, []models.LoggerObject{req})
+		request.log.Error("get_period_failed", request.err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

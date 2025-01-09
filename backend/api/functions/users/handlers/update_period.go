@@ -53,7 +53,7 @@ func UpdatePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 
 	err := upRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("update_period_init_failed", err, []models.LoggerObject{req})
+		log.Error("update_period_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -66,7 +66,7 @@ func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway
 	periodBody, err := validateUpdateRequestBody(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("validate_request_body_failed", err, []models.LoggerObject{req})
+		request.log.Error("validate_request_body_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -76,7 +76,7 @@ func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway
 	updatedPeriod, err := updatePeriod(ctx, periodBody.Username, periodBody.ID, periodBody)
 	if err != nil {
 		request.err = err
-		request.log.Error("update_period_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_period_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

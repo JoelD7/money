@@ -57,7 +57,7 @@ func CreateCategoryHandler(ctx context.Context, log logger.LogAPI, envConfig *mo
 	if err != nil {
 		ccRequest.err = err
 
-		log.Error("create_category_init_failed", err, []models.LoggerObject{req})
+		log.Error("create_category_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -69,7 +69,7 @@ func CreateCategoryHandler(ctx context.Context, log logger.LogAPI, envConfig *mo
 func (request *createCategoryRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	category, err := validateCreateCategoryRequestBody(req)
 	if err != nil {
-		request.log.Error("request_body_validation_failed", err, []models.LoggerObject{req})
+		request.log.Error("request_body_validation_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -77,14 +77,14 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{req})
+		request.log.Error("invalid_username", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -94,7 +94,7 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 	err = createCategory(ctx, username, category)
 	if err != nil {
 		request.err = err
-		request.log.Error("create_category_failed", err, []models.LoggerObject{req})
+		request.log.Error("create_category_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

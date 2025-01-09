@@ -35,11 +35,11 @@ type Credentials struct {
 	Password string `json:"password,omitempty"`
 }
 
-func (c *Credentials) LogName() string {
+func (c *Credentials) Key() string {
 	return "user_data"
 }
 
-func (c *Credentials) LogProperties() map[string]interface{} {
+func (c *Credentials) Value() map[string]interface{} {
 	return map[string]interface{}{
 		"username": c.Username,
 	}

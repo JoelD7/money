@@ -42,9 +42,9 @@ type UserUpdater interface {
 }
 
 type Logger interface {
-	Warning(eventName string, err error, objects []models.LoggerObject)
-	Error(eventName string, err error, objects []models.LoggerObject)
-	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject
+	Warning(eventName string, err error, fields ...models.LoggerField)
+	Error(eventName string, err error, fields ...models.LoggerField)
+	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField
 }
 
 type InvalidTokenCache interface {
@@ -135,18 +135,16 @@ func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx contex
 	return func(ctx context.Context, username, password string) (*models.User, error) {
 		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
-			logger.Error("user_fetching_failed", err, []models.LoggerObject{
-				logger.MapToLoggerObject("auth_request", map[string]interface{}{
-					"s_username": username,
-				}),
-			})
+			logger.Error("user_fetching_failed", err, models.Any("auth_request", map[string]interface{}{
+				"s_username": username,
+			}))
 
 			return nil, err
 		}
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 		if err != nil {
-			logger.Error("password_mismatch", err, []models.LoggerObject{authRequestBody{username, password}})
+			logger.Error("password_mismatch", err, models.Any("request_body", authRequestBody{username, password}))
 
 			return nil, models.ErrWrongCredentials
 		}
@@ -198,14 +196,14 @@ func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager,
 
 		hashedAccess, err := hash.Apply(accessToken)
 		if err != nil {
-			logger.Error("hashing_access_token_failed", err, []models.LoggerObject{user})
+			logger.Error("hashing_access_token_failed", err, user)
 
 			return nil, nil, err
 		}
 
 		hashedRefresh, err := hash.Apply(refreshToken)
 		if err != nil {
-			logger.Error("hashing_refresh_token_failed", err, []models.LoggerObject{user})
+			logger.Error("hashing_refresh_token_failed", err, user)
 
 			return nil, nil, err
 		}
@@ -215,7 +213,7 @@ func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager,
 
 		err = userManager.UpdateUser(ctx, user)
 		if err != nil {
-			logger.Error("update_user_failed", err, []models.LoggerObject{user})
+			logger.Error("update_user_failed", err, user)
 
 			return nil, nil, err
 		}
@@ -253,7 +251,7 @@ func NewRefreshTokenValidator(userGetter UserManager, logger Logger) func(ctx co
 
 		err = validateRefreshToken(user, refreshToken)
 		if err != nil {
-			logger.Warning("refresh_token_validation_failed", err, []models.LoggerObject{user, refreshTokenValue{refreshToken}})
+			logger.Warning("refresh_token_validation_failed", err, models.Any("refresh_token", refreshToken))
 
 			return user, fmt.Errorf("%w: %v", models.ErrInvalidToken, err)
 		}
@@ -345,14 +343,14 @@ func NewTokenInvalidator(tokenCache InvalidTokenCache, logger Logger) func(ctx c
 
 		err := tokenCache.AddInvalidToken(ctx, user.Username, user.AccessToken, accessTokenTTL)
 		if err != nil {
-			logger.Error("access_token_invalidation_failed", err, []models.LoggerObject{user})
+			logger.Error("access_token_invalidation_failed", err, user)
 
 			return err
 		}
 
 		err = tokenCache.AddInvalidToken(ctx, user.Username, user.RefreshToken, refreshTokenTTL)
 		if err != nil {
-			logger.Error("refresh_token_invalidation_failed", err, []models.LoggerObject{user})
+			logger.Error("refresh_token_invalidation_failed", err, user)
 
 			return err
 		}

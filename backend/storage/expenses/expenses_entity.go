@@ -96,11 +96,11 @@ func toExpenseRecurringEntity(e *models.Expense) *er.ExpenseRecurringEntity {
 	return entity
 }
 
-func (e *expenseEntity) LogName() string {
+func (e *expenseEntity) Key() string {
 	return "expense_entity"
 }
 
-func (e *expenseEntity) LogProperties() map[string]interface{} {
+func (e *expenseEntity) Value() map[string]interface{} {
 	return map[string]interface{}{
 		"expense_id":   e.ExpenseID,
 		"username":     e.Username,

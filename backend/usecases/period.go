@@ -41,21 +41,21 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, log Logg
 
 		newPeriod, err := pm.CreatePeriod(ctx, period)
 		if err != nil {
-			log.Error("create_period_failed", err, []models.LoggerObject{period})
+			log.Error("create_period_failed", err, models.Any("period", period))
 
 			return nil, err
 		}
 
 		err = cache.AddIncomePeriods(ctx, username, []string{periodID})
 		if err != nil {
-			log.Error("add_income_periods_failed", err, []models.LoggerObject{period})
+			log.Error("add_income_periods_failed", err, models.Any("period", period))
 
 			return nil, fmt.Errorf("couldn't add income periods to cache: %w", err)
 		}
 
 		err = sendPeriodToSQS(ctx, newPeriod)
 		if err != nil {
-			log.Error("send_period_to_sqs_failed", err, []models.LoggerObject{newPeriod})
+			log.Error("send_period_to_sqs_failed", err, models.Any("new_period", newPeriod))
 		}
 
 		return newPeriod, nil

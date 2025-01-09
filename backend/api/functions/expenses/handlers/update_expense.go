@@ -67,7 +67,7 @@ func UpdateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 
 	err := ueRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("update_expense_init_failed", err, []models.LoggerObject{req})
+		log.Error("update_expense_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -79,21 +79,21 @@ func UpdateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 func (request *updateExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	expenseID, ok := req.PathParameters["expenseID"]
 	if !ok || expenseID == "" {
-		request.log.Error("missing_expense_id", nil, []models.LoggerObject{req})
+		request.log.Error("missing_expense_id", nil, req)
 
 		return req.NewErrorResponse(models.ErrMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	expense, err := validateUpdateInput(req, username)
 	if err != nil {
-		request.log.Error("validate_input_failed", err, []models.LoggerObject{req})
+		request.log.Error("validate_input_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -102,7 +102,7 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	updatedExpense, err := updateExpense(ctx, expenseID, username, expense)
 	if err != nil {
-		request.log.Error("update_expense_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_expense_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

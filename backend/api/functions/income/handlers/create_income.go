@@ -61,7 +61,7 @@ func CreateIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 
 	err := ciRequest.init(ctx, log, envConfig)
 	if err != nil {
-		request.log.Error("init_failed", err, []models.LoggerObject{req})
+		request.log.Error("init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -75,7 +75,7 @@ func (request *createIncomeRequest) process(ctx context.Context, req *apigateway
 	reqIncome, err := validateCreateIncomeBody(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("validate_create_income_body_failed", err, []models.LoggerObject{req})
+		request.log.Error("validate_create_income_body_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -83,7 +83,7 @@ func (request *createIncomeRequest) process(ctx context.Context, req *apigateway
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -93,7 +93,7 @@ func (request *createIncomeRequest) process(ctx context.Context, req *apigateway
 	newIncome, err := createIncome(ctx, username, reqIncome)
 	if err != nil {
 		request.err = err
-		request.log.Error("create_income_failed", err, []models.LoggerObject{req})
+		request.log.Error("create_income_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

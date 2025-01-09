@@ -61,7 +61,7 @@ func UpdateCategoryHandler(ctx context.Context, log logger.LogAPI, envConfig *mo
 	if err != nil {
 		ucRequest.err = err
 
-		log.Error("update_category_init_failed", err, []models.LoggerObject{req})
+		log.Error("update_category_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -74,14 +74,14 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 	categoryID, ok := req.PathParameters["categoryID"]
 	if !ok {
 		request.err = errNoCategoryIDInPath
-		request.log.Error("get_category_id_from_path_failed", errNoCategoryIDInPath, []models.LoggerObject{req})
+		request.log.Error("get_category_id_from_path_failed", errNoCategoryIDInPath, req)
 
 		return req.NewErrorResponse(errNoCategoryIDInPath), nil
 	}
 
 	requestCategory, err := validateRequestBody(req)
 	if err != nil {
-		request.log.Error("request_body_validation_failed", err, []models.LoggerObject{req})
+		request.log.Error("request_body_validation_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -89,14 +89,14 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{req})
+		request.log.Error("invalid_username", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -106,7 +106,7 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 	err = updateCategory(ctx, username, categoryID, requestCategory)
 	if err != nil {
 		request.err = err
-		request.log.Error("update_category_failed", err, []models.LoggerObject{req})
+		request.log.Error("update_category_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

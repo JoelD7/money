@@ -37,7 +37,7 @@ func logoutHandler(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 	if err != nil {
 		logoutRequest.err = err
 
-		log.Error("logout_init_failed", err, []models.LoggerObject{request})
+		log.Error("logout_init_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}

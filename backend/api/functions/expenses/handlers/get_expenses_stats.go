@@ -55,7 +55,7 @@ func GetExpensesStats(ctx context.Context, log logger.LogAPI, envConfig *models.
 
 	err := gesExpenseRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("get_expenses_stats_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_expenses_stats_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -68,14 +68,14 @@ func GetExpensesStats(ctx context.Context, log logger.LogAPI, envConfig *models.
 func (request *GetExpensesStatsRequest) Process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	periodID, ok := req.PathParameters["periodID"]
 	if !ok {
-		request.Log.Error("missing_period_id", fmt.Errorf("period ID not in path parameters"), []models.LoggerObject{req})
+		request.Log.Error("missing_period_id", fmt.Errorf("period ID not in path parameters"), req)
 
 		return req.NewErrorResponse(models.ErrMissingPeriodID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.Log.Error("get_username_from_context_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -83,7 +83,7 @@ func (request *GetExpensesStatsRequest) Process(ctx context.Context, req *apigat
 	getCategoryExpensesSummary := usecases.NewCategoryExpenseSummaryGetter(request.ExpensesRepo)
 	categoryExpenseSummary, err := getCategoryExpensesSummary(ctx, username, periodID)
 	if err != nil {
-		request.Log.Error("get_expenses_stats_failed", err, []models.LoggerObject{req})
+		request.Log.Error("get_expenses_stats_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 

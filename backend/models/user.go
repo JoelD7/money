@@ -23,13 +23,14 @@ type Category struct {
 	Keywords []string `json:"keywords,omitempty"`
 }
 
-func (u User) LogName() string {
+func (u *User) GetKey() string {
 	return "user"
 }
 
-func (u User) LogProperties() map[string]interface{} {
+func (u *User) GetValue() (interface{}, error) {
 	return map[string]interface{}{
-		"s_username": u.Username,
-		"s_fullname": u.FullName,
-	}
+		"s_username":     u.Username,
+		"s_fullname":     u.FullName,
+		"t_created_date": u.CreatedDate,
+	}, nil
 }

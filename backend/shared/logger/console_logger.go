@@ -25,20 +25,20 @@ func NewConsoleLogger(service string) LogAPI {
 	return &ConsoleLogger{Service: service}
 }
 
-func (c *ConsoleLogger) Info(eventName string, objects []models.LoggerObject) {
-	c.write(infoLevel, eventName, nil, objects)
+func (c *ConsoleLogger) Info(eventName string, fields ...models.LoggerField) {
+	c.write(infoLevel, eventName, nil, fields)
 }
 
-func (c *ConsoleLogger) Warning(eventName string, err error, objects []models.LoggerObject) {
-	c.write(warningLevel, eventName, err, objects)
+func (c *ConsoleLogger) Warning(eventName string, err error, fields ...models.LoggerField) {
+	c.write(warningLevel, eventName, err, fields)
 }
 
-func (c *ConsoleLogger) Error(eventName string, err error, objects []models.LoggerObject) {
-	c.write(errLevel, eventName, err, objects)
+func (c *ConsoleLogger) Error(eventName string, err error, fields ...models.LoggerField) {
+	c.write(errLevel, eventName, err, fields)
 }
 
-func (c *ConsoleLogger) Critical(eventName string, objects []models.LoggerObject) {
-	c.write(panicLevel, eventName, nil, objects)
+func (c *ConsoleLogger) Critical(eventName string, fields ...models.LoggerField) {
+	c.write(panicLevel, eventName, nil, fields)
 }
 
 func (c *ConsoleLogger) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {}
@@ -50,14 +50,11 @@ func (c *ConsoleLogger) Finish() error {
 func (c *ConsoleLogger) SetHandler(handler string) {}
 
 // MapToLoggerObject not implemented
-func (c *ConsoleLogger) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerObject {
-	return &ObjectWrapper{
-		name:       name,
-		properties: m,
-	}
+func (c *ConsoleLogger) MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField {
+	return models.Any(name, m)
 }
 
-func (c *ConsoleLogger) write(level logLevel, eventName string, errToLog error, objects []models.LoggerObject) {
+func (c *ConsoleLogger) write(level logLevel, eventName string, errToLog error, objects []models.LoggerField) {
 	logData := &LogData{
 		Service:   c.Service,
 		Event:     eventName,

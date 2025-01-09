@@ -66,7 +66,7 @@ func GetSavingsHandler(ctx context.Context, log logger.LogAPI, envConfig *models
 
 	err := gssRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("get_savings_request_init_failed", err, []models.LoggerObject{req})
+		log.Error("get_savings_request_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -85,25 +85,25 @@ func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error 
 
 	request.username, err = apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_user_email_from_context_failed", err, req)
 
 		return err
 	}
 
 	err = validate.Email(request.username)
 	if err != nil {
-		request.log.Error("invalid_username", err, []models.LoggerObject{
+		request.log.Error("invalid_username", err,
 			request.log.MapToLoggerObject("user_data", map[string]interface{}{
 				"s_username": request.username,
 			}),
-		})
+		)
 
 		return err
 	}
 
 	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
-		request.log.Error("get_request_params_failed", err, []models.LoggerObject{req})
+		request.log.Error("get_request_params_failed", err, req)
 
 		return err
 	}
@@ -135,16 +135,14 @@ func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apiga
 
 	userSavings, nextKey, err := getSavings(ctx, request.username, request.StartKey, request.PageSize)
 	if err != nil {
-		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{
-			req,
-		})
+		request.log.Error("savings_fetch_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
-		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("savings_marshal_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -162,14 +160,14 @@ func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, re
 
 	userSavings, nextKey, err := getSavingsByPeriod(ctx, request.username, request.StartKey, period, request.PageSize)
 	if err != nil {
-		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
+		request.log.Error("savings_fetch_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
-		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("savings_marshal_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -187,14 +185,14 @@ func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context
 
 	userSavings, nextKey, err := getSavingsBySavingGoal(ctx, request.StartKey, savingGoal, request.PageSize)
 	if err != nil {
-		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
+		request.log.Error("savings_fetch_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
-		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("savings_marshal_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -213,14 +211,14 @@ func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx contex
 
 	userSavings, nextKey, err := getSavingsBySavingGoalAndPeriod(ctx, request.StartKey, savingGoal, period, request.PageSize)
 	if err != nil {
-		request.log.Error("savings_fetch_failed", err, []models.LoggerObject{req})
+		request.log.Error("savings_fetch_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	responseJSON, err := request.getSavingsResponse(userSavings, nextKey)
 	if err != nil {
-		request.log.Error("savings_marshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("savings_marshal_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

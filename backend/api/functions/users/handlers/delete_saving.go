@@ -52,7 +52,7 @@ func DeleteSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 
 	err := dsRequest.init(ctx, log, envConfig)
 	if err != nil {
-		log.Error("delete_saving_init_failed", err, []models.LoggerObject{req})
+		log.Error("delete_saving_init_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 	defer dsRequest.finish()
@@ -65,7 +65,7 @@ func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway
 
 	err := json.Unmarshal([]byte(req.Body), userSaving)
 	if err != nil {
-		request.log.Error("request_body_unmarshal_failed", err, []models.LoggerObject{req})
+		request.log.Error("request_body_unmarshal_failed", err, req)
 
 		return req.NewErrorResponse(models.ErrInvalidRequestBody), nil
 	}
@@ -74,7 +74,7 @@ func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway
 
 	err = deleteSaving(ctx, userSaving.SavingID, userSaving.Username)
 	if err != nil {
-		request.log.Error("delete_saving_failed", err, []models.LoggerObject{req})
+		request.log.Error("delete_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

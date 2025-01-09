@@ -5,10 +5,10 @@ type ObjectWrapper struct {
 	properties map[string]interface{}
 }
 
-func (o *ObjectWrapper) LogName() string {
+func (o *ObjectWrapper) Key() string {
 	return o.name
 }
 
-func (o *ObjectWrapper) LogProperties() map[string]interface{} {
+func (o *ObjectWrapper) Value() map[string]interface{} {
 	return o.properties
 }

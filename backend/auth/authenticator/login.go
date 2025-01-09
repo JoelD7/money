@@ -40,7 +40,7 @@ func logInHandler(ctx context.Context, log logger.LogAPI, envConfig *models.Envi
 	err := loginRequest.initLoginHandler(ctx, log, envConfig)
 	if err != nil {
 		loginRequest.err = err
-		log.Error("login_init_failed", err, []models.LoggerObject{request})
+		log.Error("login_init_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -76,7 +76,7 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 	reqBody, err := validateLoginInput(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("validate_input_failed", err, []models.LoggerObject{request})
+		req.log.Error("validate_input_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
