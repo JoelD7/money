@@ -33,7 +33,7 @@ func TestGetAllExpensesBetweenDates(t *testing.T) {
 	c.Nil(err, "failed to load expenses")
 
 	ctx := context.Background()
-	err = expensesRepo.BatchCreateExpenses(ctx, logger.NewConsoleLogger("test"), expensesToCreate)
+	err = expensesRepo.BatchCreateExpenses(ctx, logger.initConsole("test"), expensesToCreate)
 	c.Nil(err, "failed to batch create expenses")
 
 	t.Cleanup(func() {

@@ -21,23 +21,22 @@ var logoutRequest *requestLogoutHandler
 var logoutOnce sync.Once
 
 type requestLogoutHandler struct {
-	log                 logger.LogAPI
 	startingTime        time.Time
 	err                 error
 	userRepo            users.Repository
 	invalidTokenManager cache.InvalidTokenManager
 }
 
-func logoutHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
+func logoutHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if logoutRequest == nil {
 		logoutRequest = new(requestLogoutHandler)
 	}
 
-	err := logoutRequest.initLogoutHandler(ctx, log, envConfig)
+	err := logoutRequest.initLogoutHandler(ctx, envConfig)
 	if err != nil {
 		logoutRequest.err = err
 
-		log.Error("logout_init_failed", err, request)
+		logger.Error("logout_init_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -46,11 +45,10 @@ func logoutHandler(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 	return logoutRequest.processLogout(ctx, request)
 }
 
-func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	logoutOnce.Do(func() {
-		req.log = log
-		req.log.SetHandler("logout")
+		logger.SetHandler("logout")
 		dynamoClient := dynamo.InitClient(ctx)
 
 		req.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
@@ -65,7 +63,7 @@ func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, log logg
 }
 
 func (req *requestLogoutHandler) finish() {
-	req.log.LogLambdaTime(req.startingTime, req.err, recover())
+	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func (req *requestLogoutHandler) processLogout(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
@@ -74,24 +72,24 @@ func (req *requestLogoutHandler) processLogout(ctx context.Context, request *api
 	credentials, err := validateRequestBody(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("logout_failed", err, nil)
+		logger.Error("logout_failed", err, nil)
 
 		return request.NewErrorResponse(err), nil
 	}
 
-	logout := usecases.NewUserLogout(req.userRepo, req.invalidTokenManager, req.log)
+	logout := usecases.NewUserLogout(req.userRepo, req.invalidTokenManager)
 
 	err = logout(ctx, credentials.Username)
 	if errors.Is(err, models.ErrUserNotFound) {
 		req.err = err
-		req.log.Error("logout_failed", err, nil)
+		logger.Error("logout_failed", err, nil)
 
 		return request.NewErrorResponse(errUserNotFound), nil
 	}
 
 	if err != nil {
 		req.err = err
-		req.log.Error("logout_failed", err, nil)
+		logger.Error("logout_failed", err, nil)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -109,7 +107,7 @@ func validateRequestBody(request *apigateway.Request) (*Credentials, error) {
 	if err != nil {
 		err = fmt.Errorf("%w: %v", models.ErrInvalidRequestBody, err)
 		req.err = err
-		req.log.Error("unmarshal_credentials_failed", err, nil)
+		logger.Error("unmarshal_credentials_failed", err, nil)
 
 		return nil, err
 	}

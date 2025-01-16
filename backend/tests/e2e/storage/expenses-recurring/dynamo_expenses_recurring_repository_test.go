@@ -73,7 +73,7 @@ func createExpenses(c *require.Assertions, repository *repo.DynamoRepository) {
 		expense.CreatedDate = time.Now()
 	}
 
-	log := logger.NewConsoleLogger("e2e-recurring-expense-generator")
+	log := logger.initConsole("e2e-recurring-expense-generator")
 
 	err = repository.BatchCreateExpenseRecurring(context.Background(), log, recExpenses)
 	c.Nil(err)

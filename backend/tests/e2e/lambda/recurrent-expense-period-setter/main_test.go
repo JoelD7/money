@@ -53,7 +53,7 @@ func TestProcess(t *testing.T) {
 	req := &handler.Request{
 		ExpensesRepo: expensesRepository,
 		PeriodRepo:   periodRepository,
-		Log:          logger.NewConsoleLogger("patch_recurrent_expense_e2e_test"),
+		Log:          logger.initConsole("patch_recurrent_expense_e2e_test"),
 	}
 
 	username := "e2e_test@gmail.com"

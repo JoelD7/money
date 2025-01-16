@@ -82,7 +82,7 @@ func TestProcess(t *testing.T) {
 
 	req := &handlers.DeleteExpenseRecurringRequest{
 		Repo: expensesRecRepo,
-		Log:  logger.NewConsoleLogger("delete_expense_recurring_e2e_test"),
+		Log:  logger.initConsole("delete_expense_recurring_e2e_test"),
 	}
 
 	expenseRecurringID := strings.ToLower(*createdExpense.Name)

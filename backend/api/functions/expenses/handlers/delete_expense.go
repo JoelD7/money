@@ -18,19 +18,17 @@ var deRequest *deleteExpenseRequest
 var deOnce sync.Once
 
 type deleteExpenseRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	expensesRepo expenses.Repository
 }
 
-func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *deleteExpenseRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 
 	deOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.log = log
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
 	})
 
@@ -40,17 +38,17 @@ func (request *deleteExpenseRequest) init(ctx context.Context, log logger.LogAPI
 }
 
 func (request *deleteExpenseRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func DeleteExpense(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func DeleteExpense(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if deRequest == nil {
 		deRequest = new(deleteExpenseRequest)
 	}
 
-	err := deRequest.init(ctx, log, envConfig)
+	err := deRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("delete_expense_init_failed", err, req)
+		logger.Error("delete_expense_init_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 	defer deRequest.finish()
@@ -61,21 +59,21 @@ func DeleteExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 func (request *deleteExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	expenseID, ok := req.PathParameters["expenseID"]
 	if !ok || expenseID == "" {
-		request.log.Error("missing_expense_id", nil, req)
+		logger.Error("missing_expense_id", nil, req)
 
 		return req.NewErrorResponse(models.ErrMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, req)
+		logger.Error("invalid_username", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -84,7 +82,7 @@ func (request *deleteExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	err = deleteExpense(ctx, expenseID, username)
 	if err != nil {
-		request.log.Error("delete_expense_failed", err, req)
+		logger.Error("delete_expense_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

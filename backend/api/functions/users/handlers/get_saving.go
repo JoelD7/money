@@ -24,14 +24,13 @@ var (
 )
 
 type getSavingRequest struct {
-	log            logger.LogAPI
 	startingTime   time.Time
 	err            error
 	savingsRepo    savings.Repository
 	savingGoalRepo savingoal.Repository
 }
 
-func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *getSavingRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
@@ -44,8 +43,7 @@ func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI, en
 		if err != nil {
 			return
 		}
-		request.log = log
-		request.log.SetHandler("get-saving")
+		logger.SetHandler("get-saving")
 	})
 	request.startingTime = time.Now()
 
@@ -53,17 +51,17 @@ func (request *getSavingRequest) init(ctx context.Context, log logger.LogAPI, en
 }
 
 func (request *getSavingRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func GetSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gsRequest == nil {
 		gsRequest = new(getSavingRequest)
 	}
 
-	err := gsRequest.init(ctx, log, envConfig)
+	err := gsRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("get_saving_init_failed", err, req)
+		logger.Error("get_saving_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 
@@ -76,22 +74,22 @@ func GetSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.
 func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	savingID, ok := req.PathParameters["savingID"]
 	if !ok {
-		request.log.Error("missing_saving_id", errMissingSavingID, req)
+		logger.Error("missing_saving_id", errMissingSavingID, req)
 
 		return req.NewErrorResponse(errMissingSavingID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, req)
+		logger.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err,
-			request.log.MapToLoggerObject("user_data", map[string]interface{}{
+		logger.Error("invalid_username", err,
+			logger.MapToLoggerObject("user_data", map[string]interface{}{
 				"s_username": username,
 			}),
 		)
@@ -99,17 +97,17 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 		return req.NewErrorResponse(err), nil
 	}
 
-	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.savingGoalRepo, request.log)
+	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.savingGoalRepo)
 
 	saving, err := getSaving(ctx, username, savingID)
 	if errors.Is(err, models.ErrSavingGoalNameSettingFailed) {
-		request.log.Error("get_saving_goal_name_failed", err, req)
+		logger.Error("get_saving_goal_name_failed", err, req)
 
 		return req.NewJSONResponse(http.StatusOK, saving), nil
 	}
 
 	if err != nil {
-		request.log.Error("get_saving_failed", err, req)
+		logger.Error("get_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

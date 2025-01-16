@@ -63,7 +63,6 @@ var (
 )
 
 type requestInfo struct {
-	log            logger.LogAPI
 	secretsManager secrets.SecretManager
 	cacheRepo      cache.InvalidTokenManager
 	startingTime   time.Time
@@ -82,21 +81,19 @@ func (req *requestInfo) init() {
 
 func (req *requestInfo) finish() {
 	defer func() {
-		err := req.log.Finish()
+		err := logger.Finish()
 		if err != nil {
 			panic(err)
 		}
 	}()
 
-	req.log.LogLambdaTime(req.startingTime, req.err, recover())
+	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
 	stackTrace, ctxError := shared.ExecuteLambda(ctx, func(ctx context.Context) {
 		if req == nil {
-			req = &requestInfo{
-				log: logger.NewLogger(),
-			}
+			req = &requestInfo{}
 		}
 
 		req.init()
@@ -106,7 +103,7 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	})
 
 	if ctxError != nil {
-		req.log.Error("request_timeout", ctxError,
+		logger.Error("request_timeout", ctxError,
 			req.getEventAsLoggerObject(event),
 			models.Any("stack", map[string]interface{}{
 				"s_trace": stackTrace,
@@ -120,17 +117,17 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 	token := strings.ReplaceAll(event.AuthorizationToken, "Bearer ", "")
 
-	verifyToken := usecases.NewTokenVerifier(req.client, req.log, req.secretsManager, req.cacheRepo)
+	verifyToken := usecases.NewTokenVerifier(req.client, req.secretsManager, req.cacheRepo)
 
 	subject, err := verifyToken(ctx, token)
 	if errors.Is(err, models.ErrUnauthorized) || errors.Is(err, models.ErrInvalidToken) {
-		req.log.Error("request_unauthorized", err, req.getEventAsLoggerObject(event))
+		logger.Error("request_unauthorized", err, req.getEventAsLoggerObject(event))
 
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
 	if err != nil {
-		req.log.Error("token_verification_failed", err, req.getEventAsLoggerObject(event))
+		logger.Error("token_verification_failed", err, req.getEventAsLoggerObject(event))
 
 		return events.APIGatewayCustomAuthorizerResponse{}, err
 	}
@@ -245,5 +242,14 @@ func main() {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
-	lambda.Start(handleRequest)
+	lambda.Start(func(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
+		defer func() {
+			err = logger.Finish()
+			if err != nil {
+				panic(fmt.Errorf("failed to finish logger: %w", err))
+			}
+		}()
+
+		return handleRequest(ctx, event)
+	})
 }

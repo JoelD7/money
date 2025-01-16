@@ -77,7 +77,7 @@ func TestProcess(t *testing.T) {
 
 		req := &handlers.CreatePeriodRequest{
 			PeriodRepo: periodRepo,
-			Log:        logger.NewConsoleLogger("create_period_e2e_test"),
+			Log:        logger.initConsole("create_period_e2e_test"),
 		}
 
 		expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)

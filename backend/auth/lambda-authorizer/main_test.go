@@ -43,7 +43,7 @@ func TestJoel(t *testing.T) {
 		cacheRepo:      cache.NewRedisCache(),
 		secretsManager: secrets.NewAWSSecretManager(),
 		client:         restclient.New(),
-		log:            logger.NewLogger(),
+		log:            logger.initLogstash(),
 	}
 
 	defer func() {

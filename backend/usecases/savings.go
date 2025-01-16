@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"math"
 	"time"
 )
@@ -24,7 +25,7 @@ type SavingGoalManager interface {
 	GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error)
 }
 
-func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
+func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 	return func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 		saving, err := sm.GetSaving(ctx, username, savingID)
 		if err != nil {
@@ -40,10 +41,10 @@ func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ct
 	}
 }
 
-func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			l.Error("invalid_page_size_detected", err,
+			logger.Error("invalid_page_size_detected", err,
 				models.Any("user_data", map[string]interface{}{
 					"s_username":  username,
 					"i_page_size": pageSize,
@@ -67,10 +68,10 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(c
 	}
 }
 
-func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			l.Error("invalid_page_size_detected", err,
+			logger.Error("invalid_page_size_detected", err,
 				models.Any("user_data", map[string]interface{}{
 					"s_username":  username,
 					"i_page_size": pageSize,
@@ -94,10 +95,10 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger)
 	}
 }
 
-func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			l.Error("invalid_page_size_detected", err,
+			logger.Error("invalid_page_size_detected", err,
 				models.Any("user_data", map[string]interface{}{
 					"i_page_size": pageSize,
 				}),
@@ -120,10 +121,10 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, l Log
 	}
 }
 
-func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager, l Logger) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			l.Error("invalid_page_size_detected", err,
+			logger.Error("invalid_page_size_detected", err,
 				models.Any("user_data", map[string]interface{}{
 					"i_page_size": pageSize,
 				}),

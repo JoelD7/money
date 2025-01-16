@@ -23,17 +23,15 @@ var (
 )
 
 type getExpenseRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	expensesRepo expenses.Repository
 	userRepo     users.Repository
 }
 
-func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *getExpenseRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	getExpenseOnce.Do(func() {
-		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
@@ -52,17 +50,17 @@ func (request *getExpenseRequest) init(ctx context.Context, log logger.LogAPI, e
 }
 
 func (request *getExpenseRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetExpense(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func GetExpense(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if geExpenseRequest == nil {
 		geExpenseRequest = new(getExpenseRequest)
 	}
 
-	err := geExpenseRequest.init(ctx, log, envConfig)
+	err := geExpenseRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("get_expense_init_failed", err, req)
+		logger.Error("get_expense_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -75,21 +73,21 @@ func GetExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Enviro
 func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	expenseID, ok := req.PathParameters["expenseID"]
 	if !ok || expenseID == "" {
-		request.log.Error("missing_expense_id", errMissingExpenseID, req)
+		logger.Error("missing_expense_id", errMissingExpenseID, req)
 
 		return req.NewErrorResponse(errMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, req)
+		logger.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err,
+		logger.Error("invalid_username", err,
 			models.Any("user_data", map[string]interface{}{
 				"s_username": username,
 			}),
@@ -102,7 +100,7 @@ func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.R
 
 	expense, err := getExpense(ctx, username, expenseID)
 	if err != nil {
-		request.log.Error("get_expense_failed", err, req)
+		logger.Error("get_expense_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

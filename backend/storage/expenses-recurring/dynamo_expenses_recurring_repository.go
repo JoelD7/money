@@ -56,7 +56,7 @@ func (d *DynamoRepository) CreateExpenseRecurring(ctx context.Context, expenseRe
 	return expenseRecurring, nil
 }
 
-func (d *DynamoRepository) BatchCreateExpenseRecurring(ctx context.Context, log logger.LogAPI, expenseRecurring []*models.ExpenseRecurring) error {
+func (d *DynamoRepository) BatchCreateExpenseRecurring(ctx context.Context, expenseRecurring []*models.ExpenseRecurring) error {
 	entities := make([]*ExpenseRecurringEntity, 0, len(expenseRecurring))
 
 	for _, expense := range expenseRecurring {
@@ -170,7 +170,7 @@ func (d *DynamoRepository) ScanExpensesForDay(ctx context.Context, day int) ([]*
 	return toExpensesRecurringModel(entities), nil
 }
 
-func (d *DynamoRepository) BatchDeleteExpenseRecurring(ctx context.Context, log logger.LogAPI, expenseRecurring []*models.ExpenseRecurring) error {
+func (d *DynamoRepository) BatchDeleteExpenseRecurring(ctx context.Context, expenseRecurring []*models.ExpenseRecurring) error {
 	writeRequests := make([]types.WriteRequest, 0, len(expenseRecurring))
 
 	var idAttrValue types.AttributeValue

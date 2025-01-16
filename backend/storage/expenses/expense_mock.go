@@ -43,7 +43,7 @@ func (d *DynamoMock) CreateExpense(ctx context.Context, expense *models.Expense)
 	return expense, nil
 }
 
-func (d *DynamoMock) BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+func (d *DynamoMock) BatchCreateExpenses(ctx context.Context, expenses []*models.Expense) error {
 	//TODO implement me
 	return nil
 }
@@ -134,7 +134,7 @@ func (d *DynamoMock) GetAllExpensesBetweenDates(ctx context.Context, username, s
 	return nil, nil
 }
 
-func (d *DynamoMock) BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+func (d *DynamoMock) BatchUpdateExpenses(ctx context.Context, expenses []*models.Expense) error {
 	//TODO implement me
 	return nil
 }

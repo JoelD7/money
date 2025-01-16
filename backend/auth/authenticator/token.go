@@ -25,7 +25,6 @@ var (
 type requestTokenHandler struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
 
-	log                 logger.LogAPI
 	startingTime        time.Time
 	err                 error
 	userRepo            users.Repository
@@ -33,15 +32,15 @@ type requestTokenHandler struct {
 	secretsManager      secrets.SecretManager
 }
 
-func tokenHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
+func tokenHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if req == nil {
 		req = new(requestTokenHandler)
 	}
 
-	err := req.initTokenHandler(ctx, log, envConfig)
+	err := req.initTokenHandler(ctx, envConfig)
 	if err != nil {
 		req.err = err
-		req.log.Error("token_init_failed", err, nil)
+		logger.Error("token_init_failed", err, nil)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -50,7 +49,7 @@ func tokenHandler(ctx context.Context, log logger.LogAPI, envConfig *models.Envi
 	return req.processToken(ctx, request)
 }
 
-func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (req *requestTokenHandler) initTokenHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	once.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
@@ -61,8 +60,7 @@ func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger
 		}
 		req.invalidTokenManager = cache.NewRedisCache()
 		req.secretsManager = secrets.NewAWSSecretManager()
-		req.log = log
-		req.log.SetHandler("token")
+		logger.SetHandler("token")
 	})
 
 	req.startingTime = time.Now()
@@ -71,7 +69,7 @@ func (req *requestTokenHandler) initTokenHandler(ctx context.Context, log logger
 }
 
 func (req *requestTokenHandler) finish() {
-	req.log.LogLambdaTime(req.startingTime, req.err, recover())
+	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func (req *requestTokenHandler) processToken(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
@@ -79,12 +77,12 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 	req.RefreshToken, err = getRefreshTokenCookie(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("getting_refresh_token_cookie_failed", err, nil)
+		logger.Error("getting_refresh_token_cookie_failed", err, nil)
 
 		return request.NewErrorResponse(err), nil
 	}
 
-	validateRefreshToken := usecases.NewRefreshTokenValidator(req.userRepo, req.log)
+	validateRefreshToken := usecases.NewRefreshTokenValidator(req.userRepo)
 
 	user, err := validateRefreshToken(ctx, req.RefreshToken)
 
@@ -104,7 +102,7 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 		return request.NewErrorResponse(err), nil
 	}
 
-	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
+	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager)
 
 	accessToken, refreshToken, err := generateTokens(ctx, user)
 	if err != nil {
@@ -120,13 +118,13 @@ func (req *requestTokenHandler) processToken(ctx context.Context, request *apiga
 
 	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
-	req.log.Info("new_tokens_issued_successfully", user)
+	logger.Info("new_tokens_issued_successfully", user)
 
 	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }
 
 func (req *requestTokenHandler) handleValidationError(ctx context.Context, user *models.User, request *apigateway.Request) (*apigateway.Response, error) {
-	invalidateTokens := usecases.NewTokenInvalidator(req.invalidTokenManager, req.log)
+	invalidateTokens := usecases.NewTokenInvalidator(req.invalidTokenManager)
 
 	err := invalidateTokens(ctx, user)
 	if err != nil {

@@ -74,7 +74,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	request := &handlers.GetMultipleIncomeRequest{
 		IncomeRepo:   repo,
 		CacheManager: cacheManager,
-		Log:          logger.NewConsoleLogger("get_multiple_income_test"),
+		Log:          logger.initConsole("get_multiple_income_test"),
 		Username:     setup.Username,
 		PageSize:     10,
 		StartKey:     "",
@@ -212,7 +212,7 @@ func BenchmarkGetMultipleIncome(t *testing.B) {
 	request := &handlers.GetMultipleIncomeRequest{
 		IncomeRepo:   repo,
 		CacheManager: cacheManager,
-		Log:          logger.NewConsoleLogger("get_multiple_income_test"),
+		Log:          logger.initConsole("get_multiple_income_test"),
 		Username:     setup.Username,
 		PageSize:     10,
 		StartKey:     "",

@@ -34,7 +34,7 @@ func TestGetExpensesStats(t *testing.T) {
 
 	request := handlers.GetExpensesStatsRequest{
 		ExpensesRepo: expensesRepo,
-		Log:          logger.NewConsoleLogger("get_expenses_stats_e2e_test"),
+		Log:          logger.initConsole("get_expenses_stats_e2e_test"),
 	}
 
 	apigwRequest := &apigateway.Request{

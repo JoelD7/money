@@ -20,14 +20,13 @@ var cpRequest *CreatePeriodRequest
 var cpOnce sync.Once
 
 type CreatePeriodRequest struct {
-	Log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	PeriodRepo   period.Repository
 	CacheManager cache.IncomePeriodCacheManager
 }
 
-func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *CreatePeriodRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	cpOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
@@ -38,8 +37,7 @@ func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI,
 		}
 
 		request.CacheManager = cache.NewRedisCache()
-		request.Log = log
-		request.Log.SetHandler("create-period")
+		logger.SetHandler("create-period")
 	})
 	request.startingTime = time.Now()
 
@@ -47,17 +45,17 @@ func (request *CreatePeriodRequest) init(ctx context.Context, log logger.LogAPI,
 }
 
 func (request *CreatePeriodRequest) finish() {
-	request.Log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func CreatePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func CreatePeriodHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if cpRequest == nil {
 		cpRequest = new(CreatePeriodRequest)
 	}
 
-	err := cpRequest.init(ctx, log, envConfig)
+	err := cpRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("create_period_init_failed", err, req)
+		logger.Error("create_period_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -70,7 +68,7 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 	periodModel, err := request.validateCreateRequestBody(req)
 	if err != nil {
 		request.err = err
-		request.Log.Error("validate_request_body_failed", err, req)
+		logger.Error("validate_request_body_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -78,17 +76,17 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_username_from_context_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.CacheManager, request.Log)
+	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.CacheManager)
 
 	createdPeriod, err := createPeriod(ctx, username, periodModel)
 	if err != nil {
 		request.err = err
-		request.Log.Error("create_period_failed", err, req)
+		logger.Error("create_period_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

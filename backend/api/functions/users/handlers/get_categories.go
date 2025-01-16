@@ -18,17 +18,15 @@ var gcRequest *getCategoriesRequest
 var gcOnce sync.Once
 
 type getCategoriesRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	userRepo     users.Repository
 }
 
-func (request *getCategoriesRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *getCategoriesRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gcOnce.Do(func() {
-		request.log = log
-		request.log.SetHandler("get-categories")
+		logger.SetHandler("get-categories")
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
@@ -42,19 +40,19 @@ func (request *getCategoriesRequest) init(ctx context.Context, log logger.LogAPI
 }
 
 func (request *getCategoriesRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetCategoriesHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func GetCategoriesHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gcRequest == nil {
 		gcRequest = new(getCategoriesRequest)
 	}
 
-	err := gcRequest.init(ctx, log, envConfig)
+	err := gcRequest.init(ctx, envConfig)
 	if err != nil {
 		gcRequest.err = err
 
-		log.Error("get_categories_init_failed", err, req)
+		logger.Error("get_categories_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 
@@ -68,14 +66,14 @@ func (request *getCategoriesRequest) process(ctx context.Context, req *apigatewa
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_user_email_from_context_failed", err, req)
+		logger.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, req)
+		logger.Error("invalid_username", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -85,7 +83,7 @@ func (request *getCategoriesRequest) process(ctx context.Context, req *apigatewa
 	categories, err := getCategories(ctx, username)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_categories_failed", err, req)
+		logger.Error("get_categories_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

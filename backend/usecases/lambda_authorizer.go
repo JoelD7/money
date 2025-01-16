@@ -16,6 +16,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/hash"
+	"github.com/JoelD7/money/backend/shared/logger"
 )
 
 var (
@@ -28,7 +29,7 @@ type JWKSGetter interface {
 }
 
 // NewTokenVerifier validates a JWT against the authentication server. Returns the subject of the token if successful.
-func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager SecretManager, tokenCache InvalidTokenCache) func(ctx context.Context, token string) (string, error) {
+func NewTokenVerifier(jwksGetter JWKSGetter, secretManager SecretManager, tokenCache InvalidTokenCache) func(ctx context.Context, token string) (string, error) {
 	return func(ctx context.Context, token string) (string, error) {
 		payload, err := getTokenPayload(token)
 		if err != nil {
@@ -78,7 +79,7 @@ func NewTokenVerifier(jwksGetter JWKSGetter, logger Logger, secretManager Secret
 			return "", err
 		}
 
-		err = compareAccessTokenAgainstBlacklistRedis(ctx, tokenCache, logger, payload.Subject, token)
+		err = compareAccessTokenAgainstBlacklistRedis(ctx, tokenCache, payload.Subject, token)
 		if errors.Is(err, models.ErrInvalidToken) {
 			logger.Warning("blacklisted_token_use_detected", err,
 				models.Any("token", map[string]interface{}{"s_value": token}))
@@ -166,7 +167,7 @@ func isErrorInvalidJWT(err error) bool {
 	return false
 }
 
-func compareAccessTokenAgainstBlacklistRedis(ctx context.Context, tokenCache InvalidTokenCache, logger Logger, username, token string) error {
+func compareAccessTokenAgainstBlacklistRedis(ctx context.Context, tokenCache InvalidTokenCache, username, token string) error {
 	invalidTokens, err := tokenCache.GetInvalidTokens(ctx, username)
 	if err != nil && !errors.Is(err, models.ErrInvalidTokensNotFound) {
 		return err

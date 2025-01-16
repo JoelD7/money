@@ -18,7 +18,7 @@ func main() {
 }
 
 func run() {
-	log := logger.NewConsoleLogger("expenses-test-data")
+	log := logger.initConsole("expenses-test-data")
 	ctx := context.Background()
 
 	dynamoClient := dynamo.InitClient(ctx)

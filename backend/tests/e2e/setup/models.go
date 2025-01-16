@@ -112,7 +112,7 @@ func CreateExpensesEntries(ctx context.Context, repo expenses.Repository, source
 		return
 	}
 
-	err = repo.BatchCreateExpenses(ctx, logger.NewConsoleLogger("e2e-expenses"), entries)
+	err = repo.BatchCreateExpenses(ctx, logger.initConsole("e2e-expenses"), entries)
 	if err != nil {
 		err = fmt.Errorf("cannot create test expenses entries: %v", err)
 		return

@@ -32,13 +32,12 @@ type getPeriodsRequest struct {
 	*models.QueryParameters
 }
 
-func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *getPeriodsRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gpsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.log = log
-		request.log.SetHandler("get-periods")
+		logger.SetHandler("get-periods")
 
 		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
@@ -51,17 +50,17 @@ func (request *getPeriodsRequest) init(ctx context.Context, log logger.LogAPI, e
 }
 
 func (request *getPeriodsRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetPeriodsHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func GetPeriodsHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gpsRequest == nil {
 		gpsRequest = new(getPeriodsRequest)
 	}
 
-	err := gpsRequest.init(ctx, log, envConfig)
+	err := gpsRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("get_periods_init_failed", err, req)
+		logger.Error("get_periods_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -81,7 +80,7 @@ func (request *getPeriodsRequest) process(ctx context.Context, req *apigateway.R
 	userPeriods, nextKey, err := getPeriods(ctx, request.username, request.StartKey, request.PageSize)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_periods_failed", request.err, req)
+		logger.Error("get_periods_failed", request.err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -99,14 +98,14 @@ func (request *getPeriodsRequest) prepareRequest(req *apigateway.Request) error 
 
 	request.username, err = apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_user_email_from_context_failed", err, req)
+		logger.Error("get_user_email_from_context_failed", err, req)
 
 		return err
 	}
 
 	err = validate.Email(request.username)
 	if err != nil {
-		request.log.Error("invalid_username", err,
+		logger.Error("invalid_username", err,
 			models.Any("user_data", map[string]interface{}{
 				"s_username": request.username,
 			}),
@@ -117,7 +116,7 @@ func (request *getPeriodsRequest) prepareRequest(req *apigateway.Request) error 
 
 	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
-		request.log.Error("get_request_params_failed", err, req)
+		logger.Error("get_request_params_failed", err, req)
 
 		return err
 	}

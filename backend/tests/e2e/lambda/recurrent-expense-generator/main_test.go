@@ -76,7 +76,7 @@ func TestCron(t *testing.T) {
 
 	ctx := context.Background()
 	dynamoClient := setup.InitDynamoClient()
-	log := logger.NewConsoleLogger("e2e-recurring-expense-generator")
+	log := logger.initConsole("e2e-recurring-expense-generator")
 
 	repo, err := expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
 	c.Nil(err, "failed to create recurring expenses repository")

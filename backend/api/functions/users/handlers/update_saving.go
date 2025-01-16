@@ -21,7 +21,6 @@ var usRequest *updateSavingRequest
 var usOnce sync.Once
 
 type updateSavingRequest struct {
-	log            logger.LogAPI
 	startingTime   time.Time
 	err            error
 	savingsRepo    savings.Repository
@@ -29,7 +28,7 @@ type updateSavingRequest struct {
 	periodRepo     period.Repository
 }
 
-func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *updateSavingRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	usOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
@@ -48,8 +47,8 @@ func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI,
 		if err != nil {
 			return
 		}
-		request.log = log
-		request.log.SetHandler("update-saving")
+
+		logger.SetHandler("update-saving")
 	})
 	request.startingTime = time.Now()
 
@@ -57,17 +56,17 @@ func (request *updateSavingRequest) init(ctx context.Context, log logger.LogAPI,
 }
 
 func (request *updateSavingRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func UpdateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdateSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if usRequest == nil {
 		usRequest = new(updateSavingRequest)
 	}
 
-	err := usRequest.init(ctx, log, envConfig)
+	err := usRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("update_saving_init_failed", err, req)
+		logger.Error("update_saving_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -79,7 +78,7 @@ func UpdateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 func (request *updateSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	userSaving, err := request.validateUpdateInputs(req)
 	if err != nil {
-		request.log.Error("update_input_validation_failed", err, req)
+		logger.Error("update_input_validation_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -88,7 +87,7 @@ func (request *updateSavingRequest) process(ctx context.Context, req *apigateway
 
 	saving, err := updateSaving(ctx, userSaving.Username, userSaving)
 	if err != nil {
-		request.log.Error("update_saving_failed", err, req)
+		logger.Error("update_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

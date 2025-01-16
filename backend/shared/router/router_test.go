@@ -207,7 +207,7 @@ func dummyRouter() *Router {
 }
 
 func dummyHandler() Handler {
-	return func(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
+	return func(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 		return &apigateway.Response{
 			Body: fmt.Sprintf("Method: %s, Endpoint: %s", request.HTTPMethod, request.Resource),
 		}, nil

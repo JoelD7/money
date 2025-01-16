@@ -32,7 +32,7 @@ func TestGetByPeriod(t *testing.T) {
 	periodID := "2021-09"
 
 	ger := &handlers.GetExpensesRequest{
-		Log:          logger.NewConsoleLogger("e2e-get-expenses"),
+		Log:          logger.initConsole("e2e-get-expenses"),
 		ExpensesRepo: expensesRepo,
 		Username:     username,
 		UserRepo:     usersRepo,

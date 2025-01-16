@@ -76,7 +76,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 	request := handlers.GetPeriodStatRequest{
 		ExpensesRepo: expensesRepo,
 		IncomeRepo:   incomeRepo,
-		Log:          logger.NewConsoleLogger("get_period_stats_e2e_test"),
+		Log:          logger.initConsole("get_period_stats_e2e_test"),
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -110,7 +110,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 }
 
 func setupExpenses(ctx context.Context, file string, c *require.Assertions, expensesRepo expenses.Repository, cleaner setup.Cleaner) {
-	log := logger.NewConsoleLogger("e2e-testing")
+	log := logger.initConsole("e2e-testing")
 
 	data, err := os.ReadFile(file)
 	c.Nil(err, "reading expenses sample file failed")
@@ -196,7 +196,7 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 		request := handlers.GetPeriodStatRequest{
 			ExpensesRepo: expensesRepo,
 			IncomeRepo:   incomeRepo,
-			Log:          logger.NewConsoleLogger("get_period_stats_e2e_test"),
+			Log:          logger.initConsole("get_period_stats_e2e_test"),
 		}
 
 		response, err := request.Process(ctx, apigwRequest)
@@ -225,7 +225,7 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 		request := handlers.GetPeriodStatRequest{
 			ExpensesRepo: expensesRepo,
 			IncomeRepo:   incomeRepo,
-			Log:          logger.NewConsoleLogger("get_period_stats_e2e_test"),
+			Log:          logger.initConsole("get_period_stats_e2e_test"),
 		}
 
 		response, err := request.Process(ctx, apigwRequest)

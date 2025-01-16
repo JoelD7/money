@@ -18,19 +18,17 @@ var dpRequest *deletePeriodRequest
 var dpOnce sync.Once
 
 type deletePeriodRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	periodRepo   period.Repository
 	cacheManager cache.IncomePeriodCacheManager
 }
 
-func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *deletePeriodRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	dpOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
-		request.log = log
-		request.log.SetHandler("delete-period")
+		logger.SetHandler("delete-period")
 
 		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
@@ -45,19 +43,19 @@ func (request *deletePeriodRequest) init(ctx context.Context, log logger.LogAPI,
 }
 
 func (request *deletePeriodRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func DeletePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func DeletePeriodHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if dpRequest == nil {
 		dpRequest = new(deletePeriodRequest)
 	}
 
-	err := dpRequest.init(ctx, log, envConfig)
+	err := dpRequest.init(ctx, envConfig)
 	if err != nil {
 		dpRequest.err = err
 
-		log.Error("delete_period_init_failed", err, req)
+		logger.Error("delete_period_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 
@@ -70,7 +68,7 @@ func DeletePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	periodID, ok := req.PathParameters["periodID"]
 	if !ok || periodID == "" {
-		request.log.Error("missing_period_id", nil, req)
+		logger.Error("missing_period_id", nil, req)
 
 		return req.NewErrorResponse(models.ErrMissingPeriodID), nil
 	}
@@ -78,7 +76,7 @@ func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_username_from_context_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -87,7 +85,7 @@ func (request *deletePeriodRequest) process(ctx context.Context, req *apigateway
 
 	err = deletePeriod(ctx, periodID, username)
 	if err != nil {
-		request.log.Error("delete_period_failed", err, req)
+		logger.Error("delete_period_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

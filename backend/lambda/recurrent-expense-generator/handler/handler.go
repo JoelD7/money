@@ -21,7 +21,6 @@ var (
 )
 
 type CronRequest struct {
-	Log          logger.LogAPI
 	Repo         expenses_recurring.Repository
 	PeriodRepo   period.Repository
 	ExpensesRepo expenses.Repository
@@ -46,7 +45,7 @@ func Handle(ctx context.Context) error {
 	})
 
 	if ctxError != nil {
-		req.Log.Error("request_timeout", ctxError,
+		logger.Error("request_timeout", ctxError,
 			models.Any("stack", map[string]interface{}{
 				"s_trace": stackTrace,
 			}),
@@ -54,7 +53,7 @@ func Handle(ctx context.Context) error {
 	}
 
 	if err != nil {
-		req.Log.Error("request_error", err, nil)
+		logger.Error("request_error", err, nil)
 
 		return err
 	}
@@ -65,8 +64,6 @@ func Handle(ctx context.Context) error {
 func (req *CronRequest) init(ctx context.Context) error {
 	var err error
 	once.Do(func() {
-		req.Log = logger.NewLogger()
-
 		expensesRecurringTableName := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 		periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
 		uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
@@ -101,13 +98,13 @@ func (req *CronRequest) init(ctx context.Context) error {
 
 func (req *CronRequest) finish() {
 	defer func() {
-		err := req.Log.Finish()
+		err := logger.Finish()
 		if err != nil {
 			panic(err)
 		}
 	}()
 
-	req.Log.LogLambdaTime(req.startingTime, req.err, recover())
+	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func (req *CronRequest) Process(ctx context.Context) error {
@@ -116,7 +113,7 @@ func (req *CronRequest) Process(ctx context.Context) error {
 	recExpenses, err := req.Repo.ScanExpensesForDay(ctx, day)
 	if err != nil {
 		req.err = err
-		req.Log.Error("scan_expenses_for_day_failed", err,
+		logger.Error("scan_expenses_for_day_failed", err,
 			models.Any("run_information", map[string]interface{}{
 				"i_day": day,
 			}),
@@ -133,7 +130,7 @@ func (req *CronRequest) Process(ctx context.Context) error {
 	for username, userRecurringExpenses := range recExpensesByUser {
 		err = req.createExpenses(ctx, username, userRecurringExpenses)
 		if err != nil {
-			req.Log.Error("create_expenses_failed", err,
+			logger.Error("create_expenses_failed", err,
 				models.Any("run_information", map[string]interface{}{
 					"s_username": username,
 				}),
@@ -165,7 +162,7 @@ func (req *CronRequest) createExpenses(ctx context.Context, username string, rec
 		}
 	}
 
-	batchCreateExpenses := usecases.NewBatchExpensesCreator(req.ExpensesRepo, req.Log)
+	batchCreateExpenses := usecases.NewBatchExpensesCreator(req.ExpensesRepo)
 	err = batchCreateExpenses(ctx, expensesToCreate)
 	if err != nil {
 		return fmt.Errorf("batch create expenses failed: %v", err)
