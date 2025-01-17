@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -14,12 +13,11 @@ import (
 func TestDeleteHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
 	req := &deleteSavingRequest{
-		log:         logMock,
+
 		savingsRepo: savingsMock,
 	}
 
@@ -35,12 +33,11 @@ func TestDeleteHandlerSuccess(t *testing.T) {
 func TestDeleteHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
 	req := &deleteSavingRequest{
-		log:         logMock,
+
 		savingsRepo: savingsMock,
 	}
 
@@ -54,9 +51,7 @@ func TestDeleteHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Contains(logMock.Output.String(), "request_body_unmarshal_failed")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		logMock.Output.Reset()
 	})
 
 	t.Run("Saving with invalid username", func(t *testing.T) {
@@ -87,7 +82,6 @@ func TestDeleteHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrMissingSavingID.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "delete_saving_failed")
 	})
 
 	t.Run("Saving doesn't exist", func(t *testing.T) {

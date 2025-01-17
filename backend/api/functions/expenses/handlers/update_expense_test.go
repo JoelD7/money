@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"context"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -20,11 +18,11 @@ func TestUpdateHandlerSuccess(t *testing.T) {
 	expensesMock := expenses.NewDynamoMock()
 	periodMock := period.NewDynamoMock()
 	userMock := users.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	request := &updateExpenseRequest{
-		log:          logMock,
+
 		expensesRepo: expensesMock,
 		periodRepo:   periodMock,
 		userRepo:     userMock,
@@ -43,11 +41,11 @@ func TestUpdateHandlerFailed(t *testing.T) {
 	expensesMock := expenses.NewDynamoMock()
 	periodMock := period.NewDynamoMock()
 	userMock := users.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	request := &updateExpenseRequest{
-		log:          logMock,
+
 		expensesRepo: expensesMock,
 		periodRepo:   periodMock,
 		userRepo:     userMock,
@@ -62,9 +60,6 @@ func TestUpdateHandlerFailed(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "update_expense_failed")
-		c.Contains(logMock.Output.String(), models.ErrInvalidPeriod.Error())
-		logMock.Output.Reset()
 	})
 }
 

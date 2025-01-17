@@ -6,7 +6,6 @@ import (
 	"github.com/JoelD7/money/backend/api/functions/expenses/handlers"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -34,7 +33,6 @@ func TestGetExpensesStats(t *testing.T) {
 
 	request := handlers.GetExpensesStatsRequest{
 		ExpensesRepo: expensesRepo,
-		Log:          logger.initConsole("get_expenses_stats_e2e_test"),
 	}
 
 	apigwRequest := &apigateway.Request{

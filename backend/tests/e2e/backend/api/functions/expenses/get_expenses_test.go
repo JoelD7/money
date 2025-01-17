@@ -11,7 +11,6 @@ import (
 
 	"github.com/JoelD7/money/backend/api/functions/expenses/handlers"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -32,7 +31,6 @@ func TestGetByPeriod(t *testing.T) {
 	periodID := "2021-09"
 
 	ger := &handlers.GetExpensesRequest{
-		Log:          logger.initConsole("e2e-get-expenses"),
 		ExpensesRepo: expensesRepo,
 		Username:     username,
 		UserRepo:     usersRepo,

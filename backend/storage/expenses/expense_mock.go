@@ -3,7 +3,6 @@ package expenses
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"time"
 )
 

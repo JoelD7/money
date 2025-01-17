@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -17,12 +16,11 @@ func TestGetIncomeByPeriod(t *testing.T) {
 	apigwRequest := getDummyAPIGatewayRequest()
 	apigwRequest.QueryStringParameters["period"] = "2023-7"
 
-	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 	incomeMock := income.NewDynamoMock()
 
 	request := &GetMultipleIncomeRequest{
-		Log:        logMock,
+
 		IncomeRepo: incomeMock,
 	}
 

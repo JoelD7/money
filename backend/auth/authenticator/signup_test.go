@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
 	"net/http"
 	"testing"
@@ -28,7 +27,6 @@ func TestSignUpHandler(t *testing.T) {
 
 	request := &requestSignUpHandler{
 		userRepo: usersMock,
-		log:      logger.NewLoggerMock(nil),
 	}
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}
@@ -54,7 +52,6 @@ func TestSignUpHandlerFailed(t *testing.T) {
 
 	request := &requestSignUpHandler{
 		userRepo: usersMock,
-		log:      logger.NewLoggerMock(nil),
 	}
 
 	t.Run("Existing user error", func(t *testing.T) {

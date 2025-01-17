@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -16,11 +15,10 @@ func TestCreatePeriodSuccess(t *testing.T) {
 	c := require.New(t)
 
 	periodMock := period.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 
 	request := &CreatePeriodRequest{
-		Log:        logMock,
+
 		PeriodRepo: periodMock,
 	}
 
@@ -35,11 +33,10 @@ func TestCreatePeriodSuccessFailed(t *testing.T) {
 	c := require.New(t)
 
 	periodMock := period.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	request := &CreatePeriodRequest{
-		Log:        logMock,
 		PeriodRepo: periodMock,
 	}
 
@@ -53,7 +50,6 @@ func TestCreatePeriodSuccessFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(response.Body, models.ErrMissingPeriodName.Error())
-		c.Contains(logMock.Output.String(), "validate_request_body_failed")
 	})
 }
 

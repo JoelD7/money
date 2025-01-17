@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -18,7 +17,6 @@ import (
 func TestCreateSavingHandler(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
 	savingsMock := savings.NewMock()
 	periodMock := period.NewDynamoMock()
@@ -31,7 +29,7 @@ func TestCreateSavingHandler(t *testing.T) {
 	c.NoError(err)
 
 	req := &createSavingRequest{
-		log:         logMock,
+
 		savingsRepo: savingsMock,
 		userRepo:    userMock,
 		periodRepo:  periodMock,
@@ -52,14 +50,13 @@ func TestCreateSavingHandler(t *testing.T) {
 func TestCreateSavingHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
 	periodMock := period.NewDynamoMock()
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
 	req := &createSavingRequest{
-		log:         logMock,
+
 		userRepo:    userMock,
 		savingsRepo: savingsMock,
 		periodRepo:  periodMock,
@@ -74,9 +71,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Contains(logMock.Output.String(), "validate_request_body_failed")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		logMock.Output.Reset()
 	})
 
 	t.Run("Create saving failed", func(t *testing.T) {

@@ -25,6 +25,8 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	privateSecretName = env.GetString("TOKEN_PRIVATE_SECRET", "")
 	publicSecretName = env.GetString("TOKEN_PUBLIC_SECRET", "")
 	kidSecretName = env.GetString("KID_SECRET", "")
@@ -50,10 +52,7 @@ func TestJWKSHandler(t *testing.T) {
 		return "123", nil
 	})
 
-	logMock := logger.NewLoggerMock(nil)
-
 	request := &requestJwksHandler{
-		log:            logMock,
 		secretsManager: secretMock,
 	}
 
@@ -70,10 +69,8 @@ func TestJWKSHandlerFailed(t *testing.T) {
 
 	secretMock := secrets.NewSecretMock()
 	ctx := context.Background()
-	logMock := logger.NewLoggerMock(nil)
 
 	request := &requestJwksHandler{
-		log:            logMock,
 		secretsManager: secretMock,
 	}
 
@@ -89,7 +86,6 @@ func TestJWKSHandlerFailed(t *testing.T) {
 		response, err := request.processJWKS(ctx, &apigateway.Request{})
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.NoError(err)
-		c.Contains(logMock.Output.String(), "public_key_fetching_failed")
 	})
 
 	t.Run("Kid fetching failed", func(t *testing.T) {
@@ -111,6 +107,5 @@ func TestJWKSHandlerFailed(t *testing.T) {
 		response, err := request.processJWKS(ctx, &apigateway.Request{})
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.NoError(err)
-		c.Contains(logMock.Output.String(), "kid_fetching_failed")
 	})
 }

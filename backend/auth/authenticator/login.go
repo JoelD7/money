@@ -36,10 +36,10 @@ func logInHandler(ctx context.Context, envConfig *models.EnvironmentConfiguratio
 		loginRequest = new(requestLoginHandler)
 	}
 
-	err := loginRequest.initLoginHandler(ctx, log, envConfig)
+	err := loginRequest.initLoginHandler(ctx, envConfig)
 	if err != nil {
 		loginRequest.err = err
-		logger("login_init_failed", err, request)
+		logger.Error("login_init_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}

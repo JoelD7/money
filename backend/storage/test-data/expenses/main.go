@@ -18,7 +18,8 @@ func main() {
 }
 
 func run() {
-	log := logger.initConsole("expenses-test-data")
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	ctx := context.Background()
 
 	dynamoClient := dynamo.InitClient(ctx)
@@ -54,7 +55,7 @@ func run() {
 		panic(fmt.Errorf("unmarshalling expenses list failed: %w", err))
 	}
 
-	err = expensesRepo.BatchCreateExpenses(ctx, log, expensesList)
+	err = expensesRepo.BatchCreateExpenses(ctx, expensesList)
 	if err != nil {
 		panic(fmt.Errorf("batch creating expenses failed: %w", err))
 	}

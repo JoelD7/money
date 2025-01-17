@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/aws/aws-lambda-go/events"
@@ -16,14 +15,13 @@ import (
 func TestGetSavingsHandler(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
 	savingGoalMock := savingoal.NewMock()
 	ctx := context.Background()
 
 	req := &getSavingsRequest{
-		username:       "test@gmail.com",
-		log:            logMock,
+		username: "test@gmail.com",
+
 		savingsRepo:    savingsMock,
 		savingGoalRepo: savingGoalMock,
 	}
@@ -38,14 +36,13 @@ func TestGetSavingsHandler(t *testing.T) {
 func TestGetSavingsHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
 	savingGoalMock := savingoal.NewMock()
 	ctx := context.Background()
 
 	req := &getSavingsRequest{
-		username:       "test@gmail.com",
-		log:            logMock,
+		username: "test@gmail.com",
+
 		savingGoalRepo: savingGoalMock,
 		savingsRepo:    savingsMock,
 	}
@@ -59,9 +56,6 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 		response, err := req.getUserSavings(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusNotFound, response.StatusCode)
-		c.Contains(logMock.Output.String(), "savings_fetch_failed")
-		c.Contains(logMock.Output.String(), models.ErrSavingsNotFound.Error())
-		logMock.Output.Reset()
 	})
 
 	t.Run("Invalid email", func(t *testing.T) {
@@ -72,8 +66,6 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 
 		err := req.prepareRequest(apigwRequest)
 		c.ErrorIs(err, models.ErrInvalidEmail)
-		c.Contains(logMock.Output.String(), "invalid_username")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Username not in authorizer context", func(t *testing.T) {
@@ -82,8 +74,6 @@ func TestGetSavingsHandlerFailed(t *testing.T) {
 
 		err := req.prepareRequest(apigwRequest)
 		c.ErrorIs(err, models.ErrNoUsernameInContext)
-		c.Contains(logMock.Output.String(), "get_user_email_from_context_failed")
-		logMock.Output.Reset()
 	})
 }
 

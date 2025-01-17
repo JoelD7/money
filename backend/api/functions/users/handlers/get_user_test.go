@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -23,13 +22,11 @@ func TestHandlerSuccess(t *testing.T) {
 	usersMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
 	incomeMock := income.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
 
 	request := &getUserRequest{
 		userRepo:     usersMock,
 		expensesRepo: expensesMock,
 		incomeRepo:   incomeMock,
-		log:          logMock,
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -69,14 +66,13 @@ func TestHandlerFailed(t *testing.T) {
 	usersMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
 	incomeMock := income.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	request := &getUserRequest{
 		userRepo:     usersMock,
 		expensesRepo: expensesMock,
 		incomeRepo:   incomeMock,
-		log:          logMock,
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -97,8 +93,6 @@ func TestHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.NotNil(response)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "user_fetching_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("User not found", func(t *testing.T) {
@@ -109,9 +103,6 @@ func TestHandlerFailed(t *testing.T) {
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusNotFound, response.StatusCode)
-		c.Contains(logMock.Output.String(), "user_fetching_failed")
-		c.Contains(logMock.Output.String(), models.ErrUserNotFound.Error())
-		logMock.Output.Reset()
 	})
 
 	t.Run("Income not found", func(t *testing.T) {
@@ -122,9 +113,6 @@ func TestHandlerFailed(t *testing.T) {
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
-		c.Contains(logMock.Output.String(), "user_remainder_could_not_be_calculated")
-		c.Contains(logMock.Output.String(), models.ErrIncomeNotFound.Error())
-		logMock.Output.Reset()
 	})
 
 	t.Run("Expense not found", func(t *testing.T) {
@@ -135,8 +123,5 @@ func TestHandlerFailed(t *testing.T) {
 		c.Nil(err)
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
-		c.Contains(logMock.Output.String(), "user_remainder_could_not_be_calculated")
-		c.Contains(logMock.Output.String(), models.ErrExpensesNotFound.Error())
-		logMock.Output.Reset()
 	})
 }

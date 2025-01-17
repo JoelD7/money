@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"context"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -15,12 +13,11 @@ import (
 func TestGetPeriodHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 	periodMock := period.NewDynamoMock()
 
 	request := &getPeriodRequest{
-		log:        logMock,
+
 		periodRepo: periodMock,
 	}
 
@@ -34,12 +31,11 @@ func TestGetPeriodHandlerSuccess(t *testing.T) {
 func TestGetPeriodHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 	periodMock := period.NewDynamoMock()
 
 	request := &getPeriodRequest{
-		log:        logMock,
+
 		periodRepo: periodMock,
 	}
 
@@ -52,8 +48,6 @@ func TestGetPeriodHandlerFailed(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "missing_period_id")
-		c.Contains(logMock.Output.String(), models.ErrMissingPeriodID.Error())
 	})
 
 	t.Run("Username not in context", func(t *testing.T) {
@@ -63,8 +57,6 @@ func TestGetPeriodHandlerFailed(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "get_username_from_context_failed")
-		c.Contains(logMock.Output.String(), models.ErrNoUsernameInContext.Error())
 	})
 }
 

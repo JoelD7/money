@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -17,12 +16,11 @@ func TestUpdateCategoryHandler(t *testing.T) {
 	c := require.New(t)
 
 	usersMock := users.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	req := &updateCategoryRequest{
 		userRepo: usersMock,
-		log:      logMock,
 	}
 
 	apigwRequest := getUpdateCategoryRequest()
@@ -64,12 +62,11 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 	var apigwRequest *apigateway.Request
 
 	usersMock := users.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	req := &updateCategoryRequest{
 		userRepo: usersMock,
-		log:      logMock,
 	}
 
 	t.Run("No category id in path", func(t *testing.T) {
@@ -79,8 +76,6 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "get_category_id_from_path_failed")
-		c.Contains(logMock.Output.String(), errNoCategoryIDInPath.Error())
 	})
 
 	t.Run("Unmarshal request body failed", func(t *testing.T) {
@@ -90,7 +85,6 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
 	})
 
 	t.Run("Update category failed", func(t *testing.T) {
@@ -102,7 +96,6 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "update_category_failed")
 	})
 
 	t.Run("Invalid budget", func(t *testing.T) {
@@ -112,7 +105,6 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
 	})
 
 	t.Run("Name should not be empty", func(t *testing.T) {
@@ -122,7 +114,6 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
 	})
 
 	t.Run("Invalid color", func(t *testing.T) {
@@ -132,7 +123,6 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "update_category_failed")
 		c.Contains(response.Body, models.ErrInvalidHexColor.Error())
 	})
 
@@ -142,8 +132,6 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apiGatewayRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "update_category_failed")
-		c.Contains(logMock.Output.String(), models.ErrCategoryNameAlreadyExists.Error())
 	})
 }
 

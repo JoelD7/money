@@ -62,9 +62,9 @@ func GetSavingsHandler(ctx context.Context, envConfig *models.EnvironmentConfigu
 		gssRequest = new(getSavingsRequest)
 	}
 
-	err := gssRequest.init(ctx, log, envConfig)
+	err := gssRequest.init(ctx, envConfig)
 	if err != nil {
-		logger("get_savings_request_init_failed", err, req)
+		logger.Error("get_savings_request_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

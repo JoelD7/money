@@ -66,20 +66,20 @@ func (d *DynamoRepository) BatchCreateExpenseRecurring(ctx context.Context, expe
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			d.tableName: getBatchWriteRequests(entities, log),
+			d.tableName: getBatchWriteRequests(entities),
 		},
 	}
 
 	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
-func getBatchWriteRequests(entities []*ExpenseRecurringEntity, log logger.LogAPI) []types.WriteRequest {
+func getBatchWriteRequests(entities []*ExpenseRecurringEntity) []types.WriteRequest {
 	writeRequests := make([]types.WriteRequest, 0, len(entities))
 
 	for _, entity := range entities {
 		item, err := attributevalue.MarshalMap(entity)
 		if err != nil {
-			log.Warning("marshal_recurring_expense_failed", err, models.Any("expense_recurring_entity", entity))
+			logger.Warning("marshal_recurring_expense_failed", err, models.Any("expense_recurring_entity", entity))
 			continue
 		}
 

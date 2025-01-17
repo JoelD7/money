@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
@@ -17,14 +16,12 @@ import (
 func TestUpdateSaving(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	savingsMock := savings.NewMock()
 	savingGoalMock := savingoal.NewMock()
 	periodMock := period.NewDynamoMock()
 	ctx := context.Background()
 
 	req := &updateSavingRequest{
-		log:            logMock,
 		savingsRepo:    savingsMock,
 		periodRepo:     periodMock,
 		savingGoalRepo: savingGoalMock,
@@ -40,13 +37,11 @@ func TestUpdateSaving(t *testing.T) {
 func TestUpdateSavingHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	periodMock := period.NewDynamoMock()
 	savingsMock := savings.NewMock()
 	ctx := context.Background()
 
 	req := &updateSavingRequest{
-		log:         logMock,
 		savingsRepo: savingsMock,
 		periodRepo:  periodMock,
 	}
@@ -61,7 +56,6 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrInvalidEmail.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_input_validation_failed")
 	})
 
 	t.Run("Invalid amount", func(t *testing.T) {
@@ -72,7 +66,6 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrInvalidAmount.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_input_validation_failed")
 	})
 
 	t.Run("No saving ID", func(t *testing.T) {
@@ -83,7 +76,6 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Equal(models.ErrMissingSavingID.Error(), response.Body)
-		c.Contains(logMock.Output.String(), "update_input_validation_failed")
 	})
 
 	t.Run("Saving doesn't exist", func(t *testing.T) {
@@ -106,8 +98,6 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Contains(response.Body, models.ErrNoUsernameInContext.Error())
-		c.Contains(logMock.Output.String(), "update_input_validation_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Period doesn't exist", func(t *testing.T) {

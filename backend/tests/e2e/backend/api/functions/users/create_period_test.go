@@ -36,6 +36,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	periodTableName = env.GetString("PERIOD_TABLE_NAME", "")
 	uniquePeriodTableName = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 	usersTableName = env.GetString("USERS_TABLE_NAME", "")
@@ -77,7 +79,6 @@ func TestProcess(t *testing.T) {
 
 		req := &handlers.CreatePeriodRequest{
 			PeriodRepo: periodRepo,
-			Log:        logger.initConsole("create_period_e2e_test"),
 		}
 
 		expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
@@ -87,7 +88,7 @@ func TestProcess(t *testing.T) {
 		c.Nil(err, "loading expenses from file failed")
 		c.NotEmpty(username, "username from loaded expenses is empty")
 
-		err = expensesRepo.BatchCreateExpenses(ctx, req.Log, expensesList)
+		err = expensesRepo.BatchCreateExpenses(ctx, expensesList)
 		c.Nil(err, "batch creating expenses failed")
 
 		t.Cleanup(func() {

@@ -15,6 +15,7 @@ import (
 )
 
 func TestGetAllExpensesBetweenDates(t *testing.T) {
+	logger.InitLogger(logger.ConsoleImplementation)
 	var (
 		envConfig = &models.EnvironmentConfiguration{
 			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
@@ -33,7 +34,7 @@ func TestGetAllExpensesBetweenDates(t *testing.T) {
 	c.Nil(err, "failed to load expenses")
 
 	ctx := context.Background()
-	err = expensesRepo.BatchCreateExpenses(ctx, logger.initConsole("test"), expensesToCreate)
+	err = expensesRepo.BatchCreateExpenses(ctx, expensesToCreate)
 	c.Nil(err, "failed to batch create expenses")
 
 	t.Cleanup(func() {

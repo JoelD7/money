@@ -30,7 +30,6 @@ type GetExpensesStatsRequest struct {
 func (request *GetExpensesStatsRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gestExpenseOnce.Do(func() {
-		logger = log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
@@ -52,9 +51,9 @@ func GetExpensesStats(ctx context.Context, envConfig *models.EnvironmentConfigur
 		gesExpenseRequest = new(GetExpensesStatsRequest)
 	}
 
-	err := gesExpenseRequest.init(ctx, log, envConfig)
+	err := gesExpenseRequest.init(ctx, envConfig)
 	if err != nil {
-		logger("get_expenses_stats_init_failed", err, req)
+		logger.Error("get_expenses_stats_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

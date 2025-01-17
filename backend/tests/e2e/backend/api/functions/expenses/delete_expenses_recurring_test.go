@@ -32,6 +32,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
 	usersTableName = env.GetString("USERS_TABLE_NAME", "")
 	envConfig = &models.EnvironmentConfiguration{
@@ -82,7 +84,6 @@ func TestProcess(t *testing.T) {
 
 	req := &handlers.DeleteExpenseRecurringRequest{
 		Repo: expensesRecRepo,
-		Log:  logger.initConsole("delete_expense_recurring_e2e_test"),
 	}
 
 	expenseRecurringID := strings.ToLower(*createdExpense.Name)

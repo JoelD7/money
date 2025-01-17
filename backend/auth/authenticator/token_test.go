@@ -9,7 +9,6 @@ import (
 
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -28,7 +27,6 @@ func TestTokenHandler(t *testing.T) {
 	})
 
 	request := &requestTokenHandler{
-		log:                 logger.NewLoggerMock(nil),
 		secretsManager:      secretMock,
 		userRepo:            usersMock,
 		invalidTokenManager: cache.NewRedisCacheMock(),
@@ -64,10 +62,8 @@ func TestTokenHandlerFailed(t *testing.T) {
 	usersMock := users.NewDynamoMock()
 	secretMock := secrets.NewSecretMock()
 	redisMock := cache.NewRedisCacheMock()
-	logMock := logger.NewLoggerMock(nil)
 
 	request := &requestTokenHandler{
-		log:                 logMock,
 		secretsManager:      secretMock,
 		userRepo:            usersMock,
 		invalidTokenManager: redisMock,
@@ -80,13 +76,11 @@ func TestTokenHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
-		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
 
 		dummyApigwRequest.Headers["Cookie"] = refreshTokenCookieName + "=header.payload.signature"
 		response, err = request.processToken(ctx, dummyApigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
-		c.Contains(logMock.Output.String(), "get_refresh_token_payload_failed")
 	})
 
 	t.Run("Refresh token leaked", func(t *testing.T) {
@@ -99,7 +93,6 @@ func TestTokenHandlerFailed(t *testing.T) {
 		c.Nil(err)
 		c.Equal(http.StatusUnauthorized, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
-		c.Contains(logMock.Output.String(), "refresh_token_validation_failed")
 	})
 
 	t.Run("Token invalidation failed", func(t *testing.T) {
@@ -117,7 +110,6 @@ func TestTokenHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
-		c.Contains(logMock.Output.String(), "refresh_token_validation_failed")
 	})
 
 	t.Run("User not found", func(t *testing.T) {
@@ -130,7 +122,6 @@ func TestTokenHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
-		c.Contains(logMock.Output.String(), "get_user_failed")
 	})
 
 	t.Run("Refresh token in cookie not found", func(t *testing.T) {
@@ -140,7 +131,6 @@ func TestTokenHandlerFailed(t *testing.T) {
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
-		c.Contains(logMock.Output.String(), "getting_refresh_token_cookie_failed")
 	})
 
 	t.Run("Set tokens failed", func(t *testing.T) {
@@ -154,7 +144,6 @@ func TestTokenHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
-		c.Contains(logMock.Output.String(), "generate_access_token_failed")
 	})
 }
 

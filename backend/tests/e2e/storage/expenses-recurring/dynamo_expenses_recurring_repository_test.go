@@ -18,6 +18,8 @@ import (
 func TestScanExpensesForDay(t *testing.T) {
 	c := require.New(t)
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	var err error
 
 	dynamoClient := setup.InitDynamoClient()
@@ -73,9 +75,7 @@ func createExpenses(c *require.Assertions, repository *repo.DynamoRepository) {
 		expense.CreatedDate = time.Now()
 	}
 
-	log := logger.initConsole("e2e-recurring-expense-generator")
-
-	err = repository.BatchCreateExpenseRecurring(context.Background(), log, recExpenses)
+	err = repository.BatchCreateExpenseRecurring(context.Background(), recExpenses)
 	c.Nil(err)
 }
 
