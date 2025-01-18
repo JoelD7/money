@@ -30,6 +30,8 @@ type LogAPI interface {
 	SetHandler(handler string)
 }
 
+// InitLogger initializes the logger. Don't forget to call Finish() when the application is shutting down to ensure a
+// proper closing of the logger's resources.
 func InitLogger(impl LogImplementation) LogAPI {
 	if loggerSingleton != nil {
 		return loggerSingleton
