@@ -223,9 +223,8 @@ func (l *logstashLogger) write(data []byte) error {
 	return err
 }
 
-// Finish sends the remaining buffer's contents to Logstash. When the buffer is full it automatically flushes itself,
-// sending the data it contains to Logstash. Therefore, Finish has to wait for all "data-sending" goroutines to be
-// completed because there may or may not be a Logstash request underway.
+// Finish waits for all goroutines to send their logs and flushes the buffer. It should be noted that when the buffer
+// is full it automatically flushes itself, so this manual flushing is done just in case.
 func (l *logstashLogger) Finish() error {
 	l.wg.Wait()
 
