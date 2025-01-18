@@ -242,6 +242,8 @@ func main() {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
+	logger.InitLogger(logger.LogstashImplementation)
+
 	lambda.Start(func(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
 		defer func() {
 			err = logger.Finish()

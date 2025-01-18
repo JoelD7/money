@@ -19,6 +19,8 @@ func main() {
 
 	rootRouter := router.NewRouter(envConfig)
 
+	logger.InitLogger(logger.LogstashImplementation)
+
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/expenses", func(r *router.Router) {
 			r.Get("/{expenseID}", handlers.GetExpense)

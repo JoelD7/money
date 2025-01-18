@@ -17,6 +17,8 @@ func main() {
 		panic(fmt.Errorf("failed to load environment variables: %w", err))
 	}
 
+	logger.InitLogger(logger.LogstashImplementation)
+
 	rootRouter := router.NewRouter(envConfig)
 
 	rootRouter.Route("/", func(r *router.Router) {

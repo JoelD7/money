@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	logger.InitLogger(logger.LogstashImplementation)
 	lambda.Start(func(ctx context.Context) error {
 		defer func() {
 			err := logger.Finish()

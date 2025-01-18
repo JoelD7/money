@@ -16,6 +16,8 @@ func main() {
 		panic(err)
 	}
 
+	logger.InitLogger(logger.LogstashImplementation)
+
 	lambda.Start(func(ctx context.Context, sqsEvent events.SQSEvent) error {
 		defer func() {
 			err = logger.Finish()

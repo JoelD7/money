@@ -19,6 +19,8 @@ func main() {
 
 	rootRouter := router.NewRouter(envConfig)
 
+	logger.InitLogger(logger.LogstashImplementation)
+
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/income", func(r *router.Router) {
 			r.Post("/", handlers.CreateIncomeHandler)
