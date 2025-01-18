@@ -19,14 +19,12 @@ var (
 // Handler type, defines the function signature for an APIGateway lambda handler.
 // Takes the following arguments:
 //  1. context provided by the AWS Lambda runtime,
-//  2. a logger instance, provided by the router so that both the router and the lambda function use the same logger connection,
-//  3. an environment configuration object, so that the lambda function can access the environment variables,
+//  2. an environment configuration object, so that the lambda function can access the environment variables,
 //  4. and the request object provided by APIGateway.
-type Handler func(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error)
+type Handler func(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error)
 
 type Router struct {
 	path           string
-	log            logger.LogAPI
 	parent         *Router
 	root           *Router
 	methodHandlers map[string]map[string]Handler
@@ -36,7 +34,6 @@ type Router struct {
 func NewRouter(envConfig *models.EnvironmentConfiguration) *Router {
 	return &Router{
 		envConfig: envConfig,
-		log:       logger.NewLogger(),
 		methodHandlers: map[string]map[string]Handler{
 			http.MethodGet:     make(map[string]Handler),
 			http.MethodHead:    make(map[string]Handler),
@@ -50,19 +47,12 @@ func NewRouter(envConfig *models.EnvironmentConfiguration) *Router {
 }
 
 func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (res *apigateway.Response, err error) {
-	defer func() {
-		closeErr := router.log.Finish()
-		if closeErr != nil {
-			fmt.Println("Error closing logger: ", closeErr)
-		}
-	}()
-
 	stackTrace, ctxErr := shared.ExecuteLambda(ctx, func(ctx context.Context) {
 		res, err = router.executeHandle(ctx, router.envConfig, request)
 	})
 
 	if ctxErr != nil {
-		router.log.Error("request_timeout", ctxErr, models.Any("stack", map[string]interface{}{
+		logger.Error("request_timeout", ctxErr, models.Any("stack", map[string]interface{}{
 			"s_trace": stackTrace,
 		}))
 
@@ -78,7 +68,7 @@ func (router *Router) Handle(ctx context.Context, request *apigateway.Request) (
 
 func (router *Router) executeHandle(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if !router.isRoot() {
-		router.log.Error("router_handle_failed", errRouterIsNotRoot, nil)
+		logger.Error("router_handle_failed", errRouterIsNotRoot, nil)
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,
@@ -87,7 +77,7 @@ func (router *Router) executeHandle(ctx context.Context, envConfig *models.Envir
 	}
 
 	if _, ok := router.methodHandlers[request.HTTPMethod][request.Resource]; !ok {
-		router.log.Error("router_handle_failed", errPathNotDefined,
+		logger.Error("router_handle_failed", errPathNotDefined,
 			models.Any("router_data", map[string]interface{}{
 				"s_path": router.path,
 			}),
@@ -108,7 +98,7 @@ func (router *Router) executeHandle(ctx context.Context, envConfig *models.Envir
 		}, nil
 	}
 
-	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, router.log, envConfig, request)
+	return router.methodHandlers[request.HTTPMethod][request.Resource](ctx, envConfig, request)
 }
 
 func (router *Router) Route(path string, fn func(r *Router)) {

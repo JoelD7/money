@@ -14,7 +14,6 @@ import (
 )
 
 type incomeGetRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	incomeRepo   income.Repository
@@ -23,10 +22,9 @@ type incomeGetRequest struct {
 var once sync.Once
 var request *incomeGetRequest
 
-func (request *incomeGetRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *incomeGetRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	once.Do(func() {
-		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
@@ -40,17 +38,17 @@ func (request *incomeGetRequest) init(ctx context.Context, log logger.LogAPI, en
 }
 
 func (request *incomeGetRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func GetIncomeHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if request == nil {
 		request = new(incomeGetRequest)
 	}
 
-	err := request.init(ctx, log, envConfig)
+	err := request.init(ctx, envConfig)
 	if err != nil {
-		request.log.Error("init_failed", err, req)
+		logger.Error("init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -65,7 +63,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 	if !ok || incomeID == "" {
 		request.err = models.ErrMissingIncomeID
 
-		request.log.Error("missing_income_id", nil, req)
+		logger.Error("missing_income_id", nil, req)
 		return req.NewErrorResponse(models.ErrMissingIncomeID), nil
 	}
 
@@ -73,7 +71,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 	if err != nil {
 		request.err = err
 
-		request.log.Error("get_username_from_context_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 
@@ -83,7 +81,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 	if err != nil {
 		request.err = err
 
-		request.log.Error("get_income_failed", err, req)
+		logger.Error("get_income_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 

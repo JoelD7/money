@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -17,11 +16,9 @@ func TestDeleteHandlerSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	expensesMock := expenses.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
 
 	request := &deleteExpenseRequest{
 		expensesRepo: expensesMock,
-		log:          logMock,
 	}
 
 	apiRequest := getDeleteExpenseRequest()

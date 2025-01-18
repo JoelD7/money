@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go/aws"
@@ -27,7 +28,7 @@ type PeriodManager interface {
 	DeletePeriod(ctx context.Context, periodID, username string) error
 }
 
-func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, log Logger) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
+func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 		if period.StartDate.After(period.EndDate) {
 			return nil, models.ErrStartDateShouldBeBeforeEndDate
@@ -41,21 +42,21 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, log Logg
 
 		newPeriod, err := pm.CreatePeriod(ctx, period)
 		if err != nil {
-			log.Error("create_period_failed", err, models.Any("period", period))
+			logger.Error("create_period_failed", err, models.Any("period", period))
 
 			return nil, err
 		}
 
 		err = cache.AddIncomePeriods(ctx, username, []string{periodID})
 		if err != nil {
-			log.Error("add_income_periods_failed", err, models.Any("period", period))
+			logger.Error("add_income_periods_failed", err, models.Any("period", period))
 
 			return nil, fmt.Errorf("couldn't add income periods to cache: %w", err)
 		}
 
 		err = sendPeriodToSQS(ctx, newPeriod)
 		if err != nil {
-			log.Error("send_period_to_sqs_failed", err, models.Any("new_period", newPeriod))
+			logger.Error("send_period_to_sqs_failed", err, models.Any("new_period", newPeriod))
 		}
 
 		return newPeriod, nil

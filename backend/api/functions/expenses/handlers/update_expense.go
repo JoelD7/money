@@ -22,7 +22,6 @@ var ueRequest *updateExpenseRequest
 var ueOnce sync.Once
 
 type updateExpenseRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	expensesRepo expenses.Repository
@@ -30,10 +29,9 @@ type updateExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *updateExpenseRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *updateExpenseRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	ueOnce.Do(func() {
-		request.log = log
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
@@ -57,17 +55,17 @@ func (request *updateExpenseRequest) init(ctx context.Context, log logger.LogAPI
 }
 
 func (request *updateExpenseRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func UpdateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdateExpense(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if ueRequest == nil {
 		ueRequest = new(updateExpenseRequest)
 	}
 
-	err := ueRequest.init(ctx, log, envConfig)
+	err := ueRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("update_expense_init_failed", err, req)
+		logger.Error("update_expense_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -79,21 +77,21 @@ func UpdateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 func (request *updateExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	expenseID, ok := req.PathParameters["expenseID"]
 	if !ok || expenseID == "" {
-		request.log.Error("missing_expense_id", nil, req)
+		logger.Error("missing_expense_id", nil, req)
 
 		return req.NewErrorResponse(models.ErrMissingExpenseID), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	expense, err := validateUpdateInput(req, username)
 	if err != nil {
-		request.log.Error("validate_input_failed", err, req)
+		logger.Error("validate_input_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -102,7 +100,7 @@ func (request *updateExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	updatedExpense, err := updateExpense(ctx, expenseID, username, expense)
 	if err != nil {
-		request.log.Error("update_expense_failed", err, req)
+		logger.Error("update_expense_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

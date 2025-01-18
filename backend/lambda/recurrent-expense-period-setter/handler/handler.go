@@ -22,7 +22,6 @@ var (
 )
 
 type Request struct {
-	Log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	ExpensesRepo expenses.Repository
@@ -34,7 +33,6 @@ func (request *Request) init(ctx context.Context) error {
 
 	preOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
-		request.Log = logger.NewLogger()
 
 		periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
 		uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
@@ -63,7 +61,7 @@ func (request *Request) init(ctx context.Context) error {
 }
 
 func (request *Request) finish() {
-	request.Log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
 func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
@@ -73,7 +71,7 @@ func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 
 	err := preRequest.init(ctx)
 	if err != nil {
-		preRequest.Log.Error("init_failed", err, nil)
+		logger.Error("init_failed", err, nil)
 
 		return err
 	}
@@ -86,7 +84,7 @@ func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 		}
 	}
 
-	preRequest.Log.Info("message_processing_successful", models.Any("message_data", map[string]interface{}{
+	logger.Info("message_processing_successful", models.Any("message_data", map[string]interface{}{
 		"i_message_count": len(sqsEvent.Records),
 	}))
 
@@ -96,16 +94,16 @@ func Handle(ctx context.Context, sqsEvent events.SQSEvent) error {
 func (request *Request) ProcessMessage(ctx context.Context, record models.SQSMessage) error {
 	msgBody, err := validateMessageBody(record)
 	if err != nil {
-		request.Log.Error("validate_request_body_failed", err, models.Any("record", record))
+		logger.Error("validate_request_body_failed", err, models.Any("record", record))
 
 		return err
 	}
 
-	updateExpensesWoPeriod := usecases.NewExpensesPeriodSetter(request.ExpensesRepo, request.PeriodRepo, request.Log)
+	updateExpensesWoPeriod := usecases.NewExpensesPeriodSetter(request.ExpensesRepo, request.PeriodRepo)
 
 	err = updateExpensesWoPeriod(ctx, msgBody.Username, msgBody.Period)
 	if err != nil {
-		request.Log.Error("patch_recurrent_expenses_failed", err, models.Any("record", record))
+		logger.Error("patch_recurrent_expenses_failed", err, models.Any("record", record))
 
 		return err
 	}

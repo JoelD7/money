@@ -3,9 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/stretchr/testify/require"
@@ -16,13 +14,11 @@ import (
 func TestLogoutHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	usersMock := users.NewDynamoMock()
 	redisMock := cache.NewRedisCacheMock()
 	ctx := context.Background()
 
 	request := &requestLogoutHandler{
-		log:                 logMock,
 		userRepo:            usersMock,
 		invalidTokenManager: redisMock,
 	}
@@ -41,13 +37,11 @@ func TestLogoutHandlerSuccess(t *testing.T) {
 func TestLogoutHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	ctx := context.Background()
 	usersMock := users.NewDynamoMock()
 	redisMock := cache.NewRedisCacheMock()
 
 	request := &requestLogoutHandler{
-		log:                 logMock,
 		userRepo:            usersMock,
 		invalidTokenManager: redisMock,
 	}
@@ -61,8 +55,5 @@ func TestLogoutHandlerFailed(t *testing.T) {
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 		c.Empty(response.Headers["Set-Cookie"])
-		c.Contains(logMock.Output.String(), "logout_failed")
-		c.Contains(logMock.Output.String(), models.ErrMissingUsername.Error())
-		logMock.Output.Reset()
 	})
 }

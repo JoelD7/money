@@ -4,14 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"math"
 	"time"
 )
 
 type ExpenseManager interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
-	BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
+	BatchCreateExpenses(ctx context.Context, expenses []*models.Expense) error
 
 	GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
@@ -22,7 +21,7 @@ type ExpenseManager interface {
 	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error)
 
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
-	BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
+	BatchUpdateExpenses(ctx context.Context, expenses []*models.Expense) error
 
 	DeleteExpense(ctx context.Context, expenseID, username string) error
 }
@@ -51,14 +50,14 @@ func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Con
 	}
 }
 
-func NewBatchExpensesCreator(em ExpenseManager, log logger.LogAPI) func(ctx context.Context, expenses []*models.Expense) error {
+func NewBatchExpensesCreator(em ExpenseManager) func(ctx context.Context, expenses []*models.Expense) error {
 	return func(ctx context.Context, expenses []*models.Expense) error {
 		for _, expense := range expenses {
 			expense.ExpenseID = generateDynamoID("EX")
 			expense.CreatedDate = time.Now()
 		}
 
-		return em.BatchCreateExpenses(ctx, log, expenses)
+		return em.BatchCreateExpenses(ctx, expenses)
 	}
 }
 
@@ -208,7 +207,7 @@ func NewExpensesDeleter(em ExpenseManager) func(ctx context.Context, expenseID, 
 	}
 }
 
-func NewExpensesPeriodSetter(em ExpenseManager, pm PeriodManager, log logger.LogAPI) func(ctx context.Context, username, periodID string) error {
+func NewExpensesPeriodSetter(em ExpenseManager, pm PeriodManager) func(ctx context.Context, username, periodID string) error {
 	return func(ctx context.Context, username, periodID string) error {
 		period, err := pm.GetPeriod(ctx, username, periodID)
 		if err != nil {
@@ -229,7 +228,7 @@ func NewExpensesPeriodSetter(em ExpenseManager, pm PeriodManager, log logger.Log
 			}
 		}
 
-		err = em.BatchUpdateExpenses(ctx, log, expenses)
+		err = em.BatchUpdateExpenses(ctx, expenses)
 		if err != nil {
 			return err
 		}

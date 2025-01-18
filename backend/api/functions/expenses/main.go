@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/api/functions/expenses/handlers"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/aws/aws-lambda-go/lambda"
 )
@@ -16,6 +18,8 @@ func main() {
 	}
 
 	rootRouter := router.NewRouter(envConfig)
+
+	logger.InitLogger(logger.LogstashImplementation)
 
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/expenses", func(r *router.Router) {
@@ -37,5 +41,14 @@ func main() {
 		})
 	})
 
-	lambda.Start(rootRouter.Handle)
+	lambda.Start(func(ctx context.Context, request *apigateway.Request) (res *apigateway.Response, err error) {
+		defer func() {
+			err = logger.Finish()
+			if err != nil {
+				panic(fmt.Errorf("failed to finish logger: %w", err))
+			}
+		}()
+
+		return rootRouter.Handle(ctx, request)
+	})
 }

@@ -56,6 +56,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	os.Exit(m.Run())
 }
 
@@ -76,7 +78,6 @@ func TestCron(t *testing.T) {
 
 	ctx := context.Background()
 	dynamoClient := setup.InitDynamoClient()
-	log := logger.NewConsoleLogger("e2e-recurring-expense-generator")
 
 	repo, err := expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
 	c.Nil(err, "failed to create recurring expenses repository")
@@ -88,7 +89,6 @@ func TestCron(t *testing.T) {
 	c.Nil(err, "failed to create expenses repository")
 
 	req := &handler.CronRequest{
-		Log:          log,
 		Repo:         repo,
 		PeriodRepo:   periodRepo,
 		ExpensesRepo: expensesRepo,
@@ -159,7 +159,7 @@ func setupRecurringExpenses(baseTime time.Time, req *handler.CronRequest) ([]*mo
 		expense.CreatedDate = baseTime
 	}
 
-	err = req.Repo.BatchCreateExpenseRecurring(context.Background(), req.Log, recExpenses)
+	err = req.Repo.BatchCreateExpenseRecurring(context.Background(), recExpenses)
 	if err != nil {
 		return nil, fmt.Errorf("failed to batch create recurring expenses: %v", err)
 	}
@@ -197,7 +197,7 @@ func cleanup(req *handler.CronRequest, recExpenses *[]*models.ExpenseRecurring, 
 	var errs []error
 
 	if recExpenses != nil && len(*recExpenses) > 0 {
-		reErr := req.Repo.BatchDeleteExpenseRecurring(ctx, req.Log, *recExpenses)
+		reErr := req.Repo.BatchDeleteExpenseRecurring(ctx, *recExpenses)
 		if reErr != nil {
 			errs = append(errs, fmt.Errorf("failed to batch delete recurring expenses: %v", reErr))
 		}

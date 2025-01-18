@@ -19,23 +19,22 @@ var signUpRequest *requestSignUpHandler
 var signUpOnce sync.Once
 
 type requestSignUpHandler struct {
-	log            logger.LogAPI
 	startingTime   time.Time
 	err            error
 	userRepo       users.Repository
 	secretsManager secrets.SecretManager
 }
 
-func signUpHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
+func signUpHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if signUpRequest == nil {
 		signUpRequest = new(requestSignUpHandler)
 	}
 
-	err := signUpRequest.initSignUpHandler(ctx, log, envConfig)
+	err := signUpRequest.initSignUpHandler(ctx, envConfig)
 	if err != nil {
 		signUpRequest.err = err
 
-		signUpRequest.log.Error("sign_up_init_failed", err, request)
+		logger.Error("sign_up_init_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -44,11 +43,10 @@ func signUpHandler(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 	return signUpRequest.processSignUp(ctx, request)
 }
 
-func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	signUpOnce.Do(func() {
-		req.log = log
-		req.log.SetHandler("sign-up")
+		logger.SetHandler("sign-up")
 		dynamoClient := dynamo.InitClient(ctx)
 
 		req.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
@@ -63,24 +61,24 @@ func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, log logg
 }
 
 func (req *requestSignUpHandler) finish() {
-	req.log.LogLambdaTime(req.startingTime, req.err, recover())
+	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	reqBody, err := validateSingUpInput(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("validate_input_failed", err, request)
+		logger.Error("validate_input_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
 
-	saveNewUser := usecases.NewUserCreator(req.userRepo, req.log)
+	saveNewUser := usecases.NewUserCreator(req.userRepo)
 
 	err = saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
 	if err != nil {
 		req.err = err
-		req.log.Error("save_new_user_failed", err, request)
+		logger.Error("save_new_user_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -90,7 +88,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		FullName: reqBody.FullName,
 	}
 
-	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
+	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager)
 
 	accessToken, refreshToken, err := generateTokens(ctx, newUser)
 	if err != nil {

@@ -21,7 +21,6 @@ var loginRequest *requestLoginHandler
 var loginOnce sync.Once
 
 type requestLoginHandler struct {
-	log            logger.LogAPI
 	startingTime   time.Time
 	err            error
 	userRepo       users.Repository
@@ -32,15 +31,15 @@ type accessTokenResponse struct {
 	AccessToken string `json:"accessToken"`
 }
 
-func logInHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
+func logInHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 	if loginRequest == nil {
 		loginRequest = new(requestLoginHandler)
 	}
 
-	err := loginRequest.initLoginHandler(ctx, log, envConfig)
+	err := loginRequest.initLoginHandler(ctx, envConfig)
 	if err != nil {
 		loginRequest.err = err
-		log.Error("login_init_failed", err, request)
+		logger.Error("login_init_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
@@ -49,11 +48,10 @@ func logInHandler(ctx context.Context, log logger.LogAPI, envConfig *models.Envi
 	return loginRequest.processLogin(ctx, request)
 }
 
-func (req *requestLoginHandler) initLoginHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (req *requestLoginHandler) initLoginHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	loginOnce.Do(func() {
-		req.log = log
-		req.log.SetHandler("login")
+		logger.SetHandler("login")
 		dynamoClient := dynamo.InitClient(ctx)
 
 		req.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
@@ -69,20 +67,20 @@ func (req *requestLoginHandler) initLoginHandler(ctx context.Context, log logger
 }
 
 func (req *requestLoginHandler) finish() {
-	req.log.LogLambdaTime(req.startingTime, req.err, recover())
+	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
 func (req *requestLoginHandler) processLogin(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	reqBody, err := validateLoginInput(request)
 	if err != nil {
 		req.err = err
-		req.log.Error("validate_input_failed", err, request)
+		logger.Error("validate_input_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
 	}
 
-	authenticate := usecases.NewUserAuthenticator(req.userRepo, req.log)
-	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager, req.log)
+	authenticate := usecases.NewUserAuthenticator(req.userRepo)
+	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager)
 
 	user, err := authenticate(ctx, reqBody.Username, reqBody.Password)
 	if errors.Is(err, models.ErrUserNotFound) {
@@ -107,7 +105,7 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 
 	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
-	req.log.Info("login_succeeded", nil)
+	logger.Info("login_succeeded", nil)
 
 	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }

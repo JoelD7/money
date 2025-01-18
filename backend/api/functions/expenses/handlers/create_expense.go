@@ -24,7 +24,6 @@ var (
 )
 
 type createExpenseRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	expensesRepo expenses.Repository
@@ -32,11 +31,10 @@ type createExpenseRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *createExpenseRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	ceOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
-		request.log = log
 
 		request.expensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
@@ -54,17 +52,17 @@ func (request *createExpenseRequest) init(ctx context.Context, log logger.LogAPI
 }
 
 func (request *createExpenseRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func CreateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func CreateExpense(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if ceRequest == nil {
 		ceRequest = new(createExpenseRequest)
 	}
 
-	err := ceRequest.init(ctx, log, envConfig)
+	err := ceRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("create_expense_init_failed", err, req)
+		logger.Error("create_expense_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -77,14 +75,14 @@ func CreateExpense(ctx context.Context, log logger.LogAPI, envConfig *models.Env
 func (request *createExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	expense, err := validateInput(req, username)
 	if err != nil {
-		request.log.Error("validate_input_failed", err, req)
+		logger.Error("validate_input_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -93,7 +91,7 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 
 	newExpense, err := createExpense(ctx, username, expense)
 	if err != nil {
-		request.log.Error("create_expense_failed", err, req)
+		logger.Error("create_expense_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

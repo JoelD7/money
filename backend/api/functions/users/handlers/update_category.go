@@ -25,17 +25,15 @@ var (
 )
 
 type updateCategoryRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	userRepo     users.Repository
 }
 
-func (request *updateCategoryRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *updateCategoryRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	ucOnce.Do(func() {
-		request.log = log
-		request.log.SetHandler("update-category")
+		logger.SetHandler("update-category")
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
@@ -49,19 +47,19 @@ func (request *updateCategoryRequest) init(ctx context.Context, log logger.LogAP
 }
 
 func (request *updateCategoryRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func UpdateCategoryHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdateCategoryHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if ucRequest == nil {
 		ucRequest = new(updateCategoryRequest)
 	}
 
-	err := ucRequest.init(ctx, log, envConfig)
+	err := ucRequest.init(ctx, envConfig)
 	if err != nil {
 		ucRequest.err = err
 
-		log.Error("update_category_init_failed", err, req)
+		logger.Error("update_category_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -74,14 +72,14 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 	categoryID, ok := req.PathParameters["categoryID"]
 	if !ok {
 		request.err = errNoCategoryIDInPath
-		request.log.Error("get_category_id_from_path_failed", errNoCategoryIDInPath, req)
+		logger.Error("get_category_id_from_path_failed", errNoCategoryIDInPath, req)
 
 		return req.NewErrorResponse(errNoCategoryIDInPath), nil
 	}
 
 	requestCategory, err := validateRequestBody(req)
 	if err != nil {
-		request.log.Error("request_body_validation_failed", err, req)
+		logger.Error("request_body_validation_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -89,14 +87,14 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("get_user_email_from_context_failed", err, req)
+		logger.Error("get_user_email_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	err = validate.Email(username)
 	if err != nil {
-		request.log.Error("invalid_username", err, req)
+		logger.Error("invalid_username", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -106,7 +104,7 @@ func (request *updateCategoryRequest) process(ctx context.Context, req *apigatew
 	err = updateCategory(ctx, username, categoryID, requestCategory)
 	if err != nil {
 		request.err = err
-		request.log.Error("update_category_failed", err, req)
+		logger.Error("update_category_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

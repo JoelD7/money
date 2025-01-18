@@ -7,7 +7,6 @@ import (
 	"github.com/JoelD7/money/backend/api/functions/users/handlers"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
@@ -76,7 +75,6 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 	request := handlers.GetPeriodStatRequest{
 		ExpensesRepo: expensesRepo,
 		IncomeRepo:   incomeRepo,
-		Log:          logger.NewConsoleLogger("get_period_stats_e2e_test"),
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -110,8 +108,6 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 }
 
 func setupExpenses(ctx context.Context, file string, c *require.Assertions, expensesRepo expenses.Repository, cleaner setup.Cleaner) {
-	log := logger.NewConsoleLogger("e2e-testing")
-
 	data, err := os.ReadFile(file)
 	c.Nil(err, "reading expenses sample file failed")
 
@@ -120,7 +116,7 @@ func setupExpenses(ctx context.Context, file string, c *require.Assertions, expe
 
 	c.Len(expensesList, 13, "unexpected number of expenses in the sample file")
 
-	err = expensesRepo.BatchCreateExpenses(ctx, log, expensesList)
+	err = expensesRepo.BatchCreateExpenses(ctx, expensesList)
 	c.Nil(err, "batch creating expenses failed")
 
 	defer cleaner.Cleanup(func() {
@@ -196,7 +192,6 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 		request := handlers.GetPeriodStatRequest{
 			ExpensesRepo: expensesRepo,
 			IncomeRepo:   incomeRepo,
-			Log:          logger.NewConsoleLogger("get_period_stats_e2e_test"),
 		}
 
 		response, err := request.Process(ctx, apigwRequest)
@@ -225,7 +220,6 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 		request := handlers.GetPeriodStatRequest{
 			ExpensesRepo: expensesRepo,
 			IncomeRepo:   incomeRepo,
-			Log:          logger.NewConsoleLogger("get_period_stats_e2e_test"),
 		}
 
 		response, err := request.Process(ctx, apigwRequest)

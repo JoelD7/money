@@ -23,7 +23,6 @@ var (
 )
 
 type createSavingRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	savingsRepo  savings.Repository
@@ -31,11 +30,10 @@ type createSavingRequest struct {
 	periodRepo   period.Repository
 }
 
-func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *createSavingRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	csOnce.Do(func() {
-		request.log = log
-		request.log.SetHandler("create-saving")
+		logger.SetHandler("create-saving")
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig.SavingsTable, envConfig.PeriodSavingIndexName, envConfig.SavingGoalSavingIndexName)
@@ -53,17 +51,17 @@ func (request *createSavingRequest) init(ctx context.Context, log logger.LogAPI,
 }
 
 func (request *createSavingRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func CreateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func CreateSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if csRequest == nil {
 		csRequest = new(createSavingRequest)
 	}
 
-	err := csRequest.init(ctx, log, envConfig)
+	err := csRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("init_create_saving_request_failed", err, req)
+		logger.Error("init_create_saving_request_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -75,14 +73,14 @@ func CreateSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *mode
 func (request *createSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	userSaving, err := validateBody(req)
 	if err != nil {
-		request.log.Error("validate_request_body_failed", err, req)
+		logger.Error("validate_request_body_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		request.log.Error("get_username_from_context_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -91,7 +89,7 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 
 	saving, err := createSaving(ctx, username, userSaving)
 	if err != nil {
-		request.log.Error("create_saving_failed", err, req)
+		logger.Error("create_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

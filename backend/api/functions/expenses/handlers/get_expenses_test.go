@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
@@ -17,11 +16,10 @@ func TestGetExpensesSuccess(t *testing.T) {
 
 	usersMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	request := &GetExpensesRequest{
-		Log:          logMock,
 		ExpensesRepo: expensesMock,
 		UserRepo:     usersMock,
 	}

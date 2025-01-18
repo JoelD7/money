@@ -18,7 +18,6 @@ var gmiRequest *GetMultipleIncomeRequest
 var gmiOnce sync.Once
 
 type GetMultipleIncomeRequest struct {
-	Log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	Username     string
@@ -35,11 +34,9 @@ type MultipleIncomeResponse struct {
 	NextKey string           `json:"next_key"`
 }
 
-func (request *GetMultipleIncomeRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *GetMultipleIncomeRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	gmiOnce.Do(func() {
-		request.Log = log
-
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.IncomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
@@ -55,17 +52,17 @@ func (request *GetMultipleIncomeRequest) init(ctx context.Context, log logger.Lo
 }
 
 func (request *GetMultipleIncomeRequest) finish() {
-	request.Log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func GetMultipleIncomeHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func GetMultipleIncomeHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if gmiRequest == nil {
 		gmiRequest = new(GetMultipleIncomeRequest)
 	}
 
-	err := gmiRequest.init(ctx, log, envConfig)
+	err := gmiRequest.init(ctx, envConfig)
 	if err != nil {
-		gmiRequest.Log.Error("init_failed", err, req)
+		logger.Error("init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -84,7 +81,7 @@ func (request *GetMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_username_failed", nil, req)
+		logger.Error("get_username_failed", nil, req)
 
 		return err
 	}
@@ -93,7 +90,7 @@ func (request *GetMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 
 	request.QueryParameters, err = req.GetQueryParameters()
 	if err != nil {
-		request.Log.Error("get_request_params_failed", err, req)
+		logger.Error("get_request_params_failed", err, req)
 
 		return err
 	}
@@ -114,7 +111,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 	if period == "" {
 		request.err = models.ErrMissingPeriod
 
-		request.Log.Error("missing_period", nil, req)
+		logger.Error("missing_period", nil, req)
 		return req.NewErrorResponse(models.ErrMissingPeriod), nil
 	}
 
@@ -123,7 +120,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_income_by_period_failed", err, req)
+		logger.Error("get_income_by_period_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 
@@ -142,7 +139,7 @@ func (request *GetMultipleIncomeRequest) getAllIncome(ctx context.Context, req *
 	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.QueryParameters)
 	if err != nil {
 		request.err = err
-		request.Log.Error("get_all_income_failed", err, req)
+		logger.Error("get_all_income_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 

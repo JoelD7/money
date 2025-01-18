@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"golang.org/x/crypto/bcrypt"
 	"math/big"
 	"math/rand"
@@ -57,7 +58,7 @@ type SecretManager interface {
 }
 
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userManager UserManager, logger Logger) func(ctx context.Context, fullName, username, password string) error {
+func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName, username, password string) error {
 	return func(ctx context.Context, fullName, username, password string) error {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 		if err != nil {
@@ -131,7 +132,7 @@ func generateDynamoID(prefix string) string {
 }
 
 // NewUserAuthenticator authenticates a user.
-func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx context.Context, username, password string) (*models.User, error) {
+func NewUserAuthenticator(userGetter UserManager) func(ctx context.Context, username, password string) (*models.User, error) {
 	return func(ctx context.Context, username, password string) (*models.User, error) {
 		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
@@ -154,7 +155,7 @@ func NewUserAuthenticator(userGetter UserManager, logger Logger) func(ctx contex
 }
 
 // NewUserTokenGenerator generates access and refresh tokens for the user.
-func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager, logger Logger) func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
+func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager) func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 	return func(ctx context.Context, user *models.User) (*models.AuthToken, *models.AuthToken, error) {
 		now := time.Now()
 		accessTokenAudience := env.GetString("TOKEN_AUDIENCE", "")
@@ -233,7 +234,7 @@ func NewUserTokenGenerator(userManager UserManager, secretManager SecretManager,
 }
 
 // NewRefreshTokenValidator validates a refresh token.
-func NewRefreshTokenValidator(userGetter UserManager, logger Logger) func(ctx context.Context, refreshToken string) (*models.User, error) {
+func NewRefreshTokenValidator(userGetter UserManager) func(ctx context.Context, refreshToken string) (*models.User, error) {
 	return func(ctx context.Context, refreshToken string) (*models.User, error) {
 		payload, err := getTokenPayload(refreshToken)
 		if err != nil {
@@ -333,7 +334,7 @@ func validateRefreshToken(user *models.User, refreshToken string) error {
 }
 
 // NewTokenInvalidator invalidates a user's tokens.
-func NewTokenInvalidator(tokenCache InvalidTokenCache, logger Logger) func(ctx context.Context, user *models.User) error {
+func NewTokenInvalidator(tokenCache InvalidTokenCache) func(ctx context.Context, user *models.User) error {
 	return func(ctx context.Context, user *models.User) error {
 		accessTokenDuration := env.GetInt("ACCESS_TOKEN_DURATION", 300)
 		refreshTokenDuration := env.GetInt("REFRESH_TOKEN_DURATION", 2592000)
@@ -360,7 +361,7 @@ func NewTokenInvalidator(tokenCache InvalidTokenCache, logger Logger) func(ctx c
 }
 
 // GetJsonWebKeySet returns a JWKS using the public and kid secret names passed in.
-func GetJsonWebKeySet(ctx context.Context, secrets SecretManager, logger Logger) (*models.Jwks, error) {
+func GetJsonWebKeySet(ctx context.Context, secrets SecretManager) (*models.Jwks, error) {
 	publicKey, err := getPublicKey(ctx, secrets)
 	if err != nil {
 		logger.Error("public_key_fetching_failed", err, nil)
@@ -423,7 +424,7 @@ func getKidFromSecret(ctx context.Context, secrets SecretManager) (string, error
 	return kidSecret, nil
 }
 
-func NewUserLogout(userGetter UserManager, tokenCache InvalidTokenCache, logger Logger) func(ctx context.Context, token string) error {
+func NewUserLogout(userGetter UserManager, tokenCache InvalidTokenCache) func(ctx context.Context, token string) error {
 	return func(ctx context.Context, username string) error {
 		user, err := userGetter.GetUser(ctx, username)
 		if err != nil {
@@ -432,7 +433,7 @@ func NewUserLogout(userGetter UserManager, tokenCache InvalidTokenCache, logger 
 			return err
 		}
 
-		invalidateTokens := NewTokenInvalidator(tokenCache, logger)
+		invalidateTokens := NewTokenInvalidator(tokenCache)
 
 		err = invalidateTokens(ctx, user)
 		if err != nil {

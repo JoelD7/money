@@ -2,26 +2,38 @@ package handlers
 
 import (
 	"context"
-	"github.com/JoelD7/money/backend/models"
+	"fmt"
+	"net/http"
+	"os"
+	"testing"
+
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"testing"
 )
 
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(fmt.Errorf("loading environment failed: %v", err))
+	}
+
+	logger.InitLogger(logger.ConsoleImplementation)
+
+	os.Exit(m.Run())
+}
 func TestCreateCategoryHandlerFailed(t *testing.T) {
 	c := require.New(t)
 
 	usersMock := users.NewDynamoMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	req := &createCategoryRequest{
 		userRepo: usersMock,
-		log:      logMock,
 	}
 
 	t.Run("Invalid request body", func(t *testing.T) {
@@ -31,8 +43,6 @@ func TestCreateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apiGatewayRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
-		c.Contains(logMock.Output.String(), models.ErrInvalidRequestBody.Error())
 	})
 
 	t.Run("Missing name", func(t *testing.T) {
@@ -42,8 +52,6 @@ func TestCreateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apiGatewayRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
-		c.Contains(logMock.Output.String(), models.ErrMissingCategoryName.Error())
 	})
 
 	t.Run("Missing budget", func(t *testing.T) {
@@ -53,8 +61,6 @@ func TestCreateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apiGatewayRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
-		c.Contains(logMock.Output.String(), models.ErrMissingCategoryBudget.Error())
 	})
 
 	t.Run("Invalid budget", func(t *testing.T) {
@@ -64,8 +70,6 @@ func TestCreateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apiGatewayRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
-		c.Contains(logMock.Output.String(), models.ErrInvalidBudget.Error())
 	})
 
 	t.Run("Missing color", func(t *testing.T) {
@@ -75,8 +79,6 @@ func TestCreateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apiGatewayRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "request_body_validation_failed")
-		c.Contains(logMock.Output.String(), models.ErrMissingCategoryColor.Error())
 	})
 
 	t.Run("Category name already exists", func(t *testing.T) {
@@ -85,8 +87,6 @@ func TestCreateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apiGatewayRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "create_category_failed")
-		c.Contains(logMock.Output.String(), models.ErrCategoryNameAlreadyExists.Error())
 	})
 }
 

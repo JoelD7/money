@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/users"
 	"net/http"
 	"testing"
@@ -44,7 +43,6 @@ func TestLoginHandler(t *testing.T) {
 	request := &requestLoginHandler{
 		userRepo:       usersMock,
 		secretsManager: secretMock,
-		log:            logger.NewLoggerMock(nil),
 	}
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}
@@ -87,7 +85,6 @@ func TestLoginHandlerFailed(t *testing.T) {
 	request := &requestLoginHandler{
 		userRepo:       usersMock,
 		secretsManager: secretMock,
-		log:            logger.NewLoggerMock(nil),
 	}
 
 	apigwRequest := &apigateway.Request{Body: jsonBody}

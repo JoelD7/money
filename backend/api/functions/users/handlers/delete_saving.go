@@ -18,13 +18,12 @@ var dsRequest *deleteSavingRequest
 var dsOnce sync.Once
 
 type deleteSavingRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	savingsRepo  savings.Repository
 }
 
-func (request *deleteSavingRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *deleteSavingRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	dsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
@@ -33,8 +32,7 @@ func (request *deleteSavingRequest) init(ctx context.Context, log logger.LogAPI,
 		if err != nil {
 			return
 		}
-		request.log = log
-		request.log.SetHandler("delete-saving")
+		logger.SetHandler("delete-saving")
 	})
 	request.startingTime = time.Now()
 
@@ -42,17 +40,17 @@ func (request *deleteSavingRequest) init(ctx context.Context, log logger.LogAPI,
 }
 
 func (request *deleteSavingRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func DeleteSavingHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func DeleteSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if dsRequest == nil {
 		dsRequest = new(deleteSavingRequest)
 	}
 
-	err := dsRequest.init(ctx, log, envConfig)
+	err := dsRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("delete_saving_init_failed", err, req)
+		logger.Error("delete_saving_init_failed", err, req)
 		return req.NewErrorResponse(err), nil
 	}
 	defer dsRequest.finish()
@@ -65,7 +63,7 @@ func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway
 
 	err := json.Unmarshal([]byte(req.Body), userSaving)
 	if err != nil {
-		request.log.Error("request_body_unmarshal_failed", err, req)
+		logger.Error("request_body_unmarshal_failed", err, req)
 
 		return req.NewErrorResponse(models.ErrInvalidRequestBody), nil
 	}
@@ -74,7 +72,7 @@ func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway
 
 	err = deleteSaving(ctx, userSaving.SavingID, userSaving.Username)
 	if err != nil {
-		request.log.Error("delete_saving_failed", err, req)
+		logger.Error("delete_saving_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

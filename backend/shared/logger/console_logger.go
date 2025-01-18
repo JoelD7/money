@@ -21,7 +21,7 @@ type ConsoleLogger struct {
 	Service string `json:"service,omitempty"`
 }
 
-func NewConsoleLogger(service string) LogAPI {
+func initConsole(service string) LogAPI {
 	return &ConsoleLogger{Service: service}
 }
 

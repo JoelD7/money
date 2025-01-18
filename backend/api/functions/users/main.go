@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/api/functions/users/handlers"
+	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/router"
 	"github.com/aws/aws-lambda-go/lambda"
 )
@@ -14,6 +16,8 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("failed to load environment variables: %w", err))
 	}
+
+	logger.InitLogger(logger.LogstashImplementation)
 
 	rootRouter := router.NewRouter(envConfig)
 
@@ -49,5 +53,14 @@ func main() {
 		})
 	})
 
-	lambda.Start(rootRouter.Handle)
+	lambda.Start(func(ctx context.Context, request *apigateway.Request) (res *apigateway.Response, err error) {
+		defer func() {
+			err = logger.Finish()
+			if err != nil {
+				panic(fmt.Errorf("failed to finish logger: %w", err))
+			}
+		}()
+
+		return rootRouter.Handle(ctx, request)
+	})
 }

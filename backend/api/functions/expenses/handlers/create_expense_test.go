@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -19,7 +18,6 @@ import (
 func TestHandlerSuccess(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
 	periodMock := period.NewDynamoMock()
@@ -27,7 +25,7 @@ func TestHandlerSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	request := &createExpenseRequest{
-		log:          logMock,
+
 		userRepo:     userMock,
 		expensesRepo: expensesMock,
 		periodRepo:   periodMock,
@@ -43,14 +41,13 @@ func TestHandlerSuccess(t *testing.T) {
 func TestHandlerFailure(t *testing.T) {
 	c := require.New(t)
 
-	logMock := logger.NewLoggerMock(nil)
 	userMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
 	periodMock := period.NewDynamoMock()
 	ctx := context.Background()
 
 	request := &createExpenseRequest{
-		log:          logMock,
+
 		userRepo:     userMock,
 		expensesRepo: expensesMock,
 		periodRepo:   periodMock,
@@ -74,8 +71,6 @@ func TestHandlerFailure(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "validate_input_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Missing name", func(t *testing.T) {
@@ -86,8 +81,6 @@ func TestHandlerFailure(t *testing.T) {
 		c.NoError(err)
 		c.Contains(response.Body, models.ErrMissingName.Error())
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "validate_input_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Missing amount", func(t *testing.T) {
@@ -98,8 +91,6 @@ func TestHandlerFailure(t *testing.T) {
 		c.NoError(err)
 		c.Contains(response.Body, models.ErrMissingAmount.Error())
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "validate_input_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Invalid amount", func(t *testing.T) {
@@ -110,8 +101,6 @@ func TestHandlerFailure(t *testing.T) {
 		c.NoError(err)
 		c.Contains(response.Body, models.ErrInvalidAmount.Error())
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "validate_input_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Create expense failed", func(t *testing.T) {
@@ -121,8 +110,6 @@ func TestHandlerFailure(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Contains(logMock.Output.String(), "create_expense_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Get Username from context failed", func(t *testing.T) {
@@ -132,8 +119,6 @@ func TestHandlerFailure(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "get_username_from_context_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Missing period", func(t *testing.T) {
@@ -144,8 +129,6 @@ func TestHandlerFailure(t *testing.T) {
 		c.NoError(err)
 		c.Contains(response.Body, models.ErrMissingPeriod.Error())
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(logMock.Output.String(), "validate_input_failed")
-		logMock.Output.Reset()
 	})
 }
 

@@ -28,7 +28,7 @@ var (
 //		})
 //
 //		if ctxError != nil {
-//			req.log.Error("request_timeout", ctxError, []models.LoggerObject{
+//			req.logger("request_timeout", ctxError, []models.LoggerObject{
 //				req.getEventAsLoggerObject(event),
 //				req.log.MapToLoggerObject("stack", map[string]interface{}{
 //					"s_trace": stackTrace,

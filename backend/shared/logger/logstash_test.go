@@ -8,10 +8,20 @@ import (
 	"time"
 )
 
+func TestJoel(t *testing.T) {
+	c := require.New(t)
+
+	log := initLogstash()
+	c.NotNil(log)
+
+	log2 := initLogstash()
+	c.NotNil(log2)
+}
+
 func TestGetLogDataAsBytes(t *testing.T) {
 	c := require.New(t)
 
-	l := &Log{
+	l := &logstashLogger{
 		Service: "unit-test",
 	}
 

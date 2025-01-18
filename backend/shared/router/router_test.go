@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
@@ -207,7 +206,7 @@ func dummyRouter() *Router {
 }
 
 func dummyHandler() Handler {
-	return func(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
+	return func(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
 		return &apigateway.Response{
 			Body: fmt.Sprintf("Method: %s, Endpoint: %s", request.HTTPMethod, request.Resource),
 		}, nil

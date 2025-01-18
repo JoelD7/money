@@ -165,7 +165,7 @@ func (d *DynamoRepository) buildTransactWriteItemsInput(expenseEnt *expenseEntit
 	}, nil
 }
 
-func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, expenses []*models.Expense) error {
 	entities := make([]*expenseEntity, 0, len(expenses))
 
 	for _, expense := range expenses {
@@ -176,20 +176,20 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, log logger.L
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			d.tableName: getBatchWriteRequests(entities, log),
+			d.tableName: getBatchWriteRequests(entities),
 		},
 	}
 
 	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
 }
 
-func getBatchWriteRequests(entities []*expenseEntity, log logger.LogAPI) []types.WriteRequest {
+func getBatchWriteRequests(entities []*expenseEntity) []types.WriteRequest {
 	writeRequests := make([]types.WriteRequest, 0, len(entities))
 
 	for _, entity := range entities {
 		item, err := attributevalue.MarshalMap(entity)
 		if err != nil {
-			log.Warning("marshal_expense_failed", err, models.Any("expense_entity", entity))
+			logger.Warning("marshal_expense_failed", err, models.Any("expense_entity", entity))
 			continue
 		}
 
@@ -336,7 +336,7 @@ func getUpdateExpression(attributeValues map[string]types.AttributeValue) *strin
 	return aws.String("SET " + strings.Join(attributes, ", "))
 }
 
-func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error {
+func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, expenses []*models.Expense) error {
 	entities := make([]*expenseEntity, 0, len(expenses))
 
 	for _, expense := range expenses {
@@ -347,7 +347,7 @@ func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, log logger.L
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			d.tableName: getBatchWriteRequests(entities, log),
+			d.tableName: getBatchWriteRequests(entities),
 		},
 	}
 

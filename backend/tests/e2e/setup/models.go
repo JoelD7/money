@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -112,7 +111,7 @@ func CreateExpensesEntries(ctx context.Context, repo expenses.Repository, source
 		return
 	}
 
-	err = repo.BatchCreateExpenses(ctx, logger.NewConsoleLogger("e2e-expenses"), entries)
+	err = repo.BatchCreateExpenses(ctx, entries)
 	if err != nil {
 		err = fmt.Errorf("cannot create test expenses entries: %v", err)
 		return

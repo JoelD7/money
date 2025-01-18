@@ -29,6 +29,8 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	kidSecretName = env.GetString("KID_SECRET", "")
 
 	os.Exit(m.Run())
@@ -43,15 +45,7 @@ func TestJoel(t *testing.T) {
 		cacheRepo:      cache.NewRedisCache(),
 		secretsManager: secrets.NewAWSSecretManager(),
 		client:         restclient.New(),
-		log:            logger.NewLogger(),
 	}
-
-	defer func() {
-		err := req.log.Finish()
-		if err != nil {
-			panic(err)
-		}
-	}()
 
 	event := dummyHandlerEvent()
 	event.AuthorizationToken = "Bearer " + "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6InJlYWQgd3JpdGUiLCJpc3MiOiJodHRwczovLzM4cXNscGU4ZDkuZXhlY3V0ZS1hcGkudXMtZWFzdC0xLmFtYXpvbmF3cy5jb20vc3RhZ2luZyIsInN1YiI6InRlc3RAZ21haWwuY29tIiwiYXVkIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6MzAwMCIsImV4cCI6MTcyMTE0MTk4NCwiaWF0IjoxNzIxMTQxNjg0fQ.bathIOdA0crjvEWzd7oBzIggVkqs-Lr34HtiaU3ZV3jfE971E_FN-Ulakxhp272e6Xhe7adiJmtUHU6aDaShw3a4qO4ddNbUD_Bs4jPj4dMQcCmr6vej1qWYeXrp_ej4nMftMaFTedESnBHNv0WhJFUT-jNQ1gw_GAQY_y8rXf9oINGUxaCf0CiqQsy_xV4DJf377DlPTcymxnwqTQgKw8VuPyqdil29JoDzgQflIVAoOjCwh-A9bmNzuRh9vSWi3IKntqm4gfkWfQ9Vs5PZ7At5JkKdN2V1Vj2hxiDVerY9--gryBYpPCBvJsQlu_3NLElOezzz_dnkf7DvwWWLFw"
@@ -69,14 +63,13 @@ func TestHandleRequest(t *testing.T) {
 	mockRestClient := restclient.NewMockRestClient()
 	cacheMock := cache.NewRedisCacheMock()
 	secretMock := secrets.NewSecretMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	req := &requestInfo{
 		cacheRepo:      cacheMock,
 		secretsManager: secretMock,
 		client:         mockRestClient,
-		log:            logMock,
 	}
 
 	event := dummyHandlerEvent()
@@ -101,14 +94,13 @@ func TestHandlerError(t *testing.T) {
 	mockRestClient := restclient.NewMockRestClient()
 	cacheMock := cache.NewRedisCacheMock()
 	secretMock := secrets.NewSecretMock()
-	logMock := logger.NewLoggerMock(nil)
+
 	ctx := context.Background()
 
 	req := &requestInfo{
 		cacheRepo:      cacheMock,
 		secretsManager: secretMock,
 		client:         mockRestClient,
-		log:            logMock,
 	}
 
 	event := dummyHandlerEvent()
@@ -119,8 +111,6 @@ func TestHandlerError(t *testing.T) {
 
 		_, err := req.process(ctx, event)
 		c.ErrorIs(err, models.ErrUnauthorized)
-		c.Contains(logMock.Output.String(), "getting_token_payload_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Payload decoding failed", func(t *testing.T) {
@@ -128,8 +118,6 @@ func TestHandlerError(t *testing.T) {
 
 		_, err := req.process(ctx, event)
 		c.ErrorIs(err, models.ErrUnauthorized)
-		c.Contains(logMock.Output.String(), "getting_token_payload_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Signing key not found", func(t *testing.T) {
@@ -145,8 +133,6 @@ func TestHandlerError(t *testing.T) {
 		c.ErrorIs(err, models.ErrSigningKeyNotFound)
 		c.Nil(response.Context["stringKey"])
 		c.Empty(response)
-		c.Contains(logMock.Output.String(), "getting_public_key_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Getting public key failed", func(t *testing.T) {
@@ -163,8 +149,6 @@ func TestHandlerError(t *testing.T) {
 		response, err := req.process(ctx, event)
 		c.ErrorIs(err, secrets.ErrForceFailure)
 		c.Empty(response)
-		c.Contains(logMock.Output.String(), "getting_public_key_failed")
-		logMock.Output.Reset()
 	})
 
 	t.Run("Invalid token detected", func(t *testing.T) {
@@ -179,8 +163,6 @@ func TestHandlerError(t *testing.T) {
 		response, err := req.process(ctx, event)
 		c.Nil(err)
 		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
-		c.Contains(logMock.Output.String(), "invalid_token_use_detected")
-		logMock.Output.Reset()
 	})
 
 	t.Run("JWT verification failed", func(t *testing.T) {
@@ -196,8 +178,6 @@ func TestHandlerError(t *testing.T) {
 		response, err := req.process(ctx, event)
 		c.ErrorIs(err, models.ErrUnauthorized)
 		c.Empty(response)
-		c.Contains(logMock.Output.String(), "jwt_validation_failed")
-		logMock.Output.Reset()
 	})
 }
 

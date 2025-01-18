@@ -24,6 +24,8 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	os.Exit(m.Run())
 }
 
@@ -53,7 +55,6 @@ func TestProcess(t *testing.T) {
 	req := &handler.Request{
 		ExpensesRepo: expensesRepository,
 		PeriodRepo:   periodRepository,
-		Log:          logger.NewConsoleLogger("patch_recurrent_expense_e2e_test"),
 	}
 
 	username := "e2e_test@gmail.com"
@@ -85,7 +86,7 @@ func TestProcess(t *testing.T) {
 		},
 	}
 
-	err = req.ExpensesRepo.BatchCreateExpenses(ctx, req.Log, expensesList)
+	err = req.ExpensesRepo.BatchCreateExpenses(ctx, expensesList)
 	c.Nil(err, "batch creating expenses failed")
 
 	t.Cleanup(func() {

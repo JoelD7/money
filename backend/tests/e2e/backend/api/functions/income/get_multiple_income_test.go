@@ -37,6 +37,8 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
+	logger.InitLogger(logger.ConsoleImplementation)
+
 	incomeTableName = env.GetString("INCOME_TABLE_NAME", "")
 	periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
 	usersTableName = env.GetString("USERS_TABLE_NAME", "")
@@ -74,7 +76,6 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	request := &handlers.GetMultipleIncomeRequest{
 		IncomeRepo:   repo,
 		CacheManager: cacheManager,
-		Log:          logger.NewConsoleLogger("get_multiple_income_test"),
 		Username:     setup.Username,
 		PageSize:     10,
 		StartKey:     "",
@@ -212,7 +213,6 @@ func BenchmarkGetMultipleIncome(t *testing.B) {
 	request := &handlers.GetMultipleIncomeRequest{
 		IncomeRepo:   repo,
 		CacheManager: cacheManager,
-		Log:          logger.NewConsoleLogger("get_multiple_income_test"),
 		Username:     setup.Username,
 		PageSize:     10,
 		StartKey:     "",

@@ -19,13 +19,12 @@ var upRequest *updatePeriodRequest
 var upOnce sync.Once
 
 type updatePeriodRequest struct {
-	log          logger.LogAPI
 	startingTime time.Time
 	err          error
 	periodRepo   period.Repository
 }
 
-func (request *updatePeriodRequest) init(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration) error {
+func (request *updatePeriodRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	upOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
@@ -34,8 +33,7 @@ func (request *updatePeriodRequest) init(ctx context.Context, log logger.LogAPI,
 		if err != nil {
 			return
 		}
-		request.log = log
-		request.log.SetHandler("update-period")
+		logger.SetHandler("update-period")
 	})
 	request.startingTime = time.Now()
 
@@ -43,17 +41,17 @@ func (request *updatePeriodRequest) init(ctx context.Context, log logger.LogAPI,
 }
 
 func (request *updatePeriodRequest) finish() {
-	request.log.LogLambdaTime(request.startingTime, request.err, recover())
+	logger.LogLambdaTime(request.startingTime, request.err, recover())
 }
 
-func UpdatePeriodHandler(ctx context.Context, log logger.LogAPI, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
+func UpdatePeriodHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, req *apigateway.Request) (*apigateway.Response, error) {
 	if upRequest == nil {
 		upRequest = new(updatePeriodRequest)
 	}
 
-	err := upRequest.init(ctx, log, envConfig)
+	err := upRequest.init(ctx, envConfig)
 	if err != nil {
-		log.Error("update_period_init_failed", err, req)
+		logger.Error("update_period_init_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -66,7 +64,7 @@ func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway
 	periodBody, err := validateUpdateRequestBody(req)
 	if err != nil {
 		request.err = err
-		request.log.Error("validate_request_body_failed", err, req)
+		logger.Error("validate_request_body_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
@@ -76,7 +74,7 @@ func (request *updatePeriodRequest) process(ctx context.Context, req *apigateway
 	updatedPeriod, err := updatePeriod(ctx, periodBody.Username, periodBody.ID, periodBody)
 	if err != nil {
 		request.err = err
-		request.log.Error("update_period_failed", err, req)
+		logger.Error("update_period_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}

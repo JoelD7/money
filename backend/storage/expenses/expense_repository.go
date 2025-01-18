@@ -3,7 +3,6 @@ package expenses
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
@@ -15,7 +14,7 @@ type DynamoAPI interface {
 
 type Repository interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
-	BatchCreateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
+	BatchCreateExpenses(ctx context.Context, expenses []*models.Expense) error
 
 	GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
 	GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
@@ -26,7 +25,7 @@ type Repository interface {
 	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error)
 
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
-	BatchUpdateExpenses(ctx context.Context, log logger.LogAPI, expenses []*models.Expense) error
+	BatchUpdateExpenses(ctx context.Context, expenses []*models.Expense) error
 
 	DeleteExpense(ctx context.Context, expenseID, username string) error
 	BatchDeleteExpenses(ctx context.Context, expenses []*models.Expense) error
