@@ -105,11 +105,9 @@ func (request *getPeriodsRequest) prepareRequest(req *apigateway.Request) error 
 
 	err = validate.Email(request.username)
 	if err != nil {
-		logger.Error("invalid_username", err,
-			models.Any("user_data", map[string]interface{}{
-				"s_username": request.username,
-			}),
-		)
+		logger.Error("invalid_username", err, models.Any("user_data", map[string]interface{}{
+			"s_username": request.username,
+		}))
 
 		return err
 	}

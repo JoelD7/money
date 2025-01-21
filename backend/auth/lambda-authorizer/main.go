@@ -103,12 +103,9 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	})
 
 	if ctxError != nil {
-		logger.Error("request_timeout", ctxError,
-			req.getEventAsLoggerObject(event),
-			models.Any("stack", map[string]interface{}{
-				"s_trace": stackTrace,
-			}),
-		)
+		logger.Error("request_timeout", ctxError, req.getEventAsLoggerObject(event), models.Any("stack", map[string]interface{}{
+			"s_trace": stackTrace,
+		}))
 	}
 
 	return

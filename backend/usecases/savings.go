@@ -44,12 +44,10 @@ func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.
 func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			logger.Error("invalid_page_size_detected", err,
-				models.Any("user_data", map[string]interface{}{
-					"s_username":  username,
-					"i_page_size": pageSize,
-				}),
-			)
+			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
+				"s_username":  username,
+				"i_page_size": pageSize,
+			}))
 
 			return nil, "", err
 		}
@@ -71,12 +69,10 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context
 func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			logger.Error("invalid_page_size_detected", err,
-				models.Any("user_data", map[string]interface{}{
-					"s_username":  username,
-					"i_page_size": pageSize,
-				}),
-			)
+			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
+				"s_username":  username,
+				"i_page_size": pageSize,
+			}))
 
 			return nil, "", err
 		}
@@ -98,11 +94,9 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx 
 func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			logger.Error("invalid_page_size_detected", err,
-				models.Any("user_data", map[string]interface{}{
-					"i_page_size": pageSize,
-				}),
-			)
+			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
+				"i_page_size": pageSize,
+			}))
 
 			return nil, "", err
 		}
@@ -124,11 +118,9 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(
 func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
 		if err := validatePageSize(pageSize); err != nil {
-			logger.Error("invalid_page_size_detected", err,
-				models.Any("user_data", map[string]interface{}{
-					"i_page_size": pageSize,
-				}),
-			)
+			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
+				"i_page_size": pageSize,
+			}))
 
 			return nil, "", err
 		}

@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	loggerSingleton LogAPI
+	loggerInstance LogAPI
 )
 
 const (
@@ -16,68 +16,57 @@ const (
 	ConsoleImplementation  LogImplementation = "console"
 )
 
-// LogImplementation is the type of logger to use
-type LogImplementation string
-
-type LogAPI interface {
-	Info(eventName string, fields ...models.LoggerField)
-	Warning(eventName string, err error, fields ...models.LoggerField)
-	Error(eventName string, err error, fields ...models.LoggerField)
-	Critical(eventName string, fields ...models.LoggerField)
-	LogLambdaTime(startingTime time.Time, err error, panic interface{})
-	Finish() error
-	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField
-	SetHandler(handler string)
-}
-
-// InitLogger initializes the logger. Don't forget to call Finish() when the application is shutting down to ensure a
+// InitLogger initializes the logger. id is the identifier used to trace logs of the same request, and impl is the
+// implementation to use.
+//
+// Don't forget to call Finish() when the application is shutting down to ensure a
 // proper closing of the logger's resources.
 func InitLogger(impl LogImplementation) LogAPI {
-	if loggerSingleton != nil {
-		return loggerSingleton
-	}
-
 	switch impl {
 	case LogstashImplementation:
-		loggerSingleton = initLogstash()
+		loggerInstance = newLogstashLogger()
 	case ConsoleImplementation:
-		loggerSingleton = initConsole("unknown")
+		loggerInstance = newConsoleLogger("unknown")
 	default:
 		fmt.Println("Unknown logger implementation, using console logger")
-		loggerSingleton = initConsole("unknown")
+		loggerInstance = newConsoleLogger("unknown")
 	}
 
-	return loggerSingleton
+	return loggerInstance
 }
 
 func Info(eventName string, fields ...models.LoggerField) {
-	loggerSingleton.Info(eventName, fields...)
+	loggerInstance.Info(eventName, fields...)
 }
 
 func Warning(eventName string, err error, fields ...models.LoggerField) {
-	loggerSingleton.Warning(eventName, err, fields...)
+	loggerInstance.Warning(eventName, err, fields...)
 }
 
 func Error(eventName string, err error, fields ...models.LoggerField) {
-	loggerSingleton.Error(eventName, err, fields...)
+	loggerInstance.Error(eventName, err, fields...)
 }
 
 func Critical(eventName string, fields ...models.LoggerField) {
-	loggerSingleton.Critical(eventName, fields...)
+	loggerInstance.Critical(eventName, fields...)
 }
 
 func LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
-	loggerSingleton.LogLambdaTime(startingTime, err, panic)
+	loggerInstance.LogLambdaTime(startingTime, err, panic)
 }
 
 func Finish() error {
-	return loggerSingleton.Finish()
+	return loggerInstance.Finish()
 }
 
 func MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField {
-	return loggerSingleton.MapToLoggerObject(name, m)
+	return loggerInstance.MapToLoggerObject(name, m)
 }
 
 func SetHandler(handler string) {
-	loggerSingleton.SetHandler(handler)
+	loggerInstance.SetHandler(handler)
+}
+
+func AddToContext(key string, value interface{}) {
+	loggerInstance.AddToContext(key, value)
 }

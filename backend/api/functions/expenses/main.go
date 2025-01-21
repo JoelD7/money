@@ -19,8 +19,6 @@ func main() {
 
 	rootRouter := router.NewRouter(envConfig)
 
-	logger.InitLogger(logger.LogstashImplementation)
-
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/expenses", func(r *router.Router) {
 			r.Get("/{expenseID}", handlers.GetExpense)
@@ -42,6 +40,9 @@ func main() {
 	})
 
 	lambda.Start(func(ctx context.Context, request *apigateway.Request) (res *apigateway.Response, err error) {
+		logger.InitLogger(logger.LogstashImplementation)
+		logger.AddToContext("request_id", request.RequestContext.ExtendedRequestID)
+
 		defer func() {
 			err = logger.Finish()
 			if err != nil {

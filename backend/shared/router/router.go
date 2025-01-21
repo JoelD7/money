@@ -77,21 +77,17 @@ func (router *Router) executeHandle(ctx context.Context, envConfig *models.Envir
 	}
 
 	if _, ok := router.methodHandlers[request.HTTPMethod][request.Resource]; !ok {
-		logger.Error("router_handle_failed", errPathNotDefined,
-			models.Any("router_data", map[string]interface{}{
-				"s_path": router.path,
-			}),
-			models.Any("request", map[string]interface{}{
-				"s_method":   request.HTTPMethod,
-				"s_resource": request.Resource,
-			}), models.Any("router_data", map[string]interface{}{
-				"s_path": router.path,
-			}),
-			models.Any("request", map[string]interface{}{
-				"s_method":   request.HTTPMethod,
-				"s_resource": request.Resource,
-			}),
-		)
+		logger.Error("router_handle_failed", errPathNotDefined, models.Any("router_data", map[string]interface{}{
+			"s_path": router.path,
+		}), models.Any("request", map[string]interface{}{
+			"s_method":   request.HTTPMethod,
+			"s_resource": request.Resource,
+		}), models.Any("router_data", map[string]interface{}{
+			"s_path": router.path,
+		}), models.Any("request", map[string]interface{}{
+			"s_method":   request.HTTPMethod,
+			"s_resource": request.Resource,
+		}))
 
 		return &apigateway.Response{
 			StatusCode: http.StatusInternalServerError,

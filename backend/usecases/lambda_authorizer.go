@@ -81,8 +81,7 @@ func NewTokenVerifier(jwksGetter JWKSGetter, secretManager SecretManager, tokenC
 
 		err = compareAccessTokenAgainstBlacklistRedis(ctx, tokenCache, payload.Subject, token)
 		if errors.Is(err, models.ErrInvalidToken) {
-			logger.Warning("blacklisted_token_use_detected", err,
-				models.Any("token", map[string]interface{}{"s_value": token}))
+			logger.Warning("blacklisted_token_use_detected", err, models.Any("token", map[string]interface{}{"s_value": token}))
 		}
 
 		if err != nil {
@@ -176,23 +175,19 @@ func compareAccessTokenAgainstBlacklistRedis(ctx context.Context, tokenCache Inv
 	for _, it := range invalidTokens {
 		err = hash.CompareWithToken(it.Token, token)
 		if err == nil {
-			logger.Warning("invalid_token_use_detected", models.ErrInvalidToken,
-				models.Any("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
-			)
+			logger.Warning("invalid_token_use_detected", models.ErrInvalidToken, models.Any("token_comparison", map[string]interface{}{
+				"s_bearer_token":             token,
+				"s_saved_invalid_token_hash": it.Token,
+			}))
 
 			return models.ErrInvalidToken
 		}
 
 		if !errors.Is(err, hash.ErrHashMismatch) {
-			logger.Error("token_comparison_against_blacklist_failed", err,
-				models.Any("token_comparison", map[string]interface{}{
-					"s_bearer_token":             token,
-					"s_saved_invalid_token_hash": it.Token,
-				}),
-			)
+			logger.Error("token_comparison_against_blacklist_failed", err, models.Any("token_comparison", map[string]interface{}{
+				"s_bearer_token":             token,
+				"s_saved_invalid_token_hash": it.Token,
+			}))
 		}
 	}
 

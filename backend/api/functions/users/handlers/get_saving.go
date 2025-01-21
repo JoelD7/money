@@ -88,11 +88,9 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 
 	err = validate.Email(username)
 	if err != nil {
-		logger.Error("invalid_username", err,
-			logger.MapToLoggerObject("user_data", map[string]interface{}{
-				"s_username": username,
-			}),
-		)
+		logger.Error("invalid_username", err, logger.MapToLoggerObject("user_data", map[string]interface{}{
+			"s_username": username,
+		}))
 
 		return req.NewErrorResponse(err), nil
 	}
