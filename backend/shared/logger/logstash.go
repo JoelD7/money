@@ -260,9 +260,6 @@ func (l *logstashLogger) AddToContext(key string, value interface{}) {
 // getLogObjects transforms the logger objects to a serializable representation.
 func getLogObjects(objects []models.LoggerField, context map[string]interface{}) map[string]interface{} {
 	lObjects := make(map[string]interface{})
-	if context != nil {
-		lObjects = context
-	}
 
 	var value interface{}
 	var err error
@@ -281,6 +278,10 @@ func getLogObjects(objects []models.LoggerField, context map[string]interface{})
 		}
 
 		lObjects[object.GetKey()] = value
+	}
+
+	for k, v := range context {
+		lObjects[k] = v
 	}
 
 	return lObjects
