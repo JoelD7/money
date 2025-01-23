@@ -28,7 +28,8 @@ const (
 )
 
 var (
-	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
+	logstashInstance *logstashLogger
+	stackCleaner     = regexp.MustCompile(`[^\t]*:\d+`)
 
 	once              sync.Once
 	connectionTimeout = time.Second * 3
@@ -43,6 +44,7 @@ type logstashLogger struct {
 	connection net.Conn
 	connTimer  *time.Timer
 	wg         sync.WaitGroup
+	context    map[string]interface{}
 }
 
 type LogData struct {
@@ -54,15 +56,21 @@ type LogData struct {
 	Timestamp string                 `json:"@timestamp,omitempty"`
 }
 
-func initLogstash() *logstashLogger {
-	log := &logstashLogger{
-		lambdaName: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
-		bw:         bufio.NewWriter(os.Stdout),
+func newLogstashLogger() *logstashLogger {
+	// Reuse the same instance of the logger because it's easier to handle the connection logic when it's bound to this object.
+	if logstashInstance != nil {
+		return logstashInstance
 	}
 
-	log.establishConnection()
+	logstashInstance = &logstashLogger{
+		lambdaName: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
+		bw:         bufio.NewWriter(os.Stdout),
+		context:    map[string]interface{}{},
+	}
 
-	return log
+	logstashInstance.establishConnection()
+
+	return logstashInstance
 }
 
 func (l *logstashLogger) establishConnection() {
@@ -177,7 +185,7 @@ func (l *logstashLogger) getLogDataAsBytes(level logLevel, eventName string, err
 		Service:   l.getService(),
 		Event:     eventName,
 		Level:     string(level),
-		LogObject: getLogObjects(fields),
+		LogObject: getLogObjects(fields, l.context),
 		Timestamp: time.Now().Format(timestampLayout),
 	}
 
@@ -242,8 +250,15 @@ func (l *logstashLogger) MapToLoggerObject(name string, m map[string]interface{}
 	return models.Any(name, m)
 }
 
+func (l *logstashLogger) AddToContext(key string, value interface{}) {
+	if l.context == nil {
+		l.context = map[string]interface{}{}
+	}
+	l.context[key] = value
+}
+
 // getLogObjects transforms the logger objects to a serializable representation.
-func getLogObjects(objects []models.LoggerField) map[string]interface{} {
+func getLogObjects(objects []models.LoggerField, context map[string]interface{}) map[string]interface{} {
 	lObjects := make(map[string]interface{})
 
 	var value interface{}
@@ -263,6 +278,10 @@ func getLogObjects(objects []models.LoggerField) map[string]interface{} {
 		}
 
 		lObjects[object.GetKey()] = value
+	}
+
+	for k, v := range context {
+		lObjects[k] = v
 	}
 
 	return lObjects

@@ -90,11 +90,9 @@ func (request *getSavingsRequest) prepareRequest(req *apigateway.Request) error 
 
 	err = validate.Email(request.username)
 	if err != nil {
-		logger.Error("invalid_username", err,
-			logger.MapToLoggerObject("user_data", map[string]interface{}{
-				"s_username": request.username,
-			}),
-		)
+		logger.Error("invalid_username", err, logger.MapToLoggerObject("user_data", map[string]interface{}{
+			"s_username": request.username,
+		}))
 
 		return err
 	}

@@ -12,8 +12,7 @@ import (
 )
 
 var (
-	errorLogger  = log.New(os.Stderr, "ERROR ", log.Llongfile)
-	backupLogger = log.New(os.Stdout, "", log.Llongfile)
+	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
 )
 
 // ConsoleLogger is a logger that writes to stdErr
@@ -21,7 +20,7 @@ type ConsoleLogger struct {
 	Service string `json:"service,omitempty"`
 }
 
-func initConsole(service string) LogAPI {
+func newConsoleLogger(service string) LogAPI {
 	return &ConsoleLogger{Service: service}
 }
 
@@ -41,10 +40,16 @@ func (c *ConsoleLogger) Critical(eventName string, fields ...models.LoggerField)
 	c.write(panicLevel, eventName, nil, fields)
 }
 
-func (c *ConsoleLogger) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {}
+func (c *ConsoleLogger) LogLambdaTime(startingTime time.Time, err error, panic interface{}) {
+}
 
 func (c *ConsoleLogger) Finish() error {
 	return nil
+}
+
+func (c *ConsoleLogger) AddToContext(key string, value interface{}) {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (c *ConsoleLogger) SetHandler(handler string) {}
@@ -59,7 +64,7 @@ func (c *ConsoleLogger) write(level logLevel, eventName string, errToLog error, 
 		Service:   c.Service,
 		Event:     eventName,
 		Level:     string(level),
-		LogObject: getLogObjects(objects),
+		LogObject: getLogObjects(objects, nil),
 	}
 
 	if errToLog != nil {

@@ -29,6 +29,7 @@ var (
 		"period_user-created_date-index": {"expense_id", "username", "period_user", "created_date"},
 		"period_user-expense_id-index":   {"expense_id", "username", "period_user", "expense_id"},
 		"username-created_date-index":    {"expense_id", "username", "created_date"},
+		"":                               {"expense_id", "username"}, //If no index is specified, use the main table's primary key
 	}
 )
 
@@ -813,7 +814,12 @@ func (d *DynamoRepository) buildCustomExclusiveStartKey(lastEvaluatedKey map[str
 
 	exclusiveStartKey := make(map[string]types.AttributeValue)
 
-	keys, ok := keysByIndex[*input.IndexName]
+	indexName := ""
+	if input.IndexName != nil {
+		indexName = *input.IndexName
+	}
+
+	keys, ok := keysByIndex[indexName]
 	if !ok {
 		return nil, models.ErrIndexKeysNotFound
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/JoelD7/money/backend/shared/uuid"
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
@@ -103,12 +104,9 @@ func handleRequest(ctx context.Context, event events.APIGatewayCustomAuthorizerR
 	})
 
 	if ctxError != nil {
-		logger.Error("request_timeout", ctxError,
-			req.getEventAsLoggerObject(event),
-			models.Any("stack", map[string]interface{}{
-				"s_trace": stackTrace,
-			}),
-		)
+		logger.Error("request_timeout", ctxError, req.getEventAsLoggerObject(event), models.Any("stack", map[string]interface{}{
+			"s_trace": stackTrace,
+		}))
 	}
 
 	return
@@ -242,9 +240,10 @@ func main() {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
-	logger.InitLogger(logger.LogstashImplementation)
-
 	lambda.Start(func(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
+		logger.InitLogger(logger.LogstashImplementation)
+		logger.AddToContext("request_id", uuid.Generate(event.MethodArn))
+
 		defer func() {
 			err = logger.Finish()
 			if err != nil {

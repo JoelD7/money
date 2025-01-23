@@ -91,11 +91,9 @@ func (request *GetExpensesRequest) prepareRequest(req *apigateway.Request) error
 
 	err = validate.Email(request.Username)
 	if err != nil {
-		logger.Error("invalid_username", err,
-			models.Any("user_data", map[string]interface{}{
-				"s_username": request.Username,
-			}),
-		)
+		logger.Error("invalid_username", err, models.Any("user_data", map[string]interface{}{
+			"s_username": request.Username,
+		}))
 
 		return err
 	}
