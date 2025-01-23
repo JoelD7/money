@@ -28,7 +28,8 @@ const (
 )
 
 var (
-	stackCleaner = regexp.MustCompile(`[^\t]*:\d+`)
+	logstashInstance *logstashLogger
+	stackCleaner     = regexp.MustCompile(`[^\t]*:\d+`)
 
 	once              sync.Once
 	connectionTimeout = time.Second * 3
@@ -56,15 +57,20 @@ type LogData struct {
 }
 
 func newLogstashLogger() *logstashLogger {
-	log := &logstashLogger{
+	// Reuse the same instance of the logger because it's easier to handle the connection logic when it's bound to this object.
+	if logstashInstance != nil {
+		return logstashInstance
+	}
+
+	logstashInstance = &logstashLogger{
 		lambdaName: env.GetString("AWS_LAMBDA_FUNCTION_NAME", "unknown"),
 		bw:         bufio.NewWriter(os.Stdout),
 		context:    map[string]interface{}{},
 	}
 
-	log.establishConnection()
+	logstashInstance.establishConnection()
 
-	return log
+	return logstashInstance
 }
 
 func (l *logstashLogger) establishConnection() {
