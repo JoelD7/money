@@ -8,11 +8,6 @@ import (
 // LogImplementation is the type of logger to use
 type LogImplementation string
 
-type LogIdentifier struct {
-	Name  string
-	Value string
-}
-
 type LogAPI interface {
 	// Info logs an event with info level
 	Info(eventName string, fields ...models.LoggerField)
@@ -37,18 +32,4 @@ type LogAPI interface {
 
 	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField
 	SetHandler(handler string)
-}
-
-func NewLogIdentifier(name, value string) LogIdentifier {
-	return LogIdentifier{Name: name, Value: value}
-}
-
-// Equal compares two log identifiers. Returns true if both fields are equal, false otherwise.
-func (li LogIdentifier) Equal(other LogIdentifier) bool {
-	return li.Name == other.Name && li.Value == other.Value
-}
-
-// IsEmpty returns true if the log identifier's name and value are empty strings, false otherwise.
-func (li LogIdentifier) IsEmpty() bool {
-	return li.Name == "" && li.Value == ""
 }
