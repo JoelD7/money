@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
@@ -190,7 +192,9 @@ func handleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocesse
 func InitClient(ctx context.Context) *dynamodb.Client {
 	awsRegion := env.GetString("AWS_REGION", "")
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion),
+		config.WithLogger(logger.NewLogstashDynamo()),
+		config.WithClientLogMode(aws.LogRequestWithBody|aws.LogResponseWithBody))
 	if err != nil {
 		panic(err)
 	}
