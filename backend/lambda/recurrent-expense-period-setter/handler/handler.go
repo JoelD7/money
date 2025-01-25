@@ -34,15 +34,9 @@ func (request *Request) init(ctx context.Context) error {
 	preOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
-		uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-
-		envConfig := &models.EnvironmentConfiguration{
-			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
-			ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
-			PeriodTable:            env.GetString("PERIOD_TABLE_NAME", ""),
-			UniquePeriodTable:      env.GetString("UNIQUE_PERIOD_TABLE_NAME", ""),
-			PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+		envConfig, err := env.LoadEnv(context.Background())
+		if err != nil {
+			panic(err)
 		}
 
 		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
@@ -50,7 +44,7 @@ func (request *Request) init(ctx context.Context) error {
 			return
 		}
 
-		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
