@@ -121,7 +121,7 @@ func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCust
 	if errors.Is(err, models.ErrUnauthorized) || errors.Is(err, models.ErrInvalidToken) {
 		logger.Error("request_unauthorized", err, req.getEventAsLoggerObject(event))
 
-		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
+		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
 	}
 
 	if err != nil {
@@ -240,7 +240,7 @@ func main() {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
-	lambda.Start(func(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
+	lambda.Start(func(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 		logger.InitLogger(logger.LogstashImplementation)
 		logger.AddToContext("request_id", uuid.Generate(event.MethodArn))
 
