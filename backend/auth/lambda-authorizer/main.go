@@ -240,7 +240,7 @@ func main() {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
-	lambda.Start(func(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (res events.APIGatewayCustomAuthorizerResponse, err error) {
+	lambda.Start(func(ctx context.Context, event events.APIGatewayCustomAuthorizerRequest) (events.APIGatewayCustomAuthorizerResponse, error) {
 		logger.InitLogger(logger.LogstashImplementation)
 		logger.AddToContext("request_id", uuid.Generate(event.MethodArn))
 
