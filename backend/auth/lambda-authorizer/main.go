@@ -121,7 +121,7 @@ func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCust
 	if errors.Is(err, models.ErrUnauthorized) || errors.Is(err, models.ErrInvalidToken) {
 		logger.Error("request_unauthorized", err, req.getEventAsLoggerObject(event))
 
-		return events.APIGatewayCustomAuthorizerResponse{}, errors.New("Unauthorized")
+		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
 	if err != nil {
