@@ -72,7 +72,7 @@ export async function getExpenses({
         return ExpensesSchema.parse(res.data);
     } catch (e) {
         console.error("[money] - Error parsing expenses response", e)
-        return Promise.reject(e)
+        return Promise.reject(new Error("Invalid expenses data"))
     }
 }
 
@@ -100,6 +100,6 @@ export async function getPeriodStats(period: string) {
         return PeriodStatsSchema.parse(res.data)
     } catch (e) {
         console.error("[money] - Error parsing period stats response", e)
-        return Promise.reject(e)
+        return Promise.reject(new Error("Invalid period stats data"))
     }
 }
