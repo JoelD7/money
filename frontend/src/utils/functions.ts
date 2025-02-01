@@ -1,6 +1,7 @@
 import {Category, PeriodStats, TransactionSearchParams, User,} from "../types";
 import {Colors} from "../assets";
-import {useLocation} from "@tanstack/react-router"; // Sets category name and color to the categoryExpenseSummary object
+import {useLocation} from "@tanstack/react-router";
+import {CURRENT_PERIOD} from "./keys.ts"; // Sets category name and color to the categoryExpenseSummary object
 
 // Sets category name and color to the categoryExpenseSummary object
 export function setAdditionalData(
@@ -60,6 +61,8 @@ export function useTransactionsParams(): TransactionSearchParams {
     param = params.get("period");
     if (param !== null) {
         period = param;
+    } else {
+        period = localStorage.getItem(CURRENT_PERIOD)  || ""
     }
 
     let sortBy: string | undefined;

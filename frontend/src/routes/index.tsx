@@ -9,9 +9,9 @@ function isAuth() {
 
 const expensesSearchSchema = z.object({
     categories: z.string().optional(),
-    pageSize: z.number(),
+    pageSize: z.number().optional(),
     startKey: z.string().optional(),
-    period: z.string(),
+    period: z.string().optional(),
     sortBy: z.enum(["created_date", "name", "amount"]).optional(),
     sortOrder: z.enum(["asc", "desc"]).optional(),
 });
