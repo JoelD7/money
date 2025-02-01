@@ -43,11 +43,14 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
     const location = useLocation();
 
     const expenses: Expense[] | undefined = getExpensesQuery.data?.expenses;
+    const route = "/"
 
     const errSnackbar = {
         open: true,
         title: "Error fetching expenses",
     }
+
+    const startKeysByPage = useRef<{ [page: number]: string }>({0: ""});
 
     const colorsByExpense: Map<string, string> = getColorsByExpense();
 
@@ -57,7 +60,6 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
     const [paginationModel, setPaginationModel] = useState(
         getPaginationFromURL(),
     );
-    const startKeysByPage = useRef<{ [page: number]: string }>({0: ""});
 
     function renderCategoryCell(params: GridRenderCellParams) {
         const categoryColor = getCellBackgroundColor(String(params.id));
@@ -124,10 +126,9 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
     function getPaginationFromURL(): GridPaginationModel {
         const params = new URLSearchParams(location.search);
         const pageSize = params.get("pageSize") || "10";
-        const page = params.get("page") || "0";
 
         return {
-            page: parseInt(page),
+            page: 0,
             pageSize: parseInt(pageSize),
         };
     }
@@ -181,14 +182,14 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
 
         if (selectedCategories.length === 0) {
             navigate({
-                to: "/",
+                to: route,
             });
 
             return;
         }
 
         navigate({
-            to: "/",
+            to: route,
             search: {
                 ...location.search,
                 categories: selectedCategories.map((category) => category.id).join(","),
@@ -200,7 +201,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         setSelectedCategories([]);
 
         navigate({
-            to: "/",
+            to: route,
         });
     }
 
@@ -208,6 +209,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         let search = {...location.search};
 
         if (newModel.pageSize !== paginationModel.pageSize) {
+            startKeysByPage.current = {0: ""};
             search = {
                 ...search,
                 pageSize: newModel.pageSize,
@@ -223,7 +225,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
         }
 
         navigate({
-            to: "/",
+            to: route,
             search,
         }).then(() => {
             setPaginationModel(newModel);
@@ -259,7 +261,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
             }
 
             navigate({
-                to: "/",
+                to: route,
                 search: {
                     ...search, sortBy: item.field, sortOrder: item.sort
                 },
@@ -328,7 +330,7 @@ export function ExpensesTable({categories, period}: ExpensesTableProps) {
                         paginationModel={paginationModel}
                         onPaginationModelChange={onPaginationModelChange}
                         paginationMeta={{
-                            hasNextPage: getExpensesQuery.data?.next_key !== "",
+                            hasNextPage:  getExpensesQuery.data?.next_key !== "",
                         }}
                         slots={{
                             noRowsOverlay: NoRowsDataGrid,

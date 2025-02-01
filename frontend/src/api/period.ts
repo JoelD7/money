@@ -18,7 +18,7 @@ export async function getPeriod(period: string) {
         return PeriodSchema.parse(res.data);
     } catch (e) {
         console.error("[money] - Error parsing GET period response", e)
-        return Promise.reject(e)
+        return Promise.reject(new Error("Invalid period data"))
     }
 }
 
