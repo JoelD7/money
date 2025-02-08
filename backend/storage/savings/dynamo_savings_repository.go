@@ -39,6 +39,21 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, periodSavingI
 		return nil, fmt.Errorf("initialize saving dynamo repository failed: %v", err)
 	}
 
+	d.tableName = tableName
+	if d.tableName == "" {
+		d.tableName = tableNameEnv
+	}
+
+	d.periodSavingIndex = periodSavingIndex
+	if d.periodSavingIndex == "" {
+		d.periodSavingIndex = periodSavingIndexEnv
+	}
+
+	d.savingGoalSavingIndex = savingGoalSavingIndex
+	if d.savingGoalSavingIndex == "" {
+		d.savingGoalSavingIndex = savingGoalSavingIndexEnv
+	}
+
 	return d, nil
 }
 
