@@ -1,7 +1,8 @@
-import {BackgroundRefetchErrorSnackbar, Button, Container, Navbar} from "../components";
+import {BackgroundRefetchErrorSnackbar, Button, Container, Navbar, SavingGoalCard} from "../components";
 import Grid from "@mui/material/Unstable_Grid2";
 import {Typography} from "@mui/material";
 import SavingsIcon from '@mui/icons-material/Savings';
+import FilterListIcon from '@mui/icons-material/FilterList';
 
 export function Savings() {
     const customWidth = {
@@ -65,10 +66,19 @@ export function Savings() {
                 </Grid>
 
                 {/*Saving cards*/}
-                <Grid xs={8} pt={"3rem"}>
-                    <div className={"flex justify-between"}>
-                        <Typography variant={"h5"}>Your saving goals</Typography>
+                <Grid xs={12} pt={"3rem"}>
+                    {/*Title and buttons*/}
+                    <Typography variant={"h5"}>Your saving goals</Typography>
+                    <div className={"flex pt-2"}>
                         <Button variant={"contained"}>New goal</Button>
+                        <div className={"ml-2"}>
+                            <Button variant={"outlined"} startIcon={ <FilterListIcon/> }>Filters</Button>
+                        </div>
+                    </div>
+
+                    {/*Saving cards*/}
+                    <div className={"flex"}>
+                        <SavingGoalCard goal={100} progress={33} />
                     </div>
                 </Grid>
 
