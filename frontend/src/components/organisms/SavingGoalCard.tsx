@@ -1,4 +1,4 @@
-import { CircularProgress, circularProgressClasses, Typography } from "@mui/material";
+import { CircularProgress, Typography } from "@mui/material";
 import { Colors } from "../../assets";
 
 type SavingGoalCardProps = {
@@ -8,15 +8,9 @@ type SavingGoalCardProps = {
 
 export function SavingGoalCard({ goal, progress }: SavingGoalCardProps) {
   const size = "8rem";
-  const maxStrokeOffset = 300
-  const percentageFormat = new Intl.NumberFormat("en-US", {
-    style: "decimal",
-    minimumFractionDigits: 0,
-  });
-
-  function getProgressPercentage(): number {
-    return (progress / goal) * 100;
-  }
+  //This is an arbitrary value that works. Any value sufficiently larger or smaller breaks the animation
+  const maxStrokeOffset = 289;
+  const progressPercentage = (progress / goal) * 100;
 
   return (
     <div className={"rounded-md bg-white-100 shadow-md mt-4"}>
@@ -34,21 +28,21 @@ export function SavingGoalCard({ goal, progress }: SavingGoalCardProps) {
 
         <CircularProgress
           variant={"determinate"}
-          value={getProgressPercentage()}
+          value={progressPercentage}
           size={size}
           sx={{
-              [`& .${circularProgressClasses.circle}`]: {
-                  strokeLinecap: 'round',
-                  animation: 'progress-grow 2s ease-out forwards',
-                  '@keyframes progress-grow': {
-                      from: {
-                          strokeDashoffset: `${maxStrokeOffset}%`,
-                      },
-                      to: {
-                          strokeDashoffset: `${maxStrokeOffset - (progress * maxStrokeOffset / 100)}%`,
-                      }
-                  }
+            [`& .MuiCircularProgress-circle`]: {
+              strokeLinecap: "round",
+              animation: "progress-grow 2s ease-out forwards",
+              "@keyframes progress-grow": {
+                from: {
+                  strokeDashoffset: `${maxStrokeOffset}%`,
+                },
+                to: {
+                  strokeDashoffset: `${maxStrokeOffset - (progressPercentage * maxStrokeOffset) / 100}%`,
+                },
               },
+            },
             color: Colors.GREEN_DARK,
           }}
         />
@@ -60,7 +54,7 @@ export function SavingGoalCard({ goal, progress }: SavingGoalCardProps) {
             position: "absolute",
           }}
         >
-          {`${percentageFormat.format(getProgressPercentage())}%`}
+          {`${progressPercentage.toFixed(2)}%`}
         </Typography>
       </div>
     </div>
