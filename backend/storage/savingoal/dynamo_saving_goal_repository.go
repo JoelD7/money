@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
+
+const savingGoalIDPrefix = "SVG"
 
 type DynamoRepository struct {
 	dynamoClient *dynamodb.Client
@@ -31,6 +34,28 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*Dyna
 	}
 
 	return d, nil
+}
+
+func (d *DynamoRepository) CreateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
+	savingGoal.SavingGoalID = dynamo.GenerateID(savingGoalIDPrefix)
+	entity := toSavingGoalEntity(savingGoal)
+
+	av, err := attributevalue.MarshalMap(entity)
+	if err != nil {
+		return nil, fmt.Errorf("marshal saving goal item failed: %v", err)
+	}
+
+	input := &dynamodb.PutItemInput{
+		TableName: aws.String(d.tableName),
+		Item:      av,
+	}
+
+	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("create saving goal item failed: %v", err)
+	}
+
+	return toSavingGoalModel(entity), nil
 }
 
 func (d *DynamoRepository) GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error) {

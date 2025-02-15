@@ -6,6 +6,7 @@ import (
 )
 
 type Repository interface {
+	CreateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error)
 	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
 	GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error)
 }
