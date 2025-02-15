@@ -17,3 +17,9 @@ func NewSavingGoalCreator(savingGoalManager SavingGoalManager) func(ctx context.
 		return savingGoalManager.CreateSavingGoal(ctx, savingGoal)
 	}
 }
+
+func NewSavingGoalGetter(savingGoalManager SavingGoalManager) func(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error) {
+	return func(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error) {
+		return savingGoalManager.GetSavingGoal(ctx, username, savingGoalID)
+	}
+}
