@@ -121,3 +121,20 @@ func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string) 
 
 	return toSavingGoalModels(*savingGoalsEntities), nil
 }
+
+func (d *DynamoRepository) DeleteSavingGoal(ctx context.Context, username, savingGoalID string) error {
+	input := &dynamodb.DeleteItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]types.AttributeValue{
+			"username":       &types.AttributeValueMemberS{Value: username},
+			"saving_goal_id": &types.AttributeValueMemberS{Value: savingGoalID},
+		},
+	}
+
+	_, err := d.dynamoClient.DeleteItem(ctx, input)
+	if err != nil {
+		return fmt.Errorf("delete saving goal item failed: %v", err)
+	}
+
+	return nil
+}
