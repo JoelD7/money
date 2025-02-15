@@ -10,6 +10,18 @@ type SavingGoal struct {
 	Deadline     *time.Time `json:"deadline,omitempty"`
 }
 
+func (sg *SavingGoal) SetName(name string) {
+	sg.Name = &name
+}
+
+func (sg *SavingGoal) SetTarget(target float64) {
+	sg.Target = &target
+}
+
+func (sg *SavingGoal) SetDeadline(deadline time.Time) {
+	sg.Deadline = &deadline
+}
+
 func (sg *SavingGoal) GetSavingGoalID() string {
 	if sg == nil {
 		return ""

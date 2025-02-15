@@ -82,6 +82,10 @@ func (d *DynamoRepository) GetSavingGoal(ctx context.Context, username, savingGo
 		return nil, fmt.Errorf("get saving goal item failed: %v", err)
 	}
 
+	if result.Item == nil {
+		return nil, models.ErrSavingGoalNotFound
+	}
+
 	savingGoal := new(savingGoalEntity)
 
 	err = attributevalue.UnmarshalMap(result.Item, savingGoal)
