@@ -75,17 +75,12 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 
 	saveNewUser := usecases.NewUserCreator(req.userRepo)
 
-	err = saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
+	newUser, err := saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
 	if err != nil {
 		req.err = err
 		logger.Error("save_new_user_failed", err, request)
 
 		return request.NewErrorResponse(err), nil
-	}
-
-	newUser := &models.User{
-		Username: reqBody.Username,
-		FullName: reqBody.FullName,
 	}
 
 	generateTokens := usecases.NewUserTokenGenerator(req.userRepo, req.secretsManager)

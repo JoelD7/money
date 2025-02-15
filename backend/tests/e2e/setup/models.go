@@ -38,7 +38,7 @@ func CreateUser(ctx context.Context, repo users.Repository, user *models.User, c
 		err = repo.DeleteUser(ctx, user.Username)
 	})
 
-	err = repo.CreateUser(ctx, user)
+	_, err = repo.CreateUser(ctx, user)
 	if err == nil {
 		userCreated = true
 	}
