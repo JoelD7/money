@@ -72,6 +72,10 @@ var (
 		models.ErrRecurringExpensesNotFound:      {HTTPCode: http.StatusNotFound, Message: "Recurring expenses not found"},
 		models.ErrInvalidSortOrder:               {HTTPCode: http.StatusBadRequest, Message: "Invalid sort order. The sort order must be either 'asc' or 'desc'"},
 		models.ErrInvalidSortBy:                  {HTTPCode: http.StatusBadRequest, Message: "Invalid sort by"},
+		models.ErrMissingSavingGoalName:          {HTTPCode: http.StatusBadRequest, Message: "Missing saving goal name"},
+		models.ErrMissingSavingGoalTarget:        {HTTPCode: http.StatusBadRequest, Message: "Missing saving goal target"},
+		models.ErrInvalidSavingGoalTarget:        {HTTPCode: http.StatusBadRequest, Message: "Invalid saving goal target. Goal target must be greater than 0"},
+		models.ErrInvalidSavingGoalDeadline:      {HTTPCode: http.StatusBadRequest, Message: "Invalid saving goal deadline. Deadline must be in the future"},
 	}
 )
 

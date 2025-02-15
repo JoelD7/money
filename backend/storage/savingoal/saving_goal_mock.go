@@ -27,12 +27,16 @@ func (m *Mock) GetSavingGoal(ctx context.Context, username, savingGoalID string)
 		return nil, m.mockedErr
 	}
 
+	name := "mocked_name"
+	target := float64(1500)
+	deadline := time.Now().Add(time.Hour * 24 * 30 * 6)
+
 	return &models.SavingGoal{
 		Username:     username,
 		SavingGoalID: savingGoalID,
-		Name:         "mocked_name",
-		Goal:         1500,
-		Deadline:     time.Now().Add(time.Hour * 24 * 30 * 6),
+		Name:         &name,
+		Target:       &target,
+		Deadline:     &deadline,
 	}, nil
 }
 
@@ -41,13 +45,17 @@ func (m *Mock) GetSavingGoals(ctx context.Context, username string) ([]*models.S
 		return nil, m.mockedErr
 	}
 
+	name := "mocked_name"
+	target := float64(1500)
+	deadline := time.Now().Add(time.Hour * 24 * 30 * 6)
+
 	return []*models.SavingGoal{
 		{
 			Username:     username,
 			SavingGoalID: "savingGoalID",
-			Name:         "mocked_name",
-			Goal:         1500,
-			Deadline:     time.Now().Add(time.Hour * 24 * 30 * 6),
+			Name:         &name,
+			Target:       &target,
+			Deadline:     &deadline,
 		},
 	}, nil
 }

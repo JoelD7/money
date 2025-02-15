@@ -20,11 +20,6 @@ type SavingsManager interface {
 	DeleteSaving(ctx context.Context, savingID, username string) error
 }
 
-type SavingGoalManager interface {
-	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
-	GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error)
-}
-
 func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 	return func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 		saving, err := sm.GetSaving(ctx, username, savingID)
@@ -220,7 +215,7 @@ func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Sav
 		return err
 	}
 
-	s.SavingGoalName = savingGoal.Name
+	s.SavingGoalName = savingGoal.GetName()
 
 	return nil
 }
@@ -247,7 +242,7 @@ func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username str
 			continue
 		}
 
-		saving.SavingGoalName = savingGoal.Name
+		saving.SavingGoalName = savingGoal.GetName()
 	}
 
 	return nil
@@ -264,7 +259,7 @@ func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager,
 	}
 
 	for _, saving := range savings {
-		saving.SavingGoalName = savingGoal.Name
+		saving.SavingGoalName = savingGoal.GetName()
 	}
 
 	return nil

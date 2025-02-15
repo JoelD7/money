@@ -58,13 +58,13 @@ type SecretManager interface {
 }
 
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName, username, password string) error {
-	return func(ctx context.Context, fullName, username, password string) error {
+func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName, username, password string) (*models.User, error) {
+	return func(ctx context.Context, fullName, username, password string) (*models.User, error) {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 		if err != nil {
 			logger.Error("password_hashing_failed", err, nil)
 
-			return err
+			return nil, err
 		}
 
 		user := &models.User{
@@ -76,20 +76,20 @@ func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName,
 			UpdatedDate: time.Now(),
 		}
 
-		err = userManager.CreateUser(ctx, user)
+		createdUser, err := userManager.CreateUser(ctx, user)
 		if err != nil && errors.Is(err, models.ErrExistingUser) {
 			logger.Warning("user_creation_failed", err, nil)
 
-			return err
+			return nil, err
 		}
 
 		if err != nil {
 			logger.Error("sign_up_process_failed", err, nil)
 
-			return err
+			return nil, err
 		}
 
-		return nil
+		return createdUser, nil
 	}
 }
 

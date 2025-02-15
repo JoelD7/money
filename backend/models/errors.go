@@ -82,4 +82,9 @@ var (
 	// ErrIndexKeysNotFound error when a DynamoDB index is not included in the map used to build the LastEvaluatedKey.
 	// This is important as it breaks pagination.
 	ErrIndexKeysNotFound = errors.New("index keys not found")
+
+	ErrMissingSavingGoalName     = errors.New("missing goal name")
+	ErrMissingSavingGoalTarget   = errors.New("missing goal target")
+	ErrInvalidSavingGoalTarget   = errors.New("goal target must be greater than 0")
+	ErrInvalidSavingGoalDeadline = errors.New("deadline must be in the future")
 )
