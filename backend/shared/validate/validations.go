@@ -6,13 +6,25 @@ import (
 	"regexp"
 )
 
-const emailRegex = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
+const (
+	emailRegex = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
+
+	SortByModelExpenses    SortByModel = "expenses"
+	SortByModelSavingGoals SortByModel = "saving_goals"
+)
+
+type SortByModel string
 
 var (
-	validSortBy = map[string]struct{}{
-		string(models.SortParamCreatedDate): {},
-		string(models.SortParamAmount):      {},
-		string(models.SortParamName):        {},
+	validSortBy = map[SortByModel]map[string]struct{}{
+		SortByModelExpenses: {
+			string(models.SortParamCreatedDate): {},
+			string(models.SortParamAmount):      {},
+			string(models.SortParamName):        {},
+		},
+		SortByModelSavingGoals: {
+			string(models.SortParamCreatedDate): {},
+		},
 	}
 )
 
@@ -38,8 +50,8 @@ func Amount(amount *float64) error {
 	return nil
 }
 
-func SortBy(sortBy string) error {
-	if _, ok := validSortBy[sortBy]; !ok && sortBy != "" {
+func SortBy(sortBy string, model SortByModel) error {
+	if _, ok := validSortBy[model][sortBy]; !ok && sortBy != "" {
 		return models.ErrInvalidSortBy
 	}
 
