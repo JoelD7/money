@@ -23,7 +23,8 @@ var (
 			string(models.SortParamName):        {},
 		},
 		SortByModelSavingGoals: {
-			string(models.SortParamCreatedDate): {},
+			string(models.SortParamDeadline): {},
+			string(models.SortParamTarget):   {},
 		},
 	}
 )

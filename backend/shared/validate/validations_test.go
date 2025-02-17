@@ -61,16 +61,28 @@ func TestSortBy_SavingGoals(t *testing.T) {
 		expected error
 	}{
 		{
-			name:     "Valid sort by - created_date",
-			input:    "created_date",
+			name:     "Valid sort by - deadline",
+			input:    "deadline",
 			model:    SortByModelSavingGoals,
 			expected: nil,
 		},
 		{
-			name:     "Valid sort by - amount",
-			input:    "amount",
+			name:     "Valid sort by - target",
+			input:    "target",
 			model:    SortByModelSavingGoals,
 			expected: nil,
+		},
+		{
+			name:     "Invalid sort by - created_date",
+			input:    "created_date",
+			model:    SortByModelSavingGoals,
+			expected: models.ErrInvalidSortBy,
+		},
+		{
+			name:     "Invalid sort by - amount",
+			input:    "amount",
+			model:    SortByModelSavingGoals,
+			expected: models.ErrInvalidSortBy,
 		},
 		{
 			name:     "Invalid sort by - name",
