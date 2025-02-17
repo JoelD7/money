@@ -36,7 +36,7 @@ func (request *getSavingGoalsRequest) init(ctx context.Context, envConfig *model
 	getSavingGoalsOnce.Do(func() {
 		request.startingTime = time.Now()
 		dynamoClient := dynamo.InitClient(ctx)
-		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig.SavingGoalsTable)
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

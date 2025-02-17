@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -22,20 +21,35 @@ type DynamoRepository struct {
 	usernameTargetIndex   string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
-	tableNameEnv := env.GetString("SAVING_GOALS_TABLE_NAME", "")
 
-	if tableNameEnv == "" && tableName == "" {
-		return nil, fmt.Errorf("initialize saving goal dynamo repository failed: table name is required")
+	err := validateParams(envConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize saving goals dynamo repository: %v", err)
 	}
 
-	d.tableName = tableName
-	if d.tableName == "" {
-		d.tableName = tableNameEnv
-	}
+	d.tableName = envConfig.SavingGoalsTable
+	d.usernameDeadlineIndex = envConfig.UsernameDeadlineIndex
+	d.usernameTargetIndex = envConfig.UsernameTargetIndex
 
 	return d, nil
+}
+
+func validateParams(envConfig *models.EnvironmentConfiguration) error {
+	if envConfig.SavingGoalsTable == "" {
+		return fmt.Errorf("table name is required")
+	}
+
+	if envConfig.UsernameDeadlineIndex == "" {
+		return fmt.Errorf("username deadline index is required")
+	}
+
+	if envConfig.UsernameTargetIndex == "" {
+		return fmt.Errorf("username target index is required")
+	}
+
+	return nil
 }
 
 func (d *DynamoRepository) CreateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
