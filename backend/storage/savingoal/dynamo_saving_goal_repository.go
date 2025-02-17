@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"strings"
 )
 
 const savingGoalIDPrefix = "SVG"
@@ -188,6 +189,32 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 	}
 
 	return keyConditionEx
+}
+
+func (d *DynamoRepository) UpdateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
+	entity := toSavingGoalEntity(savingGoal)
+
+	av, err := attributevalue.MarshalMap(entity)
+	if err != nil {
+		return nil, fmt.Errorf("marshal saving goal item failed: %v", err)
+	}
+
+	input := &dynamodb.PutItemInput{
+		TableName:           aws.String(d.tableName),
+		Item:                av,
+		ConditionExpression: aws.String("attribute_exists(saving_goal_id)"),
+	}
+
+	_, err = d.dynamoClient.PutItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return nil, fmt.Errorf("%v: %w", err, models.ErrSavingGoalNotFound)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("update saving goal item failed: %v", err)
+	}
+
+	return toSavingGoalModel(entity), nil
 }
 
 func (d *DynamoRepository) DeleteSavingGoal(ctx context.Context, username, savingGoalID string) error {

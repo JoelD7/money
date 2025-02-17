@@ -266,3 +266,175 @@ func TestGetSavingGoals(t *testing.T) {
 		}
 	})
 }
+
+func TestUpdateSavingGoal(t *testing.T) {
+	c := require.New(t)
+
+	requester, err := api.NewE2ERequester()
+	c.NoError(err, "creating e2e requester failed")
+
+	inputSavingGoal := new(models.SavingGoal)
+	inputSavingGoal.SetName("test saving goal for update tests")
+	inputSavingGoal.SetTarget(1000)
+	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
+
+	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal)
+	c.Equal(http.StatusCreated, statusCode)
+	c.NoError(err, "creating saving goal failed")
+	c.NotNil(createdSavingGoal, "created saving goal is nil")
+	c.NotEmpty(createdSavingGoal.GetSavingGoalID(), "created saving goal id is empty")
+
+	defer func() {
+		statusCode, err := requester.DeleteSavingGoal(createdSavingGoal.GetSavingGoalID())
+		if statusCode != http.StatusNoContent || err != nil {
+			t.Logf("Failed to delete goal %s: %v", createdSavingGoal.GetSavingGoalID(), err)
+		}
+	}()
+
+	t.Run("Successful update of all fields", func(t *testing.T) {
+		updateGoal := new(models.SavingGoal)
+		newName := "updated goal name"
+		newTarget := 2000.0
+		newDeadline := time.Date(time.Now().Year()+2, time.January, 1, 0, 0, 0, 0, time.UTC)
+
+		updateGoal.SetName(newName)
+		updateGoal.SetTarget(newTarget)
+		updateGoal.SetDeadline(newDeadline)
+
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusOK, statusCode)
+		c.NoError(err, "updating saving goal failed")
+		c.NotNil(updatedGoal, "updated saving goal is nil")
+
+		// Verify updated fields
+		c.Equal(newName, updatedGoal.GetName())
+		c.Equal(newTarget, updatedGoal.GetTarget())
+		c.Equal(newDeadline.Unix(), updatedGoal.GetDeadline().Unix())
+
+		// Fetch to confirm update persisted
+		fetchedGoal, statusCode, err := requester.GetSavingGoal(createdSavingGoal.GetSavingGoalID())
+		c.Equal(http.StatusOK, statusCode)
+		c.NoError(err, "fetching updated saving goal failed")
+		c.Equal(newName, fetchedGoal.GetName())
+		c.Equal(newTarget, fetchedGoal.GetTarget())
+		c.Equal(newDeadline.Unix(), fetchedGoal.GetDeadline().Unix())
+	})
+
+	t.Run("Update only name", func(t *testing.T) {
+		currentGoal, statusCode, err := requester.GetSavingGoal(createdSavingGoal.GetSavingGoalID())
+		c.Equal(http.StatusOK, statusCode)
+		c.NoError(err, "fetching current saving goal failed")
+
+		// Prepare update with only name change
+		updateGoal := new(models.SavingGoal)
+		newName := "name updated again"
+		updateGoal.SetName(newName)
+		updateGoal.SetTarget(currentGoal.GetTarget())
+		updateGoal.SetDeadline(currentGoal.GetDeadline())
+
+		// Update the goal
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusOK, statusCode)
+		c.NoError(err, "updating saving goal name failed")
+
+		// Verify name was updated but other fields remain unchanged
+		c.Equal(newName, updatedGoal.GetName())
+		c.Equal(currentGoal.GetTarget(), updatedGoal.GetTarget())
+		c.Equal(currentGoal.GetDeadline().Unix(), updatedGoal.GetDeadline().Unix())
+	})
+
+	t.Run("Update non-existent goal", func(t *testing.T) {
+		// Prepare update data
+		updateGoal := new(models.SavingGoal)
+		updateGoal.SetName("updated non-existent goal")
+		updateGoal.SetTarget(3000)
+
+		// Try to update non-existent goal
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal("non-existent-id", updateGoal)
+		c.Equal(http.StatusNotFound, statusCode)
+		c.Error(err, "expected error when updating non-existent goal")
+		c.Contains(err.Error(), "Not found")
+		c.Nil(updatedGoal, "updated saving goal should be nil")
+	})
+
+	t.Run("Empty name validation", func(t *testing.T) {
+		updateGoal := new(models.SavingGoal)
+		emptyName := ""
+		updateGoal.SetName(emptyName)
+		updateGoal.SetTarget(2000)
+
+		// Update should fail with validation error
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for empty goal name")
+		c.Contains(err.Error(), "name")
+		c.Nil(updatedGoal, "updated saving goal should be nil with validation error")
+	})
+
+	t.Run("Missing name validation", func(t *testing.T) {
+		// Prepare update with missing name
+		updateGoal := new(models.SavingGoal)
+		updateGoal.SetTarget(2000)
+
+		// Update should fail with validation error
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for missing goal name")
+		c.Contains(err.Error(), "name")
+		c.Nil(updatedGoal, "updated saving goal should be nil with validation error")
+	})
+
+	t.Run("Invalid target validation", func(t *testing.T) {
+		// Prepare update with negative target
+		updateGoal := new(models.SavingGoal)
+		updateGoal.SetName("updated goal name")
+		updateGoal.SetTarget(-100)
+
+		// Update should fail with validation error
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for negative target")
+		c.Contains(err.Error(), "target")
+		c.Nil(updatedGoal, "updated saving goal should be nil with validation error")
+	})
+
+	t.Run("Zero target validation", func(t *testing.T) {
+		// Prepare update with zero target
+		updateGoal := new(models.SavingGoal)
+		updateGoal.SetName("updated goal name")
+		updateGoal.SetTarget(0)
+
+		// Update should fail with validation error
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for zero target")
+		c.Contains(err.Error(), "target")
+		c.Nil(updatedGoal, "updated saving goal should be nil with validation error")
+	})
+
+	t.Run("Missing target validation", func(t *testing.T) {
+		updateGoal := new(models.SavingGoal)
+		updateGoal.SetName("valid name update")
+
+		// Update should succeed
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err)
+		c.Nil(updatedGoal)
+	})
+
+	t.Run("Past deadline validation", func(t *testing.T) {
+		// Prepare update with past deadline
+		updateGoal := new(models.SavingGoal)
+		updateGoal.SetName("updated goal name")
+		updateGoal.SetTarget(2000)
+		pastDeadline := time.Now().AddDate(0, 0, -1) // yesterday
+		updateGoal.SetDeadline(pastDeadline)
+
+		updatedGoal, statusCode, err := requester.UpdateSavingGoal(createdSavingGoal.GetSavingGoalID(), updateGoal)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for past deadline")
+		c.Contains(err.Error(), "deadline")
+		c.Nil(updatedGoal, "updated saving goal should be nil with validation error")
+	})
+}

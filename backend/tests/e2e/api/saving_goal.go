@@ -156,6 +156,45 @@ func (e *E2ERequester) GetSavingGoals(sortBy, sortOrder, startKey string, pageSi
 	return response.SavingGoals, res.StatusCode, response.NextKey, nil
 }
 
+func (e *E2ERequester) UpdateSavingGoal(savingGoalID string, savingGoal *models.SavingGoal) (*models.SavingGoal, int, error) {
+	requestBody, err := json.Marshal(savingGoal)
+	if err != nil {
+		return nil, 0, fmt.Errorf("saving goal request body marshalling failed: %w", err)
+	}
+
+	request, err := http.NewRequest(http.MethodPut, e.baseUrl+savingGoalsEndpoint+"/"+savingGoalID, bytes.NewReader(requestBody))
+	if err != nil {
+		return nil, 0, fmt.Errorf("saving goal request building failed: %w", err)
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Auth", "Bearer "+e.accessToken)
+
+	res, err := e.client.Do(request)
+	if err != nil {
+		return nil, 0, fmt.Errorf("saving goal request failed: %w", err)
+	}
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			fmt.Printf("closing response body failed: %v\n", err)
+		}
+	}()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
+	}
+
+	var updatedSavingGoal models.SavingGoal
+	err = json.NewDecoder(res.Body).Decode(&updatedSavingGoal)
+	if err != nil {
+		return nil, res.StatusCode, fmt.Errorf("saving goal response decoding failed: %w", err)
+	}
+
+	return &updatedSavingGoal, res.StatusCode, nil
+}
+
 func handleErrorResponse(statusCode int, body io.ReadCloser) error {
 	var errRes ErrorResponse
 	err := json.NewDecoder(body).Decode(&errRes)
