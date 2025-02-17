@@ -41,7 +41,7 @@ func main() {
 				r.Post("/", handlers.CreateSavingGoalHandler)
 				r.Get("/{savingGoalID}", handlers.GetSavingGoalHandler)
 				r.Get("/", handlers.GetSavingGoalsHandler)
-				//r.Put("/{savingGoalID}", handlers.UpdateSavingGoalHandler)
+				r.Put("/{savingGoalID}", handlers.UpdateSavingGoalsHandler)
 				r.Delete("/{savingGoalID}", handlers.DeleteSavingGoalHandler)
 			})
 		})
