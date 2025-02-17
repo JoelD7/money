@@ -76,6 +76,7 @@ var (
 		models.ErrMissingSavingGoalTarget:        {HTTPCode: http.StatusBadRequest, Message: "Missing saving goal target"},
 		models.ErrInvalidSavingGoalTarget:        {HTTPCode: http.StatusBadRequest, Message: "Invalid saving goal target. Goal target must be greater than 0"},
 		models.ErrInvalidSavingGoalDeadline:      {HTTPCode: http.StatusBadRequest, Message: "Invalid saving goal deadline. Deadline must be in the future"},
+		models.ErrSavingGoalsNotFound:            {HTTPCode: http.StatusNotFound, Message: "Not found"},
 	}
 )
 

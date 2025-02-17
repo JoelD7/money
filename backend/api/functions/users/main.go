@@ -40,6 +40,7 @@ func main() {
 			r.Route("/goals", func(r *router.Router) {
 				r.Post("/", handlers.CreateSavingGoalHandler)
 				r.Get("/{savingGoalID}", handlers.GetSavingGoalHandler)
+				r.Get("/", handlers.GetSavingGoalsHandler)
 				//r.Put("/{savingGoalID}", handlers.UpdateSavingGoalHandler)
 				r.Delete("/{savingGoalID}", handlers.DeleteSavingGoalHandler)
 			})

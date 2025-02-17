@@ -16,8 +16,10 @@ import (
 const savingGoalIDPrefix = "SVG"
 
 type DynamoRepository struct {
-	dynamoClient *dynamodb.Client
-	tableName    string
+	dynamoClient          *dynamodb.Client
+	tableName             string
+	usernameDeadlineIndex string
+	usernameTargetIndex   string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*DynamoRepository, error) {
@@ -96,24 +98,19 @@ func (d *DynamoRepository) GetSavingGoal(ctx context.Context, username, savingGo
 	return toSavingGoalModel(savingGoal), nil
 }
 
-func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error) {
-	nameEx := expression.Name("username").Equal(expression.Value(username))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, error) {
+	input, err := d.buildQueryInput(username, params)
 	if err != nil {
 		return nil, err
-	}
-
-	input := &dynamodb.QueryInput{
-		TableName:                 aws.String(d.tableName),
-		KeyConditionExpression:    expr.Condition(),
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("get saving goals failed: %v", err)
+	}
+
+	if len(result.Items) == 0 {
+		return nil, models.ErrSavingGoalsNotFound
 	}
 
 	savingGoalsEntities := new([]*savingGoalEntity)
@@ -124,6 +121,54 @@ func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string) 
 	}
 
 	return toSavingGoalModels(*savingGoalsEntities), nil
+}
+
+func (d *DynamoRepository) buildQueryInput(username string, params *models.QueryParameters) (*dynamodb.QueryInput, error) {
+	var err error
+
+	input := &dynamodb.QueryInput{
+		TableName: aws.String(d.tableName),
+		Limit:     dynamo.GetPageSize(params.PageSize),
+	}
+
+	if params.SortType == string(models.SortOrderDescending) {
+		input.ScanIndexForward = aws.Bool(false)
+	}
+
+	keyConditionEx := d.setQueryIndex(input, username, params)
+
+	err = dynamo.SetExclusiveStartKey(params.StartKey, input)
+	if err != nil {
+		return nil, err
+	}
+
+	conditionBuilder := expression.NewBuilder().WithCondition(keyConditionEx)
+
+	expr, err := conditionBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input.ExpressionAttributeNames = expr.Names()
+	input.ExpressionAttributeValues = expr.Values()
+	input.KeyConditionExpression = expr.Condition()
+	input.FilterExpression = expr.Filter()
+
+	return input, nil
+}
+
+func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.ConditionBuilder {
+	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
+
+	if params.SortBy == string(models.SortParamDeadline) {
+		input.IndexName = aws.String(d.usernameDeadlineIndex)
+	}
+
+	if params.SortBy == string(models.SortParamTarget) {
+		input.IndexName = aws.String(d.usernameTargetIndex)
+	}
+
+	return keyConditionEx
 }
 
 func (d *DynamoRepository) DeleteSavingGoal(ctx context.Context, username, savingGoalID string) error {
