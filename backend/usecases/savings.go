@@ -223,7 +223,8 @@ func setSavingGoalName(ctx context.Context, sgm SavingGoalManager, s *models.Sav
 func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username string, savings []*models.Saving) error {
 	savingGoalsMap := make(map[string]*models.SavingGoal)
 
-	savingGoals, err := sgm.GetSavingGoals(ctx, username)
+	//TODO: Handle pagination
+	savingGoals, _, err := sgm.GetSavingGoals(ctx, username, &models.QueryParameters{PageSize: 20})
 	if err != nil {
 		return err
 	}

@@ -18,6 +18,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+const (
+	defaultPageSize = 10
+)
+
 // GenerateID generates a hex-based random unique ID with the given prefix
 func GenerateID(prefix string) string {
 	charset := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -232,4 +236,12 @@ func SetExclusiveStartKey(startKey string, input *dynamodb.QueryInput) error {
 	input.ExclusiveStartKey = decodedStartKey
 
 	return nil
+}
+
+func GetPageSize(pageSize int) *int32 {
+	if pageSize == 0 {
+		return aws.Int32(defaultPageSize)
+	}
+
+	return aws.Int32(int32(pageSize))
 }

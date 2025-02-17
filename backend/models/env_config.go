@@ -39,6 +39,8 @@ type EnvironmentConfiguration struct {
 	PeriodUserNameExpenseIDIndex string `json:"PERIOD_USER_NAME_EXPENSE_ID_INDEX"`
 	PeriodUserAmountIndex        string `json:"PERIOD_USER_AMOUNT_INDEX"`
 	PeriodUserNameIncomeIDIndex  string `json:"PERIOD_USER_NAME_INCOME_ID_INDEX"`
+	UsernameTargetIndex          string `json:"USERNAME_TARGET_INDEX"`
+	UsernameDeadlineIndex        string `json:"USERNAME_DEADLINE_INDEX"`
 
 	BatchWriteRetries       int `json:"BATCH_WRITE_RETRIES"`
 	BatchWriteBaseDelayInMs int `json:"BATCH_WRITE_BASE_DELAY_IN_MS"`

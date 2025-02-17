@@ -20,4 +20,6 @@ const (
 	SortParamCreatedDate SortParam = "created_date"
 	SortParamAmount      SortParam = "amount"
 	SortParamName        SortParam = "name"
+	SortParamDeadline    SortParam = "deadline"
+	SortParamTarget      SortParam = "target"
 )
