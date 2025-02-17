@@ -39,7 +39,7 @@ func (request *getSavingRequest) init(ctx context.Context, envConfig *models.Env
 		if err != nil {
 			return
 		}
-		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig.SavingGoalsTable)
+		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

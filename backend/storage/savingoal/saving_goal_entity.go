@@ -9,17 +9,31 @@ type savingGoalEntity struct {
 	SavingGoalID string    `json:"saving_goal_id,omitempty" dynamodbav:"saving_goal_id"`
 	Username     string    `json:"username,omitempty" dynamodbav:"username"`
 	Name         string    `json:"name,omitempty" dynamodbav:"name"`
-	Goal         float64   `json:"goal,omitempty" dynamodbav:"goal"`
+	Target       float64   `json:"target,omitempty" dynamodbav:"target"`
 	Deadline     time.Time `json:"deadline,omitempty" dynamodbav:"deadline"`
 }
 
+func toSavingGoalEntity(s *models.SavingGoal) *savingGoalEntity {
+	return &savingGoalEntity{
+		SavingGoalID: s.GetSavingGoalID(),
+		Username:     s.GetUsername(),
+		Name:         s.GetName(),
+		Target:       s.GetTarget(),
+		Deadline:     s.GetDeadline(),
+	}
+}
+
 func toSavingGoalModel(s *savingGoalEntity) *models.SavingGoal {
+	namePtr := &s.Name
+	deadlinePtr := &s.Deadline
+	targetPtr := &s.Target
+
 	return &models.SavingGoal{
 		SavingGoalID: s.SavingGoalID,
 		Username:     s.Username,
-		Name:         s.Name,
-		Goal:         s.Goal,
-		Deadline:     s.Deadline,
+		Name:         namePtr,
+		Target:       targetPtr,
+		Deadline:     deadlinePtr,
 	}
 }
 

@@ -36,6 +36,14 @@ func main() {
 			r.Post("/", handlers.CreateSavingHandler)
 			r.Put("/{savingID}", handlers.UpdateSavingHandler)
 			r.Delete("/", handlers.DeleteSavingHandler)
+
+			r.Route("/goals", func(r *router.Router) {
+				r.Post("/", handlers.CreateSavingGoalHandler)
+				r.Get("/{savingGoalID}", handlers.GetSavingGoalHandler)
+				r.Get("/", handlers.GetSavingGoalsHandler)
+				r.Put("/{savingGoalID}", handlers.UpdateSavingGoalsHandler)
+				r.Delete("/{savingGoalID}", handlers.DeleteSavingGoalHandler)
+			})
 		})
 
 		r.Route("/periods", func(r *router.Router) {

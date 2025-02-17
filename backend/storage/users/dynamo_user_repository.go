@@ -34,12 +34,12 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName string) (*Dyna
 	return d, nil
 }
 
-func (d *DynamoRepository) CreateUser(ctx context.Context, u *models.User) error {
+func (d *DynamoRepository) CreateUser(ctx context.Context, u *models.User) (*models.User, error) {
 	user := toUserEntity(u)
 
 	item, err := attributevalue.MarshalMap(user)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -50,14 +50,14 @@ func (d *DynamoRepository) CreateUser(ctx context.Context, u *models.User) error
 
 	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
-		return fmt.Errorf("%v: %w", err, models.ErrExistingUser)
+		return nil, fmt.Errorf("%v: %w", err, models.ErrExistingUser)
 	}
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return toUserModel(user), nil
 }
 
 func (d *DynamoRepository) GetUser(ctx context.Context, username string) (*models.User, error) {

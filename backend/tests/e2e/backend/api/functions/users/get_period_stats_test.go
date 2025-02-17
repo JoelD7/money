@@ -93,8 +93,9 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 		CurrentPeriod: periodID,
 	}
 
-	err = usersRepo.CreateUser(ctx, testUser)
+	createdUser, err := usersRepo.CreateUser(ctx, testUser)
 	c.Nil(err, "creating user failed")
+	c.NotNil(createdUser, "created user is nil")
 
 	defer cleaner.Cleanup(func() {
 		err = usersRepo.DeleteUser(ctx, username)
@@ -178,8 +179,9 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 			CurrentPeriod: periodID,
 		}
 
-		err = usersRepo.CreateUser(ctx, testUser)
+		createdUser, err := usersRepo.CreateUser(ctx, testUser)
 		c.Nil(err, "creating user failed")
+		c.NotNil(createdUser, "created user is nil")
 
 		defer t.Cleanup(func() {
 			err = usersRepo.DeleteUser(ctx, username)
@@ -206,8 +208,9 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 			CurrentPeriod: periodID,
 		}
 
-		err = usersRepo.CreateUser(ctx, testUser)
+		createdUser, err := usersRepo.CreateUser(ctx, testUser)
 		c.Nil(err, "creating user failed")
+		c.NotNil(createdUser, "created user is nil")
 
 		defer t.Cleanup(func() {
 			err = usersRepo.DeleteUser(ctx, username)
