@@ -98,29 +98,34 @@ func (d *DynamoRepository) GetSavingGoal(ctx context.Context, username, savingGo
 	return toSavingGoalModel(savingGoal), nil
 }
 
-func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, error) {
+func (d *DynamoRepository) GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error) {
 	input, err := d.buildQueryInput(username, params)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("get saving goals failed: %v", err)
+		return nil, "", fmt.Errorf("get saving goals failed: %v", err)
 	}
 
 	if len(result.Items) == 0 {
-		return nil, models.ErrSavingGoalsNotFound
+		return nil, "", models.ErrSavingGoalsNotFound
 	}
 
 	savingGoalsEntities := new([]*savingGoalEntity)
 
 	err = attributevalue.UnmarshalListOfMaps(result.Items, savingGoalsEntities)
 	if err != nil {
-		return nil, fmt.Errorf("unmarshal saving goal items failed: %v", err)
+		return nil, "", fmt.Errorf("unmarshal saving goal items failed: %v", err)
 	}
 
-	return toSavingGoalModels(*savingGoalsEntities), nil
+	nextKey, err := dynamo.EncodePaginationKey(result.LastEvaluatedKey)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return toSavingGoalModels(*savingGoalsEntities), nextKey, nil
 }
 
 func (d *DynamoRepository) buildQueryInput(username string, params *models.QueryParameters) (*dynamodb.QueryInput, error) {

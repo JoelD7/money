@@ -26,6 +26,11 @@ type getSavingGoalsRequest struct {
 	queryParams    *models.QueryParameters
 }
 
+type SavingGoalsResponse struct {
+	SavingGoals []*models.SavingGoal `json:"saving_goals"`
+	NextKey     string               `json:"next_key"`
+}
+
 func (request *getSavingGoalsRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
 	var err error
 	getSavingGoalsOnce.Do(func() {
@@ -98,12 +103,15 @@ func (request *getSavingGoalsRequest) process(ctx context.Context, req *apigatew
 
 	getSavingGoals := usecases.NewSavingGoalsGetter(request.savingGoalRepo)
 
-	savingGoals, err := getSavingGoals(ctx, username, request.queryParams)
+	savingGoals, nextKey, err := getSavingGoals(ctx, username, request.queryParams)
 	if err != nil {
 		logger.Error("get_saving_goals_failed", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	return req.NewJSONResponse(http.StatusOK, savingGoals), nil
+	return req.NewJSONResponse(http.StatusOK, &SavingGoalsResponse{
+		SavingGoals: savingGoals,
+		NextKey:     nextKey,
+	}), nil
 }

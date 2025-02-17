@@ -8,7 +8,7 @@ import (
 type SavingGoalManager interface {
 	CreateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error)
 	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
-	GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, error)
+	GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error)
 	DeleteSavingGoal(ctx context.Context, username, savingGoalID string) error
 }
 
@@ -25,8 +25,8 @@ func NewSavingGoalGetter(savingGoalManager SavingGoalManager) func(ctx context.C
 	}
 }
 
-func NewSavingGoalsGetter(savingGoalManager SavingGoalManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, error) {
-	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, error) {
+func NewSavingGoalsGetter(savingGoalManager SavingGoalManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error) {
 		return savingGoalManager.GetSavingGoals(ctx, username, params)
 	}
 }
