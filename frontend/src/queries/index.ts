@@ -10,6 +10,7 @@ export {
   incomeKeys,
   useGetPeriods,
   useGetExpenses,
+  useGetSavingGoals,
 } from "./queries";
 
 export { queryRetryFn } from "./common";
