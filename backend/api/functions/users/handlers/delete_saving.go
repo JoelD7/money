@@ -28,7 +28,7 @@ func (request *deleteSavingRequest) init(ctx context.Context, envConfig *models.
 	dsOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig.SavingsTable, envConfig.PeriodSavingIndexName, envConfig.SavingGoalSavingIndexName)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/savingoal"
+	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"sync"
@@ -23,6 +24,7 @@ type getSavingGoalsRequest struct {
 	startingTime   time.Time
 	err            error
 	savingGoalRepo savingoal.Repository
+	savingsRepo    savings.Repository
 	queryParams    *models.QueryParameters
 }
 
@@ -37,6 +39,11 @@ func (request *getSavingGoalsRequest) init(ctx context.Context, envConfig *model
 		request.startingTime = time.Now()
 		dynamoClient := dynamo.InitClient(ctx)
 		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig)
+		if err != nil {
+			return
+		}
+
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
@@ -101,7 +108,7 @@ func (request *getSavingGoalsRequest) process(ctx context.Context, req *apigatew
 		return req.NewErrorResponse(err), nil
 	}
 
-	getSavingGoals := usecases.NewSavingGoalsGetter(request.savingGoalRepo)
+	getSavingGoals := usecases.NewSavingGoalsGetter(request.savingGoalRepo, request.savingsRepo)
 
 	savingGoals, nextKey, err := getSavingGoals(ctx, username, request.queryParams)
 	if err != nil {

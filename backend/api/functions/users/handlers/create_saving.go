@@ -36,7 +36,7 @@ func (request *createSavingRequest) init(ctx context.Context, envConfig *models.
 		logger.SetHandler("create-saving")
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig.SavingsTable, envConfig.PeriodSavingIndexName, envConfig.SavingGoalSavingIndexName)
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

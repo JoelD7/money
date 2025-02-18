@@ -7,6 +7,7 @@ type SavingGoal struct {
 	Username     string     `json:"username,omitempty"`
 	Name         *string    `json:"name,omitempty"`
 	Target       *float64   `json:"target,omitempty"`
+	Progress     *float64   `json:"progress,omitempty"`
 	Deadline     *time.Time `json:"deadline,omitempty"`
 }
 
@@ -16,6 +17,10 @@ func (sg *SavingGoal) SetName(name string) {
 
 func (sg *SavingGoal) SetTarget(target float64) {
 	sg.Target = &target
+}
+
+func (sg *SavingGoal) SetProgress(progress float64) {
+	sg.Progress = &progress
 }
 
 func (sg *SavingGoal) SetDeadline(deadline time.Time) {
@@ -48,6 +53,13 @@ func (sg *SavingGoal) GetTarget() float64 {
 		return 0
 	}
 	return *sg.Target
+}
+
+func (sg *SavingGoal) GetProgress() float64 {
+	if sg == nil || sg.Progress == nil {
+		return 0
+	}
+	return *sg.Progress
 }
 
 func (sg *SavingGoal) GetDeadline() time.Time {
