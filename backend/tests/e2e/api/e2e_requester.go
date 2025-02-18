@@ -11,6 +11,7 @@ import (
 
 var (
 	loginEndpoint       = "/auth/login"
+	savingsEndpoint     = "/savings"
 	savingGoalsEndpoint = "/savings/goals"
 )
 

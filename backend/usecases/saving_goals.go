@@ -23,9 +23,16 @@ func NewSavingGoalCreator(savingGoalManager SavingGoalManager) func(ctx context.
 	}
 }
 
-func NewSavingGoalGetter(savingGoalManager SavingGoalManager) func(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error) {
+func NewSavingGoalGetter(savingGoalManager SavingGoalManager, savingManager SavingsManager) func(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error) {
 	return func(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error) {
-		return savingGoalManager.GetSavingGoal(ctx, username, savingGoalID)
+		savingGoal, err := savingGoalManager.GetSavingGoal(ctx, username, savingGoalID)
+		if err != nil {
+			return nil, err
+		}
+
+		calculateProgressByGoal(ctx, savingGoal, savingManager)
+
+		return savingGoal, nil
 	}
 }
 
