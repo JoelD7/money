@@ -78,6 +78,25 @@ func TestGetSavingGoals(t *testing.T) {
 	requester, err := api.NewE2ERequester()
 	c.NoError(err, "creating e2e requester failed")
 
+	periodName := "2021-01"
+	period := &models.Period{
+		Name:      &periodName,
+		StartDate: time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2021, time.January, 31, 0, 0, 0, 0, time.UTC),
+	}
+
+	createdPeriod, statusCode, err := requester.CreatePeriod(period)
+	c.Nil(err, "creating period failed")
+	c.Equal(http.StatusCreated, statusCode)
+	c.NotNil(createdPeriod, "created period is nil")
+
+	t.Cleanup(func() {
+		statusCode, err = requester.DeletePeriod(createdPeriod.ID)
+		if statusCode != http.StatusNoContent || err != nil {
+			t.Logf("Failed to delete period %s: %v", createdPeriod.ID, err)
+		}
+	})
+
 	var createdGoals []*models.SavingGoal
 	var goalIDs []string
 	var createdSavingIDs []string
@@ -100,13 +119,12 @@ func TestGetSavingGoals(t *testing.T) {
 	}
 
 	createSavings := func(goalID string, amounts []float64) float64 {
-		period := "2021-01"
 		var totalAmount float64
 		for _, amount := range amounts {
 			saving := new(models.Saving)
 			saving.SavingGoalID = &goalID
 			saving.Amount = &amount
-			saving.Period = &period
+			saving.Period = createdPeriod.Name
 
 			createdSaving, statusCode, err := requester.CreateSaving(saving)
 			c.Equal(http.StatusCreated, statusCode)
@@ -120,21 +138,7 @@ func TestGetSavingGoals(t *testing.T) {
 		return totalAmount
 	}
 
-	createdGoals = append(createdGoals, createGoal("Goal 1", 1000, 30))   // 30 days, $1,000
-	createdGoals = append(createdGoals, createGoal("Goal 2", 5000, 90))   // 90 days, $5,000
-	createdGoals = append(createdGoals, createGoal("Goal 3", 2000, 60))   // 60 days, $2,000
-	createdGoals = append(createdGoals, createGoal("Goal 4", 10000, 365)) // 365 days, $10,000
-	createdGoals = append(createdGoals, createGoal("Goal 5", 500, 7))     // 7 days, $500
-
-	// Create savings for each goal with different amounts
-	expectedProgress := make(map[string]float64)
-	expectedProgress[createdGoals[0].GetSavingGoalID()] = createSavings(createdGoals[0].GetSavingGoalID(), []float64{100, 200, 50})       // $350
-	expectedProgress[createdGoals[1].GetSavingGoalID()] = createSavings(createdGoals[1].GetSavingGoalID(), []float64{1000, 500})          // $1,500
-	expectedProgress[createdGoals[2].GetSavingGoalID()] = createSavings(createdGoals[2].GetSavingGoalID(), []float64{250, 250, 250, 250}) // $1,000
-	expectedProgress[createdGoals[3].GetSavingGoalID()] = createSavings(createdGoals[3].GetSavingGoalID(), []float64{2000, 1500})         // $3,500
-	expectedProgress[createdGoals[4].GetSavingGoalID()] = createSavings(createdGoals[4].GetSavingGoalID(), []float64{100, 150, 200})      // $450
-
-	defer func() {
+	t.Cleanup(func() {
 		// Cleanup all created savings
 		for _, id := range createdSavingIDs {
 			statusCode, err := requester.DeleteSaving(id)
@@ -150,7 +154,21 @@ func TestGetSavingGoals(t *testing.T) {
 				t.Logf("Failed to delete goal %s: %v", id, err)
 			}
 		}
-	}()
+	})
+
+	createdGoals = append(createdGoals, createGoal("Goal 1", 1000, 30))   // 30 days, $1,000
+	createdGoals = append(createdGoals, createGoal("Goal 2", 5000, 90))   // 90 days, $5,000
+	createdGoals = append(createdGoals, createGoal("Goal 3", 2000, 60))   // 60 days, $2,000
+	createdGoals = append(createdGoals, createGoal("Goal 4", 10000, 365)) // 365 days, $10,000
+	createdGoals = append(createdGoals, createGoal("Goal 5", 500, 7))     // 7 days, $500
+
+	// Create savings for each goal with different amounts
+	expectedProgress := make(map[string]float64)
+	expectedProgress[createdGoals[0].GetSavingGoalID()] = createSavings(createdGoals[0].GetSavingGoalID(), []float64{100, 200, 50})       // $350
+	expectedProgress[createdGoals[1].GetSavingGoalID()] = createSavings(createdGoals[1].GetSavingGoalID(), []float64{1000, 500})          // $1,500
+	expectedProgress[createdGoals[2].GetSavingGoalID()] = createSavings(createdGoals[2].GetSavingGoalID(), []float64{250, 250, 250, 250}) // $1,000
+	expectedProgress[createdGoals[3].GetSavingGoalID()] = createSavings(createdGoals[3].GetSavingGoalID(), []float64{2000, 1500})         // $3,500
+	expectedProgress[createdGoals[4].GetSavingGoalID()] = createSavings(createdGoals[4].GetSavingGoalID(), []float64{100, 150, 200})      // $450
 
 	t.Run("Get all goals with default parameters", func(t *testing.T) {
 		goals, statusCode, nextKey, err := requester.GetSavingGoals("", "", "", 10)
@@ -195,12 +213,11 @@ func TestGetSavingGoals(t *testing.T) {
 		// Add additional savings to a specific goal
 		goalToUpdate := createdGoals[2].GetSavingGoalID() // Goal 3
 		additionalAmount := 500.0
-		period := "2021-01"
 
 		saving := new(models.Saving)
 		saving.SavingGoalID = &goalToUpdate
 		saving.Amount = &additionalAmount
-		saving.Period = &period
+		saving.Period = createdPeriod.Name
 
 		createdSaving, statusCode, err := requester.CreateSaving(saving)
 		c.Equal(http.StatusCreated, statusCode)

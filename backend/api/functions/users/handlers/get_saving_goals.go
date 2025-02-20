@@ -97,6 +97,11 @@ func (request *getSavingGoalsRequest) validateQueryParams() error {
 		return err
 	}
 
+	err = validate.PageSize(request.queryParams.PageSize)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

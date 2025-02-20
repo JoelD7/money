@@ -290,7 +290,7 @@ func validateSavingPeriod(ctx context.Context, saving *models.Saving, username s
 	}
 
 	for _, period := range periods {
-		if period.ID == *saving.Period {
+		if *period.Name == *saving.Period {
 			return nil
 		}
 	}

@@ -66,3 +66,11 @@ func SortType(sortType string) error {
 
 	return models.ErrInvalidSortOrder
 }
+
+func PageSize(pageSize int) error {
+	if pageSize < 0 || pageSize > math.MaxInt32 {
+		return models.ErrInvalidPageSize
+	}
+
+	return nil
+}

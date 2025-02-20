@@ -13,6 +13,7 @@ var (
 	loginEndpoint       = "/auth/login"
 	savingsEndpoint     = "/savings"
 	savingGoalsEndpoint = "/savings/goals"
+	periodsEndpoint     = "/periods"
 )
 
 // E2ERequester is a type that will be used to make requests to the backend. It's main purpose is to hold the access token.

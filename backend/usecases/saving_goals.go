@@ -48,7 +48,9 @@ func NewSavingGoalsGetter(savingGoalManager SavingGoalManager, savingManager Sav
 		for _, goal := range savingGoals {
 			wg.Add(1)
 			go func(savingGoal *models.SavingGoal) {
-				defer wg.Done()
+				defer func() {
+					wg.Done()
+				}()
 				calculateProgressByGoal(ctx, savingGoal, savingManager)
 			}(goal)
 		}
@@ -72,6 +74,7 @@ func calculateProgressByGoal(ctx context.Context, savingGoal *models.SavingGoal,
 		}
 
 		if errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
+			logger.Error("no_more_savings_to_be_retrieved", err, models.Any("saving_goal", savingGoal))
 			break
 		}
 
@@ -85,6 +88,10 @@ func calculateProgressByGoal(ctx context.Context, savingGoal *models.SavingGoal,
 		startKey = nextKey
 
 		goalSavings = append(goalSavings, savings...)
+
+		if nextKey == "" {
+			break
+		}
 	}
 
 	progress := 0.0
