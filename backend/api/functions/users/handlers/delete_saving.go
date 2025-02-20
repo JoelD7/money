@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -59,18 +58,18 @@ func DeleteSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfi
 }
 
 func (request *deleteSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	userSaving := new(models.Saving)
+	savingID := req.PathParameters["savingID"]
 
-	err := json.Unmarshal([]byte(req.Body), userSaving)
+	username, err := apigateway.GetUsernameFromContext(req)
 	if err != nil {
-		logger.Error("request_body_unmarshal_failed", err, req)
+		logger.Error("get_username_from_context_failed", err, req)
 
-		return req.NewErrorResponse(models.ErrInvalidRequestBody), nil
+		return req.NewErrorResponse(err), nil
 	}
 
 	deleteSaving := usecases.NewSavingDeleter(request.savingsRepo)
 
-	err = deleteSaving(ctx, userSaving.SavingID, userSaving.Username)
+	err = deleteSaving(ctx, savingID, username)
 	if err != nil {
 		logger.Error("delete_saving_failed", err, req)
 
