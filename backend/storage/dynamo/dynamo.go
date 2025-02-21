@@ -211,12 +211,21 @@ func handleBatchWriteRetries(ctx context.Context, d *dynamodb.Client, unprocesse
 
 func InitClient(ctx context.Context) *dynamodb.Client {
 	awsRegion := env.GetString("AWS_REGION", "")
+	logDynamo := env.GetString("LOG_DYNAMO", "true")
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion),
-		config.WithLogger(logger.NewLogstashDynamo()),
-		config.WithClientLogMode(aws.LogRequestWithBody|aws.LogResponseWithBody))
+	var cfg aws.Config
+	var err error
+
+	if logDynamo == "true" {
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion),
+			config.WithLogger(logger.NewLogstashDynamo()),
+			config.WithClientLogMode(aws.LogRequestWithBody|aws.LogResponseWithBody))
+	} else {
+		cfg, err = config.LoadDefaultConfig(ctx, config.WithRegion(awsRegion))
+	}
+
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("initializing DynamoDB client: %v", err))
 	}
 
 	return dynamodb.NewFromConfig(cfg)
