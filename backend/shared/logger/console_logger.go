@@ -4,15 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
-)
-
-var (
-	errorLogger = log.New(os.Stderr, "LOGGER_ERROR ", log.Llongfile)
 )
 
 // ConsoleLogger is a logger that writes to stdErr

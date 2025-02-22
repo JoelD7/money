@@ -247,7 +247,7 @@ func main() {
 		defer func() {
 			err = logger.Finish()
 			if err != nil {
-				panic(fmt.Errorf("failed to finish logger: %w", err))
+				logger.ErrPrintln("failed to finish logger", err)
 			}
 		}()
 
