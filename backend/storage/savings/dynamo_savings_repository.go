@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -27,46 +26,31 @@ type DynamoRepository struct {
 	savingGoalSavingIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, tableName, periodSavingIndex, savingGoalSavingIndex string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
 
-	tableNameEnv := env.GetString("SAVINGS_TABLE_NAME", "")
-	periodSavingIndexEnv := env.GetString("PERIOD_SAVING_INDEX_NAME", "")
-	savingGoalSavingIndexEnv := env.GetString("SAVING_GOAL_SAVING_INDEX_NAME", "")
-
-	err := validateParams(tableName, periodSavingIndex, savingGoalSavingIndex, tableNameEnv, periodSavingIndexEnv, savingGoalSavingIndexEnv)
+	err := validateParams(envConfig)
 	if err != nil {
 		return nil, fmt.Errorf("initialize saving dynamo repository failed: %v", err)
 	}
 
-	d.tableName = tableName
-	if d.tableName == "" {
-		d.tableName = tableNameEnv
-	}
-
-	d.periodSavingIndex = periodSavingIndex
-	if d.periodSavingIndex == "" {
-		d.periodSavingIndex = periodSavingIndexEnv
-	}
-
-	d.savingGoalSavingIndex = savingGoalSavingIndex
-	if d.savingGoalSavingIndex == "" {
-		d.savingGoalSavingIndex = savingGoalSavingIndexEnv
-	}
+	d.tableName = envConfig.SavingsTable
+	d.periodSavingIndex = envConfig.PeriodSavingIndexName
+	d.savingGoalSavingIndex = envConfig.SavingGoalSavingIndexName
 
 	return d, nil
 }
 
-func validateParams(tableName, periodSavingIndex, savingGoalSavingIndex, tableNameEnv, periodSavingIndexEnv, savingGoalSavingIndexEnv string) error {
-	if tableName == "" && tableNameEnv == "" {
+func validateParams(envConfig *models.EnvironmentConfiguration) error {
+	if envConfig.SavingsTable == "" {
 		return fmt.Errorf("table name is required")
 	}
 
-	if periodSavingIndex == "" && periodSavingIndexEnv == "" {
+	if envConfig.PeriodSavingIndexName == "" {
 		return fmt.Errorf("period saving index is required")
 	}
 
-	if savingGoalSavingIndex == "" && savingGoalSavingIndexEnv == "" {
+	if envConfig.SavingGoalSavingIndexName == "" {
 		return fmt.Errorf("saving goal saving index is required")
 	}
 

@@ -1,6 +1,7 @@
 package users
 
 import (
+	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/tests/e2e/api"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func TestCreateSavingGoals(t *testing.T) {
 	inputSavingGoal.SetTarget(1000)
 	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal)
+	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
 	c.Equal(http.StatusCreated, statusCode)
 	c.Nil(err, "creating saving goal failed")
 	c.NotNil(createdSavingGoal, "created saving goal is nil")
@@ -55,7 +56,7 @@ func TestSavingGoalsElimination(t *testing.T) {
 	inputSavingGoal.SetTarget(1000)
 	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal)
+	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
 	c.Equal(http.StatusCreated, statusCode)
 	c.Nil(err, "creating saving goal failed")
 	c.NotNil(createdSavingGoal, "created saving goal is nil")
@@ -77,8 +78,21 @@ func TestGetSavingGoals(t *testing.T) {
 	requester, err := api.NewE2ERequester()
 	c.NoError(err, "creating e2e requester failed")
 
+	periodName := "2021-01"
+	period := &models.Period{
+		Name:      &periodName,
+		StartDate: time.Date(2021, time.January, 1, 0, 0, 0, 0, time.UTC),
+		EndDate:   time.Date(2021, time.January, 31, 0, 0, 0, 0, time.UTC),
+	}
+
+	createdPeriod, statusCode, err := requester.CreatePeriod(period, t)
+	c.Nil(err, "creating period failed")
+	c.Equal(http.StatusCreated, statusCode)
+	c.NotNil(createdPeriod, "created period is nil")
+
 	var createdGoals []*models.SavingGoal
 	var goalIDs []string
+	var createdSavingIDs []string
 
 	createGoal := func(name string, target float64, daysFromNow int) *models.SavingGoal {
 		inputGoal := new(models.SavingGoal)
@@ -87,7 +101,7 @@ func TestGetSavingGoals(t *testing.T) {
 		deadline := time.Now().AddDate(0, 0, daysFromNow)
 		inputGoal.SetDeadline(time.Date(deadline.Year(), deadline.Month(), deadline.Day(), 0, 0, 0, 0, time.UTC))
 
-		createdGoal, statusCode, err := requester.CreateSavingGoal(inputGoal)
+		createdGoal, statusCode, err := requester.CreateSavingGoal(inputGoal, t)
 		c.Equal(http.StatusCreated, statusCode)
 		c.NoError(err, "creating saving goal failed")
 		c.NotNil(createdGoal, "created saving goal is nil")
@@ -97,20 +111,39 @@ func TestGetSavingGoals(t *testing.T) {
 		return createdGoal
 	}
 
-	createdGoals = append(createdGoals, createGoal("Goal 1", 1000, 30))   // 30 days, $1000
-	createdGoals = append(createdGoals, createGoal("Goal 2", 5000, 90))   // 90 days, $5000
-	createdGoals = append(createdGoals, createGoal("Goal 3", 2000, 60))   // 60 days, $2000
-	createdGoals = append(createdGoals, createGoal("Goal 4", 10000, 365)) // 365 days, $10000
+	createSavings := func(goalID string, amounts []float64) float64 {
+		var totalAmount float64
+		for _, amount := range amounts {
+			saving := new(models.Saving)
+			saving.SavingGoalID = &goalID
+			saving.Amount = &amount
+			saving.Period = createdPeriod.Name
+
+			createdSaving, statusCode, err := requester.CreateSaving(saving, t)
+			c.Equal(http.StatusCreated, statusCode)
+			c.NoError(err, "creating saving failed")
+			c.NotNil(createdSaving, "created saving is nil")
+			c.NotEmpty(createdSaving.SavingID, "created saving id is empty")
+
+			createdSavingIDs = append(createdSavingIDs, createdSaving.SavingID)
+			totalAmount += amount
+		}
+		return totalAmount
+	}
+
+	createdGoals = append(createdGoals, createGoal("Goal 1", 1000, 30))   // 30 days, $1,000
+	createdGoals = append(createdGoals, createGoal("Goal 2", 5000, 90))   // 90 days, $5,000
+	createdGoals = append(createdGoals, createGoal("Goal 3", 2000, 60))   // 60 days, $2,000
+	createdGoals = append(createdGoals, createGoal("Goal 4", 10000, 365)) // 365 days, $10,000
 	createdGoals = append(createdGoals, createGoal("Goal 5", 500, 7))     // 7 days, $500
 
-	defer func() {
-		for _, id := range goalIDs {
-			statusCode, err := requester.DeleteSavingGoal(id)
-			if statusCode != http.StatusNoContent || err != nil {
-				t.Logf("Failed to delete goal %s: %v", id, err)
-			}
-		}
-	}()
+	// Create savings for each goal with different amounts
+	expectedProgress := make(map[string]float64)
+	expectedProgress[createdGoals[0].GetSavingGoalID()] = createSavings(createdGoals[0].GetSavingGoalID(), []float64{100, 200, 50})       // $350
+	expectedProgress[createdGoals[1].GetSavingGoalID()] = createSavings(createdGoals[1].GetSavingGoalID(), []float64{1000, 500})          // $1,500
+	expectedProgress[createdGoals[2].GetSavingGoalID()] = createSavings(createdGoals[2].GetSavingGoalID(), []float64{250, 250, 250, 250}) // $1,000
+	expectedProgress[createdGoals[3].GetSavingGoalID()] = createSavings(createdGoals[3].GetSavingGoalID(), []float64{2000, 1500})         // $3,500
+	expectedProgress[createdGoals[4].GetSavingGoalID()] = createSavings(createdGoals[4].GetSavingGoalID(), []float64{100, 150, 200})      // $450
 
 	t.Run("Get all goals with default parameters", func(t *testing.T) {
 		goals, statusCode, nextKey, err := requester.GetSavingGoals("", "", "", 10)
@@ -118,6 +151,65 @@ func TestGetSavingGoals(t *testing.T) {
 		c.NoError(err, "get saving goals failed")
 		c.GreaterOrEqual(len(goals), 5, "expected at least 5 goals")
 		c.Empty(nextKey, "expected no next key with page size 10")
+	})
+
+	t.Run("Verify progress values", func(t *testing.T) {
+		goals, statusCode, _, err := requester.GetSavingGoals("", "", "", 10)
+		c.Equal(http.StatusOK, statusCode)
+		c.NoError(err, "get saving goals for progress verification failed")
+		c.GreaterOrEqual(len(goals), 5, "expected at least 5 goals")
+
+		for _, goal := range goals {
+			// Only check goals created in this test
+			if progress, exists := expectedProgress[goal.GetSavingGoalID()]; exists {
+				c.Equal(progress, goal.GetProgress(),
+					fmt.Sprintf("goal %s has incorrect progress value. Expected: %.2f, Actual: %.2f",
+						goal.GetSavingGoalID(), progress, goal.GetProgress()))
+			}
+		}
+	})
+
+	t.Run("Check progress accuracy for specific goal", func(t *testing.T) {
+		// Get a specific goal by ID
+		for _, goal := range createdGoals {
+			goalID := goal.GetSavingGoalID()
+			retrievedGoal, statusCode, err := requester.GetSavingGoal(goalID)
+			c.Equal(http.StatusOK, statusCode)
+			c.NoError(err, fmt.Sprintf("get saving goal %s failed", goalID))
+			c.NotNil(retrievedGoal, "retrieved goal is nil")
+
+			c.Equal(expectedProgress[goalID], retrievedGoal.GetProgress(),
+				fmt.Sprintf("goal %s has incorrect progress value. Expected: %.2f, Actual: %.2f",
+					goalID, expectedProgress[goalID], retrievedGoal.GetProgress()))
+		}
+	})
+
+	t.Run("Add more savings and verify updated progress", func(t *testing.T) {
+		// Add additional savings to a specific goal
+		goalToUpdate := createdGoals[2].GetSavingGoalID() // Goal 3
+		additionalAmount := 500.0
+
+		saving := new(models.Saving)
+		saving.SavingGoalID = &goalToUpdate
+		saving.Amount = &additionalAmount
+		saving.Period = createdPeriod.Name
+
+		createdSaving, statusCode, err := requester.CreateSaving(saving, t)
+		c.Equal(http.StatusCreated, statusCode)
+		c.NoError(err, "creating additional saving failed")
+		createdSavingIDs = append(createdSavingIDs, createdSaving.SavingID)
+
+		// Update expected progress
+		expectedProgress[goalToUpdate] += additionalAmount
+
+		// Verify the updated progress
+		retrievedGoal, statusCode, err := requester.GetSavingGoal(goalToUpdate)
+		c.Equal(http.StatusOK, statusCode)
+		c.NoError(err, "get saving goal after update failed")
+
+		c.Equal(expectedProgress[goalToUpdate], retrievedGoal.GetProgress(),
+			fmt.Sprintf("goal %s has incorrect progress after update. Expected: %.2f, Actual: %.2f",
+				goalToUpdate, expectedProgress[goalToUpdate], retrievedGoal.GetProgress()))
 	})
 
 	t.Run("Sort by deadline ascending", func(t *testing.T) {
@@ -176,16 +268,45 @@ func TestGetSavingGoals(t *testing.T) {
 		}
 	})
 
+	//TODO: uncomment this after implementing progress sorting
+	//t.Run("Sort by progress ascending", func(t *testing.T) {
+	//	goals, statusCode, _, err := requester.GetSavingGoals("progress", "asc", "", 10)
+	//	c.Equal(http.StatusOK, statusCode)
+	//	c.NoError(err, "get saving goals with progress sorting failed")
+	//	c.GreaterOrEqual(len(goals), 5, "expected at least 5 goals")
+	//
+	//	for i := 0; i < len(goals)-1; i++ {
+	//		if i+1 < len(goals) {
+	//			c.LessOrEqual(goals[i].GetProgress(), goals[i+1].GetProgress(),
+	//				"goals not sorted by progress ascending")
+	//		}
+	//	}
+	//})
+	//
+	//t.Run("Sort by progress descending", func(t *testing.T) {
+	//	goals, statusCode, _, err := requester.GetSavingGoals("progress", "desc", "", 10)
+	//	c.Equal(http.StatusOK, statusCode)
+	//	c.NoError(err, "get saving goals with progress sorting failed")
+	//	c.GreaterOrEqual(len(goals), 5, "expected at least 5 goals")
+	//
+	//	for i := 0; i < len(goals)-1; i++ {
+	//		if i+1 < len(goals) {
+	//			c.GreaterOrEqual(goals[i].GetProgress(), goals[i+1].GetProgress(),
+	//				"goals not sorted by progress descending")
+	//		}
+	//	}
+	//})
+
 	t.Run("Invalid sort parameter", func(t *testing.T) {
 		goals, statusCode, _, err := requester.GetSavingGoals("invalid_param", "asc", "", 10)
-		c.NotEqual(http.StatusOK, statusCode)
+		c.Equal(http.StatusBadRequest, statusCode)
 		c.Error(err, "expected error for invalid sort parameter")
 		c.Nil(goals, "goals should be nil with invalid sort parameter")
 	})
 
 	t.Run("Invalid sort order", func(t *testing.T) {
 		goals, statusCode, _, err := requester.GetSavingGoals("deadline", "invalid_order", "", 10)
-		c.NotEqual(http.StatusOK, statusCode)
+		c.Equal(http.StatusBadRequest, statusCode)
 		c.Error(err, "expected error for invalid sort order")
 		c.Nil(goals, "goals should be nil with invalid sort order")
 	})
@@ -239,7 +360,7 @@ func TestGetSavingGoals(t *testing.T) {
 
 	t.Run("Invalid page size", func(t *testing.T) {
 		goals, statusCode, _, err := requester.GetSavingGoals("", "", "", -1)
-		c.NotEqual(http.StatusOK, statusCode)
+		c.Equal(http.StatusBadRequest, statusCode)
 		c.Error(err, "expected error for invalid page size")
 		c.Nil(goals, "goals should be nil with invalid page size")
 	})
@@ -278,7 +399,7 @@ func TestUpdateSavingGoal(t *testing.T) {
 	inputSavingGoal.SetTarget(1000)
 	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal)
+	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
 	c.Equal(http.StatusCreated, statusCode)
 	c.NoError(err, "creating saving goal failed")
 	c.NotNil(createdSavingGoal, "created saving goal is nil")

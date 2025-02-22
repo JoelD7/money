@@ -11,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"strings"
+	"time"
 )
 
 const savingGoalIDPrefix = "SVG"
@@ -56,6 +57,9 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 func (d *DynamoRepository) CreateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
 	savingGoal.SavingGoalID = dynamo.GenerateID(savingGoalIDPrefix)
 	entity := toSavingGoalEntity(savingGoal)
+
+	now := time.Now()
+	entity.CreatedAt = &now
 
 	av, err := attributevalue.MarshalMap(entity)
 	if err != nil {
@@ -193,6 +197,9 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 
 func (d *DynamoRepository) UpdateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
 	entity := toSavingGoalEntity(savingGoal)
+
+	now := time.Now()
+	entity.UpdatedAt = &now
 
 	av, err := attributevalue.MarshalMap(entity)
 	if err != nil {

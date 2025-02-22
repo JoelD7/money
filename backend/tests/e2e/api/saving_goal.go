@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"io"
 	"net/http"
+	"testing"
 )
 
 type savingGoalsResponse struct {
@@ -14,7 +15,19 @@ type savingGoalsResponse struct {
 	NextKey     string               `json:"next_key"`
 }
 
-func (e *E2ERequester) CreateSavingGoal(savingGoal *models.SavingGoal) (*models.SavingGoal, int, error) {
+func (e *E2ERequester) CreateSavingGoal(savingGoal *models.SavingGoal, t *testing.T) (*models.SavingGoal, int, error) {
+	var createdSavingGoal models.SavingGoal
+	t.Cleanup(func() {
+		if createdSavingGoal.SavingGoalID == "" {
+			return
+		}
+
+		statusCode, err := e.DeleteSavingGoal(createdSavingGoal.SavingGoalID)
+		if statusCode != http.StatusNoContent || err != nil {
+			t.Logf("Failed to delete saving goal %s: %v", createdSavingGoal.SavingGoalID, err)
+		}
+	})
+
 	requestBody, err := json.Marshal(savingGoal)
 	if err != nil {
 		return nil, 0, fmt.Errorf("saving goal request body marshalling failed: %w", err)
@@ -44,7 +57,6 @@ func (e *E2ERequester) CreateSavingGoal(savingGoal *models.SavingGoal) (*models.
 		return nil, res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
 	}
 
-	var createdSavingGoal models.SavingGoal
 	err = json.NewDecoder(res.Body).Decode(&createdSavingGoal)
 	if err != nil {
 		return nil, res.StatusCode, fmt.Errorf("saving goal response decoding failed: %w", err)
@@ -203,7 +215,7 @@ func handleErrorResponse(statusCode int, body io.ReadCloser) error {
 	}
 
 	if errRes.Message == "" {
-		return fmt.Errorf("saving goal request failed with status: %v", statusCode)
+		return fmt.Errorf("request failed with status: %v", statusCode)
 	}
 
 	return fmt.Errorf(errRes.Message)
