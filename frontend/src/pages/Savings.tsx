@@ -19,11 +19,13 @@ import { SavingGoal } from "../types";
 import {
   GridColDef,
   GridColumnHeaderParams,
+  GridPaginationModel,
   GridRenderCellParams,
   GridRowsProp,
 } from "@mui/x-data-grid";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { Colors } from "../assets";
+import { useRef, useState } from "react";
 
 export function Savings() {
   const customWidth = {
@@ -41,15 +43,17 @@ export function Savings() {
     month: "short",
     day: "numeric",
   });
-
   const currencyFormatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
   });
-
   const percentageFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 0,
   });
+
+  const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
+
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
 
   const columns: GridColDef[] = [
     {
@@ -93,7 +97,10 @@ export function Savings() {
     },
   ];
 
-  const getSavingGoalsQuery = useGetSavingGoals();
+  const getSavingGoalsQuery = useGetSavingGoals(
+    startKeysByPage.current[paginationModel.page],
+    paginationModel.pageSize,
+  );
   const savingGoals: SavingGoal[] | undefined = getSavingGoalsQuery.data?.saving_goals;
   const savingGoalsByID: Map<string, SavingGoal> = buildSavingGoalByID(
     savingGoals ? savingGoals : [],
@@ -280,6 +287,19 @@ export function Savings() {
     return savingGoalByID;
   }
 
+  function onPaginationModelChange(newModel: GridPaginationModel) {
+    if (newModel.pageSize !== paginationModel.pageSize) {
+      startKeysByPage.current = { 0: "" };
+    }
+
+    const nextKey = getSavingGoalsQuery.data?.next_key;
+    if (nextKey) {
+      startKeysByPage.current[newModel.page] = nextKey;
+    }
+
+    setPaginationModel(newModel);
+  }
+
   return (
     <Container>
       <Navbar />
@@ -328,9 +348,24 @@ export function Savings() {
           <Typography variant={"h5"}>Your saving goals</Typography>
           <Box height={"fit-content"} paddingTop={"10px"}>
             <Table
+              sortingMode={"server"}
               loading={getSavingGoalsQuery.isFetching}
               columns={columns}
               rows={getTableRows(savingGoals ? savingGoals : [])}
+              paginationModel={paginationModel}
+              initialState={{
+                pagination: {
+                  rowCount: -1,
+                  paginationModel,
+                },
+              }}
+              pageSizeOptions={[2, 10, 25]}
+              paginationMode={"server"}
+              onPaginationModelChange={onPaginationModelChange}
+              paginationMeta={{
+                hasNextPage: getSavingGoalsQuery.data?.next_key !== "",
+              }}
+              noRowsMessage={"No saving goals found"}
             />
           </Box>
         </Grid>
