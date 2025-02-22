@@ -13,3 +13,10 @@ type Saving struct {
 	UpdatedDate    time.Time `json:"updated_date,omitempty"`
 	Amount         *float64  `json:"amount"`
 }
+
+func (s *Saving) GetAmount() float64 {
+	if s == nil || s.Amount == nil {
+		return 0
+	}
+	return *s.Amount
+}

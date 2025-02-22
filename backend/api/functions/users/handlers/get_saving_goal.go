@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/JoelD7/money/backend/storage/savings"
 	"net/http"
 	"sync"
 	"time"
@@ -23,6 +24,7 @@ type getSavingGoalRequest struct {
 	startingTime   time.Time
 	err            error
 	savingGoalRepo savingoal.Repository
+	savingsRepo    savings.Repository
 }
 
 func (request *getSavingGoalRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -31,6 +33,11 @@ func (request *getSavingGoalRequest) init(ctx context.Context, envConfig *models
 		request.startingTime = time.Now()
 		dynamoClient := dynamo.InitClient(ctx)
 		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig)
+		if err != nil {
+			return
+		}
+
+		request.savingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
@@ -69,7 +76,7 @@ func (request *getSavingGoalRequest) process(ctx context.Context, req *apigatewa
 		return req.NewErrorResponse(err), nil
 	}
 
-	getSavingGoal := usecases.NewSavingGoalGetter(request.savingGoalRepo)
+	getSavingGoal := usecases.NewSavingGoalGetter(request.savingGoalRepo, request.savingsRepo)
 
 	savingGoal, err := getSavingGoal(ctx, username, savingGoalID)
 	if err != nil {

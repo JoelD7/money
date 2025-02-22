@@ -35,7 +35,7 @@ func main() {
 			r.Get("/", handlers.GetSavingsHandler)
 			r.Post("/", handlers.CreateSavingHandler)
 			r.Put("/{savingID}", handlers.UpdateSavingHandler)
-			r.Delete("/", handlers.DeleteSavingHandler)
+			r.Delete("/{savingID}", handlers.DeleteSavingHandler)
 
 			r.Route("/goals", func(r *router.Router) {
 				r.Post("/", handlers.CreateSavingGoalHandler)
@@ -67,7 +67,7 @@ func main() {
 		defer func() {
 			err = logger.Finish()
 			if err != nil {
-				panic(fmt.Errorf("failed to finish logger: %w", err))
+				logger.ErrPrintln("failed to finish logger", err)
 			}
 		}()
 

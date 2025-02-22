@@ -2,6 +2,8 @@ package logger
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
@@ -9,6 +11,7 @@ import (
 
 var (
 	loggerInstance LogAPI
+	errorLogger    = log.New(os.Stderr, "LOGGER_ERROR ", log.Llongfile)
 )
 
 const (
@@ -69,4 +72,8 @@ func SetHandler(handler string) {
 
 func AddToContext(key string, value interface{}) {
 	loggerInstance.AddToContext(key, value)
+}
+
+func ErrPrintln(v ...interface{}) {
+	errorLogger.Println(v...)
 }

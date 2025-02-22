@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/JoelD7/money/backend/lambda/recurrent-expense-generator/handler"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/uuid"
@@ -17,7 +16,7 @@ func main() {
 		defer func() {
 			err := logger.Finish()
 			if err != nil {
-				panic(fmt.Errorf("failed to finish logger: %w", err))
+				logger.ErrPrintln("failed to finish logger", err)
 			}
 		}()
 
