@@ -6,9 +6,23 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"net/http"
+	"testing"
 )
 
-func (e *E2ERequester) CreateSaving(saving *models.Saving) (*models.Saving, int, error) {
+func (e *E2ERequester) CreateSaving(saving *models.Saving, t *testing.T) (*models.Saving, int, error) {
+	var createdSaving models.Saving
+
+	t.Cleanup(func() {
+		if createdSaving.SavingID == "" {
+			return
+		}
+
+		statusCode, err := e.DeleteSaving(createdSaving.SavingID)
+		if statusCode != http.StatusNoContent || err != nil {
+			t.Logf("Failed to delete saving %s: %v", createdSaving.SavingID, err)
+		}
+	})
+
 	requestBody, err := json.Marshal(saving)
 	if err != nil {
 		return nil, 0, fmt.Errorf("saving request body marshalling failed: %w", err)
@@ -38,7 +52,6 @@ func (e *E2ERequester) CreateSaving(saving *models.Saving) (*models.Saving, int,
 		return nil, res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
 	}
 
-	var createdSaving models.Saving
 	err = json.NewDecoder(res.Body).Decode(&createdSaving)
 	if err != nil {
 		return nil, res.StatusCode, fmt.Errorf("saving response decoding failed: %w", err)

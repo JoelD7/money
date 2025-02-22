@@ -21,7 +21,7 @@ func TestCreateSavingGoals(t *testing.T) {
 	inputSavingGoal.SetTarget(1000)
 	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal)
+	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
 	c.Equal(http.StatusCreated, statusCode)
 	c.Nil(err, "creating saving goal failed")
 	c.NotNil(createdSavingGoal, "created saving goal is nil")
@@ -56,7 +56,7 @@ func TestSavingGoalsElimination(t *testing.T) {
 	inputSavingGoal.SetTarget(1000)
 	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal)
+	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
 	c.Equal(http.StatusCreated, statusCode)
 	c.Nil(err, "creating saving goal failed")
 	c.NotNil(createdSavingGoal, "created saving goal is nil")
@@ -85,17 +85,10 @@ func TestGetSavingGoals(t *testing.T) {
 		EndDate:   time.Date(2021, time.January, 31, 0, 0, 0, 0, time.UTC),
 	}
 
-	createdPeriod, statusCode, err := requester.CreatePeriod(period)
+	createdPeriod, statusCode, err := requester.CreatePeriod(period, t)
 	c.Nil(err, "creating period failed")
 	c.Equal(http.StatusCreated, statusCode)
 	c.NotNil(createdPeriod, "created period is nil")
-
-	t.Cleanup(func() {
-		statusCode, err = requester.DeletePeriod(createdPeriod.ID)
-		if statusCode != http.StatusNoContent || err != nil {
-			t.Logf("Failed to delete period %s: %v", createdPeriod.ID, err)
-		}
-	})
 
 	var createdGoals []*models.SavingGoal
 	var goalIDs []string
@@ -108,7 +101,7 @@ func TestGetSavingGoals(t *testing.T) {
 		deadline := time.Now().AddDate(0, 0, daysFromNow)
 		inputGoal.SetDeadline(time.Date(deadline.Year(), deadline.Month(), deadline.Day(), 0, 0, 0, 0, time.UTC))
 
-		createdGoal, statusCode, err := requester.CreateSavingGoal(inputGoal)
+		createdGoal, statusCode, err := requester.CreateSavingGoal(inputGoal, t)
 		c.Equal(http.StatusCreated, statusCode)
 		c.NoError(err, "creating saving goal failed")
 		c.NotNil(createdGoal, "created saving goal is nil")
@@ -126,7 +119,7 @@ func TestGetSavingGoals(t *testing.T) {
 			saving.Amount = &amount
 			saving.Period = createdPeriod.Name
 
-			createdSaving, statusCode, err := requester.CreateSaving(saving)
+			createdSaving, statusCode, err := requester.CreateSaving(saving, t)
 			c.Equal(http.StatusCreated, statusCode)
 			c.NoError(err, "creating saving failed")
 			c.NotNil(createdSaving, "created saving is nil")
@@ -137,24 +130,6 @@ func TestGetSavingGoals(t *testing.T) {
 		}
 		return totalAmount
 	}
-
-	t.Cleanup(func() {
-		// Cleanup all created savings
-		for _, id := range createdSavingIDs {
-			statusCode, err := requester.DeleteSaving(id)
-			if statusCode != http.StatusNoContent || err != nil {
-				t.Logf("Failed to delete saving %s: %v", id, err)
-			}
-		}
-
-		// Cleanup all created goals
-		for _, id := range goalIDs {
-			statusCode, err := requester.DeleteSavingGoal(id)
-			if statusCode != http.StatusNoContent || err != nil {
-				t.Logf("Failed to delete goal %s: %v", id, err)
-			}
-		}
-	})
 
 	createdGoals = append(createdGoals, createGoal("Goal 1", 1000, 30))   // 30 days, $1,000
 	createdGoals = append(createdGoals, createGoal("Goal 2", 5000, 90))   // 90 days, $5,000
@@ -219,7 +194,7 @@ func TestGetSavingGoals(t *testing.T) {
 		saving.Amount = &additionalAmount
 		saving.Period = createdPeriod.Name
 
-		createdSaving, statusCode, err := requester.CreateSaving(saving)
+		createdSaving, statusCode, err := requester.CreateSaving(saving, t)
 		c.Equal(http.StatusCreated, statusCode)
 		c.NoError(err, "creating additional saving failed")
 		createdSavingIDs = append(createdSavingIDs, createdSaving.SavingID)
@@ -424,7 +399,7 @@ func TestUpdateSavingGoal(t *testing.T) {
 	inputSavingGoal.SetTarget(1000)
 	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal)
+	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
 	c.Equal(http.StatusCreated, statusCode)
 	c.NoError(err, "creating saving goal failed")
 	c.NotNil(createdSavingGoal, "created saving goal is nil")

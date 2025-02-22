@@ -6,9 +6,23 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"net/http"
+	"testing"
 )
 
-func (e *E2ERequester) CreatePeriod(period *models.Period) (*models.Period, int, error) {
+func (e *E2ERequester) CreatePeriod(period *models.Period, t *testing.T) (*models.Period, int, error) {
+	var createdPeriod models.Period
+
+	defer t.Cleanup(func() {
+		if createdPeriod.ID == "" {
+			return
+		}
+
+		status, err := e.DeletePeriod(createdPeriod.ID)
+		if status != http.StatusNoContent || err != nil {
+			t.Logf("Failed to delete period %s: %v", createdPeriod.ID, err)
+		}
+	})
+
 	requestBody, err := json.Marshal(period)
 	if err != nil {
 		return nil, 0, fmt.Errorf("period request body marshalling failed: %w", err)
@@ -38,7 +52,6 @@ func (e *E2ERequester) CreatePeriod(period *models.Period) (*models.Period, int,
 		return nil, res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
 	}
 
-	var createdPeriod models.Period
 	err = json.NewDecoder(res.Body).Decode(&createdPeriod)
 	if err != nil {
 		return nil, res.StatusCode, fmt.Errorf("period response decoding failed: %w", err)
