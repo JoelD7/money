@@ -5,3 +5,4 @@ export { ErrorSnackbar } from "./ErrorSnackbar";
 export { BackgroundRefetchErrorSnackbar } from "./BackgroundRefetchErrorSnackbar";
 export { IncomeCard } from "./IncomeCard";
 export { Table } from "./Table";
+export { TableHeader } from "./TableHeader";

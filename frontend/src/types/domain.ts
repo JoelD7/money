@@ -132,6 +132,7 @@ export const SavingGoalSchema = z.object({
   saving_goal_id: z.string(),
   name: z.string(),
   target: z.number(),
+  progress: z.number(),
   deadline: z.string(),
   username: z.string(),
 });
