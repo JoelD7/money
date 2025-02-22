@@ -44,6 +44,7 @@ type logstashLogger struct {
 	connection net.Conn
 	connTimer  *time.Timer
 	wg         sync.WaitGroup
+	mu         sync.Mutex
 	context    map[string]interface{}
 }
 
@@ -212,6 +213,9 @@ func (l *logstashLogger) getService() string {
 }
 
 func (l *logstashLogger) write(data []byte) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	_, err := l.bw.Write(data)
 	if err != nil {
 		return fmt.Errorf("error writing log: %w", err)

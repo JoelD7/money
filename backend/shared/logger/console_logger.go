@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	errorLogger = log.New(os.Stderr, "ERROR ", log.Llongfile)
+	errorLogger = log.New(os.Stderr, "LOGGER_ERROR ", log.Llongfile)
 )
 
 // ConsoleLogger is a logger that writes to stdErr
