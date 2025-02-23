@@ -22,6 +22,7 @@ import {
   GridPaginationModel,
   GridRenderCellParams,
   GridRowsProp,
+  GridSortModel,
 } from "@mui/x-data-grid";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { Colors } from "../assets";
@@ -76,6 +77,7 @@ export function Savings() {
       headerName: "Saved",
       flex: 0.6,
       minWidth: 150,
+      sortable: false,
       renderHeader: renderSavedHeader,
       valueFormatter: (params) => currencyFormatter.format(params),
     },
@@ -84,6 +86,7 @@ export function Savings() {
       headerName: "Progress",
       flex: 1,
       minWidth: 250,
+      sortable: false,
       renderHeader: renderProgressHeader,
       renderCell: renderProgressCell,
     },
@@ -97,10 +100,14 @@ export function Savings() {
     },
   ];
 
-  const getSavingGoalsQuery = useGetSavingGoals(
-    startKeysByPage.current[paginationModel.page],
-    paginationModel.pageSize,
-  );
+  const startKey: string = startKeysByPage.current[paginationModel.page];
+  const pageSize: number = paginationModel.pageSize;
+
+  const [sortOrder, setSortOrder] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  console.log("sortBy", sortBy, "sortOrder", sortOrder);
+
+  const getSavingGoalsQuery = useGetSavingGoals(startKey, pageSize, sortOrder, sortBy);
   const savingGoals: SavingGoal[] | undefined = getSavingGoalsQuery.data?.saving_goals;
   const savingGoalsByID: Map<string, SavingGoal> = buildSavingGoalByID(
     savingGoals ? savingGoals : [],
@@ -300,6 +307,20 @@ export function Savings() {
     setPaginationModel(newModel);
   }
 
+  function onSortModelChange(newModel: GridSortModel) {
+    newModel.forEach((model) => {
+      if (model.sort !== sortOrder && model.sort) {
+        setSortOrder(model.sort);
+        //In this case the page order changes, so we need to reset this map because the pagination order changes
+        startKeysByPage.current = { 0: "" };
+      }
+
+      if (model.field !== sortBy) {
+        setSortBy(model.field);
+      }
+    });
+  }
+
   return (
     <Container>
       <Navbar />
@@ -352,6 +373,7 @@ export function Savings() {
               loading={getSavingGoalsQuery.isFetching}
               columns={columns}
               rows={getTableRows(savingGoals ? savingGoals : [])}
+              onSortModelChange={onSortModelChange}
               paginationModel={paginationModel}
               initialState={{
                 pagination: {
@@ -359,7 +381,7 @@ export function Savings() {
                   paginationModel,
                 },
               }}
-              pageSizeOptions={[2, 10, 25]}
+              pageSizeOptions={[5, 10, 25]}
               paginationMode={"server"}
               onPaginationModelChange={onPaginationModelChange}
               paginationMeta={{

@@ -117,10 +117,15 @@ export function useGetExpenses(periodID: string) {
   });
 }
 
-export function useGetSavingGoals(startKey: string = "", pageSize: number = 10) {
+export function useGetSavingGoals(
+  startKey: string = "",
+  pageSize: number = 10,
+  sortOrder: string,
+  sortBy: string,
+) {
   return useQuery({
-    queryKey: ["saving_goals", startKey, pageSize],
-    queryFn: () => api.getSavingGoals(startKey, pageSize),
+    queryKey: ["saving_goals", startKey, pageSize, sortOrder, sortBy],
+    queryFn: () => api.getSavingGoals(startKey, pageSize, sortOrder, sortBy),
     retry: queryRetryFn,
   });
 }

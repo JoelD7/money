@@ -4,7 +4,12 @@ import { SavingGoalList } from "../types";
 import { keys } from "../utils/index.ts";
 import { SavingGoalsSchema } from "../types/domain.ts";
 
-export async function getSavingGoals(startKey: string = "", pageSize: number = 10) {
+export async function getSavingGoals(
+  startKey: string = "",
+  pageSize: number = 10,
+  sortOrder: string,
+  sortBy: string,
+) {
   const params = [];
 
   if (startKey) {
@@ -13,6 +18,14 @@ export async function getSavingGoals(startKey: string = "", pageSize: number = 1
 
   if (pageSize) {
     params.push(`page_size=${pageSize}`);
+  }
+
+  if (sortOrder !== "") {
+    params.push(`sort_order=${sortOrder}`);
+  }
+
+  if (sortBy !== "") {
+    params.push(`sort_by=${sortBy}`);
   }
 
   let url = API_BASE_URL + `/savings/goals`;
