@@ -1,9 +1,4 @@
-import {
-  Button as MuiButton,
-  ButtonProps,
-  SxProps,
-  Theme,
-} from "@mui/material";
+import { Button as MuiButton, ButtonProps, SxProps, Theme } from "@mui/material";
 import { ReactNode } from "react";
 import LoadingButton from "@mui/lab/LoadingButton";
 import SaveIcon from "@mui/icons-material/Save";
@@ -17,7 +12,7 @@ export function Button(props: CustomButtonProps) {
   const { sx, loading, variant, children, ...other } = props;
   let styles: SxProps<Theme> | undefined = {
     textTransform: "capitalize",
-    borderRadius: "1rem",
+    borderRadius: "10px",
     ...sx,
   };
 

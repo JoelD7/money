@@ -1,21 +1,26 @@
 import {
   BackgroundRefetchErrorSnackbar,
+  Button,
   Container,
   Navbar,
+  NewSavingGoal,
   Table,
   TableHeader,
 } from "../components";
 import Grid from "@mui/material/Unstable_Grid2";
 import {
+  Alert,
+  AlertTitle,
   Box,
+  capitalize,
   keyframes,
   LinearProgress,
   linearProgressClasses,
+  Snackbar,
   Typography,
 } from "@mui/material";
-import SavingsIcon from "@mui/icons-material/Savings";
 import { useGetSavingGoals } from "../queries";
-import { SavingGoal } from "../types";
+import { SavingGoal, SnackAlert } from "../types";
 import {
   GridColDef,
   GridColumnHeaderParams,
@@ -29,14 +34,6 @@ import { Colors } from "../assets";
 import { useRef, useState } from "react";
 
 export function Savings() {
-  const customWidth = {
-    "&.MuiSvgIcon-root": {
-      width: "28px",
-      height: "28px",
-      fill: "#024511",
-    },
-  };
-
   const headerIconSize = 15;
 
   const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -55,6 +52,12 @@ export function Savings() {
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
 
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+  const [open, setOpen] = useState(false);
+  const [alert, setAlert] = useState<SnackAlert>({
+    open: false,
+    type: "success",
+    title: "",
+  });
 
   const columns: GridColDef[] = [
     {
@@ -321,10 +324,31 @@ export function Savings() {
     });
   }
 
+  function openNewGoalDialog() {
+    setOpen(true);
+  }
+
+  function handleAlert(alert?: SnackAlert | undefined) {
+    if (alert) {
+      setAlert(alert);
+    }
+  }
+
   return (
     <Container>
       <Navbar />
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
+      <Snackbar
+        open={alert.open}
+        onClose={() => setAlert({ ...alert, open: false })}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert variant={"filled"} severity={alert.type}>
+          <AlertTitle>{capitalize(alert.type)}</AlertTitle>
+          {alert.title}
+        </Alert>
+      </Snackbar>
 
       <Grid container position={"relative"} spacing={1} marginTop={"20px"}>
         {/*Title and summary*/}
@@ -332,66 +356,44 @@ export function Savings() {
           <Typography mt={"2rem"} variant={"h3"}>
             Savings
           </Typography>
-
-          {/*Summary*/}
-          <div className={"mt-2"}>
-            <Grid
-              container
-              borderRadius="0.5rem"
-              p="1rem"
-              bgcolor="white.main"
-              maxWidth={"450px"}
-              boxShadow={"2"}
-              justifyContent={"space-between"}
-            >
-              <Grid xs={6}>
-                <div className={"flex items-center"}>
-                  <SavingsIcon sx={customWidth} />
-                  <Typography variant={"h6"}>Total Savings</Typography>
-                </div>
-              </Grid>
-
-              <Grid xs={4}>
-                <Typography lineHeight="unset" variant="h6" color="primary">
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: "USD",
-                  }).format(585018)}
-                </Typography>
-              </Grid>
-            </Grid>
-          </div>
         </Grid>
 
-        {/*Saving cards*/}
-        <Grid xs={12} pt={"3rem"}>
+        {/*Saving goals table*/}
+        <Grid xs={12}>
           {/*Title and buttons*/}
           <Typography variant={"h5"}>Your saving goals</Typography>
-          <Box height={"fit-content"} paddingTop={"10px"}>
-            <Table
-              sortingMode={"server"}
-              loading={getSavingGoalsQuery.isFetching}
-              columns={columns}
-              rows={getTableRows(savingGoals ? savingGoals : [])}
-              onSortModelChange={onSortModelChange}
-              paginationModel={paginationModel}
-              initialState={{
-                pagination: {
-                  rowCount: -1,
-                  paginationModel,
-                },
-              }}
-              pageSizeOptions={[5, 10, 25]}
-              paginationMode={"server"}
-              onPaginationModelChange={onPaginationModelChange}
-              paginationMeta={{
-                hasNextPage: getSavingGoalsQuery.data?.next_key !== "",
-              }}
-              noRowsMessage={"No saving goals found"}
-            />
-          </Box>
+          <div className={"pt-4"}>
+            <Button variant={"contained"} onClick={() => openNewGoalDialog()}>
+              New goal
+            </Button>
+            <Box height={"fit-content"} paddingTop={"10px"}>
+              <Table
+                sortingMode={"server"}
+                loading={getSavingGoalsQuery.isFetching}
+                columns={columns}
+                rows={getTableRows(savingGoals ? savingGoals : [])}
+                onSortModelChange={onSortModelChange}
+                paginationModel={paginationModel}
+                initialState={{
+                  pagination: {
+                    rowCount: -1,
+                    paginationModel,
+                  },
+                }}
+                pageSizeOptions={[5, 10, 25]}
+                paginationMode={"server"}
+                onPaginationModelChange={onPaginationModelChange}
+                paginationMeta={{
+                  hasNextPage: getSavingGoalsQuery.data?.next_key !== "",
+                }}
+                noRowsMessage={"No saving goals found"}
+              />
+            </Box>
+          </div>
         </Grid>
       </Grid>
+
+      <NewSavingGoal open={open} onClose={() => setOpen(false)} onAlert={handleAlert} />
     </Container>
   );
 }
