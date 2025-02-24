@@ -1,6 +1,5 @@
 import {
   Box,
-  Dialog,
   Divider,
   FormControl,
   FormControlLabel,
@@ -14,14 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FormEvent, useState } from "react";
-import {
-  APIError,
-  Category,
-  Expense,
-  ExpenseType,
-  SnackAlert,
-  User,
-} from "../../types";
+import { APIError, Category, Expense, ExpenseType, SnackAlert, User } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import Grid from "@mui/material/Unstable_Grid2";
@@ -33,6 +25,7 @@ import { useMutation } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import dayjs, { Dayjs } from "dayjs";
+import { Dialog } from "../molecules";
 
 type ExpenseTypeOption = {
   label: string;
@@ -57,14 +50,6 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
       value: "recurring",
     },
   ];
-
-  const dialogStyle = {
-    "& .MuiDialog-paper": {
-      width: "705px",
-      height: "498px",
-      maxWidth: "100%",
-    },
-  };
 
   const [amount, setAmount] = useState<number | null>();
   const [name, setName] = useState<string>("");
@@ -99,10 +84,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
 
   const validationSchema = yup.object({
     name: yup.string().required("Name is required"),
-    amount: yup
-      .number()
-      .required("Amount is required")
-      .moreThan(0, "Amount is required"),
+    amount: yup.number().required("Amount is required").moreThan(0, "Amount is required"),
     created_date: yup.date().required("Date is required"),
     category_id: yup.string().required("Category is required"),
     type: yup.string().oneOf(["regular", "recurring"]),
@@ -141,7 +123,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
   }
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth sx={dialogStyle}>
+    <Dialog open={open} onClose={onClose} fullWidth>
       <Box component="form" onSubmit={createExpense}>
         <Grid
           container
@@ -149,7 +131,6 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
           bgcolor={"white.main"}
           borderRadius="1rem"
           width={"700px"}
-          p="1.5rem"
         >
           <Grid xs={12}>
             <Typography variant={"h4"}>New Expense</Typography>
@@ -230,9 +211,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
             {/*Type*/}
             <>
               <FormControl>
-                <FormLabel id="expense-type-radio-buttons-group-label">
-                  Type
-                </FormLabel>
+                <FormLabel id="expense-type-radio-buttons-group-label">Type</FormLabel>
                 <RadioGroup
                   row
                   aria-labelledby="expense-type-radio-buttons-group-label"
@@ -252,17 +231,13 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
               </FormControl>
 
               <FormControl fullWidth disabled={type !== "recurring"}>
-                <InputLabel id="recurrent-expense-day-select-label">
-                  Every
-                </InputLabel>
+                <InputLabel id="recurrent-expense-day-select-label">Every</InputLabel>
                 <Select
                   labelId="recurrent-expense-day-select-label"
                   id="recurrent-expense-select"
                   value={recurringDay}
                   label="Day"
-                  startAdornment={
-                    <CalendarTodayIcon sx={{ marginRight: "10px" }} />
-                  }
+                  startAdornment={<CalendarTodayIcon sx={{ marginRight: "10px" }} />}
                   onChange={(e) => setRecurringDay(Number(e.target.value))}
                   MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }}
                 >

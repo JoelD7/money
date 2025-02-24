@@ -1,6 +1,6 @@
 import { AxiosResponse } from "axios";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
-import { SavingGoalList } from "../types";
+import { SavingGoal, SavingGoalList } from "../types";
 import { keys } from "../utils/index.ts";
 import { SavingGoalsSchema } from "../types/domain.ts";
 
@@ -46,4 +46,13 @@ export async function getSavingGoals(
     console.error("[money] - Error parsing GET saving goals response", e);
     return Promise.reject(new Error("Invalid saving goals data"));
   }
+}
+
+export async function createSavingGoal(savingGoal: SavingGoal) {
+  return axiosClient.post(API_BASE_URL + "/savings/goals", savingGoal, {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+    },
+  });
 }
