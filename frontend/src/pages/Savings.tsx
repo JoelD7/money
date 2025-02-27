@@ -58,6 +58,7 @@ export function Savings() {
     type: "success",
     title: "",
   });
+  const [key, setKey] = useState<number>(0);
 
   const columns: GridColDef[] = [
     {
@@ -393,7 +394,15 @@ export function Savings() {
         </Grid>
       </Grid>
 
-      <NewSavingGoal open={open} onClose={() => setOpen(false)} onAlert={handleAlert} />
+      <NewSavingGoal
+        key={key}
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          setKey(key + 1);
+        }}
+        onAlert={handleAlert}
+      />
     </Container>
   );
 }
