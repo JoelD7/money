@@ -7,3 +7,4 @@ export { CategorySelect } from "./CategorySelect";
 export { NewIncome } from "./NewIncome.tsx";
 export { SavingGoalCard } from "./SavingGoalCard.tsx";
 export { NewSavingGoal } from "./NewSavingGoal.tsx";
+export { SavingGoalsTable } from "./SavingGoalsTable";
