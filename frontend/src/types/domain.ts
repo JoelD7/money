@@ -128,6 +128,25 @@ export const IncomeListSchema = z.object({
 
 export type IncomeList = z.infer<typeof IncomeListSchema>;
 
+export const SavingSchema = z.object({
+  saving_id: z.string(),
+  saving_goal_id: z.string().optional(),
+  saving_goal_name: z.string().optional(),
+  username: z.string(),
+  period: z.string(),
+  created_date: z.string(),
+  updated_date: z.string(),
+  amount: z.number(),
+});
+
+export const SavingsSchema = z.object({
+  savings: z.array(SavingSchema),
+  next_key: z.string(),
+});
+
+export type Saving = z.infer<typeof SavingSchema>;
+export type SavingList = z.infer<typeof SavingsSchema>;
+
 export const SavingGoalSchema = z.object({
   saving_goal_id: z.string(),
   name: z.string(),

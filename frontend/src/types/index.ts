@@ -1,3 +1,4 @@
+// Types
 export type {
   Expense,
   Category,
@@ -16,15 +17,11 @@ export type {
   PeriodList,
   SavingGoalList,
   SavingGoal,
+  Saving,
+  SavingList,
 } from "./domain.ts";
-export type {
-  RechartsLabelProps,
-  InputError,
-  CategoryExpense,
-  SnackAlert,
-  TransactionSearchParams,
-} from "./other.ts";
 
+// Schemas
 export {
   PeriodSchema,
   PeriodsSchema,
@@ -39,4 +36,14 @@ export {
   IncomeSchema,
   IncomeListSchema,
   ExpenseTypeSchema,
+  SavingSchema,
+  SavingsSchema,
 } from "./domain.ts";
+
+export type {
+  RechartsLabelProps,
+  InputError,
+  CategoryExpense,
+  SnackAlert,
+  TransactionSearchParams,
+} from "./other.ts";

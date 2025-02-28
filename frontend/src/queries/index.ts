@@ -11,6 +11,7 @@ export {
   useGetPeriods,
   useGetExpenses,
   useGetSavingGoals,
+  useGetSavings,
 } from "./queries";
 
 export { queryRetryFn } from "./common";

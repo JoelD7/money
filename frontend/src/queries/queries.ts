@@ -129,3 +129,16 @@ export function useGetSavingGoals(
     retry: queryRetryFn,
   });
 }
+
+export function useGetSavings(
+  startKey: string = "",
+  pageSize: number = 10,
+  sortOrder: string,
+  sortBy: string,
+) {
+  return useQuery({
+    queryKey: ["savings", startKey, pageSize, sortOrder, sortBy],
+    queryFn: () => api.getSavings(startKey, pageSize, sortOrder, sortBy),
+    retry: queryRetryFn,
+  });
+}

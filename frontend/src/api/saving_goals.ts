@@ -3,6 +3,7 @@ import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { SavingGoal, SavingGoalList } from "../types";
 import { keys } from "../utils/index.ts";
 import { SavingGoalsSchema } from "../types/domain.ts";
+import { buildQueryParams } from "./utils.ts";
 
 export async function getSavingGoals(
   startKey: string = "",
@@ -10,24 +11,7 @@ export async function getSavingGoals(
   sortOrder: string,
   sortBy: string,
 ) {
-  const params = [];
-
-  if (startKey) {
-    params.push(`start_key=${startKey}`);
-  }
-
-  if (pageSize) {
-    params.push(`page_size=${pageSize}`);
-  }
-
-  if (sortOrder !== "") {
-    params.push(`sort_order=${sortOrder}`);
-  }
-
-  if (sortBy !== "") {
-    params.push(`sort_by=${sortBy}`);
-  }
-
+  const params = buildQueryParams(startKey, pageSize, sortOrder, sortBy);
   let url = API_BASE_URL + `/savings/goals`;
   if (params.length > 0) {
     url += `?${params.join("&")}`;
