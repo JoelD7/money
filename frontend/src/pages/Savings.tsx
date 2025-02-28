@@ -28,6 +28,7 @@ import {
   faDollarSign,
 } from "@fortawesome/free-solid-svg-icons";
 import { Colors } from "../assets";
+import { utils } from "../utils";
 
 export function Savings() {
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
@@ -90,6 +91,9 @@ export function Savings() {
       headerName: "Created date",
       flex: 1,
       minWidth: 180,
+      valueFormatter: (params) => {
+        return utils.tableDateFormatter.format(params);
+      },
       renderHeader: () => (
         <TableHeader
           headerName={"Created date"}
@@ -152,7 +156,11 @@ export function Savings() {
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
 
       {getSavingsQuery.isError && (
-        <ErrorSnackbar openProp={true} title={"Error fetching savings"} />
+        <ErrorSnackbar
+          openProp={true}
+          title={"Error fetching savings"}
+          message={getSavingsQuery.error.message}
+        />
       )}
 
       <Snackbar

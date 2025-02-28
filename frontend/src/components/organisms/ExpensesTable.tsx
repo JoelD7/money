@@ -16,6 +16,7 @@ import { CategorySelect } from "./CategorySelect.tsx";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useGetExpenses } from "../../queries";
 import { ErrorSnackbar, Table } from "../molecules";
+import { utils } from "../../utils/index.ts";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
@@ -79,16 +80,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
       field: "created_date",
       headerName: "Date",
       width: 200,
-      valueFormatter: (params) => {
-        return new Intl.DateTimeFormat("en-GB", {
-          weekday: "short",
-          year: "numeric",
-          month: "numeric",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        }).format(params);
-      },
+      valueFormatter: (params) => utils.tableDateFormatter.format(params),
     },
   ];
 
