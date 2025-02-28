@@ -143,10 +143,7 @@ func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apiga
 		return req.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       responseJSON,
-	}, nil
+	return req.NewJSONResponse(http.StatusOK, responseJSON), nil
 }
 
 func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
@@ -168,10 +165,7 @@ func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, re
 		return req.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       responseJSON,
-	}, nil
+	return req.NewJSONResponse(http.StatusOK, responseJSON), nil
 }
 
 func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
@@ -193,10 +187,7 @@ func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context
 		return req.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       responseJSON,
-	}, nil
+	return req.NewJSONResponse(http.StatusOK, responseJSON), nil
 }
 
 func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
@@ -219,10 +210,7 @@ func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx contex
 		return req.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-		Body:       responseJSON,
-	}, nil
+	return req.NewJSONResponse(http.StatusOK, responseJSON), nil
 }
 
 func (request *getSavingsRequest) getSavingsResponse(savings []*models.Saving, nextKey string) (string, error) {
