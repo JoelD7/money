@@ -6,5 +6,10 @@ export function queryRetryFn(failureCount: number, e: AxiosError) {
     return false;
   }
 
-  return e.response ? e.response.status !== 404 : true;
+  if (e.response) {
+    // Only retry server errors
+    return e.response.status >= 500;
+  }
+
+  return false;
 }
