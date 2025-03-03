@@ -37,8 +37,8 @@ export function redirectToLogin() {
 export function buildQueryParams(
   startKey: string = "",
   pageSize: number = 10,
-  sortOrder: string,
-  sortBy: string,
+  sortOrder: string = "",
+  sortBy: string = "",
 ): string[] {
   const params = [];
 

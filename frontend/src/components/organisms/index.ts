@@ -8,3 +8,4 @@ export { NewIncome } from "./NewIncome.tsx";
 export { SavingGoalCard } from "./SavingGoalCard.tsx";
 export { NewSavingGoal } from "./NewSavingGoal.tsx";
 export { SavingGoalsTable } from "./SavingGoalsTable";
+export { NewSaving } from "./NewSaving.tsx";

@@ -8,10 +8,11 @@ export {
   useGetPeriodStats,
   useGetIncome,
   incomeKeys,
-  useGetPeriods,
+  useGetPeriodsInfinite,
   useGetExpenses,
   useGetSavingGoals,
   useGetSavings,
+  useGetPeriods,
 } from "./queries";
 
 export { queryRetryFn } from "./common";

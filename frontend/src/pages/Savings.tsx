@@ -4,6 +4,7 @@ import {
   Container,
   ErrorSnackbar,
   Navbar,
+  NewSaving,
   SavingGoalsTable,
   Table,
   TableHeader,
@@ -32,6 +33,10 @@ import { utils } from "../utils";
 
 export function Savings() {
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
+  const currencyFormatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  });
 
   const [open, setOpen] = useState(false);
   const [alert, setAlert] = useState<SnackAlert>({
@@ -55,6 +60,7 @@ export function Savings() {
       headerName: "Amount",
       flex: 1,
       minWidth: 180,
+      valueFormatter: (params) => currencyFormatter.format(params),
       renderHeader: () => (
         <TableHeader
           headerName={"Amount"}
@@ -222,6 +228,8 @@ export function Savings() {
           </div>
         </Grid>
       </Grid>
+
+      <NewSaving open={open} onClose={() => setOpen(false)} />
     </Container>
   );
 }

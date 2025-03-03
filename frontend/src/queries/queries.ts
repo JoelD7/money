@@ -54,7 +54,15 @@ export function useGetPeriod(user?: User) {
   });
 }
 
-export function useGetPeriods() {
+export function useGetPeriods(startKey: string = "", pageSize: number = 10) {
+  return useQuery({
+    queryKey: [PERIODS, startKey, pageSize],
+    queryFn: () => api.getPeriods(startKey, pageSize),
+    retry: queryRetryFn,
+  });
+}
+
+export function useGetPeriodsInfinite() {
   return useInfiniteQuery({
     queryKey: [PERIODS],
     initialPageParam: "",
