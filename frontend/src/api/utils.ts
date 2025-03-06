@@ -33,3 +33,30 @@ export async function retryableRequest(request: () => Promise<void>) {
 export function redirectToLogin() {
   window.location.replace("/login");
 }
+
+export function buildQueryParams(
+  startKey: string = "",
+  pageSize: number = 10,
+  sortOrder: string = "",
+  sortBy: string = "",
+): string[] {
+  const params = [];
+
+  if (startKey) {
+    params.push(`start_key=${startKey}`);
+  }
+
+  if (pageSize) {
+    params.push(`page_size=${pageSize}`);
+  }
+
+  if (sortOrder !== "") {
+    params.push(`sort_order=${sortOrder}`);
+  }
+
+  if (sortBy !== "") {
+    params.push(`sort_by=${sortBy}`);
+  }
+
+  return params;
+}

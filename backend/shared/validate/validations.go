@@ -25,6 +25,7 @@ var (
 		SortByModelSavingGoals: {
 			string(models.SortParamDeadline): {},
 			string(models.SortParamTarget):   {},
+			string(models.SortParamName):     {},
 		},
 	}
 )
