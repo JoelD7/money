@@ -87,11 +87,8 @@ export function useTransactionsParams(): TransactionSearchParams {
   };
 }
 
-export const tableDateFormatter = new Intl.DateTimeFormat("en-GB", {
-  weekday: "short",
+export const tableDateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
-  month: "numeric",
+  month: "long",
   day: "numeric",
-  hour: "numeric",
-  minute: "numeric",
 });

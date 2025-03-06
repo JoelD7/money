@@ -75,6 +75,7 @@ export function Savings() {
       headerName: "Period",
       flex: 1,
       minWidth: 180,
+      sortable: false,
       renderHeader: () => (
         <TableHeader
           headerName={"Period"}
@@ -87,6 +88,7 @@ export function Savings() {
       headerName: "Goal",
       flex: 1,
       minWidth: 180,
+      sortable: false,
       renderHeader: () => (
         <TableHeader
           headerName={"Goal"}
