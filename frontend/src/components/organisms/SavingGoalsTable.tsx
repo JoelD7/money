@@ -13,7 +13,7 @@ import { Button } from "../atoms";
 import { Table, TableHeader } from "../molecules";
 import { useRef, useState } from "react";
 import { useGetSavingGoals } from "../../queries";
-import { SavingGoal, SnackAlert } from "../../types";
+import { PaginationModel, SavingGoal, SnackAlert } from "../../types";
 import {
   GridColDef,
   GridColumnHeaderParams,
@@ -45,9 +45,12 @@ export function SavingGoalsTable() {
   });
 
   const [open, setOpen] = useState(false);
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
-  const [sortOrder, setSortOrder] = useState("");
-  const [sortBy, setSortBy] = useState("");
+  const [paginationModel, setPaginationModel] = useState<PaginationModel>({
+    page: 0,
+    pageSize: 10,
+  });
+  const [sortOrder, setSortOrder] = useState<string>();
+  const [sortBy, setSortBy] = useState<string>();
   const [key, setKey] = useState<number>(0);
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
@@ -55,8 +58,8 @@ export function SavingGoalsTable() {
     title: "",
   });
 
-  const startKey: string = startKeysByPage.current[paginationModel.page];
-  const pageSize: number = paginationModel.pageSize;
+  const startKey: string | undefined = startKeysByPage.current[paginationModel.page];
+  const pageSize: number | undefined = paginationModel.pageSize;
 
   const getSavingGoalsQuery = useGetSavingGoals(startKey, pageSize, sortOrder, sortBy);
   const savingGoals: SavingGoal[] | undefined = getSavingGoalsQuery.data?.saving_goals;

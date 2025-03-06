@@ -1,7 +1,7 @@
 import { buildQueryParams } from "./utils.ts";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { AxiosResponse } from "axios";
-import { SavingList, SavingsSchema } from "../types";
+import { Saving, SavingList, SavingsSchema } from "../types";
 import { keys } from "../utils/index.ts";
 
 export async function getSavings(
@@ -30,4 +30,13 @@ export async function getSavings(
     console.error("[money] - Error parsing GET savings response", e);
     return Promise.reject(new Error("Invalid savings data"));
   }
+}
+
+export async function createSaving(saving: Saving) {
+  return axiosClient.post(API_BASE_URL + "/savings", saving, {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+    },
+  });
 }

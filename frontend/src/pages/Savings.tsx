@@ -6,11 +6,12 @@ import {
   Navbar,
   NewSaving,
   SavingGoalsTable,
+  Snackbar,
   Table,
   TableHeader,
 } from "../components";
 import Grid from "@mui/material/Unstable_Grid2";
-import { Alert, AlertTitle, Box, capitalize, Snackbar, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { Saving, SnackAlert } from "../types";
 import {
   GridColDef,
@@ -39,6 +40,7 @@ export function Savings() {
   });
 
   const [open, setOpen] = useState(false);
+  const [key, setKey] = useState(0);
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
     type: "success",
@@ -116,7 +118,7 @@ export function Savings() {
         amount: saving.amount,
         period: saving.period,
         goal: saving.saving_goal_name,
-        created_date: new Date(saving.created_date),
+        created_date: saving.created_date ? new Date(saving.created_date) : null,
       };
     });
   }
@@ -171,15 +173,11 @@ export function Savings() {
 
       <Snackbar
         open={alert.open}
+        title={alert.title}
+        message={alert.message}
+        severity={alert.type}
         onClose={() => setAlert({ ...alert, open: false })}
-        autoHideDuration={6000}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert variant={"filled"} severity={alert.type}>
-          <AlertTitle>{capitalize(alert.type)}</AlertTitle>
-          {alert.title}
-        </Alert>
-      </Snackbar>
+      />
 
       <Grid container position={"relative"} spacing={1} marginTop={"20px"}>
         {/*Title and summary*/}
@@ -229,7 +227,19 @@ export function Savings() {
         </Grid>
       </Grid>
 
-      <NewSaving open={open} onClose={() => setOpen(false)} />
+      <NewSaving
+        key={key}
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          setKey(key + 1);
+        }}
+        onAlert={(a) => {
+          if (a) {
+            setAlert({ ...a });
+          }
+        }}
+      />
     </Container>
   );
 }

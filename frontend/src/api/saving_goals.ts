@@ -8,8 +8,8 @@ import { buildQueryParams } from "./utils.ts";
 export async function getSavingGoals(
   startKey: string = "",
   pageSize: number = 10,
-  sortOrder: string,
-  sortBy: string,
+  sortOrder: string = "",
+  sortBy: string = "",
 ) {
   const params = buildQueryParams(startKey, pageSize, sortOrder, sortBy);
   let url = API_BASE_URL + `/savings/goals`;

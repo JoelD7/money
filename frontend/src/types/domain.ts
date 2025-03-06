@@ -134,8 +134,8 @@ export const SavingSchema = z.object({
   saving_goal_name: z.string().optional(),
   username: z.string(),
   period: z.string(),
-  created_date: z.string(),
-  updated_date: z.string(),
+  created_date: z.string().optional(),
+  updated_date: z.string().optional(),
   amount: z.number(),
 });
 

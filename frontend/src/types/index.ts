@@ -46,4 +46,5 @@ export type {
   CategoryExpense,
   SnackAlert,
   TransactionSearchParams,
+  PaginationModel,
 } from "./other.ts";

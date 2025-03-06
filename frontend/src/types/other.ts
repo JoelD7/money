@@ -38,3 +38,8 @@ export type TransactionSearchParams = {
   sortBy?: string;
   sortOrder?: string;
 };
+
+export type PaginationModel = {
+  page: number;
+  pageSize: number;
+};
