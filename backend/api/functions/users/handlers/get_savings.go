@@ -147,8 +147,6 @@ func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apiga
 }
 
 func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	period := req.QueryStringParameters["period"]
-
 	getSavingsByPeriod := usecases.NewSavingByPeriodGetter(request.savingsRepo, request.savingGoalRepo)
 
 	userSavings, nextKey, err := getSavingsByPeriod(ctx, request.username, request.QueryParameters)

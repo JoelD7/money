@@ -40,7 +40,7 @@ func (m *Mock) GetSaving(ctx context.Context, username, savingID string) (*model
 	return nil, models.ErrSavingNotFound
 }
 
-func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavingsByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -48,7 +48,7 @@ func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, perio
 	savings := make([]*models.Saving, 0)
 
 	for _, saving := range m.mockedSavings {
-		if *saving.Period == period && saving.Username == username {
+		if *saving.Period == params.Period && saving.Username == username {
 			savings = append(savings, saving)
 		}
 	}
@@ -64,7 +64,7 @@ func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, params *models.QueryP
 	savings := make([]*models.Saving, 0)
 
 	for _, saving := range m.mockedSavings {
-		if *saving.SavingGoalID == savingGoalID {
+		if *saving.SavingGoalID == params.SavingGoalID {
 			savings = append(savings, saving)
 		}
 	}
@@ -79,7 +79,7 @@ func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *mode
 
 	savings := make([]*models.Saving, 0)
 	for _, saving := range m.mockedSavings {
-		if *saving.SavingGoalID == savingGoalID && *saving.Period == period {
+		if *saving.SavingGoalID == params.SavingGoalID && *saving.Period == params.Period {
 			savings = append(savings, saving)
 		}
 	}
