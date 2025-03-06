@@ -30,11 +30,10 @@ type EnvironmentConfiguration struct {
 	PeriodTable            string `json:"PERIOD_TABLE_NAME"`
 	UniquePeriodTable      string `json:"UNIQUE_PERIOD_TABLE_NAME"`
 
-	SavingsTable             string `json:"SAVINGS_TABLE_NAME"`
-	PeriodSavingIndexName    string `json:"PERIOD_SAVING_INDEX_NAME"`
-	PeriodUserExpenseIndex   string `json:"PERIOD_USER_EXPENSE_INDEX"`
-	SavingIDAmountIndex      string `json:"SAVING_ID_AMOUNT_INDEX"`
-	SavingIDCreatedDateIndex string `json:"SAVING_ID_CREATED_DATE_INDEX"`
+	SavingsTable           string `json:"SAVINGS_TABLE_NAME"`
+	PeriodSavingIndexName  string `json:"PERIOD_SAVING_INDEX_NAME"`
+	PeriodUserExpenseIndex string `json:"PERIOD_USER_EXPENSE_INDEX"`
+	UsernameAmountIndex    string `json:"USERNAME_AMOUNT_INDEX"`
 
 	SavingGoalSavingIndexName    string `json:"SAVING_GOAL_SAVING_INDEX_NAME"`
 	SavingGoalsTable             string `json:"SAVING_GOALS_TABLE_NAME"`
