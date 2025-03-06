@@ -56,7 +56,7 @@ func (m *Mock) GetSavingsByPeriod(ctx context.Context, username, startKey, perio
 	return savings, "next_key", nil
 }
 
-func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -72,7 +72,7 @@ func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalI
 	return savings, "next_key", nil
 }
 
-func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -87,7 +87,7 @@ func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, sa
 	return savings, "next_key", nil
 }
 
-func (m *Mock) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavings(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
