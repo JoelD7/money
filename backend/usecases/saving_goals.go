@@ -62,11 +62,15 @@ func NewSavingGoalsGetter(savingGoalManager SavingGoalManager, savingManager Sav
 }
 
 func calculateProgressByGoal(ctx context.Context, savingGoal *models.SavingGoal, savingManager SavingsManager) {
-	startKey := ""
+	params := &models.QueryParameters{
+		PageSize:     10,
+		SavingGoalID: savingGoal.SavingGoalID,
+	}
+
 	goalSavings := make([]*models.Saving, 0)
 
 	for {
-		savings, nextKey, err := savingManager.GetSavingsBySavingGoal(ctx, startKey, savingGoal.SavingGoalID, 10)
+		savings, nextKey, err := savingManager.GetSavingsBySavingGoal(ctx, params)
 		if errors.Is(err, models.ErrSavingsNotFound) {
 			logger.Info("saving_goal_has_no_savings", models.Any("saving_goal", savingGoal))
 			savingGoal.SetProgress(0)
@@ -80,12 +84,12 @@ func calculateProgressByGoal(ctx context.Context, savingGoal *models.SavingGoal,
 
 		if err != nil {
 			logger.Error("calculate_saving_progress_by_goal_failed", err, models.Any("saving_goal", savingGoal),
-				models.Any("start_key", startKey))
+				models.Any("start_key", params.StartKey))
 			savingGoal.SetProgress(0)
 			return
 		}
 
-		startKey = nextKey
+		params.StartKey = nextKey
 
 		goalSavings = append(goalSavings, savings...)
 

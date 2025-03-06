@@ -11,10 +11,10 @@ import (
 
 type SavingsManager interface {
 	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
-	GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error)
-	GetSavingsByPeriod(ctx context.Context, startKey, username, period string, pageSize int) ([]*models.Saving, string, error)
-	GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error)
-	GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error)
+	GetSavings(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error)
+	GetSavingsByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error)
+	GetSavingsBySavingGoal(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error)
+	GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error)
 	CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error)
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
 	DeleteSaving(ctx context.Context, savingID, username string) error
@@ -36,18 +36,18 @@ func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.
 	}
 }
 
-func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
-		if err := validatePageSize(pageSize); err != nil {
+func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
 				"s_username":  username,
-				"i_page_size": pageSize,
+				"i_page_size": params.PageSize,
 			}))
 
 			return nil, "", err
 		}
 
-		savings, nextKey, err := sm.GetSavings(ctx, username, startKey, pageSize)
+		savings, nextKey, err := sm.GetSavings(ctx, username, params)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
@@ -61,18 +61,18 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context
 	}
 }
 
-func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, username, startKey, period string, pageSize int) ([]*models.Saving, string, error) {
-		if err := validatePageSize(pageSize); err != nil {
+func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
 				"s_username":  username,
-				"i_page_size": pageSize,
+				"i_page_size": params.PageSize,
 			}))
 
 			return nil, "", err
 		}
 
-		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, startKey, username, period, pageSize)
+		savings, nextKey, err := sm.GetSavingsByPeriod(ctx, username, params)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
@@ -86,22 +86,22 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx 
 	}
 }
 
-func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
-		if err := validatePageSize(pageSize); err != nil {
+func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
-				"i_page_size": pageSize,
+				"i_page_size": params.PageSize,
 			}))
 
 			return nil, "", err
 		}
 
-		savings, nextKey, err := sm.GetSavingsBySavingGoal(ctx, startKey, savingGoalID, pageSize)
+		savings, nextKey, err := sm.GetSavingsBySavingGoal(ctx, params)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}
 
-		err = setSavingGoalNamesForSavingGoal(ctx, sgm, savings[0].Username, savingGoalID, savings)
+		err = setSavingGoalNamesForSavingGoal(ctx, sgm, savings[0].Username, params.SavingGoalID, savings)
 		if err != nil {
 			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
@@ -110,17 +110,17 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(
 	}
 }
 
-func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
-		if err := validatePageSize(pageSize); err != nil {
+func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
-				"i_page_size": pageSize,
+				"i_page_size": params.PageSize,
 			}))
 
 			return nil, "", err
 		}
 
-		savings, nextKey, err := sm.GetSavingsBySavingGoalAndPeriod(ctx, startKey, savingGoalID, period, pageSize)
+		savings, nextKey, err := sm.GetSavingsBySavingGoalAndPeriod(ctx, params)
 		if err != nil {
 			return nil, "", fmt.Errorf("savings fetch failed: %w", err)
 		}

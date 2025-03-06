@@ -86,6 +86,7 @@ func getEnvironmentConfig() *models.EnvironmentConfiguration {
 		PeriodUserNameIncomeIDIndex:  GetString("PERIOD_USER_NAME_INCOME_ID_INDEX", ""),
 		UsernameTargetIndex:          GetString("USERNAME_TARGET_INDEX", ""),
 		UsernameDeadlineIndex:        GetString("USERNAME_DEADLINE_INDEX", ""),
+		UsernameAmountIndex:          GetString("USERNAME_AMOUNT_INDEX", ""),
 	}
 }
 

@@ -20,10 +20,12 @@ const (
 )
 
 type DynamoRepository struct {
-	dynamoClient          *dynamodb.Client
-	tableName             string
-	periodSavingIndex     string
-	savingGoalSavingIndex string
+	dynamoClient             *dynamodb.Client
+	tableName                string
+	periodSavingIndex        string
+	savingGoalSavingIndex    string
+	usernameAmountIndex      string
+	usernameCreatedDateIndex string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -37,6 +39,8 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.tableName = envConfig.SavingsTable
 	d.periodSavingIndex = envConfig.PeriodSavingIndexName
 	d.savingGoalSavingIndex = envConfig.SavingGoalSavingIndexName
+	d.usernameAmountIndex = envConfig.UsernameAmountIndex
+	d.usernameCreatedDateIndex = envConfig.UsernameCreatedDateIndex
 
 	return d, nil
 }
@@ -52,6 +56,14 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.SavingGoalSavingIndexName == "" {
 		return fmt.Errorf("saving goal saving index is required")
+	}
+
+	if envConfig.UsernameAmountIndex == "" {
+		return fmt.Errorf("username amount index is required")
+	}
+
+	if envConfig.UsernameCreatedDateIndex == "" {
+		return fmt.Errorf("username created date index is required")
 	}
 
 	return nil
@@ -95,31 +107,10 @@ func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID str
 	return toSavingModel(*savingEnt), nil
 }
 
-func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey string, pageSize int) ([]*models.Saving, string, error) {
-	var decodedStartKey map[string]types.AttributeValue
-	var err error
-
-	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
-		if err != nil {
-			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
-		}
-	}
-
-	nameEx := expression.Name("username").Equal(expression.Value(username))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+func (d *DynamoRepository) GetSavings(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+	input, err := d.buildQueryInput(username, params)
 	if err != nil {
-		return nil, "", err
-	}
-
-	input := &dynamodb.QueryInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(d.tableName),
-		ExclusiveStartKey:         decodedStartKey,
-		Limit:                     getPageSize(pageSize),
+		return nil, "", fmt.Errorf("building query input: %v", err)
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -127,7 +118,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
+	if result.Items == nil || len(result.Items) == 0 && params.StartKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 
@@ -150,34 +141,64 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username, startKey st
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, username, period string, pageSize int) ([]*models.Saving, string, error) {
-	var decodedStartKey map[string]types.AttributeValue
+func (d *DynamoRepository) buildQueryInput(username string, params *models.QueryParameters) (*dynamodb.QueryInput, error) {
 	var err error
 
-	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
-		if err != nil {
-			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
-		}
-	}
-
-	periodUser := dynamo.BuildPeriodUser(username, period)
-
-	nameEx := expression.Name("period_user").Equal(expression.Value(periodUser))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
-	if err != nil {
-		return nil, "", err
-	}
-
 	input := &dynamodb.QueryInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(d.tableName),
-		IndexName:                 aws.String(d.periodSavingIndex),
-		ExclusiveStartKey:         decodedStartKey,
-		Limit:                     getPageSize(pageSize),
+		TableName: aws.String(d.tableName),
+		Limit:     dynamo.GetPageSize(params.PageSize),
+	}
+
+	if params.SortType == string(models.SortOrderDescending) {
+		input.ScanIndexForward = aws.Bool(false)
+	}
+
+	keyConditionEx := d.setQueryIndex(input, username, params)
+
+	err = dynamo.SetExclusiveStartKey(params.StartKey, input)
+	if err != nil {
+		return nil, err
+	}
+
+	conditionBuilder := expression.NewBuilder().WithCondition(keyConditionEx)
+
+	expr, err := conditionBuilder.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	input.ExpressionAttributeNames = expr.Names()
+	input.ExpressionAttributeValues = expr.Values()
+	input.KeyConditionExpression = expr.Condition()
+	input.FilterExpression = expr.Filter()
+
+	return input, nil
+}
+
+func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.ConditionBuilder {
+	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
+
+	if params.SortBy == string(models.SortParamCreatedDate) {
+		input.IndexName = aws.String(d.usernameCreatedDateIndex)
+	}
+
+	if params.SortBy == string(models.SortParamAmount) {
+		input.IndexName = aws.String(d.usernameAmountIndex)
+	}
+
+	//For the moment there is no combined sorting with the saving goal query param. If the need arises, I will add it.
+	if params.SavingGoalID != "" {
+		keyConditionEx = expression.Name("saving_goal_id").Equal(expression.Value(params.SavingGoalID))
+		input.IndexName = aws.String(d.savingGoalSavingIndex)
+	}
+
+	return keyConditionEx
+}
+
+func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+	input, err := d.buildQueryInput(username, params)
+	if err != nil {
+		return nil, "", fmt.Errorf("building query input: %v", err)
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -185,7 +206,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
+	if result.Items == nil || len(result.Items) == 0 && params.StartKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 
@@ -208,32 +229,10 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, startKey, use
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey, savingGoalID string, pageSize int) ([]*models.Saving, string, error) {
-	var decodedStartKey map[string]types.AttributeValue
-	var err error
-
-	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
-		if err != nil {
-			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
-		}
-	}
-
-	nameEx := expression.Name("saving_goal_id").Equal(expression.Value(savingGoalID))
-
-	expr, err := expression.NewBuilder().WithCondition(nameEx).Build()
+func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+	input, err := d.buildQueryInput("", params)
 	if err != nil {
-		return nil, "", err
-	}
-
-	input := &dynamodb.QueryInput{
-		ExpressionAttributeNames:  expr.Names(),
-		ExpressionAttributeValues: expr.Values(),
-		KeyConditionExpression:    expr.Condition(),
-		TableName:                 aws.String(d.tableName),
-		IndexName:                 aws.String(d.savingGoalSavingIndex),
-		ExclusiveStartKey:         decodedStartKey,
-		Limit:                     getPageSize(pageSize),
+		return nil, "", fmt.Errorf("building query input: %v", err)
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -241,7 +240,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 		return nil, "", fmt.Errorf("query failed: %v", err)
 	}
 
-	if result.Items == nil || len(result.Items) == 0 && startKey == "" {
+	if result.Items == nil || len(result.Items) == 0 && params.StartKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 
@@ -264,22 +263,22 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, startKey,
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, startKey, savingGoalID, period string, pageSize int) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 	var result *dynamodb.QueryOutput
 	retrievedItems := 0
 	resultSet := make([]savingEntity, 0)
 
-	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
+	if params.StartKey != "" {
+		decodedStartKey, err = dynamo.DecodePaginationKey(params.StartKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
 	}
 
-	nameEx := expression.Name("saving_goal_id").Equal(expression.Value(savingGoalID))
-	filterCondition := expression.Name("period").Equal(expression.Value(period))
+	nameEx := expression.Name("saving_goal_id").Equal(expression.Value(params.SavingGoalID))
+	filterCondition := expression.Name("period").Equal(expression.Value(params.Period))
 
 	expr, err := expression.NewBuilder().WithCondition(nameEx).WithFilter(filterCondition).Build()
 	if err != nil {
@@ -294,7 +293,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		TableName:                 aws.String(d.tableName),
 		IndexName:                 aws.String(d.savingGoalSavingIndex),
 		ExclusiveStartKey:         decodedStartKey,
-		Limit:                     getPageSize(pageSize),
+		Limit:                     getPageSize(params.PageSize),
 	}
 
 	for {
@@ -331,7 +330,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, 
 		return nil, "", err
 	}
 
-	if len(resultSet) == 0 && startKey == "" {
+	if len(resultSet) == 0 && params.StartKey == "" {
 		return nil, "", models.ErrSavingsNotFound
 	}
 

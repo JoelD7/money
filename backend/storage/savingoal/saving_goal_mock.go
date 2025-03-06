@@ -40,9 +40,21 @@ func (m *Mock) GetSavingGoal(ctx context.Context, username, savingGoalID string)
 	}, nil
 }
 
-func (m *Mock) GetSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error) {
+func (m *Mock) CreateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
+	return nil, nil
+}
+
+func (m *Mock) UpdateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
+	return nil, nil
+}
+
+func (m *Mock) DeleteSavingGoal(ctx context.Context, username, savingGoalID string) error {
+	return nil
+}
+
+func (m *Mock) GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error) {
 	if m.mockedErr != nil {
-		return nil, m.mockedErr
+		return nil, "", m.mockedErr
 	}
 
 	name := "mocked_name"
@@ -57,5 +69,5 @@ func (m *Mock) GetSavingGoals(ctx context.Context, username string) ([]*models.S
 			Target:       &target,
 			Deadline:     &deadline,
 		},
-	}, nil
+	}, "", nil
 }
