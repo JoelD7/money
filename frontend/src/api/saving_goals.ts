@@ -40,3 +40,17 @@ export async function createSavingGoal(savingGoal: SavingGoal) {
     },
   });
 }
+
+export async function getSavingGoal(id: string) {
+  const res: AxiosResponse = await axiosClient.get<SavingGoal>(
+    API_BASE_URL + `/savings/goals/${id}`,
+    {
+      withCredentials: true,
+      headers: {
+        Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+      },
+    },
+  );
+
+  return res.data;
+}

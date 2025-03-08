@@ -43,3 +43,11 @@ export function useGetSavingGoalsInfinite() {
     retry: queryRetryFn,
   });
 }
+
+export function useGetSavingGoal(id: string) {
+  return useQuery({
+    queryKey: ["savingGoal", id],
+    queryFn: () => api.getSavingGoal(id),
+    retry: queryRetryFn,
+  });
+}

@@ -8,7 +8,7 @@ import {
 } from "./expenses.ts";
 import { getPeriod, getPeriods } from "./period.ts";
 import { createIncome, getIncomeList } from "./income.ts";
-import { createSavingGoal, getSavingGoals } from "./saving_goals.ts";
+import { createSavingGoal, getSavingGoal, getSavingGoals } from "./saving_goals.ts";
 import { createSaving, getSavings } from "./savings.ts";
 
 const api = {
@@ -28,6 +28,7 @@ const api = {
   createSavingGoal,
   getSavings,
   createSaving,
+  getSavingGoal,
 };
 
 export default api;
