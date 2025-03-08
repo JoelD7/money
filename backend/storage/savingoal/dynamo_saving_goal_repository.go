@@ -17,10 +17,11 @@ import (
 const savingGoalIDPrefix = "SVG"
 
 type DynamoRepository struct {
-	dynamoClient          *dynamodb.Client
-	tableName             string
-	usernameDeadlineIndex string
-	usernameTargetIndex   string
+	dynamoClient              *dynamodb.Client
+	tableName                 string
+	usernameDeadlineIndex     string
+	usernameTargetIndex       string
+	usernameSavingGoalIDIndex string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -34,6 +35,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.tableName = envConfig.SavingGoalsTable
 	d.usernameDeadlineIndex = envConfig.UsernameDeadlineIndex
 	d.usernameTargetIndex = envConfig.UsernameTargetIndex
+	d.usernameSavingGoalIDIndex = envConfig.UsernameSavingGoalIDIndex
 
 	return d, nil
 }
@@ -49,6 +51,10 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.UsernameTargetIndex == "" {
 		return fmt.Errorf("username target index is required")
+	}
+
+	if envConfig.UsernameSavingGoalIDIndex == "" {
+		return fmt.Errorf("username saving goal id index is required")
 	}
 
 	return nil
