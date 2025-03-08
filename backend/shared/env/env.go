@@ -87,7 +87,7 @@ func getEnvironmentConfig() *models.EnvironmentConfiguration {
 		UsernameTargetIndex:          GetString("USERNAME_TARGET_INDEX", ""),
 		UsernameDeadlineIndex:        GetString("USERNAME_DEADLINE_INDEX", ""),
 		UsernameAmountIndex:          GetString("USERNAME_AMOUNT_INDEX", ""),
-		UsernameSavingGoalIDIndex:    GetString("USERNAME_SAVING_GOAL_INDEX", ""),
+		UsernameSavingGoalIDIndex:    GetString("USERNAME_SAVING_GOAL_ID_INDEX", ""),
 	}
 }
 
