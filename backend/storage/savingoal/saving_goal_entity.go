@@ -10,7 +10,6 @@ type savingGoalEntity struct {
 	Username        string     `json:"username,omitempty" dynamodbav:"username"`
 	Name            string     `json:"name,omitempty" dynamodbav:"name"`
 	Target          float64    `json:"target,omitempty" dynamodbav:"target"`
-	Progress        float64    `json:"progress,omitempty" dynamodbav:"progress"`
 	Deadline        time.Time  `json:"deadline,omitempty" dynamodbav:"deadline"`
 	CreatedAt       *time.Time `json:"created_at,omitempty" dynamodbav:"created_at"`
 	UpdatedAt       *time.Time `json:"updated_at,omitempty" dynamodbav:"updated_at"`
@@ -24,7 +23,6 @@ func toSavingGoalEntity(s *models.SavingGoal) *savingGoalEntity {
 		Username:        s.GetUsername(),
 		Name:            s.GetName(),
 		Target:          s.GetTarget(),
-		Progress:        s.GetProgress(),
 		Deadline:        s.GetDeadline(),
 		IsRecurring:     s.GetIsRecurring(),
 		RecurringAmount: s.GetRecurringAmount(),
@@ -35,7 +33,6 @@ func toSavingGoalModel(s *savingGoalEntity) *models.SavingGoal {
 	namePtr := &s.Name
 	deadlinePtr := &s.Deadline
 	targetPtr := &s.Target
-	progressPtr := &s.Progress
 	recurringAmountPtr := &s.RecurringAmount
 
 	return &models.SavingGoal{
@@ -43,7 +40,6 @@ func toSavingGoalModel(s *savingGoalEntity) *models.SavingGoal {
 		Username:        s.Username,
 		Name:            namePtr,
 		Target:          targetPtr,
-		Progress:        progressPtr,
 		Deadline:        deadlinePtr,
 		IsRecurring:     s.IsRecurring,
 		RecurringAmount: recurringAmountPtr,
