@@ -26,6 +26,9 @@ import { Colors } from "../../assets";
 import Grid from "@mui/material/Unstable_Grid2";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { NewSavingGoal } from "./NewSavingGoal.tsx";
+import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Link } from "@tanstack/react-router";
 
 export function SavingGoalsTable() {
   const headerIconSize = 15;
@@ -74,6 +77,7 @@ export function SavingGoalsTable() {
       flex: 1,
       minWidth: 180,
       renderHeader: renderNameHeader,
+      renderCell: (params) => <NameCell params={params} />,
     },
     {
       field: "target",
@@ -380,5 +384,38 @@ export function SavingGoalsTable() {
         onAlert={handleAlert}
       />
     </>
+  );
+}
+
+type nameCellProps = {
+  params: GridRenderCellParams;
+};
+
+function NameCell({ params }: nameCellProps) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div
+      className={"flex items-center justify-between"}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {params.value}
+
+      <div className={show ? "block" : "hidden"}>
+        <Link to="/savings/goals/$savingGoalId" params={{ savingGoalId: params.id }}>
+          <Button
+            size={"small"}
+            variant={"contained"}
+            sx={{
+              height: "fit-content",
+            }}
+            endIcon={<FontAwesomeIcon icon={faUpRightFromSquare} />}
+          >
+            Open
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 }
