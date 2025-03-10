@@ -141,9 +141,7 @@ func NewSavingCreator(sm SavingsManager, p PeriodManager) func(ctx context.Conte
 			return nil, err
 		}
 
-		saving.SavingID = generateDynamoID("SV")
 		saving.Username = username
-		saving.CreatedDate = time.Now()
 
 		newSaving, err := sm.CreateSaving(ctx, saving)
 		if err != nil {

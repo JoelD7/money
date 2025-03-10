@@ -17,6 +17,8 @@ import (
 
 const (
 	defaultPageSize = 10
+
+	savingsPrefix = "SV"
 )
 
 type DynamoRepository struct {
@@ -390,6 +392,8 @@ func getAttributeValuePK(item savingEntity) (map[string]types.AttributeValue, er
 }
 
 func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error) {
+	saving.SavingID = dynamo.GenerateID(savingsPrefix)
+	saving.CreatedDate = time.Now()
 	savingEnt := toSavingEntity(saving)
 
 	periodUser := dynamo.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
