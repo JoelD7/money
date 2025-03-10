@@ -50,8 +50,6 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager) func(ctx
 		err = cache.AddIncomePeriods(ctx, username, []string{periodID})
 		if err != nil {
 			logger.Error("add_income_periods_failed", err, models.Any("period", period))
-
-			return nil, fmt.Errorf("couldn't add income periods to cache: %w", err)
 		}
 
 		err = sendPeriodToSQS(ctx, newPeriod)
