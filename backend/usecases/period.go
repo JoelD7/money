@@ -15,10 +15,6 @@ import (
 	"time"
 )
 
-const (
-	periodPrefix = "PRD"
-)
-
 type PeriodManager interface {
 	CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error)
 	UpdatePeriod(ctx context.Context, period *models.Period) error
@@ -34,9 +30,6 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager) func(ctx
 			return nil, models.ErrStartDateShouldBeBeforeEndDate
 		}
 
-		periodID := generateDynamoID(periodPrefix)
-
-		period.ID = periodID
 		period.Username = username
 		period.CreatedDate = time.Now()
 
@@ -47,7 +40,7 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager) func(ctx
 			return nil, err
 		}
 
-		err = cache.AddIncomePeriods(ctx, username, []string{periodID})
+		err = cache.AddIncomePeriods(ctx, username, []string{newPeriod.ID})
 		if err != nil {
 			logger.Error("add_income_periods_failed", err, models.Any("period", period))
 		}
