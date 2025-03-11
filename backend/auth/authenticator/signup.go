@@ -99,6 +99,8 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 
 	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
+	logger.Info("signup_succeeded", request)
+
 	return request.NewJSONResponse(http.StatusCreated, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }
 
