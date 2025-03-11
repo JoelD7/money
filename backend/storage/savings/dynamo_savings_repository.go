@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -415,6 +416,53 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 	}
 
 	return toSavingModel(*savingEnt), nil
+}
+
+func (d *DynamoRepository) BatchCreateSavings(ctx context.Context, savings []*models.Saving) error {
+	entities := make([]*savingEntity, 0, len(savings))
+
+	for _, saving := range savings {
+		saving.SavingID = dynamo.GenerateID(savingsPrefix)
+		saving.CreatedDate = time.Now()
+
+		entity := toSavingEntity(saving)
+		if entity.Period == nil {
+			logger.Error("saving_with_nil_period", nil, models.Any("saving_model", saving),
+				models.Any("saving_entity", entity))
+			continue
+		}
+
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, *entity.Period)
+		entities = append(entities, entity)
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			d.tableName: getBatchWriteRequests(entities),
+		},
+	}
+
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
+}
+
+func getBatchWriteRequests(entities []*savingEntity) []types.WriteRequest {
+	writeRequests := make([]types.WriteRequest, 0, len(entities))
+
+	for _, entity := range entities {
+		item, err := attributevalue.MarshalMap(entity)
+		if err != nil {
+			logger.Warning("marshal_saving_failed", err, models.Any("saving_entity", entity))
+			continue
+		}
+
+		writeRequests = append(writeRequests, types.WriteRequest{
+			PutRequest: &types.PutRequest{
+				Item: item,
+			},
+		})
+	}
+
+	return writeRequests
 }
 
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {

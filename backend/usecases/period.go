@@ -24,7 +24,7 @@ type PeriodManager interface {
 	DeletePeriod(ctx context.Context, periodID, username string) error
 }
 
-func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
+func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, sgm SavingGoalManager, sm SavingsManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
 		if period.StartDate.After(period.EndDate) {
 			return nil, models.ErrStartDateShouldBeBeforeEndDate
@@ -50,8 +50,35 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager) func(ctx
 			logger.Error("send_period_to_sqs_failed", err, models.Any("new_period", newPeriod))
 		}
 
+		err = generateRecurringSavings(ctx, username, newPeriod.ID, sgm, sm)
+		if err != nil {
+			logger.Error("generate_recurring_savings_failed", err, models.Any("new_period", newPeriod))
+			return nil, err
+		}
+
 		return newPeriod, nil
 	}
+}
+
+func generateRecurringSavings(ctx context.Context, username, period string, sgm SavingGoalManager, sm SavingsManager) error {
+	goals, err := sgm.GetAllRecurringSavingGoals(ctx, username)
+	if err != nil {
+		return fmt.Errorf("couldn't get recurring saving goals: %w", err)
+	}
+
+	savingsToCreate := make([]*models.Saving, len(goals))
+
+	for i, goal := range goals {
+		savingsToCreate[i] = &models.Saving{
+			Username:     username,
+			Amount:       goal.RecurringAmount,
+			CreatedDate:  time.Now(),
+			SavingGoalID: &goal.SavingGoalID,
+			Period:       &period,
+		}
+	}
+
+	return sm.BatchCreateSavings(ctx, savingsToCreate)
 }
 
 func sendPeriodToSQS(ctx context.Context, period *models.Period) error {

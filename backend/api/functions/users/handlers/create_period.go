@@ -10,6 +10,8 @@ import (
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/savingoal"
+	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"sync"
@@ -20,10 +22,12 @@ var cpRequest *CreatePeriodRequest
 var cpOnce sync.Once
 
 type CreatePeriodRequest struct {
-	startingTime time.Time
-	err          error
-	PeriodRepo   period.Repository
-	CacheManager cache.IncomePeriodCacheManager
+	startingTime   time.Time
+	err            error
+	PeriodRepo     period.Repository
+	CacheManager   cache.IncomePeriodCacheManager
+	SavingGoalRepo savingoal.Repository
+	SavingsRepo    savings.Repository
 }
 
 func (request *CreatePeriodRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -32,6 +36,16 @@ func (request *CreatePeriodRequest) init(ctx context.Context, envConfig *models.
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		if err != nil {
+			return
+		}
+
+		request.SavingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig)
+		if err != nil {
+			return
+		}
+
+		request.SavingsRepo, err = savings.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
@@ -81,7 +95,7 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 		return req.NewErrorResponse(err), nil
 	}
 
-	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.CacheManager)
+	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.CacheManager, request.SavingGoalRepo, request.SavingsRepo)
 
 	createdPeriod, err := createPeriod(ctx, username, periodModel)
 	if err != nil {

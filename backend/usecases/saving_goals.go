@@ -14,6 +14,7 @@ type SavingGoalManager interface {
 	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
 	GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error)
 	DeleteSavingGoal(ctx context.Context, username, savingGoalID string) error
+	GetAllRecurringSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error)
 }
 
 func NewSavingGoalCreator(savingGoalManager SavingGoalManager) func(ctx context.Context, username string, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
