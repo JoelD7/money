@@ -23,12 +23,14 @@ const (
 )
 
 type DynamoRepository struct {
-	dynamoClient             *dynamodb.Client
-	tableName                string
-	periodSavingIndex        string
-	savingGoalSavingIndex    string
-	usernameAmountIndex      string
-	usernameCreatedDateIndex string
+	dynamoClient               *dynamodb.Client
+	tableName                  string
+	periodSavingIndex          string
+	savingGoalSavingIndex      string
+	usernameAmountIndex        string
+	usernameCreatedDateIndex   string
+	periodUserCreatedDateIndex string
+	periodUserAmountIndex      string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -44,6 +46,8 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.savingGoalSavingIndex = envConfig.SavingGoalSavingIndexName
 	d.usernameAmountIndex = envConfig.UsernameAmountIndex
 	d.usernameCreatedDateIndex = envConfig.UsernameCreatedDateIndex
+	d.periodUserCreatedDateIndex = envConfig.PeriodUserCreatedDateIndex
+	d.periodUserAmountIndex = envConfig.PeriodUserAmountIndex
 
 	return d, nil
 }
@@ -67,6 +71,14 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.UsernameCreatedDateIndex == "" {
 		return fmt.Errorf("username created date index is required")
+	}
+
+	if envConfig.PeriodUserCreatedDateIndex == "" {
+		return fmt.Errorf("period user created date index is required")
+	}
+
+	if envConfig.PeriodUserAmountIndex == "" {
+		return fmt.Errorf("period user amount index is required")
 	}
 
 	return nil
@@ -180,13 +192,28 @@ func (d *DynamoRepository) buildQueryInput(username string, params *models.Query
 
 func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.ConditionBuilder {
 	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
+	periodUser := dynamo.BuildPeriodUser(username, params.Period)
+
+	if params.Period != "" {
+		input.IndexName = aws.String(d.periodSavingIndex)
+
+		keyConditionEx = expression.Name("period_user").Equal(expression.Value(periodUser))
+	}
 
 	if params.SortBy == string(models.SortParamCreatedDate) {
 		input.IndexName = aws.String(d.usernameCreatedDateIndex)
 	}
 
+	if params.Period != "" && params.SortBy == string(models.SortParamCreatedDate) {
+		input.IndexName = aws.String(d.periodUserCreatedDateIndex)
+	}
+
 	if params.SortBy == string(models.SortParamAmount) {
 		input.IndexName = aws.String(d.usernameAmountIndex)
+	}
+
+	if params.Period != "" && params.SortBy == string(models.SortParamAmount) {
+		input.IndexName = aws.String(d.periodUserAmountIndex)
 	}
 
 	//For the moment there is no combined sorting with the saving goal query param. If the need arises, I will add it.
