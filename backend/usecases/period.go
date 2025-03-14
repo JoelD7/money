@@ -50,7 +50,7 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, sgm Savi
 			logger.Error("send_period_to_sqs_failed", err, models.Any("new_period", newPeriod))
 		}
 
-		err = generateRecurringSavings(ctx, username, newPeriod.ID, sgm, sm)
+		err = generateRecurringSavings(ctx, username, newPeriod.Name, sgm, sm)
 		if err != nil {
 			logger.Error("generate_recurring_savings_failed", err, models.Any("new_period", newPeriod))
 			return nil, err
@@ -60,7 +60,7 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, sgm Savi
 	}
 }
 
-func generateRecurringSavings(ctx context.Context, username, period string, sgm SavingGoalManager, sm SavingsManager) error {
+func generateRecurringSavings(ctx context.Context, username string, period *string, sgm SavingGoalManager, sm SavingsManager) error {
 	goals, err := sgm.GetAllRecurringSavingGoals(ctx, username)
 	if err != nil {
 		return fmt.Errorf("couldn't get recurring saving goals: %w", err)
@@ -74,7 +74,7 @@ func generateRecurringSavings(ctx context.Context, username, period string, sgm 
 			Amount:       goal.RecurringAmount,
 			CreatedDate:  time.Now(),
 			SavingGoalID: &goal.SavingGoalID,
-			Period:       &period,
+			Period:       period,
 		}
 	}
 
