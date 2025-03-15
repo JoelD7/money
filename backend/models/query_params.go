@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -27,6 +29,36 @@ type QueryParameters struct {
 	SortBy       string
 	SortType     string
 	SavingGoalID string
+}
+
+func (qp *QueryParameters) ParseAsURLValues(query *url.Values) {
+	if qp.Period != "" {
+		query.Add("period", qp.Period)
+	}
+
+	if qp.StartKey != "" {
+		query.Add("start_key", qp.StartKey)
+	}
+
+	if qp.PageSize != 0 {
+		query.Add("page_size", fmt.Sprint(qp.PageSize))
+	}
+
+	if qp.SavingGoalID != "" {
+		query.Add("saving_goal_id", qp.SavingGoalID)
+	}
+
+	if qp.SortBy != "" {
+		query.Add("sort_by", qp.SortBy)
+	}
+
+	if qp.SortType != "" {
+		query.Add("sort_order", qp.SortType)
+	}
+
+	for _, category := range qp.Categories {
+		query.Add("category", category)
+	}
 }
 
 func (qp *QueryParameters) ToURLParams() string {

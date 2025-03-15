@@ -66,11 +66,15 @@ func (e *E2ERequester) CreateSaving(saving *models.Saving, t *testing.T) (*model
 }
 
 func (e *E2ERequester) GetSavings(params *models.QueryParameters) ([]*models.Saving, string, int, error) {
-	request, err := http.NewRequest(http.MethodGet, e.baseUrl+savingsEndpoint+"?"+params.ToURLParams(), nil)
+	request, err := http.NewRequest(http.MethodGet, e.baseUrl+savingsEndpoint, nil)
 	if err != nil {
 		return nil, "", 0, fmt.Errorf("savings request building failed: %w", err)
 	}
 
+	q := request.URL.Query()
+	params.ParseAsURLValues(&q)
+
+	request.URL.RawQuery = q.Encode()
 	request.Header.Set("Auth", "Bearer "+e.accessToken)
 
 	res, err := e.client.Do(request)
