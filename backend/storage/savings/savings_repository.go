@@ -6,12 +6,16 @@ import (
 )
 
 type Repository interface {
+	CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error)
+	BatchCreateSavings(ctx context.Context, savings []*models.Saving) error
+
 	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
 	GetSavings(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error)
 	GetSavingsByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoal(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error)
 	GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error)
-	CreateSaving(ctx context.Context, saving *models.Saving) (*models.Saving, error)
+
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
+
 	DeleteSaving(ctx context.Context, savingID, username string) error
 }

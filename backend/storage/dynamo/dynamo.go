@@ -113,7 +113,7 @@ func BatchWrite(ctx context.Context, dynamoClient *dynamodb.Client, input *dynam
 
 		result, err := dynamoClient.BatchWriteItem(ctx, input)
 		if err != nil {
-			return fmt.Errorf("batch write recurring expenses failed: %v", err)
+			return fmt.Errorf("batch write failed: %v", err)
 		}
 
 		if result != nil && len(result.UnprocessedItems) > 0 {

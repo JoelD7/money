@@ -208,8 +208,17 @@ func (e *E2ERequester) UpdateSavingGoal(savingGoalID string, savingGoal *models.
 }
 
 func handleErrorResponse(statusCode int, body io.ReadCloser) error {
+	data, err := io.ReadAll(body)
+	if err != nil {
+		return fmt.Errorf("couldn't read error response: %v", err)
+	}
+
+	if data == nil {
+		return fmt.Errorf("no response body - request failed with status: %v", statusCode)
+	}
+
 	var errRes ErrorResponse
-	err := json.NewDecoder(body).Decode(&errRes)
+	err = json.Unmarshal(data, &errRes)
 	if err != nil {
 		return fmt.Errorf("error response decoding failed: %w", err)
 	}

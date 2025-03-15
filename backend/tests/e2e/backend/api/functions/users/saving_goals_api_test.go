@@ -16,33 +16,108 @@ func TestCreateSavingGoals(t *testing.T) {
 	requester, err := api.NewE2ERequester()
 	c.Nil(err, "creating e2e requester failed")
 
-	inputSavingGoal := new(models.SavingGoal)
-	inputSavingGoal.SetName("test saving goal for e2e tests")
-	inputSavingGoal.SetTarget(1000)
-	inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
+	t.Run("Successful creation", func(t *testing.T) {
+		inputSavingGoal := new(models.SavingGoal)
+		inputSavingGoal.SetName("test saving goal for e2e tests")
+		inputSavingGoal.SetTarget(1000)
+		inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
-	c.Equal(http.StatusCreated, statusCode)
-	c.Nil(err, "creating saving goal failed")
-	c.NotNil(createdSavingGoal, "created saving goal is nil")
-	c.NotEmpty(createdSavingGoal.GetSavingGoalID(), "created saving goal id is empty")
+		createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
+		c.Equal(http.StatusCreated, statusCode)
+		c.Nil(err, "creating saving goal failed")
+		c.NotNil(createdSavingGoal, "created saving goal is nil")
+		c.NotEmpty(createdSavingGoal.GetSavingGoalID(), "created saving goal id is empty")
 
-	t.Cleanup(func() {
-		if createdSavingGoal.GetSavingGoalID() != "" {
-			statusCode, err = requester.DeleteSavingGoal(createdSavingGoal.GetSavingGoalID())
-			c.Equal(http.StatusNoContent, statusCode)
-			c.Nil(err, "deleting saving goal failed")
-		}
+		fetchedSavingGoal, statusCode, err := requester.GetSavingGoal(createdSavingGoal.GetSavingGoalID())
+		c.Nil(err, "fetching saving goal failed")
+		c.Equal(http.StatusOK, statusCode)
+		c.NotNil(fetchedSavingGoal, "fetched saving goal is nil")
+		c.Equal(createdSavingGoal.GetSavingGoalID(), fetchedSavingGoal.GetSavingGoalID())
+		c.Equal(inputSavingGoal.GetName(), fetchedSavingGoal.GetName())
+		c.Equal(inputSavingGoal.GetTarget(), fetchedSavingGoal.GetTarget())
+		c.Equal(inputSavingGoal.GetDeadline(), fetchedSavingGoal.GetDeadline())
 	})
 
-	fetchedSavingGoal, statusCode, err := requester.GetSavingGoal(createdSavingGoal.GetSavingGoalID())
-	c.Nil(err, "fetching saving goal failed")
-	c.Equal(http.StatusOK, statusCode)
-	c.NotNil(fetchedSavingGoal, "fetched saving goal is nil")
-	c.Equal(createdSavingGoal.GetSavingGoalID(), fetchedSavingGoal.GetSavingGoalID(), "fetched saving goal id is different from the created one")
-	c.Equal(inputSavingGoal.GetName(), fetchedSavingGoal.GetName(), "fetched saving goal name is different from the created one")
-	c.Equal(inputSavingGoal.GetTarget(), fetchedSavingGoal.GetTarget(), "fetched saving goal target is different from the created one")
-	c.Equal(inputSavingGoal.GetDeadline(), fetchedSavingGoal.GetDeadline(), "fetched saving goal deadline is different from the created one")
+	t.Run("Successful creation with recurring goal", func(t *testing.T) {
+		inputSavingGoal := new(models.SavingGoal)
+		inputSavingGoal.SetName("test saving goal for e2e tests")
+		inputSavingGoal.SetTarget(1000)
+		inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
+		inputSavingGoal.SetIsRecurring(true)
+		inputSavingGoal.SetRecurringAmount(100)
+
+		createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
+		c.Equal(http.StatusCreated, statusCode)
+		c.Nil(err)
+		c.NotNil(createdSavingGoal)
+
+		fetchedSavingGoal, statusCode, err := requester.GetSavingGoal(createdSavingGoal.GetSavingGoalID())
+		c.Nil(err)
+		c.Equal(http.StatusOK, statusCode)
+		c.NotNil(fetchedSavingGoal)
+		c.Equal(createdSavingGoal.GetSavingGoalID(), fetchedSavingGoal.GetSavingGoalID())
+		c.Equal(inputSavingGoal.GetName(), fetchedSavingGoal.GetName())
+		c.Equal(inputSavingGoal.GetTarget(), fetchedSavingGoal.GetTarget())
+		c.Equal(inputSavingGoal.GetDeadline(), fetchedSavingGoal.GetDeadline())
+		c.Equal(inputSavingGoal.GetIsRecurring(), fetchedSavingGoal.GetIsRecurring())
+		c.Equal(inputSavingGoal.GetRecurringAmount(), fetchedSavingGoal.GetRecurringAmount())
+	})
+}
+
+func TestCreateSavingGoalsFailed(t *testing.T) {
+	c := require.New(t)
+
+	requester, err := api.NewE2ERequester()
+	c.Nil(err, "creating e2e requester failed")
+
+	t.Run("Empty name", func(t *testing.T) {
+		inputSavingGoal := new(models.SavingGoal)
+		inputSavingGoal.SetName("")
+		inputSavingGoal.SetTarget(1000)
+		inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
+
+		createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for empty saving goal name")
+		c.Nil(createdSavingGoal, "created saving goal should be nil with empty name")
+	})
+
+	t.Run("Empty target", func(t *testing.T) {
+		inputSavingGoal := new(models.SavingGoal)
+		inputSavingGoal.SetName("test saving goal")
+		inputSavingGoal.SetTarget(0)
+		inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
+
+		createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for empty saving goal target")
+		c.Nil(createdSavingGoal, "created saving goal should be nil with empty target")
+	})
+
+	t.Run("Empty deadline", func(t *testing.T) {
+		inputSavingGoal := new(models.SavingGoal)
+		inputSavingGoal.SetName("test saving goal")
+		inputSavingGoal.SetTarget(1000)
+		inputSavingGoal.SetDeadline(time.Time{})
+
+		createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err, "expected error for empty saving goal deadline")
+		c.Nil(createdSavingGoal, "created saving goal should be nil with empty deadline")
+	})
+
+	t.Run("Recurring without saving amount", func(t *testing.T) {
+		inputSavingGoal := new(models.SavingGoal)
+		inputSavingGoal.SetName("test saving goal")
+		inputSavingGoal.SetTarget(1000)
+		inputSavingGoal.SetDeadline(time.Date(time.Now().Year()+1, time.January, 1, 0, 0, 0, 0, time.UTC))
+		inputSavingGoal.SetIsRecurring(true)
+
+		createdSavingGoal, statusCode, err := requester.CreateSavingGoal(inputSavingGoal, t)
+		c.Equal(http.StatusBadRequest, statusCode)
+		c.Error(err)
+		c.Nil(createdSavingGoal)
+	})
 }
 
 func TestSavingGoalsElimination(t *testing.T) {

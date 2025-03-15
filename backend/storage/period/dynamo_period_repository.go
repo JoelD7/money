@@ -20,6 +20,7 @@ import (
 const (
 	defaultPageSize          = 10
 	conditionalFailedKeyword = "ConditionalCheckFailed"
+	periodPrefix             = "PRD"
 )
 
 var (
@@ -69,6 +70,7 @@ func validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, 
 }
 
 func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error) {
+	period.ID = dynamo.GenerateID(periodPrefix)
 	periodEnt := toPeriodEntity(*period)
 	uPeriodName := &uniquePeriodNameEntity{
 		Name:        *periodEnt.Name,
