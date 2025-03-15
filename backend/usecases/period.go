@@ -89,6 +89,11 @@ func generateRecurringSavings(ctx context.Context, username string, period *stri
 
 func sendPeriodToSQS(ctx context.Context, period *models.Period) error {
 	missingExpensePeriodQueueURL := env.GetString("MISSING_EXPENSE_PERIOD_QUEUE_URL", "")
+	isMissingExpensePeriodQueueEnabled := env.GetBool("ENABLE_MISSING_EXPENSE_PERIOD_QUEUE")
+
+	if !isMissingExpensePeriodQueueEnabled {
+		return nil
+	}
 
 	sdkConfig, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
