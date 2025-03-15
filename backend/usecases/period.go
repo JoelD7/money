@@ -3,6 +3,7 @@ package usecases
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -62,6 +63,11 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, sgm Savi
 
 func generateRecurringSavings(ctx context.Context, username string, period *string, sgm SavingGoalManager, sm SavingsManager) error {
 	goals, err := sgm.GetAllRecurringSavingGoals(ctx, username)
+	if errors.Is(err, models.ErrSavingGoalsNotFound) {
+		logger.Info("no_recurring_saving_goals_found", models.Any("username", username))
+		return nil
+	}
+
 	if err != nil {
 		return fmt.Errorf("couldn't get recurring saving goals: %w", err)
 	}
