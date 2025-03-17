@@ -105,7 +105,7 @@ func (req *requestLoginHandler) processLogin(ctx context.Context, request *apiga
 
 	cookieStr := getRefreshTokenCookieStr(refreshToken.Value, refreshToken.Expiration)
 
-	logger.Info("login_succeeded", nil)
+	logger.Info("login_succeeded", request)
 
 	return request.NewJSONResponse(http.StatusOK, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }

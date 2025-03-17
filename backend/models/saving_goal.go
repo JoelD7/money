@@ -3,12 +3,14 @@ package models
 import "time"
 
 type SavingGoal struct {
-	SavingGoalID string     `json:"saving_goal_id,omitempty"`
-	Username     string     `json:"username,omitempty"`
-	Name         *string    `json:"name,omitempty"`
-	Target       *float64   `json:"target,omitempty"`
-	Progress     *float64   `json:"progress,omitempty"`
-	Deadline     *time.Time `json:"deadline,omitempty"`
+	SavingGoalID    string     `json:"saving_goal_id,omitempty"`
+	Username        string     `json:"username,omitempty"`
+	Name            *string    `json:"name,omitempty"`
+	Target          *float64   `json:"target,omitempty"`
+	Progress        *float64   `json:"progress,omitempty"`
+	Deadline        *time.Time `json:"deadline,omitempty"`
+	IsRecurring     bool       `json:"is_recurring,omitempty"`
+	RecurringAmount *float64   `json:"recurring_amount,omitempty"`
 }
 
 func (sg *SavingGoal) SetName(name string) {
@@ -25,6 +27,14 @@ func (sg *SavingGoal) SetProgress(progress float64) {
 
 func (sg *SavingGoal) SetDeadline(deadline time.Time) {
 	sg.Deadline = &deadline
+}
+
+func (sg *SavingGoal) SetIsRecurring(isRecurring bool) {
+	sg.IsRecurring = isRecurring
+}
+
+func (sg *SavingGoal) SetRecurringAmount(recurringAmount float64) {
+	sg.RecurringAmount = &recurringAmount
 }
 
 func (sg *SavingGoal) GetSavingGoalID() string {
@@ -67,4 +77,18 @@ func (sg *SavingGoal) GetDeadline() time.Time {
 		return time.Time{}
 	}
 	return *sg.Deadline
+}
+
+func (sg *SavingGoal) GetIsRecurring() bool {
+	if sg == nil {
+		return false
+	}
+	return sg.IsRecurring
+}
+
+func (sg *SavingGoal) GetRecurringAmount() float64 {
+	if sg == nil || sg.RecurringAmount == nil {
+		return 0
+	}
+	return *sg.RecurringAmount
 }

@@ -9,6 +9,11 @@ import (
 	"testing"
 )
 
+type savingsResponse struct {
+	Savings []*models.Saving `json:"savings"`
+	NextKey string           `json:"next_key"`
+}
+
 func (e *E2ERequester) CreateSaving(saving *models.Saving, t *testing.T) (*models.Saving, int, error) {
 	var createdSaving models.Saving
 
@@ -58,6 +63,43 @@ func (e *E2ERequester) CreateSaving(saving *models.Saving, t *testing.T) (*model
 	}
 
 	return &createdSaving, res.StatusCode, nil
+}
+
+func (e *E2ERequester) GetSavings(params *models.QueryParameters) ([]*models.Saving, string, int, error) {
+	request, err := http.NewRequest(http.MethodGet, e.baseUrl+savingsEndpoint, nil)
+	if err != nil {
+		return nil, "", 0, fmt.Errorf("savings request building failed: %w", err)
+	}
+
+	q := request.URL.Query()
+	params.ParseAsURLValues(&q)
+
+	request.URL.RawQuery = q.Encode()
+	request.Header.Set("Auth", "Bearer "+e.accessToken)
+
+	res, err := e.client.Do(request)
+	if err != nil {
+		return nil, "", 0, fmt.Errorf("savings request failed: %w", err)
+	}
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			fmt.Printf("closing response body failed: %v\n", err)
+		}
+	}()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, "", res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
+	}
+
+	var response savingsResponse
+	err = json.NewDecoder(res.Body).Decode(&response)
+	if err != nil {
+		return nil, "", res.StatusCode, fmt.Errorf("savings response decoding failed: %w", err)
+	}
+
+	return response.Savings, response.NextKey, res.StatusCode, nil
 }
 
 func (e *E2ERequester) DeleteSaving(savingID string) (int, error) {

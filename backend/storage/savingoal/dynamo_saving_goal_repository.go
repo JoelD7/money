@@ -17,10 +17,11 @@ import (
 const savingGoalIDPrefix = "SVG"
 
 type DynamoRepository struct {
-	dynamoClient          *dynamodb.Client
-	tableName             string
-	usernameDeadlineIndex string
-	usernameTargetIndex   string
+	dynamoClient              *dynamodb.Client
+	tableName                 string
+	usernameDeadlineIndex     string
+	usernameTargetIndex       string
+	usernameSavingGoalIDIndex string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -34,6 +35,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.tableName = envConfig.SavingGoalsTable
 	d.usernameDeadlineIndex = envConfig.UsernameDeadlineIndex
 	d.usernameTargetIndex = envConfig.UsernameTargetIndex
+	d.usernameSavingGoalIDIndex = envConfig.UsernameSavingGoalIDIndex
 
 	return d, nil
 }
@@ -49,6 +51,10 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.UsernameTargetIndex == "" {
 		return fmt.Errorf("username target index is required")
+	}
+
+	if envConfig.UsernameSavingGoalIDIndex == "" {
+		return fmt.Errorf("username saving goal id index is required")
 	}
 
 	return nil
@@ -239,4 +245,58 @@ func (d *DynamoRepository) DeleteSavingGoal(ctx context.Context, username, savin
 	}
 
 	return nil
+}
+
+func (d *DynamoRepository) GetAllRecurringSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error) {
+	keyExpr := expression.Key("username").Equal(expression.Value(username))
+	recurrentFilter := expression.Name("is_recurring").Equal(expression.Value(true))
+
+	builder := expression.NewBuilder().WithKeyCondition(keyExpr).WithFilter(recurrentFilter)
+	expr, err := builder.Build()
+	if err != nil {
+		return nil, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	input := &dynamodb.QueryInput{
+		TableName:                 aws.String(d.tableName),
+		IndexName:                 aws.String(d.usernameSavingGoalIDIndex),
+		KeyConditionExpression:    expr.KeyCondition(),
+		FilterExpression:          expr.Filter(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	}
+
+	savingGoalsEntities := make([]*savingGoalEntity, 0)
+	savingGoalsInQuery := make([]*savingGoalEntity, 0)
+	var result *dynamodb.QueryOutput
+
+	for {
+		result, err = d.dynamoClient.Query(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("get all saving goals failed: %v", err)
+		}
+
+		if len(result.Items) == 0 && len(savingGoalsEntities) == 0 {
+			return nil, models.ErrSavingGoalsNotFound
+		}
+
+		if len(result.Items) == 0 {
+			break
+		}
+
+		err = attributevalue.UnmarshalListOfMaps(result.Items, &savingGoalsInQuery)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal saving goal items failed: %v", err)
+		}
+
+		savingGoalsEntities = append(savingGoalsEntities, savingGoalsInQuery...)
+
+		if result.LastEvaluatedKey == nil {
+			break
+		}
+
+		input.ExclusiveStartKey = result.LastEvaluatedKey
+	}
+
+	return toSavingGoalModels(savingGoalsEntities), nil
 }

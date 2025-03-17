@@ -6,6 +6,7 @@ import (
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/usecases"
@@ -108,6 +109,14 @@ func validateSavingGoalBody(req *apigateway.Request) (*models.SavingGoal, error)
 
 	if savingGoal.Deadline != nil && savingGoal.Deadline.Before(time.Now()) {
 		return nil, models.ErrInvalidSavingGoalDeadline
+	}
+
+	if savingGoal.IsRecurring && savingGoal.RecurringAmount == nil {
+		return nil, models.ErrMissingSavingGoalRecurringAmount
+	}
+
+	if err = validate.Amount(savingGoal.RecurringAmount); savingGoal.IsRecurring && err != nil {
+		return nil, err
 	}
 
 	return &savingGoal, nil
