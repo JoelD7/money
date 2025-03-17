@@ -184,9 +184,7 @@ export function Savings() {
       <Grid container position={"relative"} spacing={1} marginTop={"20px"}>
         {/*Title and summary*/}
         <Grid xs={12}>
-          <Typography mt={"2rem"} variant={"h3"}>
-            Savings
-          </Typography>
+          <Typography variant={"h3"}>Savings</Typography>
         </Grid>
 
         {/*Saving goals table*/}

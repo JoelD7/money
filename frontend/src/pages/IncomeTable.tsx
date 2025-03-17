@@ -218,7 +218,7 @@ export function IncomeTable() {
         />
       )}
 
-      <Typography variant={"h3"} sx={{ margin: "50px 0px 20px 0px" }}>
+      <Typography variant={"h3"} sx={{ marginBottom: "20px" }}>
         Income
       </Typography>
 
