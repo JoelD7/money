@@ -5,6 +5,7 @@ import {
   ErrorSnackbar,
   Navbar,
   NewSaving,
+  PageTitle,
   SavingGoalsTable,
   Snackbar,
   Table,
@@ -184,7 +185,7 @@ export function Savings() {
       <Grid container position={"relative"} spacing={1} marginTop={"20px"}>
         {/*Title and summary*/}
         <Grid xs={12}>
-          <Typography variant={"h3"}>Savings</Typography>
+          <PageTitle>Savings</PageTitle>
         </Grid>
 
         {/*Saving goals table*/}

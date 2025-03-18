@@ -1,9 +1,10 @@
-import { FormControl, InputLabel, MenuItem, Select, Typography } from "@mui/material";
+import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import {
   BackgroundRefetchErrorSnackbar,
   Container,
   ErrorSnackbar,
   Navbar,
+  PageTitle,
   Table,
 } from "../components";
 import { useGetIncome } from "../queries";
@@ -218,9 +219,7 @@ export function IncomeTable() {
         />
       )}
 
-      <Typography variant={"h3"} sx={{ marginBottom: "20px" }}>
-        Income
-      </Typography>
+      <PageTitle>Income</PageTitle>
 
       {/* Period selector*/}
       <div className={"pb-2"}>
