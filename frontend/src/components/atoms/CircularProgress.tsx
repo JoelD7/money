@@ -58,7 +58,7 @@ export function CircularProgress({
         }}
       />
 
-      <div className={"flex justify-center"}>
+      <div className={"flex justify-center flex-col"}>
         <Typography
           variant={"h6"}
           color={"darkGreen.main"}
@@ -70,9 +70,7 @@ export function CircularProgress({
         </Typography>
 
         {subtitle && (
-          <Typography sx={{ width: "100%" }} variant={"subtitle1"}>
-            {subtitle}
-          </Typography>
+          <h6 className={`text-sm leading-none text-center text-gray-200`}>{subtitle}</h6>
         )}
       </div>
     </div>
