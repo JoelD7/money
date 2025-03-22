@@ -70,7 +70,7 @@ export function CircularProgress({
         </Typography>
 
         {subtitle && (
-          <h6 className={`text-sm leading-none text-center text-gray-200`}>{subtitle}</h6>
+          <h6 className={`text-sm leading-none text-center text-gray-400`}>{subtitle}</h6>
         )}
       </div>
     </div>

@@ -39,11 +39,6 @@ export default {
         200: "#006dcc",
         300: "#004d99",
       },
-      gray: {
-        100: "#D9D9D9",
-        200: "#6F6F6F",
-        300: "#4D4D4D",
-      },
     },
     fontFamily: {
       sans: ["Outfit", "sans-serif"],
