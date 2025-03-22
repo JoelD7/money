@@ -8,3 +8,4 @@ export { NoRowsDataGrid } from "./NoRowsDataGrid";
 export { CashFlowSkeleton } from "./CashFlowSkeleton";
 export { PageTitle } from "./PageTitle";
 export { CircularProgress } from "./CircularProgress";
+export { FontAwesomeIcon } from "./FontAwesomeIcon";
