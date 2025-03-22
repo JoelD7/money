@@ -4,7 +4,7 @@
 @tailwind utilities;
 
 .paper {
-    @apply shadow-lg bg-white-100 rounded-md
+    @apply shadow-lg bg-white-100 rounded-xl
 }
 
 /*:root {*/

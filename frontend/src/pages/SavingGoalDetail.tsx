@@ -3,6 +3,7 @@ import {
   Button,
   CircularProgress,
   Container,
+  FontAwesomeIcon,
   Navbar,
   PageTitle,
 } from "../components";
@@ -13,9 +14,13 @@ import { IconButton, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { SavingGoal } from "../types";
 import { faTrash } from "@fortawesome/free-solid-svg-icons/faTrash";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBullseye, faPencil } from "@fortawesome/free-solid-svg-icons";
-import { Colors } from "../assets";
+import {
+  faBullseye,
+  faCalendar,
+  faClock,
+  faPencil,
+} from "@fortawesome/free-solid-svg-icons";
+import { currencyFormatter, tableDateFormatter } from "../utils";
 
 export function SavingGoalDetail() {
   // @ts-expect-error ...
@@ -37,7 +42,7 @@ export function SavingGoalDetail() {
 
       <Grid container>
         {/*Goal detail card*/}
-        <Grid xs={7}>
+        <Grid xs={6}>
           <div className={"paper p-4"}>
             {/*Title*/}
             <div className={"flex items-center w-full"}>
@@ -73,7 +78,7 @@ export function SavingGoalDetail() {
             </div>
 
             {/*Breakdown in numbers*/}
-            <div className={"flex w-full justify-center"}>
+            <div className={"flex w-full justify-center pt-8"}>
               <div className={"grid grid-cols-3 justify-center w-[90%]"}>
                 {/*Goal*/}
                 <div>
@@ -82,8 +87,32 @@ export function SavingGoalDetail() {
                       <FontAwesomeIcon icon={faBullseye} />
                     </span>
                     <h4 className={"ml-1 text-xl font-bold leading-[0px]"}>Goal</h4>
-                    <h4 className={"text-xl"}>{savingGoal.target}</h4>
                   </div>
+                  <h4 className={"text-xl"}>
+                    {currencyFormatter.format(savingGoal.target)}
+                  </h4>
+                </div>
+
+                {/*Progress*/}
+                <div>
+                  <div className={"flex items-center"}>
+                    <FontAwesomeIcon colorClassName={"text-sky-600"} icon={faClock} />
+                    <h4 className={"ml-1 text-xl font-bold leading-[0px]"}>Progress</h4>
+                  </div>
+                  <h4 className={"text-xl"}>
+                    {currencyFormatter.format(savingGoal.progress)}
+                  </h4>
+                </div>
+
+                {/*Deadline*/}
+                <div>
+                  <div className={"flex items-center"}>
+                    <FontAwesomeIcon colorClassName={"text-red-200"} icon={faCalendar} />
+                    <h4 className={"ml-1 text-xl font-bold leading-[0px]"}>Deadline</h4>
+                  </div>
+                  <h4 className={"text-xl"}>
+                    {tableDateFormatter.format(new Date(savingGoal.deadline))}
+                  </h4>
                 </div>
               </div>
             </div>

@@ -86,9 +86,3 @@ export function useTransactionsParams(): TransactionSearchParams {
     sortOrder,
   };
 }
-
-export const tableDateFormatter = new Intl.DateTimeFormat("en-US", {
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-});

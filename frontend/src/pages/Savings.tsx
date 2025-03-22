@@ -31,14 +31,10 @@ import {
   faDollarSign,
 } from "@fortawesome/free-solid-svg-icons";
 import { Colors } from "../assets";
-import { utils } from "../utils";
+import { currencyFormatter, tableDateFormatter } from "../utils";
 
 export function Savings() {
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
-  const currencyFormatter = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  });
 
   const [open, setOpen] = useState(false);
   const [key, setKey] = useState(0);
@@ -103,7 +99,7 @@ export function Savings() {
       flex: 1,
       minWidth: 180,
       valueFormatter: (params) => {
-        return utils.tableDateFormatter.format(params);
+        return tableDateFormatter.format(params);
       },
       renderHeader: () => (
         <TableHeader
