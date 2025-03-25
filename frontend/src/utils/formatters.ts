@@ -4,9 +4,15 @@ export const currencyFormatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-// Nov 1, 2022
+// November 1, 2022
 export const tableDateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "long",
   day: "numeric",
+});
+
+// November 2022
+export const monthYearFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
 });
