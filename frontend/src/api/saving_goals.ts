@@ -54,3 +54,16 @@ export async function getSavingGoal(id: string) {
 
   return res.data;
 }
+
+export function updateSavingGoal(savingGoal: SavingGoal) {
+  return axiosClient.put(
+    API_BASE_URL + `/savings/goals/${savingGoal.saving_goal_id}`,
+    savingGoal,
+    {
+      withCredentials: true,
+      headers: {
+        Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+      },
+    },
+  );
+}

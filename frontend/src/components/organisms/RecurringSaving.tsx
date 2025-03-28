@@ -1,4 +1,12 @@
-import { TextField, Tooltip, Typography } from "@mui/material";
+import {
+  Alert,
+  AlertTitle,
+  capitalize,
+  Snackbar,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { Button, FontAwesomeIcon } from "../atoms";
 import {
@@ -8,8 +16,11 @@ import {
   faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import { currencyFormatter, monthYearFormatter } from "../../utils";
-import { useState } from "react";
-import { SavingGoal } from "../../types";
+import { ChangeEvent, useState } from "react";
+import { SavingGoal, SnackAlert } from "../../types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../../api";
+import { savingGoalKeys } from "../../queries/saving_goals.ts";
 
 type RecurringSavingProps = {
   savingGoal: SavingGoal;
@@ -24,6 +35,12 @@ export function RecurringSaving(props: RecurringSavingProps) {
   const [recurringAmount, setRecurringAmount] = useState<number>(
     savingGoal.recurring_amount ? savingGoal.recurring_amount : 1,
   );
+  const [toggleEditView, setToggleEditView] = useState<boolean>(false);
+  const [alert, setAlert] = useState<SnackAlert>({
+    open: false,
+    type: "success",
+    title: "",
+  });
 
   const reestimatedDeadline: Date = (() => {
     const periodsToReachGoal = Math.ceil(
@@ -39,11 +56,50 @@ export function RecurringSaving(props: RecurringSavingProps) {
   const reestimatedSavingAmount: number = (() => {
     if (!savingGoal) return 0;
 
-    const dateDiffInMs = new Date(savingGoal.deadline).getTime() - Date.now();
-    const monthsUntilDeadline = Math.floor(dateDiffInMs / (1000 * 60 * 60 * 24 * 30));
+    // Always use the first day of the month for both dates to avoid rounding errors when the cur date is near the
+    // end of the month and the deadline is near the start of the month
+    const deadlineMonth = new Date(savingGoal.deadline).getMonth();
+    const deadlineYear = new Date(savingGoal.deadline).getFullYear();
+    const deadline = new Date(deadlineYear, deadlineMonth, 1);
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const current = new Date(currentYear, currentMonth, 1);
 
-    return (savingGoal.target - savingGoal.progress) / (monthsUntilDeadline - 1);
+    const monthsUntilDeadline = Math.floor(
+      (deadline.getTime() - current.getTime()) / (1000 * 60 * 60 * 24 * 30),
+    );
+
+    const result = (savingGoal.target - savingGoal.progress) / monthsUntilDeadline;
+    return Math.ceil(result * 10) / 10;
   })();
+
+  const queryClient = useQueryClient();
+  const mutateSavingGoal = useMutation({
+    mutationFn: api.updateSavingGoal,
+    onSuccess: () => {
+      setAlert({
+        ...alert,
+        open: true,
+        type: "success",
+        title: "Saving goal updated successfully",
+      });
+
+      queryClient
+        .invalidateQueries({ queryKey: savingGoalKeys.single(savingGoal.saving_goal_id) })
+        .then()
+        .catch((e) => {
+          console.error("Error invalidating saving goal query", e);
+        });
+    },
+    onError: () => {
+      setAlert({
+        ...alert,
+        open: true,
+        type: "error",
+        title: "Error updating saving goal",
+      });
+    },
+  });
 
   function renderInfoBox() {
     if (!savingGoal.is_recurring) return <InfoBoxNoRecurringSaving />;
@@ -56,17 +112,63 @@ export function RecurringSaving(props: RecurringSavingProps) {
       recurringAmount: recurringAmount,
       reestimatedSavingAmount: reestimatedSavingAmount,
       deadline: new Date(savingGoal.deadline),
+      onChangeRecurringAmount: handleChangeRecurringAmount,
+      onChangeDeadline: handleChangeDeadline,
     };
 
     if (reestimatedDeadlineString === deadlineString) {
       return <InfoBoxKeepItUp {...props} />;
     }
 
-    return <InfoBoxDefault {...props} />;
+    if (toggleEditView) {
+      return <InfoBoxEdit {...props} />;
+    }
+
+    return <InfoBoxBehind {...props} />;
+  }
+
+  function handleRecurringAmountChange(event: ChangeEvent<HTMLInputElement>) {
+    const value = Number(event.target.value);
+    setRecurringAmount(value);
+
+    if (value !== savingGoal.recurring_amount) {
+      setToggleEditView(true);
+    }
+  }
+
+  function handleChangeRecurringAmount() {
+    setToggleEditView(false);
+
+    mutateSavingGoal.mutate({
+      ...savingGoal,
+      recurring_amount: reestimatedSavingAmount,
+    });
+  }
+
+  function handleChangeDeadline() {
+    setToggleEditView(false);
+
+    mutateSavingGoal.mutate({
+      ...savingGoal,
+      deadline: reestimatedDeadline.toISOString(),
+    });
   }
 
   return (
     <div className={"paper p-4"}>
+      {/*Alert */}
+      <Snackbar
+        open={alert.open}
+        onClose={() => setAlert({ ...alert, open: false })}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert variant={"filled"} severity={alert.type}>
+          <AlertTitle>{capitalize(alert.type)}</AlertTitle>
+          {alert.title}
+        </Alert>
+      </Snackbar>
+
       <div className={"flex justify-between"}>
         <Typography variant={"h5"} sx={{ fontWeight: "bold" }}>
           Automatic savings
@@ -91,7 +193,7 @@ export function RecurringSaving(props: RecurringSavingProps) {
           sx={{
             width: "50%",
           }}
-          onChange={(e) => setRecurringAmount(Number(e.target.value))}
+          onChange={handleRecurringAmountChange}
         />
       )}
 
@@ -106,6 +208,9 @@ type InfoBoxProps = {
   recurringAmount: number;
   reestimatedSavingAmount: number;
   deadline: Date;
+  onChangeRecurringAmount?: () => void;
+  onChangeDeadline?: () => void;
+  loadingButton?: boolean;
 };
 
 function InfoBoxKeepItUp(props: InfoBoxProps) {
@@ -176,7 +281,13 @@ function InfoBoxNoRecurringSaving() {
 }
 
 function InfoBoxBehind(props: InfoBoxProps) {
-  const { reestimatedDeadline, reestimatedSavingAmount } = props;
+  const {
+    reestimatedDeadline,
+    reestimatedSavingAmount,
+    onChangeDeadline,
+    onChangeRecurringAmount,
+    loadingButton,
+  } = props;
   return (
     <div className={infoBoxContainerClass}>
       <Grid container spacing={1} height={"100%"}>
@@ -184,7 +295,7 @@ function InfoBoxBehind(props: InfoBoxProps) {
         <Grid xs={1}>
           <div className={"flex h-full items-center"}>
             <FontAwesomeIcon
-              colorClassName={"text-yellow-200"}
+              colorClassName={"text-yellow-400"}
               icon={faTriangleExclamation}
               size={"2xl"}
             />
@@ -198,7 +309,7 @@ function InfoBoxBehind(props: InfoBoxProps) {
           </Typography>
 
           <Typography variant={"body1"}>
-            Change the running amount to{" "}
+            Change the recurring amount to{" "}
             <span className={"text-green-300"}>
               {currencyFormatter.format(reestimatedSavingAmount)}
             </span>{" "}
@@ -210,8 +321,7 @@ function InfoBoxBehind(props: InfoBoxProps) {
           </Typography>
 
           <Typography variant={"body1"}>
-            Change the deadline to
-            {monthYearFormatter.format(reestimatedDeadline)}
+            Change the deadline to {monthYearFormatter.format(reestimatedDeadline)}
           </Typography>
         </Grid>
 
@@ -221,13 +331,19 @@ function InfoBoxBehind(props: InfoBoxProps) {
             <Tooltip title={`Changes the recurring amount to ${reestimatedSavingAmount}`}>
               <Button
                 variant={"contained"}
+                loading={loadingButton}
+                onClick={onChangeRecurringAmount}
               >{`Accept ${currencyFormatter.format(reestimatedSavingAmount)}`}</Button>
             </Tooltip>
 
             <Tooltip
               title={`Changes the deadline to ${monthYearFormatter.format(reestimatedDeadline)}`}
             >
-              <Button variant={"outlined"}>{`Change deadline`}</Button>
+              <Button
+                variant={"outlined"}
+                loading={loadingButton}
+                onClick={onChangeDeadline}
+              >{`Change deadline`}</Button>
             </Tooltip>
           </div>
         </Grid>
@@ -236,9 +352,16 @@ function InfoBoxBehind(props: InfoBoxProps) {
   );
 }
 
-function InfoBoxDefault(props: InfoBoxProps) {
-  const { reestimatedDeadline, recurringAmount, reestimatedSavingAmount, deadline } =
-    props;
+function InfoBoxEdit(props: InfoBoxProps) {
+  const {
+    reestimatedDeadline,
+    recurringAmount,
+    reestimatedSavingAmount,
+    deadline,
+    onChangeRecurringAmount,
+    loadingButton,
+    onChangeDeadline,
+  } = props;
   return (
     <div className={infoBoxContainerClass}>
       <Grid container spacing={1} height={"100%"}>
@@ -269,7 +392,7 @@ function InfoBoxDefault(props: InfoBoxProps) {
           </Typography>
 
           <Typography variant={"body1"}>
-            You would now have to save{" "}
+            Save{" "}
             <span className={"text-green-300"}>
               {currencyFormatter.format(reestimatedSavingAmount)}
             </span>{" "}
@@ -284,13 +407,19 @@ function InfoBoxDefault(props: InfoBoxProps) {
             <Tooltip title={`Changes the recurring amount to ${reestimatedSavingAmount}`}>
               <Button
                 variant={"contained"}
+                loading={loadingButton}
+                onClick={onChangeRecurringAmount}
               >{`Accept ${currencyFormatter.format(reestimatedSavingAmount)}`}</Button>
             </Tooltip>
 
             <Tooltip
               title={`Changes the deadline to ${monthYearFormatter.format(reestimatedDeadline)}`}
             >
-              <Button variant={"contained"}>{`Change deadline`}</Button>
+              <Button
+                onClick={onChangeDeadline}
+                loading={loadingButton}
+                variant={"contained"}
+              >{`Change deadline`}</Button>
             </Tooltip>
           </div>
         </Grid>
