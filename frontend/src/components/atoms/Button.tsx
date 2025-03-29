@@ -1,5 +1,5 @@
 import { Button as MuiButton, ButtonProps, SxProps, Theme } from "@mui/material";
-import { ReactNode } from "react";
+import { forwardRef, ReactNode } from "react";
 import LoadingButton from "@mui/lab/LoadingButton";
 import SaveIcon from "@mui/icons-material/Save";
 
@@ -8,7 +8,7 @@ type CustomButtonProps = {
   loading?: boolean;
 } & ButtonProps;
 
-export function Button(props: CustomButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, CustomButtonProps>((props, ref) => {
   const { sx, loading, variant, children, ...other } = props;
   let styles: SxProps<Theme> | undefined = {
     textTransform: "capitalize",
@@ -37,15 +37,10 @@ export function Button(props: CustomButtonProps) {
           {...other}
         ></LoadingButton>
       ) : (
-        <MuiButton
-          sx={styles}
-          /*@ts-ignore*/
-          variant={variant}
-          {...other}
-        >
+        <MuiButton ref={ref} sx={styles} variant={variant} {...other}>
           {children}
         </MuiButton>
       )}
     </>
   );
-}
+});
