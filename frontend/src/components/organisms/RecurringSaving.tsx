@@ -2,6 +2,7 @@ import {
   Alert,
   AlertTitle,
   capitalize,
+  CircularProgress as MuiCircularProgress,
   Snackbar,
   TextField,
   Tooltip,
@@ -15,26 +16,28 @@ import {
   faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import { currencyFormatter, monthYearFormatter } from "../../utils";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { SavingGoal, SnackAlert } from "../../types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
-import { savingGoalKeys } from "../../queries/saving_goals.ts";
+import { savingGoalKeys, useGetSavingGoal } from "../../queries/saving_goals.ts";
 
 type RecurringSavingProps = {
-  savingGoal: SavingGoal;
+  savingGoalID: string;
 };
 
-export function RecurringSaving(props: RecurringSavingProps) {
-  const { savingGoal } = props;
+export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
+  const containerClasses = "flex flex-col paper p-4 h-full";
+  const getSavingGoalQuery = useGetSavingGoal(savingGoalID);
+  const savingGoal: SavingGoal | undefined = getSavingGoalQuery.data;
 
   // Default value is 1 to avoid posible division by zero
-  const [recurringAmount, setRecurringAmount] = useState<number>(
-    savingGoal.recurring_amount ? savingGoal.recurring_amount : 0,
+  const [recurringAmount, setRecurringAmount] = useState<number | undefined>(
+    savingGoal ? savingGoal.recurring_amount : 0,
   );
 
   // This is a copy of recurringAmount except when it's 0. In that case holds the previous value before the change.
-  const recurringAmountRef = useRef<number>(recurringAmount);
+  const recurringAmountRef = useRef<number>(recurringAmount || 1);
   const [toggleEditView, setToggleEditView] = useState<boolean>(false);
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
@@ -42,7 +45,22 @@ export function RecurringSaving(props: RecurringSavingProps) {
     title: "",
   });
 
+  useEffect(() => {
+    //This is needed so that recurringAmount is initialized with the correct value when the component is mounted again
+    // after the query returns. This should only happen once.
+    if (
+      savingGoal &&
+      savingGoal.recurring_amount !== undefined &&
+      recurringAmount === 0
+    ) {
+      setRecurringAmount(savingGoal.recurring_amount);
+      recurringAmountRef.current = savingGoal.recurring_amount;
+    }
+  }, [savingGoal, recurringAmount]);
+
   const reestimatedDeadline: Date = (() => {
+    if (!savingGoal) return new Date();
+
     //Always use recurringAmountRef to avoid possible division by zero
     const periodsToReachGoal = Math.ceil(
       (savingGoal.target - savingGoal.progress) / recurringAmountRef.current,
@@ -86,7 +104,7 @@ export function RecurringSaving(props: RecurringSavingProps) {
       });
 
       queryClient
-        .invalidateQueries({ queryKey: savingGoalKeys.single(savingGoal.saving_goal_id) })
+        .invalidateQueries({ queryKey: savingGoalKeys.single(savingGoalID) })
         .then(() => {
           // Close the edit view AFTER the query is updated so that the correct info box is rendered
           setToggleEditView(false);
@@ -106,6 +124,12 @@ export function RecurringSaving(props: RecurringSavingProps) {
   });
 
   function renderInfoBox() {
+    // This should never happen because I'm rendering a loading or error component if this is undefined. I do this check
+    // to make TS happy
+    if (!savingGoal) {
+      return <></>;
+    }
+
     if (!savingGoal.is_recurring) return <InfoBoxNoRecurringSaving />;
 
     const reestimatedDeadlineString = monthYearFormatter.format(reestimatedDeadline);
@@ -113,7 +137,7 @@ export function RecurringSaving(props: RecurringSavingProps) {
 
     const props: InfoBoxProps = {
       reestimatedDeadline: reestimatedDeadline,
-      recurringAmount: recurringAmount,
+      recurringAmount: recurringAmount || 0,
       reestimatedSavingAmount: reestimatedSavingAmount,
       deadline: new Date(savingGoal.deadline),
       onChangeRecurringAmount: handleChangeRecurringAmount,
@@ -136,6 +160,8 @@ export function RecurringSaving(props: RecurringSavingProps) {
   }
 
   function doesEstimationMatchSavingGoalData(): boolean {
+    if (!savingGoal) return false;
+
     const reestimatedDeadlineStr = monthYearFormatter.format(reestimatedDeadline);
     const savingGoalDeadlineStr = monthYearFormatter.format(
       new Date(savingGoal.deadline),
@@ -148,6 +174,8 @@ export function RecurringSaving(props: RecurringSavingProps) {
   }
 
   function handleChangeRecurringAmount() {
+    if (!savingGoal) return;
+
     mutateSavingGoal.mutate({
       ...savingGoal,
       recurring_amount: reestimatedSavingAmount,
@@ -155,6 +183,8 @@ export function RecurringSaving(props: RecurringSavingProps) {
   }
 
   function handleChangeDeadline() {
+    if (!savingGoal) return;
+
     mutateSavingGoal.mutate({
       ...savingGoal,
       recurring_amount: recurringAmount,
@@ -163,6 +193,8 @@ export function RecurringSaving(props: RecurringSavingProps) {
   }
 
   function handleRecurringAmountChange(event: ChangeEvent<HTMLInputElement>) {
+    if (!savingGoal) return;
+
     const value = Number(event.target.value);
     setRecurringAmount(value);
     if (value > 0) {
@@ -174,8 +206,16 @@ export function RecurringSaving(props: RecurringSavingProps) {
     }
   }
 
+  if (getSavingGoalQuery.isPending || savingGoal === undefined) {
+    return (
+      <div className={`${containerClasses} items-center justify-center`}>
+        <MuiCircularProgress size={"7rem"} />
+      </div>
+    );
+  }
+
   return (
-    <div className={"flex flex-col paper p-4 h-full"}>
+    <div className={containerClasses}>
       {/*Alert */}
       <Snackbar
         open={alert.open}

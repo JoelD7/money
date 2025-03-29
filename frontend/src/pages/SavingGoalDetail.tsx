@@ -43,7 +43,7 @@ export function SavingGoalDetail() {
 
         {/*Automatic savings*/}
         <Grid xs={5} height={"24rem"}>
-          {savingGoal && <RecurringSaving savingGoal={savingGoal} />}
+          <RecurringSaving savingGoalID={savingGoalId} />
         </Grid>
       </Grid>
     </Container>
