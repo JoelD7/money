@@ -15,27 +15,26 @@ import {
   faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import { currencyFormatter, monthYearFormatter } from "../../utils";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { SavingGoal, SnackAlert } from "../../types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
-import { savingGoalKeys, useGetSavingGoal } from "../../queries/saving_goals.ts";
+import { savingGoalKeys } from "../../queries/saving_goals.ts";
 
 type RecurringSavingProps = {
-  savingGoalID: string;
+  savingGoal: SavingGoal;
 };
 
 export function RecurringSaving(props: RecurringSavingProps) {
-  // const { savingGoal } = props;
-  const savingGoalId = props.savingGoalID;
-
-  const getSavingGoalQuery = useGetSavingGoal(savingGoalId);
-  const savingGoal: SavingGoal = getSavingGoalQuery.data ? getSavingGoalQuery.data : {};
+  const { savingGoal } = props;
 
   // Default value is 1 to avoid posible division by zero
   const [recurringAmount, setRecurringAmount] = useState<number>(
-    savingGoal.recurring_amount ? savingGoal.recurring_amount : 1,
+    savingGoal.recurring_amount ? savingGoal.recurring_amount : 0,
   );
+
+  // This is a copy of recurringAmount except when it's 0. In that case holds the previous value before the change.
+  const recurringAmountRef = useRef<number>(recurringAmount);
   const [toggleEditView, setToggleEditView] = useState<boolean>(false);
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
@@ -44,8 +43,9 @@ export function RecurringSaving(props: RecurringSavingProps) {
   });
 
   const reestimatedDeadline: Date = (() => {
+    //Always use recurringAmountRef to avoid possible division by zero
     const periodsToReachGoal = Math.ceil(
-      (savingGoal.target - savingGoal.progress) / recurringAmount,
+      (savingGoal.target - savingGoal.progress) / recurringAmountRef.current,
     );
 
     const newDeadline = new Date(Date.now());
@@ -87,7 +87,10 @@ export function RecurringSaving(props: RecurringSavingProps) {
 
       queryClient
         .invalidateQueries({ queryKey: savingGoalKeys.single(savingGoal.saving_goal_id) })
-        .then()
+        .then(() => {
+          // Close the edit view AFTER the query is updated so that the correct info box is rendered
+          setToggleEditView(false);
+        })
         .catch((e) => {
           console.error("Error invalidating saving goal query", e);
         });
@@ -117,10 +120,7 @@ export function RecurringSaving(props: RecurringSavingProps) {
       onChangeDeadline: handleChangeDeadline,
     };
 
-    if (
-      reestimatedDeadlineString === deadlineString &&
-      savingGoal.recurring_amount === recurringAmount
-    ) {
+    if (doesEstimationMatchSavingGoalData()) {
       return <InfoBoxKeepItUp {...props} />;
     }
 
@@ -135,18 +135,19 @@ export function RecurringSaving(props: RecurringSavingProps) {
     return <InfoBoxBehind {...props} />;
   }
 
-  function handleRecurringAmountChange(event: ChangeEvent<HTMLInputElement>) {
-    const value = Number(event.target.value);
-    setRecurringAmount(value);
+  function doesEstimationMatchSavingGoalData(): boolean {
+    const reestimatedDeadlineStr = monthYearFormatter.format(reestimatedDeadline);
+    const savingGoalDeadlineStr = monthYearFormatter.format(
+      new Date(savingGoal.deadline),
+    );
 
-    if (value !== savingGoal.recurring_amount) {
-      setToggleEditView(true);
-    }
+    return (
+      reestimatedDeadlineStr === savingGoalDeadlineStr &&
+      reestimatedSavingAmount === savingGoal.recurring_amount
+    );
   }
 
   function handleChangeRecurringAmount() {
-    setToggleEditView(false);
-
     mutateSavingGoal.mutate({
       ...savingGoal,
       recurring_amount: reestimatedSavingAmount,
@@ -154,32 +155,23 @@ export function RecurringSaving(props: RecurringSavingProps) {
   }
 
   function handleChangeDeadline() {
-    setToggleEditView(false);
-
     mutateSavingGoal.mutate({
       ...savingGoal,
+      recurring_amount: recurringAmount,
       deadline: reestimatedDeadline.toISOString(),
     });
   }
 
-  if (getSavingGoalQuery.isPending) {
-    return (
-      <div className={"paper p-4"}>
-        <Typography variant={"h5"} sx={{ fontWeight: "bold" }}>
-          Loading...
-        </Typography>
-      </div>
-    );
-  }
+  function handleRecurringAmountChange(event: ChangeEvent<HTMLInputElement>) {
+    const value = Number(event.target.value);
+    setRecurringAmount(value);
+    if (value > 0) {
+      recurringAmountRef.current = value;
+    }
 
-  if (getSavingGoalQuery.isError) {
-    return (
-      <div className={"paper p-4"}>
-        <Typography variant={"h5"} sx={{ fontWeight: "bold" }}>
-          Error loading saving goal...
-        </Typography>
-      </div>
-    );
+    if (value !== savingGoal.recurring_amount) {
+      setToggleEditView(true);
+    }
   }
 
   return (
