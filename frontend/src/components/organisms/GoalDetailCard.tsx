@@ -27,16 +27,8 @@ export function GoalDetailCard() {
 
   if (getSavingGoalQuery.isPending || savingGoal === undefined) {
     return (
-      <div className={containerClasses}>
+      <div className={`${containerClasses} flex items-center justify-center`}>
         <MuiCircularProgress size={"7rem"} />
-      </div>
-    );
-  }
-
-  if (getSavingGoalQuery.isError && !savingGoal) {
-    return (
-      <div className={containerClasses}>
-        <Typography variant={"h5"}>Error</Typography>
       </div>
     );
   }

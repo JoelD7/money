@@ -20,7 +20,12 @@ export function SavingGoalDetail() {
   const savingGoal: SavingGoal | undefined = getSavingGoalQuery.data;
 
   if (getSavingGoalQuery.isError && !savingGoal) {
-    return <Error />;
+    return (
+      <Container>
+        <Navbar />
+        <Error />
+      </Container>
+    );
   }
 
   return (
