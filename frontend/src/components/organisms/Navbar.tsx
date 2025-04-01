@@ -114,7 +114,7 @@ export function Navbar({ children }: NavbarProps) {
   }
 
   function goToSavings() {
-    console.log("Navigating to /savings");
+    console.error("Navigating to /savings");
     navigate({ to: "/savings" })
       .then(() => {})
       .catch((err) => {
