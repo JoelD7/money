@@ -15,7 +15,7 @@ import {
   faCircleInfo,
   faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
-import { currencyFormatter, monthYearFormatter } from "../../utils";
+import { currencyFormatter, monthYearFormatter, utils } from "../../utils";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { SavingGoal, SnackAlert } from "../../types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -35,7 +35,6 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
   const [recurringAmount, setRecurringAmount] = useState<number | undefined>(
     savingGoal ? savingGoal.recurring_amount : 0,
   );
-
   // This is a copy of recurringAmount except when it's 0. In that case holds the previous value before the change.
   const recurringAmountRef = useRef<number>(recurringAmount || 1);
   const [toggleEditView, setToggleEditView] = useState<boolean>(false);
@@ -68,29 +67,12 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
 
     const newDeadline = new Date(Date.now());
     newDeadline.setMonth(newDeadline.getMonth() + periodsToReachGoal);
+    newDeadline.setDate(1);
 
     return newDeadline;
   })();
 
-  const reestimatedSavingAmount: number = (() => {
-    if (!savingGoal) return 0;
-
-    // Always use the first day of the month for both dates to avoid rounding errors when the cur date is near the
-    // end of the month and the deadline is near the start of the month
-    const deadlineMonth = new Date(savingGoal.deadline).getMonth();
-    const deadlineYear = new Date(savingGoal.deadline).getFullYear();
-    const deadline = new Date(deadlineYear, deadlineMonth, 1);
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    const current = new Date(currentYear, currentMonth, 1);
-
-    const monthsUntilDeadline = Math.floor(
-      (deadline.getTime() - current.getTime()) / (1000 * 60 * 60 * 24 * 30),
-    );
-
-    const result = (savingGoal.target - savingGoal.progress) / monthsUntilDeadline;
-    return Math.ceil(result * 10) / 10;
-  })();
+  const reestimatedSavingAmount: number = utils.estimateSavingAmount(savingGoal);
 
   const queryClient = useQueryClient();
   const mutateSavingGoal = useMutation({
@@ -139,17 +121,24 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
       reestimatedDeadline: reestimatedDeadline,
       recurringAmount: recurringAmount || 0,
       reestimatedSavingAmount: reestimatedSavingAmount,
+      savingGoalRecurringAmount: savingGoal.recurring_amount
+        ? savingGoal.recurring_amount
+        : 0,
       deadline: new Date(savingGoal.deadline),
       onChangeRecurringAmount: handleChangeRecurringAmount,
       onChangeDeadline: handleChangeDeadline,
     };
 
-    if (doesEstimationMatchSavingGoalData()) {
-      return <InfoBoxKeepItUp {...props} />;
+    if (
+      reestimatedDeadlineString === deadlineString &&
+      toggleEditView &&
+      recurringAmount !== savingGoal.recurring_amount
+    ) {
+      return <InfoBoxMeetDeadlineAmount {...props} />;
     }
 
     if (reestimatedDeadlineString === deadlineString) {
-      return <InfoBoxMeetDeadlineAmount {...props} />;
+      return <InfoBoxKeepItUp {...props} />;
     }
 
     if (toggleEditView) {
@@ -159,27 +148,15 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
     return <InfoBoxBehind {...props} />;
   }
 
-  function doesEstimationMatchSavingGoalData(): boolean {
-    if (!savingGoal) return false;
-
-    const reestimatedDeadlineStr = monthYearFormatter.format(reestimatedDeadline);
-    const savingGoalDeadlineStr = monthYearFormatter.format(
-      new Date(savingGoal.deadline),
-    );
-
-    return (
-      reestimatedDeadlineStr === savingGoalDeadlineStr &&
-      reestimatedSavingAmount === savingGoal.recurring_amount
-    );
-  }
-
-  function handleChangeRecurringAmount() {
+  function handleChangeRecurringAmount(newAmount: number) {
     if (!savingGoal) return;
 
     mutateSavingGoal.mutate({
       ...savingGoal,
-      recurring_amount: reestimatedSavingAmount,
+      recurring_amount: newAmount,
     });
+    setRecurringAmount(newAmount);
+    recurringAmountRef.current = newAmount;
   }
 
   function handleChangeDeadline() {
@@ -264,9 +241,10 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
 type InfoBoxProps = {
   reestimatedDeadline: Date;
   recurringAmount: number;
+  savingGoalRecurringAmount: number;
   reestimatedSavingAmount: number;
   deadline: Date;
-  onChangeRecurringAmount?: () => void;
+  onChangeRecurringAmount: (amount: number) => void;
   onChangeDeadline?: () => void;
   loadingButton?: boolean;
 };
@@ -385,7 +363,7 @@ function InfoBoxBehind(props: InfoBoxProps) {
             <Button
               variant={"contained"}
               loading={loadingButton}
-              onClick={onChangeRecurringAmount}
+              onClick={() => onChangeRecurringAmount(reestimatedSavingAmount)}
             >{`Accept ${currencyFormatter.format(reestimatedSavingAmount)}`}</Button>
           </Tooltip>
 
@@ -409,6 +387,7 @@ function InfoBoxEdit(props: InfoBoxProps) {
     reestimatedDeadline,
     recurringAmount,
     reestimatedSavingAmount,
+    savingGoalRecurringAmount,
     deadline,
     onChangeRecurringAmount,
     loadingButton,
@@ -438,30 +417,36 @@ function InfoBoxEdit(props: InfoBoxProps) {
           {monthYearFormatter.format(reestimatedDeadline)}
         </Typography>
 
-        <Typography variant={"body1"} sx={{ fontWeight: "bold" }}>
-          Or...
-        </Typography>
+        {savingGoalRecurringAmount !== reestimatedSavingAmount && (
+          <>
+            <Typography variant={"body1"} sx={{ fontWeight: "bold" }}>
+              Or...
+            </Typography>
 
-        <Typography variant={"body1"}>
-          Save{" "}
-          <span className={"text-green-300"}>
-            {currencyFormatter.format(reestimatedSavingAmount)}
-          </span>{" "}
-          each month to meet the same deadline of{" "}
-          {monthYearFormatter.format(new Date(deadline))}
-        </Typography>
+            <Typography variant={"body1"}>
+              Save at least{" "}
+              <span className={"text-green-300"}>
+                {currencyFormatter.format(reestimatedSavingAmount)}
+              </span>{" "}
+              each month to meet the same deadline of{" "}
+              {monthYearFormatter.format(new Date(deadline))}
+            </Typography>
+          </>
+        )}
       </Grid>
 
       {/*Buttons*/}
       <Grid xs={12}>
         <div className={"flex justify-end gap-1"}>
-          <Tooltip title={`Changes the recurring amount to ${reestimatedSavingAmount}`}>
-            <Button
-              variant={"contained"}
-              loading={loadingButton}
-              onClick={onChangeRecurringAmount}
-            >{`Accept ${currencyFormatter.format(reestimatedSavingAmount)}`}</Button>
-          </Tooltip>
+          {savingGoalRecurringAmount !== reestimatedSavingAmount && (
+            <Tooltip title={`Changes the recurring amount to ${reestimatedSavingAmount}`}>
+              <Button
+                variant={"contained"}
+                loading={loadingButton}
+                onClick={() => onChangeRecurringAmount(reestimatedSavingAmount)}
+              >{`Accept ${currencyFormatter.format(reestimatedSavingAmount)}`}</Button>
+            </Tooltip>
+          )}
 
           <Tooltip
             title={`Changes the deadline to ${monthYearFormatter.format(reestimatedDeadline)}`}
@@ -479,12 +464,7 @@ function InfoBoxEdit(props: InfoBoxProps) {
 }
 
 function InfoBoxMeetDeadlineAmount(props: InfoBoxProps) {
-  const {
-    recurringAmount,
-    reestimatedSavingAmount,
-    onChangeRecurringAmount,
-    loadingButton,
-  } = props;
+  const { recurringAmount, onChangeRecurringAmount, loadingButton } = props;
   return (
     <Grid container spacing={1} height={"100%"}>
       {/*Information icon*/}
@@ -512,12 +492,12 @@ function InfoBoxMeetDeadlineAmount(props: InfoBoxProps) {
       {/*Buttons*/}
       <Grid xs={12}>
         <div className={"flex justify-end gap-1"}>
-          <Tooltip title={`Changes the recurring amount to ${reestimatedSavingAmount}`}>
+          <Tooltip title={`Changes the recurring amount to ${recurringAmount}`}>
             <Button
               variant={"contained"}
               loading={loadingButton}
-              onClick={onChangeRecurringAmount}
-            >{`Save ${currencyFormatter.format(reestimatedSavingAmount)}`}</Button>
+              onClick={() => onChangeRecurringAmount(recurringAmount)}
+            >{`Save ${currencyFormatter.format(recurringAmount)}`}</Button>
           </Tooltip>
         </div>
       </Grid>
