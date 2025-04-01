@@ -96,30 +96,48 @@ export function useTransactionsParams(): TransactionSearchParams {
 export function estimateSavingAmount(savingGoal?: SavingGoal): number {
   if (!savingGoal) return 0;
 
-  const monthsUntilDeadline = getMonthDifference(new Date(), new Date(savingGoal.deadline));
-
+  const monthsUntilDeadline = getMonthDifference(
+    new Date(),
+    new Date(savingGoal.deadline),
+  );
   if (monthsUntilDeadline === 0) {
-    return (savingGoal.target - savingGoal.progress);
+    return savingGoal.target - savingGoal.progress;
   }
 
-  const result = (savingGoal.target - savingGoal.progress) / (monthsUntilDeadline);
+  const result = (savingGoal.target - savingGoal.progress) / monthsUntilDeadline;
 
   //Use ceil because it's preferred for the amount to be over the goal than under it.
   return Math.ceil(result * 10) / 10;
 }
 
 export function getMonthDifference(current: Date, deadline: Date): number {
-  const years: number = deadline.getFullYear() - current.getFullYear()
-  if (years === 0) return deadline.getMonth() - current.getMonth()
+  const years: number = deadline.getFullYear() - current.getFullYear();
+  if (years === 0) return deadline.getMonth() - current.getMonth();
 
   // for the case where the deadline is in the next year
-  if(deadline.getMonth() < current.getMonth()) {
-    return (deadline.getMonth() - current.getMonth() + 12)
+  if (deadline.getMonth() < current.getMonth()) {
+    return deadline.getMonth() - current.getMonth() + 12;
   }
 
-  if(deadline.getMonth() < current.getMonth() && years > 1) {
-    return (deadline.getMonth() - current.getMonth() + 12) + (years * 12)
+  if (deadline.getMonth() < current.getMonth() && years > 1) {
+    return deadline.getMonth() - current.getMonth() + 12 + years * 12;
   }
 
-  return (deadline.getMonth() - current.getMonth()) + (years * 12)
+  return deadline.getMonth() - current.getMonth() + years * 12;
+}
+
+export function estimateDeadlineFromRecurringAmount(
+  recurringAmount: number,
+  savingGoal?: SavingGoal,
+): Date {
+  if (!savingGoal) return new Date();
+
+  const periodsToReachGoal = Math.ceil(
+    (savingGoal.target - savingGoal.progress) / recurringAmount,
+  );
+
+  const newDeadline = new Date();
+  console.log(newDeadline)
+  newDeadline.setMonth(newDeadline.getMonth() + periodsToReachGoal);
+  return newDeadline;
 }

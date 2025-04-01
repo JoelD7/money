@@ -57,21 +57,8 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
     }
   }, [savingGoal, recurringAmount]);
 
-  const reestimatedDeadline: Date = (() => {
-    if (!savingGoal) return new Date();
-
-    //Always use recurringAmountRef to avoid possible division by zero
-    const periodsToReachGoal = Math.ceil(
-      (savingGoal.target - savingGoal.progress) / recurringAmountRef.current,
-    );
-
-    const newDeadline = new Date(Date.now());
-    newDeadline.setMonth(newDeadline.getMonth() + periodsToReachGoal);
-    newDeadline.setDate(1);
-
-    return newDeadline;
-  })();
-
+  //Always use recurringAmountRef to avoid possible division by zero
+  const reestimatedDeadline: Date = utils.estimateDeadlineFromRecurringAmount( recurringAmountRef.current,savingGoal);
   const reestimatedSavingAmount: number = utils.estimateSavingAmount(savingGoal);
 
   const queryClient = useQueryClient();
