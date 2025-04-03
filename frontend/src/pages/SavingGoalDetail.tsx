@@ -1,14 +1,14 @@
 import {
-    BackgroundRefetchErrorSnackbar,
-    Button,
-    Container,
-    GoalDetailCard,
-    Navbar,
-    NewSaving,
-    PageTitle,
-    RecurringSaving,
-     SavingsTable,
-    Snackbar,
+  BackgroundRefetchErrorSnackbar,
+  Button,
+  Container,
+  GoalDetailCard,
+  Navbar,
+  NewSaving,
+  PageTitle,
+  RecurringSaving,
+  SavingsTable,
+  Snackbar,
 } from "../components";
 import { useGetSavingGoal } from "../queries";
 import { useParams } from "@tanstack/react-router";
@@ -90,6 +90,7 @@ export function SavingGoalDetail() {
       <NewSaving
         key={key}
         open={openNewSaving}
+        showSavingGoalSelector={false}
         onClose={() => {
           setOpenNewSaving(false);
           setKey(key + 1);

@@ -28,9 +28,15 @@ type NewSavingProps = {
   open: boolean;
   onClose: () => void;
   onAlert: (alert?: SnackAlert) => void;
+  showSavingGoalSelector?: boolean;
 };
 
-export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
+export function NewSaving({
+  open,
+  onClose,
+  onAlert,
+  showSavingGoalSelector = true,
+}: NewSavingProps) {
   const labelId: string = uuidv4();
   const validationSchema = yup.object({
     amount: yup.number().required("Amount is required").moreThan(0, "Amount is required"),
@@ -226,42 +232,44 @@ export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
           </Grid>
 
           {/* Saving goal */}
-          <Grid xs={12}>
-            <FormControl sx={{ width: "100%" }}>
-              <InputLabel id={labelId}>Saving goal</InputLabel>
+          {showSavingGoalSelector && (
+            <Grid xs={12}>
+              <FormControl sx={{ width: "100%" }}>
+                <InputLabel id={labelId}>Saving goal</InputLabel>
 
-              <Select
-                labelId={labelId}
-                id={"Goal"}
-                MenuProps={{
-                  slotProps: {
-                    paper: {
-                      onScroll: handleSavingGoalsMenuScroll,
+                <Select
+                  labelId={labelId}
+                  id={"Goal"}
+                  MenuProps={{
+                    slotProps: {
+                      paper: {
+                        onScroll: handleSavingGoalsMenuScroll,
+                      },
                     },
-                  },
-                  PaperProps: {
-                    sx: {
-                      maxHeight: 150,
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 150,
+                      },
                     },
-                  },
-                }}
-                label={"Goal"}
-                value={savingGoals.length > 0 ? savingGoal : ""}
-                onChange={(e) => setSavingGoal(e.target.value)}
-              >
-                {Array.isArray(savingGoals) &&
-                  savingGoals.map((sg) => (
-                    <MenuItem
-                      key={sg.saving_goal_id}
-                      id={sg.saving_goal_id}
-                      value={sg.saving_goal_id}
-                    >
-                      {sg.name}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </FormControl>
-          </Grid>
+                  }}
+                  label={"Goal"}
+                  value={savingGoals.length > 0 ? savingGoal : ""}
+                  onChange={(e) => setSavingGoal(e.target.value)}
+                >
+                  {Array.isArray(savingGoals) &&
+                    savingGoals.map((sg) => (
+                      <MenuItem
+                        key={sg.saving_goal_id}
+                        id={sg.saving_goal_id}
+                        value={sg.saving_goal_id}
+                      >
+                        {sg.name}
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
 
           {/*Buttons*/}
           <Grid xs={12} alignSelf={"end"}>
