@@ -7,3 +7,4 @@ export { Table } from "./Table";
 export { TableHeader } from "./TableHeader";
 export { Dialog } from "./Dialog";
 export { Snackbar } from "./Snackbar";
+export { SavingGoalSelector } from "./SavingGoalSelector";

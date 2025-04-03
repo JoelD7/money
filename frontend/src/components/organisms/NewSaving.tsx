@@ -1,4 +1,4 @@
-import { Dialog, ErrorSnackbar } from "../molecules";
+import { Dialog, ErrorSnackbar, SavingGoalSelector } from "../molecules";
 import {
   Box,
   Divider,
@@ -12,12 +12,8 @@ import {
 import Grid from "@mui/material/Unstable_Grid2";
 import React, { FormEvent, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import {
-  queryKeys,
-  useGetPeriodsInfinite,
-  useGetSavingGoalsInfinite,
-} from "../../queries";
-import { Saving, SavingGoal, SnackAlert } from "../../types";
+import { queryKeys, useGetPeriodsInfinite } from "../../queries";
+import { Saving, SnackAlert } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import { Button } from "../atoms";
@@ -55,18 +51,6 @@ export function NewSaving({
         .map((page) => page.periods)
         .flat()
         .map((p) => p.name);
-    }
-
-    return [];
-  })();
-
-  const getSavingGoalsQuery = useGetSavingGoalsInfinite();
-  const savingGoals: SavingGoal[] = (() => {
-    if (getSavingGoalsQuery.data) {
-      return getSavingGoalsQuery.data.pages
-        .map((page) => page.saving_goals)
-        .flat()
-        .map((p) => p);
     }
 
     return [];
@@ -117,21 +101,6 @@ export function NewSaving({
     }
   }
 
-  function handleSavingGoalsMenuScroll(e: React.UIEvent<HTMLDivElement, UIEvent>) {
-    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (
-      scrollTop + clientHeight >= scrollHeight - 5 &&
-      !(getSavingGoalsQuery.isFetching || getSavingGoalsQuery.isFetchingNextPage)
-    ) {
-      getSavingGoalsQuery
-        .fetchNextPage()
-        .then(() => {})
-        .catch((e) => {
-          console.error("Error fetching more saving goals", e);
-        });
-    }
-  }
-
   function createSaving(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -155,6 +124,10 @@ export function NewSaving({
       });
       console.error("Error validating saving", err.errors[0]);
     }
+  }
+
+  function onSavingGoalChange(savingGoalId: string) {
+    setSavingGoal(savingGoalId);
   }
 
   return (
@@ -234,40 +207,10 @@ export function NewSaving({
           {/* Saving goal */}
           {showSavingGoalSelector && (
             <Grid xs={12}>
-              <FormControl sx={{ width: "100%" }}>
-                <InputLabel id={labelId}>Saving goal</InputLabel>
-
-                <Select
-                  labelId={labelId}
-                  id={"Goal"}
-                  MenuProps={{
-                    slotProps: {
-                      paper: {
-                        onScroll: handleSavingGoalsMenuScroll,
-                      },
-                    },
-                    PaperProps: {
-                      sx: {
-                        maxHeight: 150,
-                      },
-                    },
-                  }}
-                  label={"Goal"}
-                  value={savingGoals.length > 0 ? savingGoal : ""}
-                  onChange={(e) => setSavingGoal(e.target.value)}
-                >
-                  {Array.isArray(savingGoals) &&
-                    savingGoals.map((sg) => (
-                      <MenuItem
-                        key={sg.saving_goal_id}
-                        id={sg.saving_goal_id}
-                        value={sg.saving_goal_id}
-                      >
-                        {sg.name}
-                      </MenuItem>
-                    ))}
-                </Select>
-              </FormControl>
+              <SavingGoalSelector
+                savingGoalID={savingGoal}
+                onSavingGoalChange={onSavingGoalChange}
+              />
             </Grid>
           )}
 
