@@ -58,7 +58,10 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
   }, [savingGoal, recurringAmount]);
 
   //Always use recurringAmountRef to avoid possible division by zero
-  const reestimatedDeadline: Date = utils.estimateDeadlineFromRecurringAmount( recurringAmountRef.current,savingGoal);
+  const reestimatedDeadline: Date = utils.estimateDeadlineFromRecurringAmount(
+    recurringAmountRef.current,
+    savingGoal,
+  );
   const reestimatedSavingAmount: number = utils.estimateSavingAmount(savingGoal);
 
   const queryClient = useQueryClient();
@@ -142,6 +145,8 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
       ...savingGoal,
       recurring_amount: newAmount,
     });
+
+    setToggleEditView(false);
     setRecurringAmount(newAmount);
     recurringAmountRef.current = newAmount;
   }
@@ -239,7 +244,7 @@ type InfoBoxProps = {
 function InfoBoxKeepItUp(props: InfoBoxProps) {
   const { deadline } = props;
   return (
-    <Grid container spacing={1} height={"100%"}>
+    <Grid container spacing={4} height={"100%"}>
       {/*Checkmark icon*/}
       <Grid xs={1}>
         <div className={"flex h-full items-center"}>
