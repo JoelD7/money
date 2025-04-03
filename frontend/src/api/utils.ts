@@ -39,6 +39,7 @@ export function buildQueryParams(
   pageSize: number = 10,
   sortOrder: string = "",
   sortBy: string = "",
+  savingGoalID: string = "",
 ): string[] {
   const params = [];
 
@@ -56,6 +57,10 @@ export function buildQueryParams(
 
   if (sortBy !== "") {
     params.push(`sort_by=${sortBy}`);
+  }
+
+  if (savingGoalID !== "") {
+    params.push(`saving_goal_id=${savingGoalID}`);
   }
 
   return params;

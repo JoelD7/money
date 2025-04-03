@@ -19,7 +19,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 
-export function SavingsTable() {
+type SavingsTableProps = {
+    savingGoalID?: string
+}
+
+export function SavingsTable({savingGoalID}: SavingsTableProps) {
+
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
 
   const [sortOrder, setSortOrder] = useState("");
@@ -28,7 +33,7 @@ export function SavingsTable() {
 
   const startKey: string = startKeysByPage.current[paginationModel.page];
   const pageSize: number = paginationModel.pageSize;
-  const getSavingsQuery = useGetSavings(startKey, pageSize, sortOrder, sortBy);
+  const getSavingsQuery = useGetSavings(startKey, pageSize, sortOrder, sortBy, savingGoalID);
 
   const savings: Saving[] | undefined = getSavingsQuery.data?.savings;
 

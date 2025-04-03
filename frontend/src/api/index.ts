@@ -14,7 +14,7 @@ import {
   getSavingGoals,
   updateSavingGoal,
 } from "./saving_goals.ts";
-import { createSaving, getSavings } from "./savings.ts";
+import { createSaving, getSavings, savingsKeys } from "./savings.ts";
 
 const api = {
   signUp,
@@ -26,6 +26,7 @@ const api = {
   createExpense,
   getPeriodStats,
   expensesQueryKeys,
+  savingsKeys,
   createIncome,
   getIncomeList,
   getPeriods,
