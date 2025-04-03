@@ -126,18 +126,29 @@ export function getMonthDifference(current: Date, deadline: Date): number {
   return deadline.getMonth() - current.getMonth() + years * 12;
 }
 
+/**
+ * Returns the new deadline of the saving goal based on the recurring amount.
+ *
+ * @param {number} recurringAmount - The new recurring amount of the saving goal.
+ * @param {SavingGoal} [savingGoal] - The saving goal object.
+ * @param {Date} [nowDate] - Optional parameter representing the current date.
+ * Used solely for testing to allow mocking of the current date.
+ * @returns {Date} - The estimated deadline to reach the saving goal.
+ */
 export function estimateDeadlineFromRecurringAmount(
-  recurringAmount: number,
-  savingGoal?: SavingGoal,
+    recurringAmount: number,
+    savingGoal?: SavingGoal,
+    nowDate?: Date
 ): Date {
-  if (!savingGoal) return new Date();
+  if (!nowDate) nowDate = new Date();
+  if (!savingGoal) return nowDate;
 
   const periodsToReachGoal = Math.ceil(
-    (savingGoal.target - savingGoal.progress) / recurringAmount,
+      (savingGoal.target - savingGoal.progress) / recurringAmount,
   );
 
-  const newDeadline = new Date();
-  console.log(newDeadline)
+  const newDeadline = nowDate;
   newDeadline.setMonth(newDeadline.getMonth() + periodsToReachGoal);
   return newDeadline;
 }
+
