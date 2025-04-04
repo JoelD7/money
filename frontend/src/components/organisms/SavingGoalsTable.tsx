@@ -297,8 +297,10 @@ export function SavingGoalsTable() {
       startKeysByPage.current = { 0: "" };
     }
 
+    const key = startKeysByPage.current[newModel.page];
+
     const nextKey = getSavingGoalsQuery.data?.next_key;
-    if (nextKey) {
+    if (nextKey && key === undefined) {
       startKeysByPage.current[newModel.page] = nextKey;
     }
 
