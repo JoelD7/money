@@ -12,13 +12,15 @@ import {
 import Grid from "@mui/material/Unstable_Grid2";
 import React, { FormEvent, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { queryKeys, useGetPeriodsInfinite } from "../../queries";
+import { useGetPeriodsInfinite } from "../../queries";
 import { Saving, SnackAlert } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import { Button } from "../atoms";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
+import { savingsKeys } from "../../api/savings.ts";
+import { savingGoalKeys } from "../../queries/saving_goals.ts";
 
 type NewSavingProps = {
   open: boolean;
@@ -68,10 +70,17 @@ export function NewSaving({
 
       onClose();
       queryClient
-        .invalidateQueries({ queryKey: [queryKeys.SAVINGS] })
+        .invalidateQueries({ queryKey: [...savingsKeys.all] })
         .then(() => {})
         .catch((e) => {
           console.error("Error invalidating savings query", e);
+        });
+
+      queryClient
+        .invalidateQueries({ queryKey: [...savingGoalKeys.all] })
+        .then(() => {})
+        .catch((e) => {
+          console.error("Error invalidating saving goals query", e);
         });
     },
     onError: (error) => {
