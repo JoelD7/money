@@ -154,6 +154,8 @@ export const SavingGoalSchema = z.object({
   progress: z.number(),
   deadline: z.string(),
   username: z.string(),
+  is_recurring: z.boolean().optional(),
+  recurring_amount: z.number().optional(),
 });
 
 export const SavingGoalsSchema = z.object({

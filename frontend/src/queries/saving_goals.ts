@@ -5,6 +5,8 @@ import { SavingGoalList } from "../types";
 
 export const savingGoalKeys = {
   all: [{ scope: "savingGoals" }],
+  single: (id: string) => [...savingGoalKeys.all, id],
+  infinite: () => [...savingGoalKeys.all, "infinite"],
   list: (pageSize?: number, startKey?: string, sortOrder?: string, sortBy?: string) => {
     return [
       {
@@ -34,12 +36,20 @@ export function useGetSavingGoals(
 export function useGetSavingGoalsInfinite() {
   return useInfiniteQuery({
     // Infinite queries must use a different key to regular queries because data is stored differently.
-    queryKey: ["savingGoals", "infinite"],
+    queryKey: savingGoalKeys.infinite(),
     initialPageParam: "",
     getNextPageParam: (lastPage: SavingGoalList) => {
       return lastPage.next_key !== "" ? lastPage.next_key : null;
     },
     queryFn: ({ pageParam }) => api.getSavingGoals(pageParam, 10, "", ""),
+    retry: queryRetryFn,
+  });
+}
+
+export function useGetSavingGoal(id: string) {
+  return useQuery({
+    queryKey: savingGoalKeys.single(id),
+    queryFn: () => api.getSavingGoal(id),
     retry: queryRetryFn,
   });
 }

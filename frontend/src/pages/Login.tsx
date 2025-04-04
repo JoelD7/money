@@ -40,7 +40,7 @@ export function Login() {
       navigate({ to: "/" })
         .then(() => {})
         .catch((err) => {
-          console.log("Error navigation to /", err);
+          console.error("Error navigation to /", err);
         });
     },
     onError: (error) => {

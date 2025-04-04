@@ -4,7 +4,6 @@ import { keys, utils } from "../utils";
 import { PeriodList, User } from "../types";
 import { INCOME, PERIOD, PERIOD_STATS, PERIODS, USER } from "./keys";
 import { queryRetryFn } from "./common.ts";
-import { queryKeys } from "./index.ts";
 
 export const QUERY_RETRIES = 2;
 
@@ -131,10 +130,11 @@ export function useGetSavings(
   pageSize: number = 10,
   sortOrder: string,
   sortBy: string,
+  savingGoalID?: string,
 ) {
   return useQuery({
-    queryKey: [queryKeys.SAVINGS, startKey, pageSize, sortOrder, sortBy],
-    queryFn: () => api.getSavings(startKey, pageSize, sortOrder, sortBy),
+    queryKey: api.savingsKeys.list(pageSize, startKey, sortOrder, sortBy, savingGoalID),
+    queryFn: api.getSavings,
     retry: queryRetryFn,
   });
 }

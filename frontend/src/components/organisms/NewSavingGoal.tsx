@@ -4,13 +4,14 @@ import Grid from "@mui/material/Unstable_Grid2";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs, { Dayjs } from "dayjs";
 import { Button } from "../atoms";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import { APIError, SavingGoal, SnackAlert } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import { Dialog } from "../molecules";
+import { savingGoalKeys } from "../../queries/saving_goals.ts";
 
 type NewSavingGoalProps = {
   open: boolean;
@@ -23,6 +24,8 @@ export function NewSavingGoal({ open, onClose, onAlert }: NewSavingGoalProps) {
   const [target, setTarget] = useState<number | null>(null);
   const [deadline, setDeadline] = useState<Dayjs | null>(dayjs());
 
+  const queryClient = useQueryClient();
+
   const createSavingGoalMutation = useMutation({
     mutationFn: api.createSavingGoal,
     onSuccess: () => {
@@ -32,6 +35,12 @@ export function NewSavingGoal({ open, onClose, onAlert }: NewSavingGoalProps) {
         title: "Saving goal created successfully",
       });
       onClose();
+      queryClient
+        .invalidateQueries({ queryKey: [...savingGoalKeys.all] })
+        .then(() => {})
+        .catch((e) => {
+          console.error("Error invalidating saving goals query", e);
+        });
     },
     onError: (error) => {
       if (error) {

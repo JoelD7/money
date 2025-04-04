@@ -33,7 +33,7 @@ export const Route = createFileRoute("/")({
         try {
             searchParams = expensesSearchSchema.parse(search)
         } catch (e) {
-            console.log("Search params parsing failed:", e)
+            console.error("Search params parsing failed:", e)
             throw new Error("Search params parsing failed")
         }
 

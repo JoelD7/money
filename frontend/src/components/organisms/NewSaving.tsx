@@ -1,4 +1,4 @@
-import { Dialog, ErrorSnackbar } from "../molecules";
+import { Dialog, ErrorSnackbar, SavingGoalSelector } from "../molecules";
 import {
   Box,
   Divider,
@@ -12,25 +12,29 @@ import {
 import Grid from "@mui/material/Unstable_Grid2";
 import React, { FormEvent, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import {
-  queryKeys,
-  useGetPeriodsInfinite,
-  useGetSavingGoalsInfinite,
-} from "../../queries";
-import { Saving, SavingGoal, SnackAlert } from "../../types";
+import { useGetPeriodsInfinite } from "../../queries";
+import { Saving, SnackAlert } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import { Button } from "../atoms";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
+import { savingsKeys } from "../../api/savings.ts";
+import { savingGoalKeys } from "../../queries/saving_goals.ts";
 
 type NewSavingProps = {
   open: boolean;
   onClose: () => void;
   onAlert: (alert?: SnackAlert) => void;
+  showSavingGoalSelector?: boolean;
 };
 
-export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
+export function NewSaving({
+  open,
+  onClose,
+  onAlert,
+  showSavingGoalSelector = true,
+}: NewSavingProps) {
   const labelId: string = uuidv4();
   const validationSchema = yup.object({
     amount: yup.number().required("Amount is required").moreThan(0, "Amount is required"),
@@ -54,18 +58,6 @@ export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
     return [];
   })();
 
-  const getSavingGoalsQuery = useGetSavingGoalsInfinite();
-  const savingGoals: SavingGoal[] = (() => {
-    if (getSavingGoalsQuery.data) {
-      return getSavingGoalsQuery.data.pages
-        .map((page) => page.saving_goals)
-        .flat()
-        .map((p) => p);
-    }
-
-    return [];
-  })();
-
   const queryClient = useQueryClient();
   const createSavingMutation = useMutation({
     mutationFn: api.createSaving,
@@ -78,10 +70,17 @@ export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
 
       onClose();
       queryClient
-        .invalidateQueries({ queryKey: [queryKeys.SAVINGS] })
+        .invalidateQueries({ queryKey: [...savingsKeys.all] })
         .then(() => {})
         .catch((e) => {
           console.error("Error invalidating savings query", e);
+        });
+
+      queryClient
+        .invalidateQueries({ queryKey: [...savingGoalKeys.all] })
+        .then(() => {})
+        .catch((e) => {
+          console.error("Error invalidating saving goals query", e);
         });
     },
     onError: (error) => {
@@ -111,21 +110,6 @@ export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
     }
   }
 
-  function handleSavingGoalsMenuScroll(e: React.UIEvent<HTMLDivElement, UIEvent>) {
-    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (
-      scrollTop + clientHeight >= scrollHeight - 5 &&
-      !(getSavingGoalsQuery.isFetching || getSavingGoalsQuery.isFetchingNextPage)
-    ) {
-      getSavingGoalsQuery
-        .fetchNextPage()
-        .then(() => {})
-        .catch((e) => {
-          console.error("Error fetching more saving goals", e);
-        });
-    }
-  }
-
   function createSaving(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -149,6 +133,10 @@ export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
       });
       console.error("Error validating saving", err.errors[0]);
     }
+  }
+
+  function onSavingGoalChange(savingGoalId: string) {
+    setSavingGoal(savingGoalId);
   }
 
   return (
@@ -226,42 +214,14 @@ export function NewSaving({ open, onClose, onAlert }: NewSavingProps) {
           </Grid>
 
           {/* Saving goal */}
-          <Grid xs={12}>
-            <FormControl sx={{ width: "100%" }}>
-              <InputLabel id={labelId}>Saving goal</InputLabel>
-
-              <Select
-                labelId={labelId}
-                id={"Goal"}
-                MenuProps={{
-                  slotProps: {
-                    paper: {
-                      onScroll: handleSavingGoalsMenuScroll,
-                    },
-                  },
-                  PaperProps: {
-                    sx: {
-                      maxHeight: 150,
-                    },
-                  },
-                }}
-                label={"Goal"}
-                value={savingGoals.length > 0 ? savingGoal : ""}
-                onChange={(e) => setSavingGoal(e.target.value)}
-              >
-                {Array.isArray(savingGoals) &&
-                  savingGoals.map((sg) => (
-                    <MenuItem
-                      key={sg.saving_goal_id}
-                      id={sg.saving_goal_id}
-                      value={sg.saving_goal_id}
-                    >
-                      {sg.name}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          {showSavingGoalSelector && (
+            <Grid xs={12}>
+              <SavingGoalSelector
+                savingGoalID={savingGoal}
+                onSavingGoalChange={onSavingGoalChange}
+              />
+            </Grid>
+          )}
 
           {/*Buttons*/}
           <Grid xs={12} alignSelf={"end"}>

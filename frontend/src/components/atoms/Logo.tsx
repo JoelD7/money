@@ -18,7 +18,7 @@ export function Logo({variant = "h4"}: LogoProps) {
                 //Reload the page to reset state
                 window.location.reload()
             }
-        }).catch((e) => console.log("[money] Couldn't navigate to home from logo", e))
+        }).catch((e) => console.error("[money] Couldn't navigate to home from logo", e))
     }
 
     return (

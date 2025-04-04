@@ -5,3 +5,5 @@ export { Error } from "./Error";
 export { Loading } from "./Loading";
 export { IncomeTable } from "./IncomeTable.tsx";
 export { Savings } from "./Savings.tsx";
+export { SavingGoalDetail } from "./SavingGoalDetail.tsx";
+export { NotFound } from "./NotFound";

@@ -12,20 +12,16 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as SignupImport } from './routes/signup'
-import { Route as SavingsImport } from './routes/savings'
 import { Route as LoginImport } from './routes/login'
 import { Route as IncomeImport } from './routes/income'
 import { Route as IndexImport } from './routes/index'
+import { Route as SavingsIndexImport } from './routes/savings.index'
+import { Route as SavingsGoalsSavingGoalIdImport } from './routes/savings.goals.$savingGoalId'
 
 // Create/Update Routes
 
 const SignupRoute = SignupImport.update({
   path: '/signup',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const SavingsRoute = SavingsImport.update({
-  path: '/savings',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -41,6 +37,16 @@ const IncomeRoute = IncomeImport.update({
 
 const IndexRoute = IndexImport.update({
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SavingsIndexRoute = SavingsIndexImport.update({
+  path: '/savings/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SavingsGoalsSavingGoalIdRoute = SavingsGoalsSavingGoalIdImport.update({
+  path: '/savings/goals/$savingGoalId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -60,12 +66,16 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
-    '/savings': {
-      preLoaderRoute: typeof SavingsImport
-      parentRoute: typeof rootRoute
-    }
     '/signup': {
       preLoaderRoute: typeof SignupImport
+      parentRoute: typeof rootRoute
+    }
+    '/savings/': {
+      preLoaderRoute: typeof SavingsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/savings/goals/$savingGoalId': {
+      preLoaderRoute: typeof SavingsGoalsSavingGoalIdImport
       parentRoute: typeof rootRoute
     }
   }
@@ -77,8 +87,9 @@ export const routeTree = rootRoute.addChildren([
   IndexRoute,
   IncomeRoute,
   LoginRoute,
-  SavingsRoute,
   SignupRoute,
+  SavingsIndexRoute,
+  SavingsGoalsSavingGoalIdRoute,
 ])
 
 /* prettier-ignore-end */
