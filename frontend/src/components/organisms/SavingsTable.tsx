@@ -1,10 +1,16 @@
-import {BackgroundRefetchErrorSnackbar, ErrorSnackbar, Table, TableHeader} from "../molecules";
+import {
+  BackgroundRefetchErrorSnackbar,
+  ErrorSnackbar,
+  Table,
+  TableHeader,
+} from "../molecules";
 import { useGetSavings } from "../../queries";
 import { useRef, useState } from "react";
 import { Saving } from "../../types";
 import {
   GridColDef,
   GridPaginationModel,
+  GridRenderCellParams,
   GridRowsProp,
   GridSortModel,
 } from "@mui/x-data-grid";
@@ -16,15 +22,17 @@ import {
   faCalendar,
   faClock,
   faDollarSign,
+  faUpRightFromSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
+import { Link } from "@tanstack/react-router";
+import { Button } from "../atoms";
 
 type SavingsTableProps = {
-    savingGoalID?: string
-}
+  savingGoalID?: string;
+};
 
-export function SavingsTable({savingGoalID}: SavingsTableProps) {
-
+export function SavingsTable({ savingGoalID }: SavingsTableProps) {
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
 
   const [sortOrder, setSortOrder] = useState("");
@@ -33,7 +41,13 @@ export function SavingsTable({savingGoalID}: SavingsTableProps) {
 
   const startKey: string = startKeysByPage.current[paginationModel.page];
   const pageSize: number = paginationModel.pageSize;
-  const getSavingsQuery = useGetSavings(startKey, pageSize, sortOrder, sortBy, savingGoalID);
+  const getSavingsQuery = useGetSavings(
+    startKey,
+    pageSize,
+    sortOrder,
+    sortBy,
+    savingGoalID,
+  );
 
   const savings: Saving[] | undefined = getSavingsQuery.data?.savings;
 
@@ -76,6 +90,7 @@ export function SavingsTable({savingGoalID}: SavingsTableProps) {
           icon={<FontAwesomeIcon color={Colors.BLUE} icon={faBullseye} />}
         />
       ),
+      renderCell: (params) => <GoalCell params={params} />,
     },
     {
       field: "created_date",
@@ -140,11 +155,11 @@ export function SavingsTable({savingGoalID}: SavingsTableProps) {
   return (
     <>
       {getSavingsQuery.isError && (
-          <ErrorSnackbar
-              openProp={true}
-              title={"Error fetching savings"}
-              message={getSavingsQuery.error.message}
-          />
+        <ErrorSnackbar
+          openProp={true}
+          title={"Error fetching savings"}
+          message={getSavingsQuery.error.message}
+        />
       )}
 
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
@@ -171,5 +186,38 @@ export function SavingsTable({savingGoalID}: SavingsTableProps) {
         noRowsMessage={"No savings found"}
       />
     </>
+  );
+}
+
+type goalCellProps = {
+  params: GridRenderCellParams;
+};
+
+function GoalCell({ params }: goalCellProps) {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div
+      className={"flex items-center justify-between"}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {params.value}
+
+      <div className={show ? "block" : "hidden"}>
+        <Link to="/savings/goals/$savingGoalId" params={{ savingGoalId: params.id }}>
+          <Button
+            size={"small"}
+            variant={"contained"}
+            sx={{
+              height: "fit-content",
+            }}
+            endIcon={<FontAwesomeIcon icon={faUpRightFromSquare} />}
+          >
+            Open
+          </Button>
+        </Link>
+      </div>
+    </div>
   );
 }
