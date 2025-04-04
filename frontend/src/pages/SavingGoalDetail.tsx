@@ -11,12 +11,13 @@ import {
   Snackbar,
 } from "../components";
 import { useGetSavingGoal } from "../queries";
-import { useParams } from "@tanstack/react-router";
-import { Error } from "./Error.tsx";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import Grid from "@mui/material/Unstable_Grid2";
 import { SavingGoal, SnackAlert } from "../types";
 import { Typography } from "@mui/material";
 import { useState } from "react";
+import { NotFound } from "./NotFound.tsx";
+import { Error } from "./Error.tsx";
 
 export function SavingGoalDetail() {
   // @ts-expect-error ...
@@ -32,6 +33,36 @@ export function SavingGoalDetail() {
 
   const getSavingGoalQuery = useGetSavingGoal(savingGoalId);
   const savingGoal: SavingGoal | undefined = getSavingGoalQuery.data;
+
+  const navigate = useNavigate();
+
+  if (getSavingGoalQuery.error?.response?.status === 404) {
+    return (
+      <Container>
+        <Navbar />
+        <NotFound
+          title={"Whoops..."}
+          subtitle={"Saving goal not found"}
+          body={"This saving goal has likely been deleted or it never existed."}
+        >
+          <Button
+            variant={"contained"}
+            sx={{
+              marginTop: "10px",
+              fontSize: "18px",
+            }}
+            onClick={() => {
+              navigate({
+                to: "/savings",
+              }).catch((e) => console.error("Error navigating to /savings", e));
+            }}
+          >
+            Go back to savings
+          </Button>
+        </NotFound>
+      </Container>
+    );
+  }
 
   if (getSavingGoalQuery.isError && !savingGoal) {
     return (
