@@ -3,6 +3,7 @@ import {
   AlertTitle,
   capitalize,
   CircularProgress as MuiCircularProgress,
+  IconButton,
   Snackbar,
   TextField,
   Tooltip,
@@ -13,6 +14,7 @@ import { Button, FontAwesomeIcon } from "../atoms";
 import {
   faCircleCheck,
   faCircleInfo,
+  faRotateLeft,
   faTriangleExclamation,
 } from "@fortawesome/free-solid-svg-icons";
 import { currencyFormatter, monthYearFormatter, utils } from "../../utils";
@@ -175,6 +177,14 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
     }
   }
 
+  function handleRecurringAmountReset() {
+    if (!savingGoal) return;
+
+    setToggleEditView(false);
+    setRecurringAmount(savingGoal.recurring_amount);
+    recurringAmountRef.current = savingGoal.recurring_amount ? savingGoal.recurring_amount : 1;
+  }
+
   if (getSavingGoalQuery.isPending || savingGoal === undefined) {
     return (
       <div className={`${containerClasses} items-center justify-center`}>
@@ -205,21 +215,35 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
       </div>
 
       {savingGoal.is_recurring && (
-        <div className={"flex w-full"}>
-          <TextField
-            margin={"normal"}
-            name={"amount"}
-            value={recurringAmount || ""}
-            type={"number"}
-            label={"Amount"}
-            variant={"outlined"}
-            required
-            sx={{
-              width: "50%",
-            }}
-            onChange={handleRecurringAmountChange}
-          />
-        </div>
+        <>
+          <div className={"flex w-full"}>
+            <TextField
+              margin={"normal"}
+              name={"amount"}
+              value={recurringAmount || ""}
+              type={"number"}
+              label={"Amount"}
+              variant={"outlined"}
+              required
+              sx={{
+                width: "50%",
+              }}
+              onChange={handleRecurringAmountChange}
+            />
+
+            <div className={"flex items-center"}>
+              <IconButton sx={{
+                marginTop: "10px",
+                "&.MuiIconButton-root ":{
+                  height: "50px",
+                  width: "50px",
+                },
+              }} onClick={() => handleRecurringAmountReset()}>
+                <FontAwesomeIcon icon={faRotateLeft} />
+              </IconButton>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Estimation box */}
@@ -446,7 +470,7 @@ function InfoBoxEdit(props: InfoBoxProps) {
             <Button
               onClick={onChangeDeadline}
               loading={loadingButton}
-              variant={"contained"}
+              variant={"outlined"}
             >{`Save & Change deadline`}</Button>
           </Tooltip>
         </div>
