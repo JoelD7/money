@@ -5,7 +5,7 @@ type CustomDataGridProps = {
   noRowsMessage?: string;
 } & DataGridProps;
 
-export function Table({ noRowsMessage, ...props }: CustomDataGridProps) {
+export function Table({ noRowsMessage, slots, slotProps,  ...props }: CustomDataGridProps) {
   const gridStyle = {
     "&.MuiDataGrid-root": {
       borderRadius: "1rem",
@@ -33,8 +33,10 @@ export function Table({ noRowsMessage, ...props }: CustomDataGridProps) {
       {...props}
       slots={{
         noRowsOverlay: NoGrid,
+        ...slots,
       }}
       slotProps={{
+        ...slotProps,
         noRowsOverlay: {
           sx: {
             height: "100px",
