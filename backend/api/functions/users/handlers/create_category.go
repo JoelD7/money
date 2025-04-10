@@ -97,9 +97,7 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 		return req.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusOK,
-	}, nil
+	return req.NewJSONResponse(http.StatusCreated, nil), nil
 }
 
 func validateCreateCategoryRequestBody(req *apigateway.Request) (*models.Category, error) {

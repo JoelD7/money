@@ -77,7 +77,5 @@ func (request *deleteSavingGoalRequest) process(ctx context.Context, req *apigat
 		return req.NewErrorResponse(err), nil
 	}
 
-	return &apigateway.Response{
-		StatusCode: http.StatusNoContent,
-	}, nil
+	return req.NewJSONResponse(http.StatusNoContent, nil), nil
 }
