@@ -232,15 +232,17 @@ export function RecurringSaving({ savingGoalID }: RecurringSavingProps) {
             />
 
             <div className={"flex items-center"}>
-              <IconButton sx={{
-                marginTop: "10px",
-                "&.MuiIconButton-root ":{
-                  height: "50px",
-                  width: "50px",
-                },
-              }} onClick={() => handleRecurringAmountReset()}>
-                <FontAwesomeIcon icon={faRotateLeft} />
-              </IconButton>
+              <Tooltip title={"Reset value"}>
+                <IconButton sx={{
+                  marginTop: "10px",
+                  "&.MuiIconButton-root ":{
+                    height: "50px",
+                    width: "50px",
+                  },
+                }} onClick={() => handleRecurringAmountReset()}>
+                  <FontAwesomeIcon icon={faRotateLeft} />
+                </IconButton>
+              </Tooltip>
             </div>
           </div>
         </>
