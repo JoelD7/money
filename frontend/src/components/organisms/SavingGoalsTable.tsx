@@ -263,7 +263,11 @@ export function SavingGoalsTable() {
       progressPercent = (goal.progress / goal.target) * 100;
     }
 
-    const toTransformX: number = 100 - progressPercent;
+    let toTransformX: number = 100 - progressPercent;
+    if (toTransformX < 0){
+      toTransformX = 0
+    }
+
     const progressGrow = keyframes`
     from {
       transform: translateX(-100%);
