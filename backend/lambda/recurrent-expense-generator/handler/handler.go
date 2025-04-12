@@ -98,7 +98,7 @@ func (req *CronRequest) finish() {
 	defer func() {
 		err := logger.Finish()
 		if err != nil {
-			panic(err)
+			logger.ErrPrintln("failed to finish logger", err)
 		}
 	}()
 

@@ -84,7 +84,7 @@ func (req *requestInfo) finish() {
 	defer func() {
 		err := logger.Finish()
 		if err != nil {
-			panic(err)
+			logger.ErrPrintln("failed to finish logger", err)
 		}
 	}()
 
@@ -127,7 +127,7 @@ func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCust
 	if err != nil {
 		logger.Error("token_verification_failed", err, req.getEventAsLoggerObject(event))
 
-		return events.APIGatewayCustomAuthorizerResponse{}, err
+		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
 	principalID := subject
