@@ -17,11 +17,12 @@ import (
 const savingGoalIDPrefix = "SVG"
 
 type DynamoRepository struct {
-	dynamoClient              *dynamodb.Client
-	tableName                 string
-	usernameDeadlineIndex     string
-	usernameTargetIndex       string
-	usernameSavingGoalIDIndex string
+	dynamoClient                  *dynamodb.Client
+	tableName                     string
+	usernameDeadlineIndex         string
+	usernameTargetIndex           string
+	usernameSavingGoalIDIndex     string
+	usernameNameSavingGoalIDIndex string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -36,6 +37,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.usernameDeadlineIndex = envConfig.UsernameDeadlineIndex
 	d.usernameTargetIndex = envConfig.UsernameTargetIndex
 	d.usernameSavingGoalIDIndex = envConfig.UsernameSavingGoalIDIndex
+	d.usernameNameSavingGoalIDIndex = envConfig.UsernameNameSavingGoalIDIndex
 
 	return d, nil
 }
@@ -55,6 +57,10 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.UsernameSavingGoalIDIndex == "" {
 		return fmt.Errorf("username saving goal id index is required")
+	}
+
+	if envConfig.UsernameNameSavingGoalIDIndex == "" {
+		return fmt.Errorf("username name saving goal id index is required")
 	}
 
 	return nil
@@ -196,6 +202,10 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 
 	if params.SortBy == string(models.SortParamTarget) {
 		input.IndexName = aws.String(d.usernameTargetIndex)
+	}
+
+	if params.SortBy == string(models.SortParamName) {
+		input.IndexName = aws.String(d.usernameNameSavingGoalIDIndex)
 	}
 
 	return keyConditionEx

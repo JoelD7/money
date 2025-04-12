@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
@@ -51,7 +52,7 @@ func BuildAmountKey(amount float64, id string) string {
 
 // BuildNameKey builds the name sort key, which is a combined string of the name and the item ID.
 func BuildNameKey(name, id string) string {
-	return fmt.Sprintf("%s:%s", name, id)
+	return fmt.Sprintf("%s:%s", strings.ToLower(name), id)
 }
 
 // EncodePaginationKey encodes the last evaluated key returned by Dynamo in a string format to be used in the next query
