@@ -30,9 +30,16 @@ import { Button } from "../atoms";
 
 type SavingsTableProps = {
   savingGoalID?: string;
+  /**
+   * @field showNotFoundErr - Indicates weather to show not found error in an alert or not. In some
+   * instances having no savings yet is expected, such as right after creating a saving goal and navigating to it.
+   *
+   * Defaults to true.
+   * */
+  showNotFoundErr?: boolean;
 };
 
-export function SavingsTable({ savingGoalID }: SavingsTableProps) {
+export function SavingsTable({ savingGoalID, showNotFoundErr = true }: SavingsTableProps) {
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
 
   const [sortOrder, setSortOrder] = useState("");
@@ -154,7 +161,7 @@ export function SavingsTable({ savingGoalID }: SavingsTableProps) {
 
   return (
     <>
-      {getSavingsQuery.isError && (
+      {getSavingsQuery.isError && showNotFoundErr && (
         <ErrorSnackbar
           openProp={true}
           title={"Error fetching savings"}
