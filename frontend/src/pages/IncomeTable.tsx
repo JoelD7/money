@@ -19,6 +19,7 @@ import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { v4 as uuidv4 } from "uuid";
+import { tableDateFormatter } from "../utils";
 
 export function IncomeTable() {
   const gridStyle = {
@@ -73,14 +74,7 @@ export function IncomeTable() {
       headerName: "Date",
       width: 200,
       valueFormatter: (params) => {
-        return new Intl.DateTimeFormat("en-GB", {
-          weekday: "short",
-          year: "numeric",
-          month: "numeric",
-          day: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        }).format(params);
+        return tableDateFormatter.format(params);
       },
     },
   ];

@@ -16,7 +16,7 @@ import { CategorySelect } from "./CategorySelect.tsx";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useGetExpenses } from "../../queries";
 import { ErrorSnackbar, Table } from "../molecules";
-import { utils } from "../../utils/index.ts";
+import {tableDateFormatter} from "../../utils";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
@@ -80,7 +80,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
       field: "created_date",
       headerName: "Date",
       width: 200,
-      valueFormatter: (params) => utils.tableDateFormatter.format(params),
+      valueFormatter: (params) => tableDateFormatter.format(params),
     },
   ];
 
