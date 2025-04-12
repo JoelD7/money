@@ -1,4 +1,12 @@
-import { Box, Divider, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Divider,
+  FormControlLabel,
+  FormGroup,
+  Switch,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { FormEvent, useState } from "react";
 import Grid from "@mui/material/Unstable_Grid2";
 import { DatePicker } from "@mui/x-date-pickers";
@@ -22,6 +30,8 @@ type NewSavingGoalProps = {
 export function NewSavingGoal({ open, onClose, onAlert }: NewSavingGoalProps) {
   const [name, setName] = useState<string>("");
   const [target, setTarget] = useState<number | null>(null);
+  const [recurringAmount, setRecurringAmount] = useState<number | null>(null);
+  const [recurringChecked, setRecurringChecked] = useState<boolean>(false);
   const [deadline, setDeadline] = useState<Dayjs | null>(dayjs());
 
   const queryClient = useQueryClient();
@@ -71,6 +81,11 @@ export function NewSavingGoal({ open, onClose, onAlert }: NewSavingGoalProps) {
       progress: 0,
       username: "",
     };
+
+    if (recurringChecked) {
+      savingGoal.is_recurring = true;
+      savingGoal.recurring_amount = recurringAmount ? recurringAmount : 0;
+    }
 
     try {
       validationSchema.validateSync(savingGoal);
@@ -130,12 +145,43 @@ export function NewSavingGoal({ open, onClose, onAlert }: NewSavingGoalProps) {
           {/*Deadline*/}
           <Grid xs={6}>
             <DatePicker
-              label="Date"
+              label="Deadline"
               value={deadline}
               disablePast
+              views={["year", "month"]}
               onChange={(newDate) => setDeadline(newDate)}
               sx={{ width: "100%" }}
             />
+          </Grid>
+
+          {/*Recurring goal switch*/}
+          <Grid xs={6}>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={recurringChecked}
+                    onChange={(e) => setRecurringChecked(e.target.checked)}
+                  />
+                }
+                label="Recurring"
+              />
+            </FormGroup>
+
+            {recurringChecked && (
+              <TextField
+                margin={"normal"}
+                sx={{ marginTop: "0px" }}
+                name={"Recurring amount"}
+                value={recurringAmount || ""}
+                fullWidth={true}
+                type={"number"}
+                label={"Recurring amount"}
+                variant={"outlined"}
+                required
+                onChange={(e) => setRecurringAmount(Number(e.target.value))}
+              />
+            )}
           </Grid>
 
           {/*Buttons*/}
