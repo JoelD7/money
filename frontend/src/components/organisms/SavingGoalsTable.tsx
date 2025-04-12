@@ -3,6 +3,7 @@ import {
   AlertTitle,
   Box,
   capitalize,
+  IconButton,
   keyframes,
   LinearProgress,
   linearProgressClasses,
@@ -10,8 +11,8 @@ import {
   Typography,
 } from "@mui/material";
 import { Button } from "../atoms";
-import { Table, TableHeader } from "../molecules";
-import { useRef, useState } from "react";
+import { DeleteSavingGoal, Table, TableHeader } from "../molecules";
+import { MouseEvent, useRef, useState } from "react";
 import { useGetSavingGoals } from "../../queries";
 import { PaginationModel, SavingGoal, SnackAlert } from "../../types";
 import {
@@ -19,6 +20,7 @@ import {
   GridColumnHeaderParams,
   GridPaginationModel,
   GridRenderCellParams,
+  GridRowId,
   GridRowsProp,
   GridSortModel,
 } from "@mui/x-data-grid";
@@ -29,6 +31,7 @@ import { NewSavingGoal } from "./NewSavingGoal.tsx";
 import { faUpRightFromSquare } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link } from "@tanstack/react-router";
+import { faTrash } from "@fortawesome/free-solid-svg-icons/faTrash";
 
 export function SavingGoalsTable() {
   const headerIconSize = 15;
@@ -60,6 +63,9 @@ export function SavingGoalsTable() {
     type: "success",
     title: "",
   });
+  const [hoveredRow, setHoveredRow] = useState<GridRowId>("0");
+  const [savingGoalToDelete, setSavingGoalToDelete] = useState<SavingGoal | null>(null);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
 
   const startKey: string | undefined = startKeysByPage.current[paginationModel.page];
   const pageSize: number | undefined = paginationModel.pageSize;
@@ -108,10 +114,39 @@ export function SavingGoalsTable() {
     {
       field: "deadline",
       headerName: "Deadline",
+      resizable: false,
       flex: 0.7,
       minWidth: 150,
       renderHeader: renderDeadlineHeader,
       valueFormatter: (params) => dateFormatter.format(params),
+    },
+    {
+      field: "actions",
+      flex: 0.1,
+      minWidth: 50,
+      sortable: false,
+      resizable: false,
+      disableColumnMenu: true,
+
+      renderHeader: () => null,
+      renderCell: (params) => {
+        const isVisible = hoveredRow === params.id;
+        return (
+          <>
+            {isVisible && (
+              <div key={params.id}>
+                <IconButton
+                  title={"Delete"}
+                  size={"small"}
+                  onClick={() => handleDeleteSavingGoal(params.id)}
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </IconButton>
+              </div>
+            )}
+          </>
+        );
+      },
     },
   ];
 
@@ -331,6 +366,29 @@ export function SavingGoalsTable() {
     }
   }
 
+  function handleMouseEnter(event: MouseEvent<HTMLDivElement>) {
+    const rowID = event.currentTarget.getAttribute("data-id");
+    if (rowID !== null) {
+      setHoveredRow(rowID);
+    }
+  }
+
+  function handleMouseLeave() {
+    setHoveredRow("");
+  }
+
+  function handleDeleteSavingGoal(rowID: GridRowId) {
+    const savingGoal: SavingGoal | undefined = savingGoalsByID.get(rowID as string);
+    if (savingGoal) {
+      setSavingGoalToDelete(savingGoal);
+      setOpenDeleteDialog(true);
+    }
+  }
+
+  function handleDeleteSavingGoalDialogClose() {
+    setOpenDeleteDialog(false);
+  }
+
   return (
     <>
       <Snackbar
@@ -368,6 +426,12 @@ export function SavingGoalsTable() {
             pageSizeOptions={[5, 10, 25]}
             paginationMode={"server"}
             onPaginationModelChange={onPaginationModelChange}
+            slotProps={{
+              row: {
+                onMouseEnter: handleMouseEnter,
+                onMouseLeave: handleMouseLeave,
+              },
+            }}
             paginationMeta={{
               hasNextPage: getSavingGoalsQuery.data?.next_key !== "",
             }}
@@ -385,6 +449,15 @@ export function SavingGoalsTable() {
         }}
         onAlert={handleAlert}
       />
+
+      {savingGoalToDelete && (
+        <DeleteSavingGoal
+          open={openDeleteDialog}
+          onClose={handleDeleteSavingGoalDialogClose}
+          savingGoal={savingGoalToDelete}
+          onAlert={(alert)=>handleAlert(alert)}
+        />
+      )}
     </>
   );
 }

@@ -10,6 +10,7 @@ import { getPeriod, getPeriods } from "./period.ts";
 import { createIncome, getIncomeList } from "./income.ts";
 import {
   createSavingGoal,
+  deleteSavingGoal,
   getSavingGoal,
   getSavingGoals,
   updateSavingGoal,
@@ -36,6 +37,7 @@ const api = {
   createSaving,
   getSavingGoal,
   updateSavingGoal,
+  deleteSavingGoal,
 };
 
 export default api;

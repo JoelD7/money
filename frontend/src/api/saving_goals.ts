@@ -67,3 +67,12 @@ export function updateSavingGoal(savingGoal: SavingGoal) {
     },
   );
 }
+
+export function deleteSavingGoal(id: string) {
+  return axiosClient.delete(API_BASE_URL + `/savings/goals/${id}`, {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+    },
+  });
+}

@@ -136,6 +136,10 @@ func (m *Mock) DeleteSaving(ctx context.Context, savingID, email string) error {
 	return nil
 }
 
+func (m *Mock) BatchCreateSavings(ctx context.Context, savings []*models.Saving) error {
+	return nil
+}
+
 func GetDummySavings() []*models.Saving {
 	return []*models.Saving{
 		{

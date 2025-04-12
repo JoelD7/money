@@ -38,18 +38,32 @@ export function GoalDetailCard() {
       <Grid container height={"100%"}>
         {/*Title*/}
         <Grid xs={12}>
-          <div className={"flex items-center w-full h-fit"}>
-            <Typography variant={"h5"} sx={{ fontWeight: "bold" }}>
-              {savingGoal.name}
-            </Typography>
+          <div>
+            <Grid container>
+              <Grid xs={6}>
+                <Typography variant={"h5"} sx={{ fontWeight: "bold" }}>
+                  {savingGoal.name}
+                </Typography>
+              </Grid>
 
-            <IconButton sx={{ marginLeft: "auto", marginRight: "5px" }} title={"Delete"}>
-              <FontAwesomeIcon icon={faTrash} />
-            </IconButton>
+              <Grid xs={6}>
+                <div className={"flex items-end"}>
+                  <IconButton
+                    sx={{ marginLeft: "auto", marginRight: "5px", height: "50px", width: "50px" }}
+                    title={"Delete"}
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </IconButton>
 
-            <Button variant={"outlined"} startIcon={<FontAwesomeIcon icon={faPencil} />}>
-              Edit
-            </Button>
+                  <Button
+                    variant={"outlined"}
+                    startIcon={<FontAwesomeIcon icon={faPencil} />}
+                  >
+                    Edit
+                  </Button>
+                </div>
+              </Grid>
+            </Grid>
           </div>
         </Grid>
 

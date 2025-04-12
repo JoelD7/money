@@ -118,16 +118,18 @@ export function SavingGoalDetail() {
         </Grid>
       </Grid>
 
-      <NewSaving
-        key={key}
-        open={openNewSaving}
-        showSavingGoalSelector={false}
-        onClose={() => {
-          setOpenNewSaving(false);
-          setKey(key + 1);
-        }}
-        onAlert={handleAlert}
-      />
+      {savingGoal && (
+        <NewSaving
+          key={key}
+          open={openNewSaving}
+          savingGoalId={savingGoal.saving_goal_id}
+          onClose={() => {
+            setOpenNewSaving(false);
+            setKey(key + 1);
+          }}
+          onAlert={handleAlert}
+        />
+      )}
     </Container>
   );
 }

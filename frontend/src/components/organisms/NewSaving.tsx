@@ -26,16 +26,17 @@ type NewSavingProps = {
   open: boolean;
   onClose: () => void;
   onAlert: (alert?: SnackAlert) => void;
-  showSavingGoalSelector?: boolean;
+  savingGoalId?: string;
 };
 
 export function NewSaving({
   open,
   onClose,
   onAlert,
-  showSavingGoalSelector = true,
+                            savingGoalId,
 }: NewSavingProps) {
   const labelId: string = uuidv4();
+  const showSavingGoalSelector: boolean = savingGoalId ? savingGoalId === "" : true;
   const validationSchema = yup.object({
     amount: yup.number().required("Amount is required").moreThan(0, "Amount is required"),
     period: yup.string().required("Period is required"),
@@ -44,7 +45,7 @@ export function NewSaving({
 
   const [period, setPeriod] = useState<string>("");
   const [amount, setAmount] = useState<number | null>(null);
-  const [savingGoal, setSavingGoal] = useState<string>("");
+  const [savingGoal, setSavingGoal] = useState<string>(savingGoalId ? savingGoalId : "");
 
   const getPeriodsQuery = useGetPeriodsInfinite();
   const periods: string[] = (() => {
