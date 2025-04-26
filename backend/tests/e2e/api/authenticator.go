@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func (e *E2ERequester) SignUp(username, fullname, password string, t *testing.T) (statusCode int, err error) {
+func (e *E2ERequester) SignUp(username, fullname, password string, headers map[string]string, t *testing.T) (statusCode int, err error) {
 	isUserCreated := false
 
 	t.Cleanup(func() {
@@ -31,6 +31,10 @@ func (e *E2ERequester) SignUp(username, fullname, password string, t *testing.T)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(requestBody))
 	if err != nil {
 		return 0, fmt.Errorf("sign up request building failed: %w", err)
+	}
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
 	}
 
 	res, err := e.client.Do(req)
