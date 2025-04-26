@@ -78,7 +78,16 @@ var (
 		models.ErrInvalidSavingGoalDeadline:        {HTTPCode: http.StatusBadRequest, Message: "Invalid saving goal deadline. Deadline must be in the future"},
 		models.ErrSavingGoalsNotFound:              {HTTPCode: http.StatusNotFound, Message: "Not found"},
 		models.ErrMissingSavingGoalRecurringAmount: {HTTPCode: http.StatusBadRequest, Message: "Missing saving goal recurring amount"},
+		models.ErrMissingIdempotencyKey:            {HTTPCode: http.StatusBadRequest, Message: "Missing Idempotency-Key header"},
 	}
+)
+
+const (
+	// Header name of the idempotency key.
+	//
+	// API Gateway is case-sensitive in header names; it doesn't normalize the casing so I can't normalize it on the
+	// code(changing it to lowercase for example). This is why the code can't support random casing, hence why we need to force it.
+	idempotencyKeyHeaderName = "Idempotency-Key"
 )
 
 type Response events.APIGatewayProxyResponse
@@ -249,4 +258,15 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 		SortType:     req.QueryStringParameters["sort_order"],
 		SavingGoalID: req.QueryStringParameters["saving_goal_id"],
 	}, nil
+}
+
+// Validate does general validations on the APIGW request that apply to all models. Call this function on controllers,
+// before processing the request.
+func (req *Request) Validate() error {
+	_, ok := req.Headers[idempotencyKeyHeaderName]
+	if !ok {
+		return models.ErrMissingIdempotencyKey
+	}
+
+	return nil
 }

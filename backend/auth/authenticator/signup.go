@@ -65,7 +65,14 @@ func (req *requestSignUpHandler) finish() {
 }
 
 func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
-	reqBody, err := validateSingUpInput(request)
+	err := request.Validate()
+	if err != nil {
+		req.err = err
+		logger.Error("http_request_validation_failed", err, request)
+		return request.NewErrorResponse(err), nil
+	}
+
+	reqBody, err := validateSignUpInput(request)
 	if err != nil {
 		req.err = err
 		logger.Error("validate_input_failed", err, request)
@@ -104,7 +111,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 	return request.NewJSONResponse(http.StatusCreated, string(data), apigateway.Header{Key: "Set-Cookie", Value: cookieStr}), nil
 }
 
-func validateSingUpInput(request *apigateway.Request) (*signUpBody, error) {
+func validateSignUpInput(request *apigateway.Request) (*signUpBody, error) {
 	reqBody := new(signUpBody)
 
 	err := json.Unmarshal([]byte(request.Body), reqBody)
