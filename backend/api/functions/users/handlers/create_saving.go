@@ -71,6 +71,13 @@ func CreateSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfi
 }
 
 func (request *createSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	err := req.Validate()
+	if err != nil {
+		request.err = err
+		logger.Error("http_request_validation_failed", err, req)
+		return req.NewErrorResponse(err), nil
+	}
+
 	userSaving, err := validateBody(req)
 	if err != nil {
 		logger.Error("validate_request_body_failed", err, req)

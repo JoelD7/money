@@ -65,6 +65,13 @@ func CreateCategoryHandler(ctx context.Context, envConfig *models.EnvironmentCon
 }
 
 func (request *createCategoryRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	err := req.Validate()
+	if err != nil {
+		request.err = err
+		logger.Error("http_request_validation_failed", err, req)
+		return req.NewErrorResponse(err), nil
+	}
+
 	category, err := validateCreateCategoryRequestBody(req)
 	if err != nil {
 		logger.Error("request_body_validation_failed", err, req)
