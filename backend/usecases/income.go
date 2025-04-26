@@ -8,22 +8,6 @@ import (
 	"time"
 )
 
-type IncomeRepository interface {
-	CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error)
-
-	GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error)
-	GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
-	GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
-	GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error)
-	GetAllIncomePeriods(ctx context.Context, username string) ([]string, error)
-}
-
-type IncomePeriodCacheManager interface {
-	AddIncomePeriods(ctx context.Context, username string, periods []string) error
-	GetIncomePeriods(ctx context.Context, username string) ([]string, error)
-	DeleteIncomePeriods(ctx context.Context, username string, periods ...string) error
-}
-
 func NewIncomeCreator(im IncomeRepository, pm PeriodManager) func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
 	return func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
 		err := validateIncomePeriod(ctx, username, income, pm)

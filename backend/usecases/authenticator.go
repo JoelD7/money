@@ -34,29 +34,6 @@ var (
 	errInvalidTokenLength = apigateway.NewError("invalid token length", http.StatusUnauthorized)
 )
 
-type UserCreator interface {
-	CreateUser(ctx context.Context, fullName, username, password string) error
-}
-
-type UserUpdater interface {
-	UpdateUser(ctx context.Context, user *models.User) error
-}
-
-type Logger interface {
-	Warning(eventName string, err error, fields ...models.LoggerField)
-	Error(eventName string, err error, fields ...models.LoggerField)
-	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField
-}
-
-type InvalidTokenCache interface {
-	GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error)
-	AddInvalidToken(ctx context.Context, username, token string, ttl int64) error
-}
-
-type SecretManager interface {
-	GetSecret(ctx context.Context, name string) (string, error)
-}
-
 // NewUserCreator creates a new user with password.
 func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName, username, password string) (*models.User, error) {
 	return func(ctx context.Context, fullName, username, password string) (*models.User, error) {

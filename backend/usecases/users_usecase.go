@@ -17,17 +17,6 @@ const (
 	categoryPrefix = "CTG"
 )
 
-type UserManager interface {
-	CreateUser(ctx context.Context, u *models.User) (*models.User, error)
-	GetUser(ctx context.Context, username string) (*models.User, error)
-	UpdateUser(ctx context.Context, user *models.User) error
-	DeleteUser(ctx context.Context, username string) error
-}
-
-type IDGenerator interface {
-	GenerateID(prefix string) string
-}
-
 func NewUserGetter(u UserManager, i IncomeRepository, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
 		user, err := u.GetUser(ctx, username)

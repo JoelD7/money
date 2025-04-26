@@ -8,28 +8,6 @@ import (
 	"time"
 )
 
-type ExpenseManager interface {
-	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
-	BatchCreateExpenses(ctx context.Context, expenses []*models.Expense) error
-
-	GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
-	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
-	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error)
-
-	UpdateExpense(ctx context.Context, expense *models.Expense) error
-	BatchUpdateExpenses(ctx context.Context, expenses []*models.Expense) error
-
-	DeleteExpense(ctx context.Context, expenseID, username string) error
-}
-
-type ExpenseRecurringManager interface {
-	DeleteExpenseRecurring(ctx context.Context, expenseRecurringID, username string) error
-}
-
 func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
 		err := validateExpensePeriod(ctx, expense, username, pm)

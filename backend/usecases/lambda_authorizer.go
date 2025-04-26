@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"net/http"
 	"time"
 
 	"github.com/gbrlsnchs/jwt/v3"
@@ -23,10 +22,6 @@ var (
 	invalidJWTErrs = []error{jwt.ErrAudValidation, jwt.ErrExpValidation, jwt.ErrIatValidation, jwt.ErrIssValidation,
 		jwt.ErrJtiValidation, jwt.ErrNbfValidation, jwt.ErrSubValidation}
 )
-
-type JWKSGetter interface {
-	Get(url string) (resp *http.Response, err error)
-}
 
 // NewTokenVerifier validates a JWT against the authentication server. Returns the subject of the token if successful.
 func NewTokenVerifier(jwksGetter JWKSGetter, secretManager SecretManager, tokenCache InvalidTokenCache) func(ctx context.Context, token string) (string, error) {
