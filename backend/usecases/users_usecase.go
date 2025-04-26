@@ -127,6 +127,12 @@ func getAllIncomeForPeriod(ctx context.Context, username string, period string, 
 	return income, nil
 }
 
+func NewUserDeleter(u UserManager) func(ctx context.Context, username string) error {
+	return func(ctx context.Context, username string) error {
+		return u.DeleteUser(ctx, username)
+	}
+}
+
 func NewCategoryCreator(u UserManager) func(ctx context.Context, username string, category *models.Category) error {
 	return func(ctx context.Context, username string, category *models.Category) error {
 		user, err := u.GetUser(ctx, username)

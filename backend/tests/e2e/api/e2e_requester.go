@@ -29,7 +29,7 @@ type ErrorResponse struct {
 	Message  string `json:"message"`
 }
 
-type loginResponse struct {
+type authResponse struct {
 	AccessToken string `json:"accessToken"`
 }
 
@@ -82,7 +82,7 @@ func (e *E2ERequester) login() error {
 		return fmt.Errorf("login request failed with status: %d", res.StatusCode)
 	}
 
-	var loginRes loginResponse
+	var loginRes authResponse
 	err = json.Unmarshal(responseBody, &loginRes)
 	if err != nil {
 		return fmt.Errorf("login response unmarshalling failed: %w", err)

@@ -89,4 +89,9 @@ var (
 	ErrInvalidSavingGoalTarget          = errors.New("goal target must be greater than 0")
 	ErrInvalidSavingGoalDeadline        = errors.New("deadline must be in the future")
 	ErrMissingSavingGoalRecurringAmount = errors.New("missing recurring amount")
+
+	// ErrUsernameDeleteMismatch error when the username in the authorization header doesn't match with the username in
+	// the path parameter of an endpoint like /users/{username}. This error is currently returned when a user tries to
+	// delete another user.
+	ErrUsernameDeleteMismatch = errors.New("authorization username doesn't match with path parameter username")
 )
