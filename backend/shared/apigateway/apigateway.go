@@ -85,9 +85,6 @@ var (
 
 const (
 	// Header name of the idempotency key.
-	//
-	// API Gateway is case-sensitive in header names; it doesn't normalize the casing so I can't normalize it on the
-	// code(changing it to lowercase for example). This is why the code can't support random casing, hence why we need to force it.
 	idempotencyKeyHeaderName = "Idempotency-Key"
 )
 
@@ -266,10 +263,10 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 // Validate does general validations on the APIGW request that apply to all models. Call this function on controllers,
 // before processing the request.
 func (req *Request) Validate() error {
-	_, ok := req.Headers[idempotencyKeyHeaderName]
-	if !ok {
-		return models.ErrMissingIdempotencyKey
+	for headerName := range req.Headers {
+		if strings.EqualFold(headerName, idempotencyKeyHeaderName) {
+			return nil
+		}
 	}
-
-	return nil
+	return models.ErrMissingIdempotencyKey
 }
