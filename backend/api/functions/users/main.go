@@ -23,6 +23,11 @@ func main() {
 	rootRouter.Route("/", func(r *router.Router) {
 		r.Route("/users", func(r *router.Router) {
 			r.Get("/", handlers.GetUserHandler)
+
+			r.Route("/{username}", func(r *router.Router) {
+				r.Delete("/", handlers.DeleteUserHandler)
+			})
+
 			r.Route("/categories", func(r *router.Router) {
 				r.Get("/", handlers.GetCategoriesHandler)
 				r.Post("/", handlers.CreateCategoryHandler)

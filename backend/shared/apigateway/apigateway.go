@@ -78,6 +78,7 @@ var (
 		models.ErrInvalidSavingGoalDeadline:        {HTTPCode: http.StatusBadRequest, Message: "Invalid saving goal deadline. Deadline must be in the future"},
 		models.ErrSavingGoalsNotFound:              {HTTPCode: http.StatusNotFound, Message: "Not found"},
 		models.ErrMissingSavingGoalRecurringAmount: {HTTPCode: http.StatusBadRequest, Message: "Missing saving goal recurring amount"},
+		models.ErrUsernameDeleteMismatch:           {HTTPCode: http.StatusForbidden, Message: "You do not have permissions to delete this user"},
 		models.ErrMissingIdempotencyKey:            {HTTPCode: http.StatusBadRequest, Message: "Missing Idempotency-Key header"},
 	}
 )
@@ -229,6 +230,8 @@ func multiValueParamsToString(params map[string][]string) string {
 	return sb.String()
 }
 
+// GetUsernameFromContext returns the username associated with this request. This is extracted from the access token on
+// the authorizer lambda.
 func GetUsernameFromContext(req *Request) (string, error) {
 	username, ok := req.RequestContext.Authorizer["username"].(string)
 	if !ok || username == "" {

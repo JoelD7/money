@@ -23,6 +23,10 @@ var (
 	// was denied. If we were to state that 'this token is malformed,' it could signal an attacker that the denial was
 	// linked to the token's structure or content, inadvertently assisting him.
 	ErrMalformedToken = errors.New("invalid token")
+	// ErrUsernameDeleteMismatch error when the username in the authorization header doesn't match with the username in
+	// the path parameter of an endpoint like /users/{username}. This error is currently returned when a user tries to
+	// delete another user.
+	ErrUsernameDeleteMismatch = errors.New("authorization username doesn't match with path parameter username")
 
 	// Income
 	ErrIncomeNotFound        = errors.New("user income not found")
