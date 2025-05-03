@@ -8,7 +8,9 @@ type EnvironmentConfiguration struct {
 	LogstashHost string `json:"LOGSTASH_HOST"`
 	LogstashPort string `json:"LOGSTASH_PORT"`
 
-	RedisURL   string `json:"REDIS_URL"`
+	RedisURL                      string `json:"REDIS_URL"`
+	IdempotencyKeyCacheTTLSeconds int64  `json:"IDEMPOTENCY_KEY_CACHE_TTL_SECONDS"`
+
 	CorsOrigin string `json:"CORS_ORIGIN"`
 
 	AccessTokenDuration  string `json:"ACCESS_TOKEN_DURATION"`

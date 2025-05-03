@@ -89,6 +89,7 @@ func getEnvironmentConfig() *models.EnvironmentConfiguration {
 		UsernameAmountIndex:           GetString("USERNAME_AMOUNT_INDEX", ""),
 		UsernameSavingGoalIDIndex:     GetString("USERNAME_SAVING_GOAL_ID_INDEX", ""),
 		UsernameNameSavingGoalIDIndex: GetString("USERNAME_NAME_SAVING_GOAL_ID_INDEX", ""),
+		IdempotencyKeyCacheTTLSeconds: int64(GetInt("IDEMPOTENCY_KEY_CACHE_TTL_SECONDS", 86400)),
 	}
 }
 

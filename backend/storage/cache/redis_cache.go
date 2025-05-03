@@ -19,6 +19,10 @@ var (
 	redisURL      string
 )
 
+const (
+	defaultIdempotencyCacheTTLSeconds = 60 * 60 * 24 // 1 day
+)
+
 type RedisCache struct {
 	client *redis.Client
 }
@@ -139,6 +143,18 @@ func (r *RedisCache) DeleteIncomePeriods(ctx context.Context, username string, p
 	}
 
 	return nil
+}
+
+func (r *RedisCache) AddResource(ctx context.Context, key string, resource interface{}, ttl int64) error {
+	if ttl == 0 {
+		ttl = defaultIdempotencyCacheTTLSeconds
+	}
+
+	return r.client.SetNX(ctx, key, resource, time.Duration(ttl)*time.Second).Err()
+}
+
+func (r *RedisCache) GetResource(ctx context.Context, key string) (string, error) {
+	return r.client.Get(ctx, key).Result()
 }
 
 func buildKey(keyPrefix string, keys ...string) string {

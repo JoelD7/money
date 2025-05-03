@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	emailRegex   = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
 	passwordCost = bcrypt.DefaultCost
 )
 
@@ -35,8 +34,8 @@ var (
 )
 
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName, username, password string) (*models.User, error) {
-	return func(ctx context.Context, fullName, username, password string) (*models.User, error) {
+func NewUserCreator(userManager UserManager, cache ResourceCacheManager, envConfig models.EnvironmentConfiguration) func(ctx context.Context, fullName, username, password, idempotencyKey string) (*models.User, error) {
+	return func(ctx context.Context, fullName, username, password, idempotencyKey string) (*models.User, error) {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 		if err != nil {
 			logger.Error("password_hashing_failed", err, nil)
@@ -53,17 +52,27 @@ func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName,
 			UpdatedDate: time.Now(),
 		}
 
-		createdUser, err := userManager.CreateUser(ctx, user)
-		if err != nil && errors.Is(err, models.ErrExistingUser) {
-			logger.Warning("user_creation_failed", err, nil)
+		idempotencyManager := NewIdempotencyManager(cache)
+		userResource, err := idempotencyManager.CreateResource(ctx, idempotencyKey, envConfig.IdempotencyKeyCacheTTLSeconds, func() (any, error) {
+			dbCreatedUser, persistErr := userManager.CreateUser(ctx, user)
+			if persistErr != nil && errors.Is(persistErr, models.ErrExistingUser) {
+				logger.Warning("user_creation_failed", persistErr, nil)
 
-			return nil, err
-		}
+				return nil, persistErr
+			}
 
-		if err != nil {
-			logger.Error("sign_up_process_failed", err, nil)
+			if persistErr != nil {
+				logger.Error("sign_up_process_failed", persistErr, nil)
 
-			return nil, err
+				return nil, persistErr
+			}
+
+			return dbCreatedUser, nil
+		})
+
+		createdUser, ok := userResource.(*models.User)
+		if !ok {
+			return nil, models.ErrUnexpectedTypeAssertion
 		}
 
 		return createdUser, nil

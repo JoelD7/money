@@ -49,6 +49,8 @@ var (
 	// This is important as it breaks pagination.
 	ErrIndexKeysNotFound     = errors.New("index keys not found")
 	ErrMissingIdempotencyKey = errors.New("missing idempotency key header")
+	// ErrUnexpectedTypeAssertion error when the type of a resource obtained from the idempotency manager is unexpected.
+	ErrUnexpectedTypeAssertion = errors.New("unexpected type assertion in idempotency manager")
 
 	// Saving
 	ErrMissingSavingID      = errors.New("missing saving id")

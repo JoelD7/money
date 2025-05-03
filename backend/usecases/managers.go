@@ -66,6 +66,11 @@ type IncomePeriodCacheManager interface {
 	DeleteIncomePeriods(ctx context.Context, username string, periods ...string) error
 }
 
+type ResourceCacheManager interface {
+	AddResource(ctx context.Context, key string, resource interface{}, ttl int64) error
+	GetResource(ctx context.Context, key string) (string, error)
+}
+
 type JWKSGetter interface {
 	Get(url string) (resp *http.Response, err error)
 }

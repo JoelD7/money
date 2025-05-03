@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
@@ -19,10 +20,11 @@ var signUpRequest *requestSignUpHandler
 var signUpOnce sync.Once
 
 type requestSignUpHandler struct {
-	startingTime   time.Time
-	err            error
-	userRepo       users.Repository
-	secretsManager secrets.SecretManager
+	startingTime     time.Time
+	err              error
+	userRepo         users.Repository
+	secretsManager   secrets.SecretManager
+	idempotenceCache cache.IdempotenceCacheManager
 }
 
 func signUpHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration, request *apigateway.Request) (*apigateway.Response, error) {
@@ -40,7 +42,7 @@ func signUpHandler(ctx context.Context, envConfig *models.EnvironmentConfigurati
 	}
 	defer signUpRequest.finish()
 
-	return signUpRequest.processSignUp(ctx, request)
+	return signUpRequest.processSignUp(ctx, request, envConfig)
 }
 
 func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -54,6 +56,8 @@ func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, envConfi
 			return
 		}
 		req.secretsManager = secrets.NewAWSSecretManager()
+
+		req.idempotenceCache = cache.NewRedisCache()
 	})
 	req.startingTime = time.Now()
 
@@ -64,8 +68,8 @@ func (req *requestSignUpHandler) finish() {
 	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
-	err := request.Validate()
+func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request, envConfig *models.EnvironmentConfiguration) (*apigateway.Response, error) {
+	idempotencyKey, err := request.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		req.err = err
 		logger.Error("http_request_validation_failed", err, request)
@@ -80,9 +84,9 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		return request.NewErrorResponse(err), nil
 	}
 
-	saveNewUser := usecases.NewUserCreator(req.userRepo)
+	saveNewUser := usecases.NewUserCreator(req.userRepo, req.idempotenceCache, *envConfig)
 
-	newUser, err := saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password)
+	newUser, err := saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password, idempotencyKey)
 	if err != nil {
 		req.err = err
 		logger.Error("save_new_user_failed", err, request)
