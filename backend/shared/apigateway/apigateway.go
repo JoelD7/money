@@ -260,13 +260,13 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 	}, nil
 }
 
-// Validate does general validations on the APIGW request that apply to all models. Call this function on controllers,
+// GetIdempotenceyKeyFromHeader returns the idempotency key value from the header. Call this function on controllers,
 // before processing the request.
-func (req *Request) Validate() error {
-	for headerName := range req.Headers {
+func (req *Request) GetIdempotenceyKeyFromHeader() (string, error) {
+	for headerName, value := range req.Headers {
 		if strings.EqualFold(headerName, idempotencyKeyHeaderName) {
-			return nil
+			return value, nil
 		}
 	}
-	return models.ErrMissingIdempotencyKey
+	return "", models.ErrMissingIdempotencyKey
 }

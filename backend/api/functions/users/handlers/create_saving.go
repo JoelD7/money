@@ -71,7 +71,7 @@ func CreateSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfi
 }
 
 func (request *createSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	err := req.Validate()
+	_, err := req.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		request.err = err
 		logger.Error("http_request_validation_failed", err, req)

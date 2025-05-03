@@ -73,7 +73,7 @@ func CreateExpense(ctx context.Context, envConfig *models.EnvironmentConfigurati
 }
 
 func (request *createExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	err := req.Validate()
+	_, err := req.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		request.err = err
 		logger.Error("http_request_validation_failed", err, req)
