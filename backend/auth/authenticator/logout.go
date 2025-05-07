@@ -58,6 +58,7 @@ func (req *requestLogoutHandler) initLogoutHandler(ctx context.Context, envConfi
 		req.invalidTokenManager = cache.NewRedisCache()
 	})
 	req.startingTime = time.Now()
+	req.err = nil
 
 	return err
 }

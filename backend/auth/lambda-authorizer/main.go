@@ -78,6 +78,7 @@ func (req *requestInfo) init() {
 		req.client = restclient.New()
 	})
 	req.startingTime = time.Now()
+	req.err = nil
 }
 
 func (req *requestInfo) finish() {
