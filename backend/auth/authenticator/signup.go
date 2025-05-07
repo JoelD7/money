@@ -60,6 +60,7 @@ func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, envConfi
 		req.idempotenceCache = cache.NewRedisCache()
 	})
 	req.startingTime = time.Now()
+	req.err = nil
 
 	return err
 }

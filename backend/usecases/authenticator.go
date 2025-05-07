@@ -52,8 +52,7 @@ func NewUserCreator(userManager UserManager, cache ResourceCacheManager, envConf
 			UpdatedDate: time.Now(),
 		}
 
-		idempotencyManager := NewIdempotencyManager(cache)
-		userResource, err := idempotencyManager.CreateResource(ctx, idempotencyKey, envConfig.IdempotencyKeyCacheTTLSeconds, func() (any, error) {
+		createdUser, err := CreateResource(ctx, cache, idempotencyKey, envConfig.IdempotencyKeyCacheTTLSeconds, func() (*models.User, error) {
 			dbCreatedUser, persistErr := userManager.CreateUser(ctx, user)
 			if persistErr != nil && errors.Is(persistErr, models.ErrExistingUser) {
 				logger.Warning("user_creation_failed", persistErr, nil)
@@ -70,9 +69,8 @@ func NewUserCreator(userManager UserManager, cache ResourceCacheManager, envConf
 			return dbCreatedUser, nil
 		})
 
-		createdUser, ok := userResource.(*models.User)
-		if !ok {
-			return nil, models.ErrUnexpectedTypeAssertion
+		if err != nil {
+			return nil, err
 		}
 
 		return createdUser, nil
