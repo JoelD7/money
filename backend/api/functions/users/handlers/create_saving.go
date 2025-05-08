@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
@@ -23,11 +24,12 @@ var (
 )
 
 type createSavingRequest struct {
-	startingTime time.Time
-	err          error
-	savingsRepo  savings.Repository
-	userRepo     users.Repository
-	periodRepo   period.Repository
+	startingTime     time.Time
+	err              error
+	savingsRepo      savings.Repository
+	userRepo         users.Repository
+	periodRepo       period.Repository
+	idempotenceCache cache.IdempotenceCacheManager
 }
 
 func (request *createSavingRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -44,6 +46,9 @@ func (request *createSavingRequest) init(ctx context.Context, envConfig *models.
 		if err != nil {
 			return
 		}
+
+		request.idempotenceCache = cache.NewRedisCache()
+		request.idempotenceCache.SetTTL(envConfig.IdempotencyKeyCacheTTLSeconds)
 	})
 	request.startingTime = time.Now()
 
@@ -71,7 +76,7 @@ func CreateSavingHandler(ctx context.Context, envConfig *models.EnvironmentConfi
 }
 
 func (request *createSavingRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	_, err := req.GetIdempotenceyKeyFromHeader()
+	idempotencyKey, err := req.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		request.err = err
 		logger.Error("http_request_validation_failed", err, req)
@@ -92,9 +97,9 @@ func (request *createSavingRequest) process(ctx context.Context, req *apigateway
 		return req.NewErrorResponse(err), nil
 	}
 
-	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.periodRepo)
+	createSaving := usecases.NewSavingCreator(request.savingsRepo, request.periodRepo, request.idempotenceCache)
 
-	saving, err := createSaving(ctx, username, userSaving)
+	saving, err := createSaving(ctx, username, idempotencyKey, userSaving)
 	if err != nil {
 		logger.Error("create_saving_failed", err, req)
 

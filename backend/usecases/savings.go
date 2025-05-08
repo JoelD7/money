@@ -123,21 +123,29 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 	}
 }
 
-func NewSavingCreator(sm SavingsManager, p PeriodManager) func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
-	return func(ctx context.Context, username string, saving *models.Saving) (*models.Saving, error) {
-		err := validateSavingPeriod(ctx, saving, username, p)
+func NewSavingCreator(sm SavingsManager, p PeriodManager, cache ResourceCacheManager) func(ctx context.Context, username, idempotencyKey string, saving *models.Saving) (*models.Saving, error) {
+	return func(ctx context.Context, username, idempotencyKey string, saving *models.Saving) (*models.Saving, error) {
+		createdSaving, err := CreateResource(ctx, cache, idempotencyKey, func() (*models.Saving, error) {
+			err := validateSavingPeriod(ctx, saving, username, p)
+			if err != nil {
+				return nil, err
+			}
+
+			saving.Username = username
+
+			newSaving, err := sm.CreateSaving(ctx, saving)
+			if err != nil {
+				return nil, fmt.Errorf("saving creation failed: %w", err)
+			}
+
+			return newSaving, nil
+		})
+
 		if err != nil {
 			return nil, err
 		}
 
-		saving.Username = username
-
-		newSaving, err := sm.CreateSaving(ctx, saving)
-		if err != nil {
-			return nil, fmt.Errorf("saving creation failed: %w", err)
-		}
-
-		return newSaving, nil
+		return createdSaving, nil
 	}
 }
 
