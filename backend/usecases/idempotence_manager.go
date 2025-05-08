@@ -15,8 +15,8 @@ import (
 // from the cache.
 //
 // persistToDB is a function parameter that creates a new resource on the database. It's only called if there's no
-// cached resource.
-func CreateResource[R models.Resource](ctx context.Context, cache ResourceCacheManager, idempotenceKey string, ttl int64, persistToDB func() (R, error)) (R, error) {
+// cached resource. The return value of this function(not the error) is stored in the cache.
+func CreateResource[R models.Resource](ctx context.Context, cache ResourceCacheManager, idempotenceKey string, persistToDB func() (R, error)) (R, error) {
 	cachedResourceStr, err := cache.GetResource(ctx, idempotenceKey)
 	if err != nil {
 		logger.Error("get_resource_from_cache_failed", err, models.Any("idempotency_key", idempotenceKey))
@@ -43,7 +43,7 @@ func CreateResource[R models.Resource](ctx context.Context, cache ResourceCacheM
 		return nil, err
 	}
 
-	err = addToCache(ctx, cache, idempotenceKey, createdResource, ttl)
+	err = addToCache(ctx, cache, idempotenceKey, createdResource)
 	if err != nil {
 		logger.Error("add_created_resource_to_cache_failed", err, models.Any("idempotency_key", idempotenceKey),
 			models.Any("created_resource", createdResource))
@@ -52,13 +52,13 @@ func CreateResource[R models.Resource](ctx context.Context, cache ResourceCacheM
 	return createdResource, nil
 }
 
-func addToCache[R models.Resource](ctx context.Context, cache ResourceCacheManager, idempotenceKey string, resource R, ttl int64) error {
+func addToCache[R models.Resource](ctx context.Context, cache ResourceCacheManager, idempotenceKey string, resource R) error {
 	createdResourceData, err := json.Marshal(resource)
 	if err != nil {
 		return err
 	}
 
-	err = cache.AddResource(ctx, idempotenceKey, createdResourceData, ttl)
+	err = cache.AddResource(ctx, idempotenceKey, createdResourceData, 0)
 	if err != nil {
 		return err
 	}

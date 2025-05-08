@@ -25,6 +25,7 @@ const (
 
 type RedisCache struct {
 	client *redis.Client
+	ttl    int64
 }
 
 func NewRedisCache() *RedisCache {
@@ -38,7 +39,8 @@ func NewRedisCache() *RedisCache {
 	opt.ContextTimeoutEnabled = true
 
 	return &RedisCache{
-		redis.NewClient(opt),
+		client: redis.NewClient(opt),
+		ttl:    0,
 	}
 }
 
@@ -146,8 +148,12 @@ func (r *RedisCache) DeleteIncomePeriods(ctx context.Context, username string, p
 }
 
 func (r *RedisCache) AddResource(ctx context.Context, key string, resource interface{}, ttl int64) error {
-	if ttl == 0 {
+	if ttl == 0 && r.ttl == 0 {
 		ttl = defaultIdempotencyCacheTTLSeconds
+	}
+
+	if ttl == 0 {
+		ttl = r.ttl
 	}
 
 	return r.client.SetNX(ctx, key, resource, time.Duration(ttl)*time.Second).Err()
@@ -155,6 +161,10 @@ func (r *RedisCache) AddResource(ctx context.Context, key string, resource inter
 
 func (r *RedisCache) GetResource(ctx context.Context, key string) (string, error) {
 	return r.client.Get(ctx, key).Result()
+}
+
+func (r *RedisCache) SetTTL(ttl int64) {
+	r.ttl = ttl
 }
 
 func buildKey(keyPrefix string, keys ...string) string {

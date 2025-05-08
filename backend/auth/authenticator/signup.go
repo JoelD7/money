@@ -58,6 +58,7 @@ func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, envConfi
 		req.secretsManager = secrets.NewAWSSecretManager()
 
 		req.idempotenceCache = cache.NewRedisCache()
+		req.idempotenceCache.SetTTL(envConfig.IdempotencyKeyCacheTTLSeconds)
 	})
 	req.startingTime = time.Now()
 	req.err = nil
