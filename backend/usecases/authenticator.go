@@ -52,7 +52,7 @@ func NewUserCreator(userManager UserManager, cache ResourceCacheManager, envConf
 			UpdatedDate: time.Now(),
 		}
 
-		createdUser, err := CreateResource(ctx, cache, idempotencyKey, envConfig.IdempotencyKeyCacheTTLSeconds, func() (*models.User, error) {
+		createdUser, err := CreateResource(ctx, cache, idempotencyKey, func() (*models.User, error) {
 			dbCreatedUser, persistErr := userManager.CreateUser(ctx, user)
 			if persistErr != nil && errors.Is(persistErr, models.ErrExistingUser) {
 				logger.Warning("user_creation_failed", persistErr, nil)
