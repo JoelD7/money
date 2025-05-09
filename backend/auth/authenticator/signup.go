@@ -86,7 +86,7 @@ func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *api
 		return request.NewErrorResponse(err), nil
 	}
 
-	saveNewUser := usecases.NewUserCreator(req.userRepo, req.idempotenceCache, *envConfig)
+	saveNewUser := usecases.NewUserCreator(req.userRepo, req.idempotenceCache)
 
 	newUser, err := saveNewUser(ctx, reqBody.FullName, reqBody.Username, reqBody.Password, idempotencyKey)
 	if err != nil {

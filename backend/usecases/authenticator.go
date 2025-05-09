@@ -34,7 +34,7 @@ var (
 )
 
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userManager UserManager, cache ResourceCacheManager, envConfig models.EnvironmentConfiguration) func(ctx context.Context, fullName, username, password, idempotencyKey string) (*models.User, error) {
+func NewUserCreator(userManager UserManager, cache ResourceCacheManager) func(ctx context.Context, fullName, username, password, idempotencyKey string) (*models.User, error) {
 	return func(ctx context.Context, fullName, username, password, idempotencyKey string) (*models.User, error) {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 		if err != nil {

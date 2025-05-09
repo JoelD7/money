@@ -16,8 +16,8 @@ import (
 	"time"
 )
 
-func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, sgm SavingGoalManager, sm SavingsManager) func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
-	return func(ctx context.Context, username string, period *models.Period) (*models.Period, error) {
+func NewPeriodCreator(pm PeriodManager, incomePeriodCache IncomePeriodCacheManager, resourceCache ResourceCacheManager, sgm SavingGoalManager, sm SavingsManager) func(ctx context.Context, username, idempotencyKey string, period *models.Period) (*models.Period, error) {
+	return func(ctx context.Context, username, idempotencyKey string, period *models.Period) (*models.Period, error) {
 		if period.StartDate.After(period.EndDate) {
 			return nil, models.ErrStartDateShouldBeBeforeEndDate
 		}
@@ -25,26 +25,34 @@ func NewPeriodCreator(pm PeriodManager, cache IncomePeriodCacheManager, sgm Savi
 		period.Username = username
 		period.CreatedDate = time.Now()
 
-		newPeriod, err := pm.CreatePeriod(ctx, period)
-		if err != nil {
-			logger.Error("create_period_failed", err, models.Any("period", period))
+		newPeriod, err := CreateResource(ctx, resourceCache, idempotencyKey, func() (*models.Period, error) {
+			newPeriod, err := pm.CreatePeriod(ctx, period)
+			if err != nil {
+				logger.Error("create_period_failed", err, models.Any("period", period))
 
-			return nil, err
-		}
+				return nil, err
+			}
 
-		err = cache.AddIncomePeriods(ctx, username, []string{newPeriod.ID})
-		if err != nil {
-			logger.Error("add_income_periods_failed", err, models.Any("period", period))
-		}
+			err = incomePeriodCache.AddIncomePeriods(ctx, username, []string{newPeriod.ID})
+			if err != nil {
+				logger.Error("add_income_periods_failed", err, models.Any("period", period))
+			}
 
-		err = sendPeriodToSQS(ctx, newPeriod)
-		if err != nil {
-			logger.Error("send_period_to_sqs_failed", err, models.Any("new_period", newPeriod))
-		}
+			err = sendPeriodToSQS(ctx, newPeriod)
+			if err != nil {
+				logger.Error("send_period_to_sqs_failed", err, models.Any("new_period", newPeriod))
+			}
 
-		err = generateRecurringSavings(ctx, username, newPeriod.Name, sgm, sm)
+			err = generateRecurringSavings(ctx, username, newPeriod.Name, sgm, sm)
+			if err != nil {
+				logger.Error("generate_recurring_savings_failed", err, models.Any("new_period", newPeriod))
+				return nil, err
+			}
+
+			return newPeriod, nil
+		})
+
 		if err != nil {
-			logger.Error("generate_recurring_savings_failed", err, models.Any("new_period", newPeriod))
 			return nil, err
 		}
 

@@ -22,12 +22,13 @@ var cpRequest *CreatePeriodRequest
 var cpOnce sync.Once
 
 type CreatePeriodRequest struct {
-	startingTime   time.Time
-	err            error
-	PeriodRepo     period.Repository
-	CacheManager   cache.IncomePeriodCacheManager
-	SavingGoalRepo savingoal.Repository
-	SavingsRepo    savings.Repository
+	startingTime             time.Time
+	err                      error
+	PeriodRepo               period.Repository
+	IncomePeriodCacheManager cache.IncomePeriodCacheManager
+	IdempotenceCache         cache.IdempotenceCacheManager
+	SavingGoalRepo           savingoal.Repository
+	SavingsRepo              savings.Repository
 }
 
 func (request *CreatePeriodRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -50,7 +51,9 @@ func (request *CreatePeriodRequest) init(ctx context.Context, envConfig *models.
 			return
 		}
 
-		request.CacheManager = cache.NewRedisCache()
+		redisCache := cache.NewRedisCache()
+		request.IncomePeriodCacheManager = redisCache
+		request.IdempotenceCache = redisCache
 		logger.SetHandler("create-period")
 	})
 	request.startingTime = time.Now()
@@ -79,7 +82,7 @@ func CreatePeriodHandler(ctx context.Context, envConfig *models.EnvironmentConfi
 }
 
 func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	_, err := req.GetIdempotenceyKeyFromHeader()
+	idempotencyKey, err := req.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		request.err = err
 		logger.Error("http_request_validation_failed", err, req)
@@ -102,9 +105,10 @@ func (request *CreatePeriodRequest) Process(ctx context.Context, req *apigateway
 		return req.NewErrorResponse(err), nil
 	}
 
-	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.CacheManager, request.SavingGoalRepo, request.SavingsRepo)
+	createPeriod := usecases.NewPeriodCreator(request.PeriodRepo, request.IncomePeriodCacheManager, request.IdempotenceCache,
+		request.SavingGoalRepo, request.SavingsRepo)
 
-	createdPeriod, err := createPeriod(ctx, username, periodModel)
+	createdPeriod, err := createPeriod(ctx, username, idempotencyKey, periodModel)
 	if err != nil {
 		request.err = err
 		logger.Error("create_period_failed", err, req)
