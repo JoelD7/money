@@ -8,10 +8,13 @@ import (
 	"sync"
 )
 
-func NewSavingGoalCreator(savingGoalManager SavingGoalManager) func(ctx context.Context, username string, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
-	return func(ctx context.Context, username string, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
+func NewSavingGoalCreator(savingGoalManager SavingGoalManager, cache ResourceCacheManager) func(ctx context.Context, username, idempotencyKey string, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
+	return func(ctx context.Context, username, idempotencyKey string, savingGoal *models.SavingGoal) (*models.SavingGoal, error) {
 		savingGoal.Username = username
-		return savingGoalManager.CreateSavingGoal(ctx, savingGoal)
+
+		return CreateResource(ctx, cache, idempotencyKey, func() (*models.SavingGoal, error) {
+			return savingGoalManager.CreateSavingGoal(ctx, savingGoal)
+		})
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/usecases"
@@ -24,6 +25,7 @@ type createSavingGoalRequest struct {
 	startingTime   time.Time
 	err            error
 	savingGoalRepo savingoal.Repository
+	cacheManager   cache.IdempotenceCacheManager
 }
 
 func (request *createSavingGoalRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -35,6 +37,7 @@ func (request *createSavingGoalRequest) init(ctx context.Context, envConfig *mod
 		if err != nil {
 			return
 		}
+		request.cacheManager = cache.NewRedisCache()
 	})
 
 	return err
@@ -61,7 +64,7 @@ func CreateSavingGoalHandler(ctx context.Context, envConfig *models.EnvironmentC
 }
 
 func (request *createSavingGoalRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	_, err := req.GetIdempotenceyKeyFromHeader()
+	idempotencyKey, err := req.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		request.err = err
 		logger.Error("http_request_validation_failed", err, req)
@@ -82,9 +85,9 @@ func (request *createSavingGoalRequest) process(ctx context.Context, req *apigat
 		return req.NewErrorResponse(err), nil
 	}
 
-	createSavingGoal := usecases.NewSavingGoalCreator(request.savingGoalRepo)
+	createSavingGoal := usecases.NewSavingGoalCreator(request.savingGoalRepo, request.cacheManager)
 
-	savingGoal, err = createSavingGoal(ctx, username, savingGoal)
+	savingGoal, err = createSavingGoal(ctx, username, idempotencyKey, savingGoal)
 	if err != nil {
 		logger.Error("create_saving_goal_failed", err, req)
 
