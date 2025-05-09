@@ -8,23 +8,25 @@ import (
 	"time"
 )
 
-func NewExpenseCreator(em ExpenseManager, pm PeriodManager) func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
-	return func(ctx context.Context, username string, expense *models.Expense) (*models.Expense, error) {
-		err := validateExpensePeriod(ctx, expense, username, pm)
-		if err != nil {
-			return nil, err
-		}
+func NewExpenseCreator(em ExpenseManager, pm PeriodManager, cache ResourceCacheManager) func(ctx context.Context, username, idempotencyKey string, expense *models.Expense) (*models.Expense, error) {
+	return func(ctx context.Context, username, idempotencyKey string, expense *models.Expense) (*models.Expense, error) {
+		return CreateResource(ctx, cache, idempotencyKey, func() (*models.Expense, error) {
+			err := validateExpensePeriod(ctx, expense, username, pm)
+			if err != nil {
+				return nil, err
+			}
 
-		expense.ExpenseID = generateDynamoID("EX")
-		expense.Username = username
-		expense.CreatedDate = time.Now()
+			expense.ExpenseID = generateDynamoID("EX")
+			expense.Username = username
+			expense.CreatedDate = time.Now()
 
-		newExpense, err := em.CreateExpense(ctx, expense)
-		if err != nil {
-			return nil, err
-		}
+			newExpense, err := em.CreateExpense(ctx, expense)
+			if err != nil {
+				return nil, err
+			}
 
-		return newExpense, nil
+			return newExpense, nil
+		})
 	}
 }
 

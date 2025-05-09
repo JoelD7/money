@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
 	"github.com/JoelD7/money/backend/storage/period"
@@ -23,10 +24,11 @@ var (
 )
 
 type createIncomeRequest struct {
-	startingTime time.Time
-	err          error
-	incomeRepo   income.Repository
-	periodRepo   period.Repository
+	startingTime     time.Time
+	err              error
+	incomeRepo       income.Repository
+	periodRepo       period.Repository
+	idempotenceCache cache.IdempotenceCacheManager
 }
 
 func (request *createIncomeRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -42,6 +44,7 @@ func (request *createIncomeRequest) init(ctx context.Context, envConfig *models.
 		if err != nil {
 			return
 		}
+		request.idempotenceCache = cache.NewRedisCache()
 	})
 	request.startingTime = time.Now()
 
@@ -70,7 +73,7 @@ func CreateIncomeHandler(ctx context.Context, envConfig *models.EnvironmentConfi
 }
 
 func (request *createIncomeRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	_, err := req.GetIdempotenceyKeyFromHeader()
+	idempotencyKey, err := req.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		request.err = err
 		logger.Error("http_request_validation_failed", err, req)
@@ -93,9 +96,9 @@ func (request *createIncomeRequest) process(ctx context.Context, req *apigateway
 		return req.NewErrorResponse(err), nil
 	}
 
-	createIncome := usecases.NewIncomeCreator(request.incomeRepo, request.periodRepo)
+	createIncome := usecases.NewIncomeCreator(request.incomeRepo, request.periodRepo, request.idempotenceCache)
 
-	newIncome, err := createIncome(ctx, username, reqIncome)
+	newIncome, err := createIncome(ctx, username, idempotencyKey, reqIncome)
 	if err != nil {
 		request.err = err
 		logger.Error("create_income_failed", err, req)

@@ -8,23 +8,25 @@ import (
 	"time"
 )
 
-func NewIncomeCreator(im IncomeRepository, pm PeriodManager) func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
-	return func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
-		err := validateIncomePeriod(ctx, username, income, pm)
-		if err != nil {
-			return nil, err
-		}
+func NewIncomeCreator(im IncomeRepository, pm PeriodManager, cache ResourceCacheManager) func(ctx context.Context, username, idempotencyKey string, income *models.Income) (*models.Income, error) {
+	return func(ctx context.Context, username, idempotencyKey string, income *models.Income) (*models.Income, error) {
+		return CreateResource(ctx, cache, idempotencyKey, func() (*models.Income, error) {
+			err := validateIncomePeriod(ctx, username, income, pm)
+			if err != nil {
+				return nil, err
+			}
 
-		income.IncomeID = generateDynamoID("IN")
-		income.Username = username
-		income.CreatedDate = time.Now()
+			income.IncomeID = generateDynamoID("IN")
+			income.Username = username
+			income.CreatedDate = time.Now()
 
-		newIncome, err := im.CreateIncome(ctx, income)
-		if err != nil {
-			return nil, err
-		}
+			newIncome, err := im.CreateIncome(ctx, income)
+			if err != nil {
+				return nil, err
+			}
 
-		return newIncome, nil
+			return newIncome, nil
+		})
 	}
 }
 

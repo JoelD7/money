@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
@@ -24,11 +25,12 @@ var (
 )
 
 type createExpenseRequest struct {
-	startingTime time.Time
-	err          error
-	expensesRepo expenses.Repository
-	userRepo     users.Repository
-	periodRepo   period.Repository
+	startingTime     time.Time
+	err              error
+	expensesRepo     expenses.Repository
+	userRepo         users.Repository
+	periodRepo       period.Repository
+	idempotenceCache cache.IdempotenceCacheManager
 }
 
 func (request *createExpenseRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -45,6 +47,8 @@ func (request *createExpenseRequest) init(ctx context.Context, envConfig *models
 		if err != nil {
 			return
 		}
+
+		request.idempotenceCache = cache.NewRedisCache()
 	})
 	request.startingTime = time.Now()
 
@@ -73,7 +77,7 @@ func CreateExpense(ctx context.Context, envConfig *models.EnvironmentConfigurati
 }
 
 func (request *createExpenseRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	_, err := req.GetIdempotenceyKeyFromHeader()
+	idempotencyKey, err := req.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		request.err = err
 		logger.Error("http_request_validation_failed", err, req)
@@ -94,9 +98,9 @@ func (request *createExpenseRequest) process(ctx context.Context, req *apigatewa
 		return req.NewErrorResponse(err), nil
 	}
 
-	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.periodRepo)
+	createExpense := usecases.NewExpenseCreator(request.expensesRepo, request.periodRepo, request.idempotenceCache)
 
-	newExpense, err := createExpense(ctx, username, expense)
+	newExpense, err := createExpense(ctx, username, idempotencyKey, expense)
 	if err != nil {
 		logger.Error("create_expense_failed", err, req)
 
