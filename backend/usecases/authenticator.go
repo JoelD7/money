@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	emailRegex   = "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-]+$"
 	passwordCost = bcrypt.DefaultCost
 )
 
@@ -34,32 +33,9 @@ var (
 	errInvalidTokenLength = apigateway.NewError("invalid token length", http.StatusUnauthorized)
 )
 
-type UserCreator interface {
-	CreateUser(ctx context.Context, fullName, username, password string) error
-}
-
-type UserUpdater interface {
-	UpdateUser(ctx context.Context, user *models.User) error
-}
-
-type Logger interface {
-	Warning(eventName string, err error, fields ...models.LoggerField)
-	Error(eventName string, err error, fields ...models.LoggerField)
-	MapToLoggerObject(name string, m map[string]interface{}) models.LoggerField
-}
-
-type InvalidTokenCache interface {
-	GetInvalidTokens(ctx context.Context, username string) ([]*models.InvalidToken, error)
-	AddInvalidToken(ctx context.Context, username, token string, ttl int64) error
-}
-
-type SecretManager interface {
-	GetSecret(ctx context.Context, name string) (string, error)
-}
-
 // NewUserCreator creates a new user with password.
-func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName, username, password string) (*models.User, error) {
-	return func(ctx context.Context, fullName, username, password string) (*models.User, error) {
+func NewUserCreator(userManager UserManager, cache ResourceCacheManager) func(ctx context.Context, fullName, username, password, idempotencyKey string) (*models.User, error) {
+	return func(ctx context.Context, fullName, username, password, idempotencyKey string) (*models.User, error) {
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), passwordCost)
 		if err != nil {
 			logger.Error("password_hashing_failed", err, nil)
@@ -76,16 +52,24 @@ func NewUserCreator(userManager UserManager) func(ctx context.Context, fullName,
 			UpdatedDate: time.Now(),
 		}
 
-		createdUser, err := userManager.CreateUser(ctx, user)
-		if err != nil && errors.Is(err, models.ErrExistingUser) {
-			logger.Warning("user_creation_failed", err, nil)
+		createdUser, err := CreateResource(ctx, cache, idempotencyKey, func() (*models.User, error) {
+			dbCreatedUser, persistErr := userManager.CreateUser(ctx, user)
+			if persistErr != nil && errors.Is(persistErr, models.ErrExistingUser) {
+				logger.Warning("user_creation_failed", persistErr, nil)
 
-			return nil, err
-		}
+				return nil, persistErr
+			}
+
+			if persistErr != nil {
+				logger.Error("sign_up_process_failed", persistErr, nil)
+
+				return nil, persistErr
+			}
+
+			return dbCreatedUser, nil
+		})
 
 		if err != nil {
-			logger.Error("sign_up_process_failed", err, nil)
-
 			return nil, err
 		}
 

@@ -79,7 +79,13 @@ var (
 		models.ErrSavingGoalsNotFound:              {HTTPCode: http.StatusNotFound, Message: "Not found"},
 		models.ErrMissingSavingGoalRecurringAmount: {HTTPCode: http.StatusBadRequest, Message: "Missing saving goal recurring amount"},
 		models.ErrUsernameDeleteMismatch:           {HTTPCode: http.StatusForbidden, Message: "You do not have permissions to delete this user"},
+		models.ErrMissingIdempotencyKey:            {HTTPCode: http.StatusBadRequest, Message: "Missing Idempotency-Key header"},
 	}
+)
+
+const (
+	// Header name of the idempotency key.
+	idempotencyKeyHeaderName = "Idempotency-Key"
 )
 
 type Response events.APIGatewayProxyResponse
@@ -252,4 +258,15 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 		SortType:     req.QueryStringParameters["sort_order"],
 		SavingGoalID: req.QueryStringParameters["saving_goal_id"],
 	}, nil
+}
+
+// GetIdempotenceyKeyFromHeader returns the idempotency key value from the header. Call this function on controllers,
+// before processing the request.
+func (req *Request) GetIdempotenceyKeyFromHeader() (string, error) {
+	for headerName, value := range req.Headers {
+		if strings.EqualFold(headerName, idempotencyKeyHeaderName) {
+			return value, nil
+		}
+	}
+	return "", models.ErrMissingIdempotencyKey
 }

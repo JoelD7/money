@@ -16,6 +16,8 @@ var (
 	errPathNotDefined  = errors.New("this path does not have a handler")
 )
 
+//TODO: make envConfig a value, not a pointer
+
 // Handler type, defines the function signature for an APIGateway lambda handler.
 // Takes the following arguments:
 //  1. context provided by the AWS Lambda runtime,

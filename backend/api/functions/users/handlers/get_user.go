@@ -102,6 +102,10 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 		request.err = err
 		logger.Error("user_not_found", err, req)
 
+		// Use a custom error instead of the error model to return 500.
+		// The "username" that’s utilized to get the user from the DB is the one on the tokens that are
+		// emitted by the server. Before the server creates the tokens, it supposed to have persisted the user on the DB,
+		// so if the user can’t be found, then the server did something wrong.
 		return req.NewErrorResponse(errors.New("user not found")), nil
 	}
 

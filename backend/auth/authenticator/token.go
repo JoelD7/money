@@ -64,6 +64,7 @@ func (req *requestTokenHandler) initTokenHandler(ctx context.Context, envConfig 
 	})
 
 	req.startingTime = time.Now()
+	req.err = nil
 
 	return err
 }

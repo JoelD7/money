@@ -90,6 +90,7 @@ func (req *CronRequest) init(ctx context.Context) error {
 		}
 	})
 	req.startingTime = time.Now()
+	req.err = nil
 
 	return err
 }

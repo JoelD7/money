@@ -17,17 +17,6 @@ const (
 	categoryPrefix = "CTG"
 )
 
-type UserManager interface {
-	CreateUser(ctx context.Context, u *models.User) (*models.User, error)
-	GetUser(ctx context.Context, username string) (*models.User, error)
-	UpdateUser(ctx context.Context, user *models.User) error
-	DeleteUser(ctx context.Context, username string) error
-}
-
-type IDGenerator interface {
-	GenerateID(prefix string) string
-}
-
 func NewUserGetter(u UserManager, i IncomeRepository, e ExpenseManager) func(ctx context.Context, username string) (*models.User, error) {
 	return func(ctx context.Context, username string) (*models.User, error) {
 		user, err := u.GetUser(ctx, username)
@@ -133,8 +122,8 @@ func NewUserDeleter(u UserManager) func(ctx context.Context, username string) er
 	}
 }
 
-func NewCategoryCreator(u UserManager) func(ctx context.Context, username string, category *models.Category) error {
-	return func(ctx context.Context, username string, category *models.Category) error {
+func NewCategoryCreator(u UserManager, cache ResourceCacheManager) func(ctx context.Context, username, idempotencyKey string, category *models.Category) error {
+	return func(ctx context.Context, username, idempotencyKey string, category *models.Category) error {
 		user, err := u.GetUser(ctx, username)
 		if err != nil {
 			return err
@@ -144,20 +133,24 @@ func NewCategoryCreator(u UserManager) func(ctx context.Context, username string
 			user.Categories = make([]*models.Category, 0)
 		}
 
-		err = validateCategoryName(category, user.Categories)
-		if err != nil {
-			return err
-		}
-
-		err = validateCategoryColor(category.Color)
-		if err != nil {
-			return err
-		}
-
 		category.ID = generateDynamoID(categoryPrefix)
 		user.Categories = append(user.Categories, category)
 
-		return u.UpdateUser(ctx, user)
+		_, err = CreateResource(ctx, cache, idempotencyKey, func() (*models.User, error) {
+			err = validateCategoryName(category, user.Categories)
+			if err != nil {
+				return nil, err
+			}
+
+			err = validateCategoryColor(category.Color)
+			if err != nil {
+				return nil, err
+			}
+
+			return user, u.UpdateUser(ctx, user)
+		})
+
+		return err
 	}
 }
 

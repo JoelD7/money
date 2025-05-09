@@ -8,39 +8,25 @@ import (
 	"time"
 )
 
-type IncomeRepository interface {
-	CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error)
+func NewIncomeCreator(im IncomeRepository, pm PeriodManager, cache ResourceCacheManager) func(ctx context.Context, username, idempotencyKey string, income *models.Income) (*models.Income, error) {
+	return func(ctx context.Context, username, idempotencyKey string, income *models.Income) (*models.Income, error) {
+		return CreateResource(ctx, cache, idempotencyKey, func() (*models.Income, error) {
+			err := validateIncomePeriod(ctx, username, income, pm)
+			if err != nil {
+				return nil, err
+			}
 
-	GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error)
-	GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
-	GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
-	GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error)
-	GetAllIncomePeriods(ctx context.Context, username string) ([]string, error)
-}
+			income.IncomeID = generateDynamoID("IN")
+			income.Username = username
+			income.CreatedDate = time.Now()
 
-type IncomePeriodCacheManager interface {
-	AddIncomePeriods(ctx context.Context, username string, periods []string) error
-	GetIncomePeriods(ctx context.Context, username string) ([]string, error)
-	DeleteIncomePeriods(ctx context.Context, username string, periods ...string) error
-}
+			newIncome, err := im.CreateIncome(ctx, income)
+			if err != nil {
+				return nil, err
+			}
 
-func NewIncomeCreator(im IncomeRepository, pm PeriodManager) func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
-	return func(ctx context.Context, username string, income *models.Income) (*models.Income, error) {
-		err := validateIncomePeriod(ctx, username, income, pm)
-		if err != nil {
-			return nil, err
-		}
-
-		income.IncomeID = generateDynamoID("IN")
-		income.Username = username
-		income.CreatedDate = time.Now()
-
-		newIncome, err := im.CreateIncome(ctx, income)
-		if err != nil {
-			return nil, err
-		}
-
-		return newIncome, nil
+			return newIncome, nil
+		})
 	}
 }
 

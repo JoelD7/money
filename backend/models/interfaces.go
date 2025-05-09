@@ -26,3 +26,9 @@ func (a *AnyField) GetKey() string {
 func (a *AnyField) GetValue() (interface{}, error) {
 	return a.Value, nil
 }
+
+// Resource is an interface that represents any of the types that can be stored in the database. It's purpose is to
+// serve as a generics type.
+type Resource interface {
+	*User | *Category | *Expense | *SavingGoal | *Income | *Period | *Saving
+}

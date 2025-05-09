@@ -20,3 +20,14 @@ type IncomePeriodCacheManager interface {
 	GetIncomePeriods(ctx context.Context, username string) ([]string, error)
 	DeleteIncomePeriods(ctx context.Context, username string, periods ...string) error
 }
+
+// IdempotenceCacheManager handles reads and writes to cached resources with idempotency keys
+type IdempotenceCacheManager interface {
+	// AddResource adds a resource to the cache for ttl seconds. If the passed-in ttl is 0, the default TTL set via the
+	// SetTTL function, will be used
+	AddResource(ctx context.Context, key string, resource interface{}, ttl int64) error
+	// GetResource gets a resource from the cache
+	GetResource(ctx context.Context, key string) (string, error)
+	// SetTTL sets a TTL that will be used on all calls to AddResource
+	SetTTL(ttl int64)
+}

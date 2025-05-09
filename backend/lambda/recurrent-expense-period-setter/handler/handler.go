@@ -32,12 +32,12 @@ func (request *Request) init(ctx context.Context) error {
 	var err error
 
 	preOnce.Do(func() {
-		dynamoClient := dynamo.InitClient(ctx)
-
 		envConfig, err := env.LoadEnv(context.Background())
 		if err != nil {
 			panic(err)
 		}
+
+		dynamoClient := dynamo.InitClient(ctx)
 
 		request.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
@@ -92,6 +92,8 @@ func (request *Request) ProcessMessage(ctx context.Context, record models.SQSMes
 
 		return err
 	}
+
+	logger.Info("received_message", models.Any("message_data", msgBody))
 
 	updateExpensesWoPeriod := usecases.NewExpensesPeriodSetter(request.ExpensesRepo, request.PeriodRepo)
 

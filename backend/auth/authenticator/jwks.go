@@ -40,6 +40,7 @@ func (req *requestJwksHandler) initJwksHandler() {
 		logger.SetHandler("jwks")
 	})
 	req.startingTime = time.Now()
+	req.err = nil
 }
 
 func (req *requestJwksHandler) finish() {

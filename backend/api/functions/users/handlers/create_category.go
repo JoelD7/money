@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
@@ -21,9 +22,10 @@ var ccRequest *createCategoryRequest
 var ccOnce sync.Once
 
 type createCategoryRequest struct {
-	startingTime time.Time
-	err          error
-	userRepo     users.Repository
+	startingTime     time.Time
+	err              error
+	userRepo         users.Repository
+	idempotenceCache cache.IdempotenceCacheManager
 }
 
 func (request *createCategoryRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -36,6 +38,9 @@ func (request *createCategoryRequest) init(ctx context.Context, envConfig *model
 		if err != nil {
 			return
 		}
+
+		request.idempotenceCache = cache.NewRedisCache()
+		request.idempotenceCache.SetTTL(envConfig.IdempotencyKeyCacheTTLSeconds)
 	})
 	request.startingTime = time.Now()
 
@@ -65,6 +70,13 @@ func CreateCategoryHandler(ctx context.Context, envConfig *models.EnvironmentCon
 }
 
 func (request *createCategoryRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
+	idempotencyKey, err := req.GetIdempotenceyKeyFromHeader()
+	if err != nil {
+		request.err = err
+		logger.Error("http_request_validation_failed", err, req)
+		return req.NewErrorResponse(err), nil
+	}
+
 	category, err := validateCreateCategoryRequestBody(req)
 	if err != nil {
 		logger.Error("request_body_validation_failed", err, req)
@@ -87,9 +99,9 @@ func (request *createCategoryRequest) process(ctx context.Context, req *apigatew
 		return req.NewErrorResponse(err), nil
 	}
 
-	createCategory := usecases.NewCategoryCreator(request.userRepo)
+	createCategory := usecases.NewCategoryCreator(request.userRepo, request.idempotenceCache)
 
-	err = createCategory(ctx, username, category)
+	err = createCategory(ctx, username, idempotencyKey, category)
 	if err != nil {
 		request.err = err
 		logger.Error("create_category_failed", err, req)

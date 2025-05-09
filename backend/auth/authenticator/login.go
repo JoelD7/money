@@ -62,6 +62,7 @@ func (req *requestLoginHandler) initLoginHandler(ctx context.Context, envConfig 
 		req.secretsManager = secrets.NewAWSSecretManager()
 	})
 	req.startingTime = time.Now()
+	req.err = nil
 
 	return err
 }
