@@ -43,3 +43,9 @@ export type PaginationModel = {
   page: number;
   pageSize: number;
 };
+
+// IdempotencyKVP holds the encoded request body and the idempotency key values that are kept on local storage
+export type IdempotencyKVP = {
+  encodedRequestBody: string;
+  idempotencyKey: string;
+}

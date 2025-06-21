@@ -1,11 +1,37 @@
-import { Credentials, SignUpUser } from "../types";
+import { Credentials, IdempotencyKVP, SignUpUser } from "../types";
 import { API_BASE_URL } from "./money-api.ts";
-import axios from "axios";
-import { redirectToLogin, retryableRequest } from "./utils.ts";
-import { keys } from "../utils";
+import axios, { AxiosError } from "axios";
+import { getIdempotencyKey, redirectToLogin, retryableRequest } from "./utils.ts";
+import { keys } from "../utils"; // Promise<AxiosResponse<any, any>>
 
 export function signUp(newUser: SignUpUser) {
-  return axios.post(API_BASE_URL + "/auth/signup", newUser);
+  const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(newUser, "", newUser.username);
+
+  return axios
+    .post(API_BASE_URL + "/auth/signup", newUser, {
+      headers: {
+        "Idempotency-Key": idempotenceKVP.idempotencyKey,
+      },
+    })
+    .then((res) => {
+      console.log("removing idempotency key item request success");
+      localStorage.removeItem(idempotenceKVP.encodedRequestBody);
+      return res;
+    })
+    .catch((err) => {
+      console.log("removing idempotency key item request error", err);
+      const axiosError = err as AxiosError;
+      if (
+        axiosError.response &&
+        axiosError.response.status >= 400 &&
+        axiosError.response.status < 500
+      ) {
+        console.log("removing idempotency key item non-500 error");
+        localStorage.removeItem(idempotenceKVP.encodedRequestBody);
+      }
+
+      return Promise.reject(err);
+    });
 }
 
 export function login(credentials: Credentials) {
