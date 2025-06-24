@@ -21,7 +21,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { CategorySelect } from "./CategorySelect.tsx";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { Button } from "../atoms";
-import { useMutation } from "@tanstack/react-query";
+import {useMutation, useQueryClient} from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import dayjs, { Dayjs } from "dayjs";
@@ -59,6 +59,8 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
   const [recurringDay, setRecurringDay] = useState<number>(1);
   const [date, setDate] = useState<Dayjs | null>(dayjs());
 
+  const queryClient = useQueryClient();
+
   const ceMutation = useMutation({
     mutationFn: api.createExpense,
     onSuccess: () => {
@@ -67,6 +69,12 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
         type: "success",
         title: "Expense created successfully",
       });
+
+      queryClient.invalidateQueries({ queryKey: [...api.expensesQueryKeys.all] })
+          .then(null, (error) => {
+            console.error("Error invalidating expenses query", error);
+          })
+
       onClose();
     },
     onError: (error) => {
