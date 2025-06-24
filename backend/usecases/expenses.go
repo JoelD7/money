@@ -32,7 +32,7 @@ func NewExpenseCreator(em ExpenseManager, pm PeriodManager, cache ResourceCacheM
 }
 
 // Returns an error on 50% of the calls
-func returnRandomErr[R models.Resource](resource R) (R, error) {
+func randomErr[R models.Resource](resource R) (R, error) {
 	if rand.Intn(10)%2 == 0 {
 		return resource, nil
 	}
