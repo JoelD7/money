@@ -1,4 +1,4 @@
-import { AxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
 import { v4 as uuidv4 } from "uuid";
 import { IdempotencyKVP } from "../types";
 
@@ -105,4 +105,27 @@ function getUsernameFromAccessToken(accessToken: string): string {
   const jsonPayload = decodeURIComponent(atob(base64).split("=")[0]);
 
   return JSON.parse(jsonPayload).sub;
+}
+
+export async function handleIdempotentRequest<T>(
+    promise: Promise<AxiosResponse<T>>,
+    idempotencyStorageKey: string,
+): Promise<AxiosResponse<T>> {
+  return promise
+      .then((res) => {
+        localStorage.removeItem(idempotencyStorageKey);
+        return res;
+      })
+      .catch((err) => {
+        const axiosError = err as AxiosError;
+        if (
+            axiosError.response &&
+            axiosError.response.status >= 400 &&
+            axiosError.response.status < 500
+        ) {
+          localStorage.removeItem(idempotencyStorageKey);
+        }
+
+        return Promise.reject(err);
+      });
 }
