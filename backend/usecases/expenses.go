@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"math"
+	"math/rand"
 	"time"
 )
 
@@ -28,6 +29,15 @@ func NewExpenseCreator(em ExpenseManager, pm PeriodManager, cache ResourceCacheM
 			return newExpense, nil
 		})
 	}
+}
+
+// Returns an error on 50% of the calls
+func randomErr[R models.Resource](resource R) (R, error) {
+	if rand.Intn(10)%2 == 0 {
+		return resource, nil
+	}
+
+	return nil, fmt.Errorf("random error")
 }
 
 func NewBatchExpensesCreator(em ExpenseManager) func(ctx context.Context, expenses []*models.Expense) error {

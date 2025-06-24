@@ -1,11 +1,24 @@
-import { Credentials, SignUpUser } from "../types";
+import { Credentials, IdempotencyKVP, SignUpUser } from "../types";
 import { API_BASE_URL } from "./money-api.ts";
 import axios from "axios";
-import { redirectToLogin, retryableRequest } from "./utils.ts";
-import { keys } from "../utils";
+import {
+  getIdempotencyKey,
+  handleIdempotentRequest,
+  redirectToLogin,
+  retryableRequest,
+} from "./utils.ts";
+import { keys } from "../utils"; // Promise<AxiosResponse<any, any>>
 
 export function signUp(newUser: SignUpUser) {
-  return axios.post(API_BASE_URL + "/auth/signup", newUser);
+  const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(newUser, "", newUser.username);
+
+  const promise = axios.post(API_BASE_URL + "/auth/signup", newUser, {
+    headers: {
+      "Idempotency-Key": idempotenceKVP.idempotencyKey,
+    },
+  });
+
+  return handleIdempotentRequest(promise, idempotenceKVP.encodedRequestBody);
 }
 
 export function login(credentials: Credentials) {

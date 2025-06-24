@@ -1,4 +1,6 @@
-import { AxiosError } from "axios";
+import { AxiosError, AxiosResponse } from "axios";
+import { v4 as uuidv4 } from "uuid";
+import { IdempotencyKVP } from "../types";
 
 const BACKOFF_TIME_MS: number = 1000;
 export const MAX_RETRIES: number = 3;
@@ -64,4 +66,66 @@ export function buildQueryParams(
   }
 
   return params;
+}
+
+// getIdempotencyKey returns a previously saved idempotency key associated with the a request body, or generates a new one if it
+// doesn't exist.
+// Returns an IdempotencyKVP object that besides the idempotency key, also holds the associated encoded request body so
+// that a caller can delete the local storage item on a succesful request.
+export function getIdempotencyKey(data: unknown, accessToken: string, username: string): IdempotencyKVP {
+  const encodedBody: string = window.btoa(encodeURIComponent(JSON.stringify(data)));
+  let idempotencyKey: string | null = localStorage.getItem(encodedBody);
+
+  if (username === ""){
+    username = getUsernameFromAccessToken(accessToken);
+  }
+
+  if (!idempotencyKey) {
+    idempotencyKey = `${uuidv4()}:${username}`;
+    localStorage.setItem(encodedBody, idempotencyKey);
+    return {
+      encodedRequestBody: encodedBody,
+      idempotencyKey,
+    };
+  }
+
+  return {
+    encodedRequestBody: encodedBody,
+    idempotencyKey,
+  };
+}
+
+function getUsernameFromAccessToken(accessToken: string): string {
+  if (accessToken === "") {
+    return "";
+  }
+
+  const base64Url = accessToken.split(".")[1];
+  const base64 = base64Url.replace(/_/g, "/").replace(/-/g, "+");
+  const jsonPayload = decodeURIComponent(atob(base64).split("=")[0]);
+
+  return JSON.parse(jsonPayload).sub;
+}
+
+export async function handleIdempotentRequest<T>(
+    promise: Promise<AxiosResponse<T>>,
+    idempotencyStorageKey: string,
+): Promise<AxiosResponse<T>> {
+  return promise
+      .then((res) => {
+        localStorage.removeItem(idempotencyStorageKey);
+        return res;
+      })
+      .catch((err) => {
+        const axiosError = err as AxiosError;
+        if (
+            axiosError.response &&
+            axiosError.response.status >= 400 &&
+            axiosError.response.status < 500
+        ) {
+          localStorage.removeItem(idempotencyStorageKey);
+        }
+
+        return Promise.reject(err);
+      });
 }

@@ -53,7 +53,7 @@ func (r *RedisCache) GetInvalidTokens(ctx context.Context, username string) ([]*
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("get invalid tokens: %v", err)
+		return nil, fmt.Errorf("get invalid tokens for '%s': %v", key, err)
 	}
 
 	invalidTokens := make([]*models.InvalidToken, 0)

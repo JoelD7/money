@@ -1,10 +1,10 @@
-import {AccessToken, User} from "../types";
-import axios, {AxiosError, AxiosResponse} from "axios";
-import {keys} from "../utils";
+import { AccessToken, User } from "../types";
+import axios, { AxiosError, AxiosResponse } from "axios";
+import { keys } from "../utils";
 import createAuthRefreshInterceptor from "axios-auth-refresh";
-import {redirectToLogin, retryableRequest} from "./utils.ts";
-import {logout} from "./auth.ts";
-import {UserSchema} from "../types/domain.ts";
+import { redirectToLogin, retryableRequest } from "./utils.ts";
+import { logout } from "./auth.ts";
+import { UserSchema } from "../types/domain.ts";
 
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 

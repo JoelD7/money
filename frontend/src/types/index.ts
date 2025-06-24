@@ -47,4 +47,5 @@ export type {
   SnackAlert,
   TransactionSearchParams,
   PaginationModel,
+  IdempotencyKVP,
 } from "./other.ts";
