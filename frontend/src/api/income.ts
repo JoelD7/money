@@ -1,17 +1,27 @@
-import {API_BASE_URL, axiosClient} from "./money-api.ts";
-import {Income, IncomeList, IncomeListSchema} from "../types";
-import {keys} from "../utils/index.ts";
-import {QueryFunctionContext} from "@tanstack/react-query";
-import {incomeKeys} from "../queries";
-import {AxiosResponse} from "axios";
+import { API_BASE_URL, axiosClient } from "./money-api.ts";
+import { IdempotencyKVP, Income, IncomeList, IncomeListSchema } from "../types";
+import { keys } from "../utils/index.ts";
+import { QueryFunctionContext } from "@tanstack/react-query";
+import { incomeKeys } from "../queries";
+import { AxiosResponse } from "axios";
+import { getIdempotencyKey, handleIdempotentRequest } from "./utils.ts";
 
 export function createIncome(income: Income) {
-    return axiosClient.post(API_BASE_URL + "/income", income, {
-        withCredentials: true,
-        headers: {
-            Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
-        },
-    });
+  let accessToken = localStorage.getItem(keys.ACCESS_TOKEN);
+  if (!accessToken) {
+    accessToken = "";
+  }
+
+  const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(income, accessToken, "");
+  const p = axiosClient.post(API_BASE_URL + "/income", income, {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+      "Idempotency-Key": idempotenceKVP.idempotencyKey,
+    },
+  });
+
+  return handleIdempotentRequest(p, idempotenceKVP.encodedRequestBody);
 }
 
 export async function getIncomeList({
