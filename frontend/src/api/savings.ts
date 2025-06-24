@@ -1,7 +1,7 @@
-import { buildQueryParams } from "./utils.ts";
+import { buildQueryParams, getIdempotencyKey, handleIdempotentRequest } from "./utils.ts";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { AxiosResponse } from "axios";
-import { Saving, SavingList, SavingsSchema } from "../types";
+import { IdempotencyKVP, Saving, SavingList, SavingsSchema } from "../types";
 import { keys } from "../utils/index.ts";
 import { QueryFunctionContext } from "@tanstack/react-query";
 
@@ -28,9 +28,9 @@ export const savingsKeys = {
 };
 
 export async function getSavings({
-                                   queryKey,
-                                 }: QueryFunctionContext<ReturnType<(typeof savingsKeys)["list"]>>) {
-  const {pageSize, startKey, sortOrder, sortBy, savingGoalID} = queryKey[0];
+  queryKey,
+}: QueryFunctionContext<ReturnType<(typeof savingsKeys)["list"]>>) {
+  const { pageSize, startKey, sortOrder, sortBy, savingGoalID } = queryKey[0];
   const params = buildQueryParams(startKey, pageSize, sortOrder, sortBy, savingGoalID);
 
   let url = API_BASE_URL + `/savings`;
@@ -54,10 +54,19 @@ export async function getSavings({
 }
 
 export async function createSaving(saving: Saving) {
-  return axiosClient.post(API_BASE_URL + "/savings", saving, {
+  let accessToken = localStorage.getItem(keys.ACCESS_TOKEN);
+  if (!accessToken) {
+    accessToken = "";
+  }
+
+  const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(saving, accessToken, "");
+  const p = axiosClient.post(API_BASE_URL + "/savings", saving, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+      "Idempotency-Key": idempotenceKVP.idempotencyKey,
     },
   });
+
+  return handleIdempotentRequest(p, idempotenceKVP.encodedRequestBody);
 }
