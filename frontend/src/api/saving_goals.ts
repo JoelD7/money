@@ -1,9 +1,9 @@
 import { AxiosResponse } from "axios";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
-import { SavingGoal, SavingGoalList } from "../types";
+import { IdempotencyKVP, SavingGoal, SavingGoalList } from "../types";
 import { keys } from "../utils/index.ts";
 import { SavingGoalsSchema } from "../types/domain.ts";
-import { buildQueryParams } from "./utils.ts";
+import { buildQueryParams, getIdempotencyKey, handleIdempotentRequest } from "./utils.ts";
 
 export async function getSavingGoals(
   startKey: string = "",
@@ -33,12 +33,21 @@ export async function getSavingGoals(
 }
 
 export async function createSavingGoal(savingGoal: SavingGoal) {
-  return axiosClient.post(API_BASE_URL + "/savings/goals", savingGoal, {
+  let accessToken = localStorage.getItem(keys.ACCESS_TOKEN);
+  if (!accessToken) {
+    accessToken = ""
+  }
+
+  const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(savingGoal, accessToken, "");
+  const p = axiosClient.post(API_BASE_URL + "/savings/goals", savingGoal, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${localStorage.getItem(keys.ACCESS_TOKEN)}`,
+      "Idempotency-Key": idempotenceKVP.idempotencyKey,
     },
   });
+
+  return handleIdempotentRequest(p, idempotenceKVP.encodedRequestBody);
 }
 
 export async function getSavingGoal(id: string) {
