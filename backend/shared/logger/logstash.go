@@ -239,6 +239,7 @@ func (l *logstashLogger) write(data []byte) error {
 // is full it automatically flushes itself, so this manual flushing is done just in case.
 func (l *logstashLogger) Finish() error {
 	l.wg.Wait()
+	l.context = nil
 
 	err := l.bw.Flush()
 	if err != nil {
