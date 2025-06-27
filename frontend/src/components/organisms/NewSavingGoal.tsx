@@ -73,10 +73,18 @@ export function NewSavingGoal({ open, onClose, onAlert }: NewSavingGoalProps) {
 
   function createSavingGoal(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    let savingGoalDeadline: string = "";
+    if (deadline) {
+      const date = deadline.toDate();
+      date.setHours(23, 59, 59);
+      savingGoalDeadline = date.toISOString();
+    }
+
     const savingGoal: SavingGoal = {
       name: name,
       target: target ? target : 0,
-      deadline: deadline ? deadline.format() : "",
+      deadline: savingGoalDeadline,
       saving_goal_id: "",
       progress: 0,
       username: "",
@@ -148,7 +156,6 @@ export function NewSavingGoal({ open, onClose, onAlert }: NewSavingGoalProps) {
               label="Deadline"
               value={deadline}
               disablePast
-              views={["year", "month"]}
               onChange={(newDate) => setDeadline(newDate)}
               sx={{ width: "100%" }}
             />
