@@ -39,6 +39,7 @@ export function useGetUser() {
 
       return result;
     },
+    staleTime: 2 * 60 * 1000,
   });
 }
 

@@ -21,8 +21,9 @@ import { setIsAuthenticated } from "../../store";
 import { useNavigate } from "@tanstack/react-router";
 import { useDispatch } from "react-redux";
 import api from "../../api";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { Credentials, User } from "../../types";
+import { useGetUser } from "../../queries";
 
 type NavbarProps = {
   children?: ReactNode;
@@ -51,15 +52,9 @@ export function Navbar({ children }: NavbarProps) {
   const theme = useTheme();
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
-  const getUserQuery = useQuery({
-    queryKey: ["user"],
-    queryFn: () => api.getUser(),
-    retry: false,
-    staleTime: 1000,
-    refetchOnWindowFocus: false,
-  });
+  const getUser = useGetUser();
 
-  const user: User | undefined = getUserQuery.data;
+  const user: User | undefined = getUser.data;
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
