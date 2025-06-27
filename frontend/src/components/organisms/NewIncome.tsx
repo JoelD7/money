@@ -33,7 +33,10 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
       });
       onClose();
 
-      queryClient.invalidateQueries({ queryKey: [queryKeys.PERIOD_STATS] });
+      queryClient.invalidateQueries({ queryKey: [queryKeys.PERIOD_STATS] })
+          .then(null, (e) => {
+            console.error("Error invalidating period stats query", e);
+          })
     },
     onError: (error) => {
       if (error) {
