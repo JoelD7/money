@@ -1,5 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { queryRetryFn } from "./index.ts";
+import { defaultStaleTime, queryRetryFn } from "./common.ts";
 import api from "../api";
 import { SavingGoalList } from "../types";
 
@@ -30,7 +30,7 @@ export function useGetSavingGoals(
     queryKey: savingGoalKeys.list(pageSize, startKey, sortOrder, sortBy),
     queryFn: () => api.getSavingGoals(startKey, pageSize, sortOrder, sortBy),
     retry: queryRetryFn,
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
   });
 }
 
@@ -44,7 +44,7 @@ export function useGetSavingGoalsInfinite() {
     },
     queryFn: ({ pageParam }) => api.getSavingGoals(pageParam, 10, "", ""),
     retry: queryRetryFn,
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
   });
 }
 
@@ -53,6 +53,6 @@ export function useGetSavingGoal(id: string) {
     queryKey: savingGoalKeys.single(id),
     queryFn: () => api.getSavingGoal(id),
     retry: queryRetryFn,
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
   });
 }

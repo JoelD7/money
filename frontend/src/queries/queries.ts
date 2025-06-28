@@ -3,7 +3,7 @@ import api from "../api";
 import { keys, utils } from "../utils";
 import { PeriodList, User } from "../types";
 import { INCOME, PERIOD, PERIOD_STATS, PERIODS, USER } from "./keys";
-import { queryRetryFn } from "./common.ts";
+import { defaultStaleTime, queryRetryFn } from "./common.ts";
 
 export const QUERY_RETRIES = 2;
 
@@ -39,7 +39,7 @@ export function useGetUser() {
 
       return result;
     },
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
   });
 }
 
@@ -51,7 +51,7 @@ export function useGetPeriod(user?: User) {
     queryKey: [PERIOD],
     queryFn: () => api.getPeriod(periodID),
     enabled: periodID !== "",
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -60,7 +60,7 @@ export function useGetPeriods(startKey: string = "", pageSize: number = 10) {
   return useQuery({
     queryKey: [PERIODS, startKey, pageSize],
     queryFn: () => api.getPeriods(startKey, pageSize),
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -69,7 +69,7 @@ export function useGetPeriodsInfinite() {
   return useInfiniteQuery({
     queryKey: [PERIODS],
     initialPageParam: "",
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
     getNextPageParam: (lastPage: PeriodList) => {
       return lastPage.next_key !== "" ? lastPage.next_key : null;
     },
@@ -86,7 +86,7 @@ export function useGetPeriodStats(user?: User) {
     queryKey: [PERIOD_STATS, periodID],
     queryFn: () => api.getPeriodStats(periodID),
     enabled: periodID !== "",
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -102,7 +102,7 @@ export function useGetIncome() {
   return useQuery({
     queryKey: incomeKeys.list(pageSize, startKey, period, sortOrder, sortBy),
     queryFn: api.getIncomeList,
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -127,7 +127,7 @@ export function useGetExpenses(periodID: string) {
     ),
     queryFn: api.getExpenses,
     enabled: periodID !== "",
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -142,7 +142,7 @@ export function useGetSavings(
   return useQuery({
     queryKey: api.savingsKeys.list(pageSize, startKey, sortOrder, sortBy, savingGoalID),
     queryFn: api.getSavings,
-    staleTime: 2 * 60 * 1000,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }

@@ -20,4 +20,4 @@ export {
   useGetSavingGoal,
 } from "./saving_goals";
 
-export { queryRetryFn } from "./common";
+export { queryRetryFn, defaultStaleTime } from "./common";
