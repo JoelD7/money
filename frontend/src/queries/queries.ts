@@ -28,6 +28,29 @@ export const incomeKeys = {
     ] as const,
 };
 
+export const expensesQueryKeys = {
+  all: [{ scope: "expenses" }] as const,
+  list: (
+      categories?: string[],
+      pageSize?: number,
+      startKey?: string,
+      period?: string,
+      sortBy?: string,
+      sortOrder?: string,
+  ) =>
+      [
+        {
+          ...expensesQueryKeys.all[0],
+          pageSize,
+          startKey,
+          period,
+          categories,
+          sortBy,
+          sortOrder,
+        },
+      ] as const,
+};
+
 export function useGetUser() {
   return useQuery({
     queryKey: [USER],
@@ -117,7 +140,7 @@ export function useGetExpenses(periodID: string) {
   }
 
   return useQuery({
-    queryKey: api.expensesQueryKeys.list(
+    queryKey: expensesQueryKeys.list(
       categories,
       pageSize,
       startKey,

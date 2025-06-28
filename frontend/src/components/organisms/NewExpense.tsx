@@ -21,11 +21,12 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { CategorySelect } from "./CategorySelect.tsx";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { Button } from "../atoms";
-import {useMutation, useQueryClient} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import dayjs, { Dayjs } from "dayjs";
 import { Dialog } from "../molecules";
+import { expensesQueryKeys } from "../../queries";
 
 type ExpenseTypeOption = {
   label: string;
@@ -70,10 +71,11 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
         title: "Expense created successfully",
       });
 
-      queryClient.invalidateQueries({ queryKey: [...api.expensesQueryKeys.all] })
-          .then(null, (error) => {
-            console.error("Error invalidating expenses query", error);
-          })
+      queryClient
+        .invalidateQueries({ queryKey: [...expensesQueryKeys.all] })
+        .then(null, (error) => {
+          console.error("Error invalidating expenses query", error);
+        });
 
       onClose();
     },

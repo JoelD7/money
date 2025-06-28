@@ -8,6 +8,7 @@ export {
   useGetPeriodStats,
   useGetIncome,
   incomeKeys,
+  expensesQueryKeys,
   useGetPeriodsInfinite,
   useGetExpenses,
   useGetSavings,
