@@ -56,7 +56,7 @@ export function Home() {
     return getUser.isRefetchError || getPeriodStats.isRefetchError;
   }
 
-  if (getUser.isPending && user === undefined) {
+  if (getUser.isLoading) {
     return <Loading />;
   }
 
@@ -125,10 +125,7 @@ export function Home() {
               <Grid xs={12} lg={8}>
                 <ExpensesChart
                   user={user}
-                  summary={periodStats ? periodStats.category_expense_summary : []}
                   chartHeight={chartHeight}
-                  isLoading={getUser.isLoading}
-                  isError={getPeriodStats.isError}
                 />
               </Grid>
 

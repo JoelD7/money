@@ -57,7 +57,9 @@ export function useGetUser() {
     queryFn: () => {
       const result: Promise<User> = api.getUser();
       result.then((res) => {
-        localStorage.setItem(keys.CURRENT_PERIOD, res.current_period);
+        if (res.current_period){
+          localStorage.setItem(keys.CURRENT_PERIOD, res.current_period);
+        }
       });
 
       return result;
@@ -73,7 +75,6 @@ export function useGetPeriod(user?: User) {
   return useQuery({
     queryKey: [PERIOD],
     queryFn: () => api.getPeriod(periodID),
-    enabled: periodID !== "",
     staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
@@ -103,12 +104,11 @@ export function useGetPeriodsInfinite() {
 
 export function useGetPeriodStats(user?: User) {
   const periodID =
-    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
+    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "no-current-period";
 
   return useQuery({
     queryKey: [PERIOD_STATS, periodID],
     queryFn: () => api.getPeriodStats(periodID),
-    enabled: periodID !== "",
     staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
@@ -130,7 +130,7 @@ export function useGetIncome() {
   });
 }
 
-export function useGetExpenses(periodID: string) {
+export function useGetExpenses(periodID?: string) {
   // eslint-disable-next-line prefer-const
   let { categories, pageSize, startKey, period, sortOrder, sortBy } =
     utils.useTransactionsParams();

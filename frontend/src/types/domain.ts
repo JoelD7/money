@@ -11,7 +11,7 @@ export type Category = z.infer<typeof CategorySchema>;
 
 export const UserSchema = z.object({
   username: z.string(),
-  current_period: z.string(),
+  current_period: z.string().optional(),
   remainder: z.number(),
   expenses: z.number().optional(),
   categories: z.array(CategorySchema).optional(),

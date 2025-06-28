@@ -20,7 +20,7 @@ import {tableDateFormatter} from "../../utils";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
-  period: string;
+  period?: string;
 };
 
 export function ExpensesTable({ categories, period }: ExpensesTableProps) {
