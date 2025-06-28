@@ -250,7 +250,7 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
   const apiRef = useGridApiRef();
   return (
     <div>
-      {getExpensesQuery.isError && (
+      {getExpensesQuery.isError && getExpensesQuery.error.response?.status !== 404 && (
         <ErrorSnackbar
           openProp={errSnackbar.open}
           title={errSnackbar.title}
