@@ -12,7 +12,7 @@ type User struct {
 	AccessToken   string      `json:"-"`
 	RefreshToken  string      `json:"-"`
 	CurrentPeriod string      `json:"current_period,omitempty"`
-	Remainder     float64     `json:"remainder,omitempty"`
+	Remainder     float64     `json:"remainder"`
 }
 
 type Category struct {
