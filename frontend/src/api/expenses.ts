@@ -11,29 +11,7 @@ import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { QueryFunctionContext } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
 import { getIdempotencyKey, handleIdempotentRequest } from "./utils.ts";
-
-export const expensesQueryKeys = {
-  all: [{ scope: "expenses" }] as const,
-  list: (
-    categories?: string[],
-    pageSize?: number,
-    startKey?: string,
-    period?: string,
-    sortBy?: string,
-    sortOrder?: string,
-  ) =>
-    [
-      {
-        ...expensesQueryKeys.all[0],
-        pageSize,
-        startKey,
-        period,
-        categories,
-        sortBy,
-        sortOrder,
-      },
-    ] as const,
-};
+import { expensesQueryKeys } from "../queries";
 
 export async function getExpenses({
   queryKey,
@@ -99,7 +77,7 @@ export async function getExpenses({
 export function createExpense(expense: Expense) {
   let accessToken = localStorage.getItem(keys.ACCESS_TOKEN);
   if (!accessToken) {
-    accessToken = ""
+    accessToken = "";
   }
 
   const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(expense, accessToken, "");

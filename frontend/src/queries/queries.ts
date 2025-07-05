@@ -3,7 +3,7 @@ import api from "../api";
 import { keys, utils } from "../utils";
 import { PeriodList, User } from "../types";
 import { INCOME, PERIOD, PERIOD_STATS, PERIODS, USER } from "./keys";
-import { queryRetryFn } from "./common.ts";
+import { defaultStaleTime, queryRetryFn } from "./common.ts";
 
 export const QUERY_RETRIES = 2;
 
@@ -28,17 +28,43 @@ export const incomeKeys = {
     ] as const,
 };
 
+export const expensesQueryKeys = {
+  all: [{ scope: "expenses" }] as const,
+  list: (
+    categories?: string[],
+    pageSize?: number,
+    startKey?: string,
+    period?: string,
+    sortBy?: string,
+    sortOrder?: string,
+  ) =>
+    [
+      {
+        ...expensesQueryKeys.all[0],
+        pageSize,
+        startKey,
+        period,
+        categories,
+        sortBy,
+        sortOrder,
+      },
+    ] as const,
+};
+
 export function useGetUser() {
   return useQuery({
     queryKey: [USER],
     queryFn: () => {
       const result: Promise<User> = api.getUser();
       result.then((res) => {
-        localStorage.setItem(keys.CURRENT_PERIOD, res.current_period);
+        if (res.current_period) {
+          localStorage.setItem(keys.CURRENT_PERIOD, res.current_period);
+        }
       });
 
       return result;
     },
+    staleTime: defaultStaleTime,
   });
 }
 
@@ -49,7 +75,7 @@ export function useGetPeriod(user?: User) {
   return useQuery({
     queryKey: [PERIOD],
     queryFn: () => api.getPeriod(periodID),
-    enabled: periodID !== "",
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -58,6 +84,7 @@ export function useGetPeriods(startKey: string = "", pageSize: number = 10) {
   return useQuery({
     queryKey: [PERIODS, startKey, pageSize],
     queryFn: () => api.getPeriods(startKey, pageSize),
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -66,6 +93,7 @@ export function useGetPeriodsInfinite() {
   return useInfiniteQuery({
     queryKey: [PERIODS],
     initialPageParam: "",
+    staleTime: defaultStaleTime,
     getNextPageParam: (lastPage: PeriodList) => {
       return lastPage.next_key !== "" ? lastPage.next_key : null;
     },
@@ -81,6 +109,7 @@ export function useGetPeriodStats(user?: User) {
   return useQuery({
     queryKey: [PERIOD_STATS, periodID],
     queryFn: () => api.getPeriodStats(periodID),
+    staleTime: defaultStaleTime,
     enabled: periodID !== "",
     retry: queryRetryFn,
   });
@@ -97,11 +126,12 @@ export function useGetIncome() {
   return useQuery({
     queryKey: incomeKeys.list(pageSize, startKey, period, sortOrder, sortBy),
     queryFn: api.getIncomeList,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
 
-export function useGetExpenses(periodID: string) {
+export function useGetExpenses(periodID?: string) {
   // eslint-disable-next-line prefer-const
   let { categories, pageSize, startKey, period, sortOrder, sortBy } =
     utils.useTransactionsParams();
@@ -111,7 +141,7 @@ export function useGetExpenses(periodID: string) {
   }
 
   return useQuery({
-    queryKey: api.expensesQueryKeys.list(
+    queryKey: expensesQueryKeys.list(
       categories,
       pageSize,
       startKey,
@@ -121,6 +151,7 @@ export function useGetExpenses(periodID: string) {
     ),
     queryFn: api.getExpenses,
     enabled: periodID !== "",
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }
@@ -135,6 +166,7 @@ export function useGetSavings(
   return useQuery({
     queryKey: api.savingsKeys.list(pageSize, startKey, sortOrder, sortBy, savingGoalID),
     queryFn: api.getSavings,
+    staleTime: defaultStaleTime,
     retry: queryRetryFn,
   });
 }

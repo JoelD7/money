@@ -10,7 +10,7 @@ import api from "../../api";
 import { AxiosError } from "axios";
 import * as yup from "yup";
 import { ValidationError } from "yup";
-import { queryKeys } from "../../queries";
+import { incomeKeys, queryKeys } from "../../queries";
 import { Dialog } from "../molecules";
 
 type NewIncomeProps = {
@@ -33,7 +33,15 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
       });
       onClose();
 
-      queryClient.invalidateQueries({ queryKey: [queryKeys.PERIOD_STATS] });
+      queryClient.invalidateQueries({ queryKey: [...incomeKeys.all] }).then(null, (e) => {
+        console.error("Error invalidating income list query", e);
+      });
+
+      queryClient
+        .invalidateQueries({ queryKey: [queryKeys.PERIOD_STATS] })
+        .then(null, (e) => {
+          console.error("Error invalidating period stats query", e);
+        });
     },
     onError: (error) => {
       if (error) {

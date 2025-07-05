@@ -19,24 +19,13 @@ export function BalanceCard({ remainder, loading }: BalanceCardProps) {
 
   return (
     <div>
-      <Grid
-        container
-        borderRadius="1rem"
-        p="0.5rem"
-        bgcolor="white.main"
-        boxShadow={"2"}
-      >
+      <Grid container borderRadius="1rem" p="0.5rem" bgcolor="white.main" boxShadow={"2"}>
         {loading ? (
           <CashFlowSkeleton />
         ) : (
           <>
             <Grid xs={3}>
-              <Grid
-                height="100%"
-                container
-                alignContent="center"
-                justifyContent="center"
-              >
+              <Grid height="100%" container alignContent="center" justifyContent="center">
                 <RemoveCircleOutlineOutlinedIcon sx={customWidth} />
               </Grid>
             </Grid>

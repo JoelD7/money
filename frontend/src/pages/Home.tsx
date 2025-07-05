@@ -56,7 +56,7 @@ export function Home() {
     return getUser.isRefetchError || getPeriodStats.isRefetchError;
   }
 
-  if (getUser.isPending && user === undefined) {
+  if (getUser.isLoading) {
     return <Loading />;
   }
 
@@ -75,6 +75,14 @@ export function Home() {
     return 0;
   }
 
+  function showPeriodStatsErr(): boolean{
+    if (getPeriodStats.isError && getPeriodStats.error.response){
+      return getPeriodStats.error.response.status !== 404
+    }
+
+    return getPeriodStats.isError
+  }
+
   return (
     <Container>
       <Navbar />
@@ -82,7 +90,7 @@ export function Home() {
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
       <LinearProgress loading={getUser.isFetching} />
 
-      {getPeriodStats.isError && (
+      {showPeriodStatsErr() && (
         <ErrorSnackbar openProp={errSnackbar.open} title={errSnackbar.title} />
       )}
 
@@ -96,7 +104,7 @@ export function Home() {
         {/*Income*/}
         <Grid xs={12} sm={4} hidden={lgUp}>
           <IncomeCard
-            loading={getPeriodStats.isPending}
+            loading={getPeriodStats.isLoading}
             income={periodStats?.total_income}
           />
         </Grid>
@@ -104,7 +112,7 @@ export function Home() {
         {/*Balance*/}
         <Grid xs={12} sm={4} hidden={lgUp}>
           <BalanceCard
-            loading={getUser.isPending}
+            loading={getUser.isLoading}
             remainder={user ? user.remainder : 0}
           />
         </Grid>
@@ -112,7 +120,7 @@ export function Home() {
         {/*Expenses*/}
         <Grid xs={12} sm={4} hidden={lgUp}>
           <ExpenseCard
-            loading={getPeriodStats.isPending}
+            loading={getPeriodStats.isLoading}
             expenses={getPeriodTotalExpenses()}
           />
         </Grid>
@@ -125,10 +133,7 @@ export function Home() {
               <Grid xs={12} lg={8}>
                 <ExpensesChart
                   user={user}
-                  summary={periodStats ? periodStats.category_expense_summary : []}
                   chartHeight={chartHeight}
-                  isLoading={getUser.isLoading}
-                  isError={getPeriodStats.isError}
                 />
               </Grid>
 
@@ -139,7 +144,7 @@ export function Home() {
                     {/*Income*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <IncomeCard
-                        loading={getPeriodStats.isPending}
+                        loading={getPeriodStats.isLoading}
                         income={periodStats?.total_income}
                       />
                     </Grid>
@@ -147,7 +152,7 @@ export function Home() {
                     {/*Balance*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <BalanceCard
-                        loading={getUser.isPending}
+                        loading={getUser.isLoading}
                         remainder={user ? user.remainder : 0}
                       />
                     </Grid>
@@ -155,7 +160,7 @@ export function Home() {
                     {/*Expenses*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <ExpenseCard
-                        loading={getPeriodStats.isPending}
+                        loading={getPeriodStats.isLoading}
                         expenses={getPeriodTotalExpenses()}
                       />
                     </Grid>

@@ -1,14 +1,16 @@
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import {
   BackgroundRefetchErrorSnackbar,
+  Button,
   Container,
   ErrorSnackbar,
   Navbar,
+  NewTransaction,
   PageTitle,
   Table,
 } from "../components";
-import { useGetIncome } from "../queries";
-import { Income, IncomeList } from "../types";
+import { useGetIncome, useGetUser } from "../queries";
+import { Income, IncomeList, User } from "../types";
 import {
   GridColDef,
   GridPaginationModel,
@@ -20,6 +22,7 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { v4 as uuidv4 } from "uuid";
 import { tableDateFormatter } from "../utils";
+import AddIcon from "@mui/icons-material/Add";
 
 export function IncomeTable() {
   const gridStyle = {
@@ -45,6 +48,7 @@ export function IncomeTable() {
   };
 
   const location = useLocation();
+  const [openNewIncome, setOpenNewIncome] = useState<boolean>(false);
   const [paginationModel, setPaginationModel] = useState(getPaginationFromURL());
   const [selectedPeriod, setSelectedPeriod] = useState(getCurrentPeriodFromURL());
 
@@ -52,7 +56,10 @@ export function IncomeTable() {
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
 
   const getIncome = useGetIncome();
+  const getUser = useGetUser();
+
   const incomeList: IncomeList | undefined = getIncome.data;
+  const user: User | undefined = getUser.data;
 
   const periods: string[] = getPeriodArray();
 
@@ -200,48 +207,69 @@ export function IncomeTable() {
     });
   }
 
+  function showErrorSnackbar():boolean {
+    if (getIncome.isError && getIncome.error.response){
+      return getIncome.error.response.status !== 404
+    }
+
+    return getIncome.isError
+  }
+
   return (
     <Container>
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
       <Navbar />
 
-      {getIncome.isError && incomeList === undefined && (
+      {showErrorSnackbar() && (
         <ErrorSnackbar
           openProp={incomeListErrSnackbar.open}
           title={incomeListErrSnackbar.title}
-          message={getIncome.error.message}
+          message={getIncome.error?getIncome.error.message:""}
         />
       )}
 
       <PageTitle>Income</PageTitle>
 
-      {/* Period selector*/}
-      <div className={"pb-2"}>
-        <FormControl sx={{ width: "150px" }}>
-          <InputLabel id={labelId}>Period</InputLabel>
-
-          <Select
-            labelId={labelId}
-            id={"Period"}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  maxHeight: 150,
-                },
-              },
-            }}
-            label={"Period"}
-            value={periods.length > 0 ? selectedPeriod : ""}
-            onChange={(e) => onSelectedPeriodChange(e.target.value)}
+      {/* Period selector, new income button*/}
+      <div className={"w-full flex align-center justify-between"}>
+        {/*New income button*/}
+        <div>
+          <Button
+            variant={"contained"}
+            startIcon={<AddIcon />}
+            onClick={() => setOpenNewIncome(true)}
           >
-            {Array.isArray(periods) &&
-              periods.map((p) => (
-                <MenuItem key={p} id={p} value={p}>
-                  {p}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
+            New income
+          </Button>
+        </div>
+        {/*Period selector*/}
+        <div className={"pb-2"}>
+          <FormControl sx={{ width: "150px" }}>
+            <InputLabel id={labelId}>Period</InputLabel>
+
+            <Select
+              labelId={labelId}
+              id={"Period"}
+              MenuProps={{
+                PaperProps: {
+                  sx: {
+                    maxHeight: 150,
+                  },
+                },
+              }}
+              label={"Period"}
+              value={periods.length > 0 ? selectedPeriod : ""}
+              onChange={(e) => onSelectedPeriodChange(e.target.value)}
+            >
+              {Array.isArray(periods) &&
+                periods.map((p) => (
+                  <MenuItem key={p} id={p} value={p}>
+                    {p}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+        </div>
       </div>
 
       <div style={{ height: "631px" }}>
@@ -278,6 +306,14 @@ export function IncomeTable() {
           }}
         />
       </div>
+
+      {/*New income dialog*/}
+      <NewTransaction
+        type={"income"}
+        user={user}
+        open={openNewIncome}
+        onClose={() => setOpenNewIncome(false)}
+      />
     </Container>
   );
 }
