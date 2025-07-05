@@ -152,13 +152,21 @@ export function SavingsTable({ savingGoalID }: SavingsTableProps) {
     return getSavingsQuery.isRefetchError;
   }
 
+  function openErrorSnackbar(): boolean {
+    if (getSavingsQuery.isError && getSavingsQuery.error.response) {
+      return getSavingsQuery.error.response.status !== 404;
+    }
+
+    return getSavingsQuery.isError;
+  }
+
   return (
     <>
-      {getSavingsQuery.isError && getSavingsQuery.error.response?.status !== 404 && (
+      {openErrorSnackbar() && (
         <ErrorSnackbar
           openProp={true}
           title={"Error fetching savings"}
-          message={getSavingsQuery.error.message}
+          message={getSavingsQuery.error ? getSavingsQuery.error.message : ""}
         />
       )}
 

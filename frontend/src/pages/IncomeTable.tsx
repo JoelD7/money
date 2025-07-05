@@ -207,16 +207,24 @@ export function IncomeTable() {
     });
   }
 
+  function showErrorSnackbar():boolean {
+    if (getIncome.isError && getIncome.error.response){
+      return getIncome.error.response.status !== 404
+    }
+
+    return getIncome.isError
+  }
+
   return (
     <Container>
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
       <Navbar />
 
-      {getIncome.isError && getIncome.error.response?.status !== 404 && (
+      {showErrorSnackbar() && (
         <ErrorSnackbar
           openProp={incomeListErrSnackbar.open}
           title={incomeListErrSnackbar.title}
-          message={getIncome.error.message}
+          message={getIncome.error?getIncome.error.message:""}
         />
       )}
 

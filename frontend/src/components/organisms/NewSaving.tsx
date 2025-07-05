@@ -140,13 +140,21 @@ export function NewSaving({
     setSavingGoal(savingGoalId);
   }
 
+  function showErrorSnackbar() {
+    if (getPeriodsQuery.isError && getPeriodsQuery.error.response){
+      return getPeriodsQuery.error.response.status !== 404
+    }
+
+    return getPeriodsQuery.isError
+  }
+
   return (
     <Dialog open={open} onClose={onClose}>
-      {getPeriodsQuery.isError && (
+      {showErrorSnackbar() && (
         <ErrorSnackbar
           openProp={getPeriodsQuery.isError}
           title={"Error fetching periods"}
-          message={getPeriodsQuery.error.message}
+          message={ getPeriodsQuery.error? getPeriodsQuery.error.message:""}
         />
       )}
 

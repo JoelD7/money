@@ -16,7 +16,7 @@ import { CategorySelect } from "./CategorySelect.tsx";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useGetExpenses } from "../../queries";
 import { ErrorSnackbar, Table } from "../molecules";
-import {tableDateFormatter} from "../../utils";
+import { tableDateFormatter } from "../../utils";
 
 type ExpensesTableProps = {
   categories: Category[] | undefined;
@@ -247,14 +247,22 @@ export function ExpensesTable({ categories, period }: ExpensesTableProps) {
     });
   }
 
+  function showErrorSnackbar(): boolean {
+    if (getExpensesQuery.isError && getExpensesQuery.error.response) {
+      return getExpensesQuery.error.response.status !== 404;
+    }
+
+    return getExpensesQuery.isError;
+  }
+
   const apiRef = useGridApiRef();
   return (
     <div>
-      {getExpensesQuery.isError && getExpensesQuery.error.response?.status !== 404 && (
+      {showErrorSnackbar() && (
         <ErrorSnackbar
           openProp={errSnackbar.open}
           title={errSnackbar.title}
-          message={getExpensesQuery.error.message}
+          message={getExpensesQuery.error ? getExpensesQuery.error.message : ""}
         />
       )}
 
