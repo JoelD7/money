@@ -75,6 +75,14 @@ export function Home() {
     return 0;
   }
 
+  function showPeriodStatsErr(): boolean{
+    if (getPeriodStats.isError && getPeriodStats.error.response){
+      return getPeriodStats.error.response.status !== 404
+    }
+
+    return getPeriodStats.isError
+  }
+
   return (
     <Container>
       <Navbar />
@@ -82,7 +90,7 @@ export function Home() {
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
       <LinearProgress loading={getUser.isFetching} />
 
-      {getPeriodStats.isError && (
+      {showPeriodStatsErr() && (
         <ErrorSnackbar openProp={errSnackbar.open} title={errSnackbar.title} />
       )}
 

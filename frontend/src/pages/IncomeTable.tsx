@@ -212,7 +212,7 @@ export function IncomeTable() {
       <BackgroundRefetchErrorSnackbar show={showRefetchErrorSnackbar()} />
       <Navbar />
 
-      {getIncome.isError && incomeList === undefined && (
+      {getIncome.isError && getIncome.error.response?.status !== 404 && (
         <ErrorSnackbar
           openProp={incomeListErrSnackbar.open}
           title={incomeListErrSnackbar.title}
