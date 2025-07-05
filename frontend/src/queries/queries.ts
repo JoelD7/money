@@ -31,24 +31,24 @@ export const incomeKeys = {
 export const expensesQueryKeys = {
   all: [{ scope: "expenses" }] as const,
   list: (
-      categories?: string[],
-      pageSize?: number,
-      startKey?: string,
-      period?: string,
-      sortBy?: string,
-      sortOrder?: string,
+    categories?: string[],
+    pageSize?: number,
+    startKey?: string,
+    period?: string,
+    sortBy?: string,
+    sortOrder?: string,
   ) =>
-      [
-        {
-          ...expensesQueryKeys.all[0],
-          pageSize,
-          startKey,
-          period,
-          categories,
-          sortBy,
-          sortOrder,
-        },
-      ] as const,
+    [
+      {
+        ...expensesQueryKeys.all[0],
+        pageSize,
+        startKey,
+        period,
+        categories,
+        sortBy,
+        sortOrder,
+      },
+    ] as const,
 };
 
 export function useGetUser() {
@@ -57,7 +57,7 @@ export function useGetUser() {
     queryFn: () => {
       const result: Promise<User> = api.getUser();
       result.then((res) => {
-        if (res.current_period){
+        if (res.current_period) {
           localStorage.setItem(keys.CURRENT_PERIOD, res.current_period);
         }
       });
@@ -104,12 +104,13 @@ export function useGetPeriodsInfinite() {
 
 export function useGetPeriodStats(user?: User) {
   const periodID =
-    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "no-current-period";
+    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
 
   return useQuery({
     queryKey: [PERIOD_STATS, periodID],
     queryFn: () => api.getPeriodStats(periodID),
     staleTime: defaultStaleTime,
+    enabled: periodID !== "",
     retry: queryRetryFn,
   });
 }

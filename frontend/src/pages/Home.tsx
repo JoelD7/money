@@ -104,7 +104,7 @@ export function Home() {
         {/*Income*/}
         <Grid xs={12} sm={4} hidden={lgUp}>
           <IncomeCard
-            loading={getPeriodStats.isPending}
+            loading={getPeriodStats.isLoading}
             income={periodStats?.total_income}
           />
         </Grid>
@@ -112,7 +112,7 @@ export function Home() {
         {/*Balance*/}
         <Grid xs={12} sm={4} hidden={lgUp}>
           <BalanceCard
-            loading={getUser.isPending}
+            loading={getUser.isLoading}
             remainder={user ? user.remainder : 0}
           />
         </Grid>
@@ -120,7 +120,7 @@ export function Home() {
         {/*Expenses*/}
         <Grid xs={12} sm={4} hidden={lgUp}>
           <ExpenseCard
-            loading={getPeriodStats.isPending}
+            loading={getPeriodStats.isLoading}
             expenses={getPeriodTotalExpenses()}
           />
         </Grid>
@@ -144,7 +144,7 @@ export function Home() {
                     {/*Income*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <IncomeCard
-                        loading={getPeriodStats.isPending}
+                        loading={getPeriodStats.isLoading}
                         income={periodStats?.total_income}
                       />
                     </Grid>
@@ -152,7 +152,7 @@ export function Home() {
                     {/*Balance*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <BalanceCard
-                        loading={getUser.isPending}
+                        loading={getUser.isLoading}
                         remainder={user ? user.remainder : 0}
                       />
                     </Grid>
@@ -160,7 +160,7 @@ export function Home() {
                     {/*Expenses*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <ExpenseCard
-                        loading={getPeriodStats.isPending}
+                        loading={getPeriodStats.isLoading}
                         expenses={getPeriodTotalExpenses()}
                       />
                     </Grid>
