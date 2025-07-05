@@ -113,7 +113,7 @@ export function SavingGoalDetail() {
                 New saving
               </Button>
             </div>
-            <SavingsTable savingGoalID={savingGoalId} showNotFoundErr={false} />
+            <SavingsTable savingGoalID={savingGoalId} />
           </div>
         </Grid>
       </Grid>
