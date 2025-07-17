@@ -72,7 +72,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Insurance Premium"),
 				Notes:       "Monthly insurance premium",
 				CreatedDate: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "gym membership",
@@ -82,7 +82,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gym Membership"),
 				Notes:       "Monthly gym membership",
 				CreatedDate: time.Date(2021, 9, 2, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "netflix subscription",
@@ -92,7 +92,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Netflix Subscription"),
 				Notes:       "Monthly Netflix subscription",
 				CreatedDate: time.Date(2021, 9, 3, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "spotify subscription",
@@ -102,7 +102,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Spotify Subscription"),
 				Notes:       "Monthly Spotify subscription",
 				CreatedDate: time.Date(2021, 9, 4, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "car insurance",
@@ -112,7 +112,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Car Insurance"),
 				Notes:       "Monthly car insurance premium",
 				CreatedDate: time.Date(2021, 9, 5, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "electricity bill",
@@ -122,7 +122,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Electricity Bill"),
 				Notes:       "Monthly electricity bill",
 				CreatedDate: time.Date(2021, 9, 6, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "internet bill",
@@ -132,7 +132,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Internet Bill"),
 				Notes:       "Monthly internet bill",
 				CreatedDate: time.Date(2021, 9, 7, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "water bill",
@@ -142,7 +142,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Water Bill"),
 				Notes:       "Monthly water bill",
 				CreatedDate: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "phone bill",
@@ -152,7 +152,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Phone Bill"),
 				Notes:       "Monthly phone bill",
 				CreatedDate: time.Date(2021, 9, 9, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "credit card payment",
@@ -162,7 +162,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Credit Card Payment"),
 				Notes:       "Monthly credit card payment",
 				CreatedDate: time.Date(2021, 9, 10, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "student loan",
@@ -172,7 +172,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Student Loan"),
 				Notes:       "Monthly student loan payment",
 				CreatedDate: time.Date(2021, 9, 11, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "rent payment",
@@ -182,7 +182,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Rent Payment"),
 				Notes:       "Monthly rent payment",
 				CreatedDate: time.Date(2021, 9, 12, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "gas bill",
@@ -192,7 +192,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gas Bill"),
 				Notes:       "Monthly gas bill",
 				CreatedDate: time.Date(2021, 9, 13, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 		}
 
@@ -225,7 +225,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gas Bill"),
 				Notes:       "Monthly gas bill",
 				CreatedDate: time.Date(2021, 9, 13, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "rent payment",
@@ -235,7 +235,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Rent Payment"),
 				Notes:       "Monthly rent payment",
 				CreatedDate: time.Date(2021, 9, 12, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "student loan",
@@ -245,7 +245,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Student Loan"),
 				Notes:       "Monthly student loan payment",
 				CreatedDate: time.Date(2021, 9, 11, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "credit card payment",
@@ -255,7 +255,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Credit Card Payment"),
 				Notes:       "Monthly credit card payment",
 				CreatedDate: time.Date(2021, 9, 10, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "phone bill",
@@ -265,7 +265,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Phone Bill"),
 				Notes:       "Monthly phone bill",
 				CreatedDate: time.Date(2021, 9, 9, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "water bill",
@@ -275,7 +275,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Water Bill"),
 				Notes:       "Monthly water bill",
 				CreatedDate: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "internet bill",
@@ -285,7 +285,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Internet Bill"),
 				Notes:       "Monthly internet bill",
 				CreatedDate: time.Date(2021, 9, 7, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "electricity bill",
@@ -295,7 +295,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Electricity Bill"),
 				Notes:       "Monthly electricity bill",
 				CreatedDate: time.Date(2021, 9, 6, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "car insurance",
@@ -305,7 +305,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Car Insurance"),
 				Notes:       "Monthly car insurance premium",
 				CreatedDate: time.Date(2021, 9, 5, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "spotify subscription",
@@ -315,7 +315,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Spotify Subscription"),
 				Notes:       "Monthly Spotify subscription",
 				CreatedDate: time.Date(2021, 9, 4, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "netflix subscription",
@@ -325,7 +325,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Netflix Subscription"),
 				Notes:       "Monthly Netflix subscription",
 				CreatedDate: time.Date(2021, 9, 3, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "gym membership",
@@ -335,7 +335,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gym Membership"),
 				Notes:       "Monthly gym membership",
 				CreatedDate: time.Date(2021, 9, 2, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "insurance premium",
@@ -345,7 +345,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Insurance Premium"),
 				Notes:       "Monthly insurance premium",
 				CreatedDate: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 		}
 
@@ -377,7 +377,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Car Insurance"),
 				Notes:       "Monthly car insurance premium",
 				CreatedDate: time.Date(2021, 9, 5, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "credit card payment",
@@ -387,7 +387,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Credit Card Payment"),
 				Notes:       "Monthly credit card payment",
 				CreatedDate: time.Date(2021, 9, 10, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "electricity bill",
@@ -397,7 +397,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Electricity Bill"),
 				Notes:       "Monthly electricity bill",
 				CreatedDate: time.Date(2021, 9, 6, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "gas bill",
@@ -407,7 +407,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gas Bill"),
 				Notes:       "Monthly gas bill",
 				CreatedDate: time.Date(2021, 9, 13, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "gym membership",
@@ -417,7 +417,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gym Membership"),
 				Notes:       "Monthly gym membership",
 				CreatedDate: time.Date(2021, 9, 2, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "insurance premium",
@@ -427,7 +427,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Insurance Premium"),
 				Notes:       "Monthly insurance premium",
 				CreatedDate: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "internet bill",
@@ -437,7 +437,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Internet Bill"),
 				Notes:       "Monthly internet bill",
 				CreatedDate: time.Date(2021, 9, 7, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "netflix subscription",
@@ -447,7 +447,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Netflix Subscription"),
 				Notes:       "Monthly Netflix subscription",
 				CreatedDate: time.Date(2021, 9, 3, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "phone bill",
@@ -457,7 +457,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Phone Bill"),
 				Notes:       "Monthly phone bill",
 				CreatedDate: time.Date(2021, 9, 9, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "rent payment",
@@ -467,7 +467,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Rent Payment"),
 				Notes:       "Monthly rent payment",
 				CreatedDate: time.Date(2021, 9, 12, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "spotify subscription",
@@ -477,7 +477,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Spotify Subscription"),
 				Notes:       "Monthly Spotify subscription",
 				CreatedDate: time.Date(2021, 9, 4, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "student loan",
@@ -487,7 +487,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Student Loan"),
 				Notes:       "Monthly student loan payment",
 				CreatedDate: time.Date(2021, 9, 11, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "water bill",
@@ -497,7 +497,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Water Bill"),
 				Notes:       "Monthly water bill",
 				CreatedDate: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			}}
 
 		for i, expense := range expensesResponse.Expenses {
@@ -528,7 +528,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Spotify Subscription"),
 				Notes:       "Monthly Spotify subscription",
 				CreatedDate: time.Date(2021, 9, 4, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "netflix subscription",
@@ -538,7 +538,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Netflix Subscription"),
 				Notes:       "Monthly Netflix subscription",
 				CreatedDate: time.Date(2021, 9, 3, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "gas bill",
@@ -548,7 +548,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gas Bill"),
 				Notes:       "Monthly gas bill",
 				CreatedDate: time.Date(2021, 9, 13, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "phone bill",
@@ -558,7 +558,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Phone Bill"),
 				Notes:       "Monthly phone bill",
 				CreatedDate: time.Date(2021, 9, 9, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "water bill",
@@ -568,7 +568,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Water Bill"),
 				Notes:       "Monthly water bill",
 				CreatedDate: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "internet bill",
@@ -578,7 +578,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Internet Bill"),
 				Notes:       "Monthly internet bill",
 				CreatedDate: time.Date(2021, 9, 7, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "gym membership",
@@ -588,7 +588,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Gym Membership"),
 				Notes:       "Monthly gym membership",
 				CreatedDate: time.Date(2021, 9, 2, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "electricity bill",
@@ -598,7 +598,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Electricity Bill"),
 				Notes:       "Monthly electricity bill",
 				CreatedDate: time.Date(2021, 9, 6, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "car insurance",
@@ -608,7 +608,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Car Insurance"),
 				Notes:       "Monthly car insurance premium",
 				CreatedDate: time.Date(2021, 9, 5, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "insurance premium",
@@ -618,7 +618,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Insurance Premium"),
 				Notes:       "Monthly insurance premium",
 				CreatedDate: time.Date(2021, 9, 1, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "student loan",
@@ -628,7 +628,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Student Loan"),
 				Notes:       "Monthly student loan payment",
 				CreatedDate: time.Date(2021, 9, 11, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "credit card payment",
@@ -638,7 +638,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Credit Card Payment"),
 				Notes:       "Monthly credit card payment",
 				CreatedDate: time.Date(2021, 9, 10, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 			{
 				ExpenseID:   "rent payment",
@@ -648,7 +648,7 @@ func TestGetByPeriod(t *testing.T) {
 				Name:        stringPtr("Rent Payment"),
 				Notes:       "Monthly rent payment",
 				CreatedDate: time.Date(2021, 9, 12, 0, 0, 0, 0, time.UTC),
-				Period:      "2021-09",
+				PeriodID:    "2021-09",
 			},
 		}
 

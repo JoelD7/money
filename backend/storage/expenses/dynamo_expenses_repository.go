@@ -116,7 +116,7 @@ func (d *DynamoRepository) CreateExpense(ctx context.Context, expense *models.Ex
 }
 
 func (d *DynamoRepository) buildTransactWriteItemsInput(expenseEnt *expenseEntity, expense *models.Expense) (*dynamodb.TransactWriteItemsInput, error) {
-	expenseEnt.PeriodUser = dynamo.BuildPeriodUser(expenseEnt.Username, expenseEnt.Period)
+	expenseEnt.PeriodUser = dynamo.BuildPeriodUser(expenseEnt.Username, expenseEnt.PeriodID)
 
 	item, err := attributevalue.MarshalMap(expenseEnt)
 	if err != nil {
@@ -171,7 +171,7 @@ func (d *DynamoRepository) BatchCreateExpenses(ctx context.Context, expenses []*
 
 	for _, expense := range expenses {
 		entity := toExpenseEntity(expense)
-		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.PeriodID)
 		entities = append(entities, entity)
 	}
 
@@ -207,8 +207,8 @@ func getBatchWriteRequests(entities []*expenseEntity) []types.WriteRequest {
 func (d *DynamoRepository) UpdateExpense(ctx context.Context, expense *models.Expense) error {
 	entity := toExpenseEntity(expense)
 
-	if entity.Period != "" {
-		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
+	if entity.PeriodID != "" {
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.PeriodID)
 	}
 
 	username, err := attributevalue.Marshal(entity.Username)
@@ -278,7 +278,7 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 		return nil, err
 	}
 
-	period, err := attributevalue.Marshal(expense.Period)
+	period, err := attributevalue.Marshal(expense.PeriodID)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func getAttributeValues(expense *expenseEntity) (map[string]types.AttributeValue
 		attrValues[":notes"] = notes
 	}
 
-	if expense.Period != "" {
+	if expense.PeriodID != "" {
 		attrValues[":period"] = period
 		attrValues[":period_user"] = periodUser
 	}
@@ -342,7 +342,7 @@ func (d *DynamoRepository) BatchUpdateExpenses(ctx context.Context, expenses []*
 
 	for _, expense := range expenses {
 		entity := toExpenseEntity(expense)
-		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.Period)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, entity.PeriodID)
 		entities = append(entities, entity)
 	}
 
