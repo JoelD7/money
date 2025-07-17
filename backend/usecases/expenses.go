@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"math"
@@ -250,31 +251,18 @@ func validateExpensePeriod(ctx context.Context, expense *models.Expense, usernam
 		return nil
 	}
 
-	periods := make([]*models.Period, 0)
-	curPeriods := make([]*models.Period, 0)
-	nextKey := ""
 	var err error
 
-	for {
-		curPeriods, nextKey, err = p.GetPeriods(ctx, username, nextKey, 50)
-		if err != nil {
-			return fmt.Errorf("check if expense period is valid failed: %v", err)
-		}
-
-		periods = append(periods, curPeriods...)
-
-		if nextKey == "" {
-			break
-		}
+	_, err = p.GetPeriod(ctx, username, expense.Period)
+	if errors.Is(err, models.ErrPeriodNotFound) {
+		return models.ErrInvalidPeriod
 	}
 
-	for _, period := range periods {
-		if period.ID == expense.Period {
-			return nil
-		}
+	if err != nil {
+		return fmt.Errorf("check if expense period is valid failed: %v", err)
 	}
 
-	return models.ErrInvalidPeriod
+	return nil
 }
 
 func NewExpenseRecurringEliminator(em ExpenseRecurringManager) func(ctx context.Context, expenseRecurringID, username string) error {
