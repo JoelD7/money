@@ -76,7 +76,7 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 func (d *DynamoRepository) CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error) {
 	incomeEnt := toIncomeEntity(income)
-	incomeEnt.PeriodUser = dynamo.BuildPeriodUser(income.Username, *income.Period)
+	incomeEnt.PeriodUser = dynamo.BuildPeriodUser(income.Username, *income.PeriodID)
 
 	incomeAv, err := attributevalue.MarshalMap(incomeEnt)
 	if err != nil {
@@ -114,7 +114,7 @@ func (d *DynamoRepository) BatchCreateIncome(ctx context.Context, incomes []*mod
 
 	for _, income := range incomes {
 		incomeEnt := toIncomeEntity(income)
-		incomeEnt.PeriodUser = dynamo.BuildPeriodUser(income.Username, *income.Period)
+		incomeEnt.PeriodUser = dynamo.BuildPeriodUser(income.Username, *income.PeriodID)
 		incomeEntities = append(incomeEntities, *incomeEnt)
 	}
 
@@ -327,14 +327,14 @@ func (d *DynamoRepository) GetAllIncomePeriods(ctx context.Context, username str
 	var exists bool
 
 	for _, entity := range entities {
-		if entity.Period == nil {
+		if entity.PeriodID == nil {
 			continue
 		}
 
-		_, exists = existsMap[*entity.Period]
+		_, exists = existsMap[*entity.PeriodID]
 		if !exists {
-			periods = append(periods, *entity.Period)
-			existsMap[*entity.Period] = struct{}{}
+			periods = append(periods, *entity.PeriodID)
+			existsMap[*entity.PeriodID] = struct{}{}
 		}
 	}
 

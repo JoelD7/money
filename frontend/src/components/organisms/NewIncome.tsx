@@ -75,7 +75,7 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
       name: name,
       created_date: date ? date.format("") : "",
       notes: notes,
-      period: user ? user.current_period : "",
+      period_id: (user && user.current_period) ? user.current_period : "",
     };
 
     try {

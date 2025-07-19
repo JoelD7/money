@@ -102,7 +102,7 @@ func GetDummyIncome() []*models.Income {
 			Amount:      getFloatPtr(8700),
 			Name:        getStringPtr("Salary"),
 			CreatedDate: time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			PeriodID:    getStringPtr("2023-5"),
 		},
 		{
 			Username:    "test@gmail.com",
@@ -110,7 +110,7 @@ func GetDummyIncome() []*models.Income {
 			Amount:      getFloatPtr(1500),
 			Name:        getStringPtr("Debt collection"),
 			CreatedDate: time.Date(2023, 5, 15, 20, 0, 0, 0, time.UTC),
-			Period:      getStringPtr("2023-5"),
+			PeriodID:    getStringPtr("2023-5"),
 		},
 	}
 }

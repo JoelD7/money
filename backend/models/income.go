@@ -10,6 +10,6 @@ type Income struct {
 	Notes       *string   `json:"notes,omitempty"`
 	CreatedDate time.Time `json:"created_date,omitempty"`
 	UpdatedDate time.Time `json:"updated_date,omitempty"`
-	Period      *string   `json:"period,omitempty"`
+	PeriodID    *string   `json:"period_id,omitempty"`
 	PeriodUser  *string   `json:"period_user,omitempty"`
 }
