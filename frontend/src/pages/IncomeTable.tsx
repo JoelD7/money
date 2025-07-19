@@ -9,7 +9,7 @@ import {
   PageTitle,
   Table,
 } from "../components";
-import { useGetIncome, useGetUser } from "../queries";
+import { useGetIncome, useGetPeriodsInfinite, useGetUser } from "../queries";
 import { Income, IncomeList, User } from "../types";
 import {
   GridColDef,
@@ -41,6 +41,7 @@ export function IncomeTable() {
   };
 
   const labelId: string = uuidv4();
+  const noneSelectValue = "None";
 
   const incomeListErrSnackbar = {
     open: true,
@@ -61,15 +62,17 @@ export function IncomeTable() {
   const incomeList: IncomeList | undefined = getIncome.data;
   const user: User | undefined = getUser.data;
 
-  const periods: string[] = getPeriodArray();
-
-  function getPeriodArray(): string[] {
-    if (!incomeList) {
-      return [];
+  const getPeriodsQuery = useGetPeriodsInfinite();
+  const periods: string[] = (() => {
+    if (getPeriodsQuery.data) {
+      return getPeriodsQuery.data.pages
+        .map((page) => page.periods)
+        .flat()
+        .map((p) => p.period);
     }
 
-    return incomeList.periods ? incomeList.periods : [];
-  }
+    return [];
+  })();
 
   const columns: GridColDef[] = [
     { field: "amount", headerName: "Amount", width: 150 },
@@ -157,7 +160,7 @@ export function IncomeTable() {
         }).format(inc.amount),
         name: inc.name,
         notes: inc.notes ? inc.notes : "-",
-        period: inc.period,
+        period: inc.period_id,
         created_date: new Date(inc.created_date),
       };
     });
@@ -168,6 +171,22 @@ export function IncomeTable() {
   }
 
   function onSelectedPeriodChange(newPeriod: string) {
+    if (newPeriod === noneSelectValue) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { period, ...search } = location.search;
+      navigate({
+        to: "/income",
+        search: {
+          ...search,
+        },
+      }).catch((e) => {
+        console.error("[money] - Navigating to /income failed: ", e);
+      });
+
+      setSelectedPeriod("");
+      return;
+    }
+
     if (selectedPeriod === newPeriod) {
       return;
     }
@@ -207,12 +226,12 @@ export function IncomeTable() {
     });
   }
 
-  function showErrorSnackbar():boolean {
-    if (getIncome.isError && getIncome.error.response){
-      return getIncome.error.response.status !== 404
+  function showErrorSnackbar(): boolean {
+    if (getIncome.isError && getIncome.error.response) {
+      return getIncome.error.response.status !== 404;
     }
 
-    return getIncome.isError
+    return getIncome.isError;
   }
 
   return (
@@ -224,7 +243,7 @@ export function IncomeTable() {
         <ErrorSnackbar
           openProp={incomeListErrSnackbar.open}
           title={incomeListErrSnackbar.title}
-          message={getIncome.error?getIncome.error.message:""}
+          message={getIncome.error ? getIncome.error.message : ""}
         />
       )}
 
@@ -261,6 +280,9 @@ export function IncomeTable() {
               value={periods.length > 0 ? selectedPeriod : ""}
               onChange={(e) => onSelectedPeriodChange(e.target.value)}
             >
+              <MenuItem key={"None"} id={"None"} value={noneSelectValue}>
+                <em>None</em>
+              </MenuItem>
               {Array.isArray(periods) &&
                 periods.map((p) => (
                   <MenuItem key={p} id={p} value={p}>

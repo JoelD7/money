@@ -53,7 +53,7 @@ export function NewSaving({
       return getPeriodsQuery.data.pages
         .map((page) => page.periods)
         .flat()
-        .map((p) => p.name);
+        .map((p) => p.period);
     }
 
     return [];
