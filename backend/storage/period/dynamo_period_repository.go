@@ -109,19 +109,9 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 
 	periodEnt.UpdatedDate = time.Now()
 
-	uPeriodName := &uniquePeriodNameEntity{
-		Name:     *periodEnt.Name,
-		Username: periodEnt.Username,
-	}
-
 	periodAv, err := attributevalue.MarshalMap(periodEnt)
 	if err != nil {
 		return fmt.Errorf("marshaling period to attribute value: %v", err)
-	}
-
-	uPeriodNameAv, err := attributevalue.MarshalMap(uPeriodName)
-	if err != nil {
-		return fmt.Errorf("marshaling unique period name to attribute value failed: %v", err)
 	}
 
 	periodExistsCond := expression.Name("period").AttributeExists()
@@ -151,21 +141,17 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 				Item:                     periodAv,
 			},
 		},
-		{
-			Put: &types.Put{
-				TableName:                aws.String(d.uniquePeriodNameTableName),
-				ConditionExpression:      uniquePeriodNameTableExpr.Condition(),
-				ExpressionAttributeNames: uniquePeriodNameTableExpr.Names(),
-				Item:                     uPeriodNameAv,
-			},
-		},
 	}
 
-	input := &dynamodb.TransactWriteItemsInput{
-		TransactItems: transactItems,
+	input := &dynamodb.PutItemInput{
+		Item:                      periodAv,
+		TableName:                 aws.String(d.periodTableName),
+		ConditionExpression:       periodTableExpr.Condition(),
+		ExpressionAttributeNames:  periodTableExpr.Names(),
+		ExpressionAttributeValues: periodTableExpr.Values(),
 	}
 
-	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
+	_, err = d.dynamoClient.PutItem(ctx, input)
 	if err != nil {
 		return handleUpdatePeriodError(transactItems, errByCondition, err)
 	}
