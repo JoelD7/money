@@ -251,7 +251,7 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 
 	return &models.QueryParameters{
 		Categories:   req.MultiValueQueryStringParameters["category"],
-		Period:       req.QueryStringParameters["period"],
+		Period:       req.QueryStringParameters["period_id"],
 		StartKey:     req.QueryStringParameters["start_key"],
 		PageSize:     pageSizeParam,
 		SortBy:       req.QueryStringParameters["sort_by"],

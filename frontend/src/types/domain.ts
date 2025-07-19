@@ -32,7 +32,7 @@ export const ExpenseSchema = z.object({
   notes: z.string().optional(),
   type: ExpenseTypeSchema.optional(),
   created_date: z.string(),
-  period: z.string(),
+  period_id: z.string(),
   update_date: z.string().optional(),
 });
 
