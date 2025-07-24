@@ -2,6 +2,7 @@ package savings
 
 import (
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"time"
 )
 
@@ -12,14 +13,15 @@ var (
 )
 
 type savingEntity struct {
-	SavingID     string    `json:"saving_id,omitempty"  dynamodbav:"saving_id"`
-	SavingGoalID *string   `json:"saving_goal_id,omitempty"  dynamodbav:"saving_goal_id"`
-	Username     string    `json:"username,omitempty"  dynamodbav:"username"`
-	Period       *string   `json:"period,omitempty"  dynamodbav:"period"`
-	PeriodUser   *string   `json:"period_user,omitempty"  dynamodbav:"period_user"`
-	CreatedDate  time.Time `json:"created_date,omitempty"  dynamodbav:"created_date"`
-	UpdatedDate  time.Time `json:"updated_date,omitempty"  dynamodbav:"updated_date"`
-	Amount       *float64  `json:"amount" dynamodbav:"amount"`
+	SavingID            string    `json:"saving_id,omitempty"  dynamodbav:"saving_id"`
+	SavingGoalID        *string   `json:"saving_goal_id,omitempty"  dynamodbav:"saving_goal_id"`
+	Username            string    `json:"username,omitempty"  dynamodbav:"username"`
+	Period              *string   `json:"period,omitempty"  dynamodbav:"period"`
+	PeriodUser          *string   `json:"period_user,omitempty"  dynamodbav:"period_user"`
+	CreatedDate         time.Time `json:"created_date,omitempty"  dynamodbav:"created_date"`
+	UpdatedDate         time.Time `json:"updated_date,omitempty"  dynamodbav:"updated_date"`
+	Amount              *float64  `json:"amount" dynamodbav:"amount"`
+	CreatedDateSavingID string    `json:"created_date_saving_id,omitempty" dynamodbav:"created_date_saving_id"`
 }
 
 func toSavingEntity(s *models.Saving) *savingEntity {
@@ -32,6 +34,10 @@ func toSavingEntity(s *models.Saving) *savingEntity {
 		CreatedDate:  s.CreatedDate,
 		UpdatedDate:  s.UpdatedDate,
 		Amount:       s.Amount,
+		CreatedDateSavingID: dynamo.BuildCreatedDateEntityIDKey(
+			s.CreatedDate,
+			s.SavingID,
+		),
 	}
 
 	if s.SavingGoalID == nil || (s.SavingGoalID != nil && *s.SavingGoalID == "") {
