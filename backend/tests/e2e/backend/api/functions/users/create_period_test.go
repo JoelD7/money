@@ -45,10 +45,19 @@ func TestMain(m *testing.M) {
 	periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
 	incomeTableName = env.GetString("INCOME_TABLE_NAME", "")
 	envConfig = &models.EnvironmentConfiguration{
-		ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
-		ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
-		PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
-		UsersTable:             env.GetString("USERS_TABLE_NAME", ""),
+		ExpensesTable:                        env.GetString("EXPENSES_TABLE_NAME", ""),
+		ExpensesRecurringTable:               env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+		PeriodUserExpenseIndex:               env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+		UsersTable:                           env.GetString("USERS_TABLE_NAME", ""),
+		SavingsTable:                         env.GetString("SAVINGS_TABLE_NAME", ""),
+		PeriodSavingIndexName:                env.GetString("PERIOD_SAVING_INDEX_NAME", ""),
+		SavingGoalSavingIndexName:            env.GetString("SAVING_GOAL_SAVING_INDEX_NAME", ""),
+		SavingGoalCreatedDateSavingIndexName: env.GetString("SAVING_GOAL_CREATED_DATE_SAVING_INDEX_NAME", ""),
+		SavingGoalsTable:                     env.GetString("SAVING_GOALS_TABLE_NAME", ""),
+		UsernameAmountIndex:                  env.GetString("USERNAME_AMOUNT_INDEX", ""),
+		UsernameCreatedDateIndex:             env.GetString("USERNAME_CREATED_DATE_INDEX", ""),
+		PeriodUserCreatedDateIndex:           env.GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
+		PeriodUserAmountIndex:                env.GetString("PERIOD_USER_AMOUNT_INDEX", ""),
 	}
 
 	os.Exit(m.Run())
@@ -258,9 +267,9 @@ func TestCreatePeriod(t *testing.T) {
 				foundSavingGoals[matchingSavingGoal.SavingGoalID] = true
 
 				// Verify saving has correct period
-				c.NotNil(saving.Period)
+				c.NotNil(saving.PeriodID)
 				c.NotNil(period.Name)
-				c.Equal(*period.Name, *saving.Period)
+				c.Equal(*period.Name, *saving.PeriodID)
 
 				// Verify amount matches the recurring amount from the saving goal
 				c.Equal(*matchingSavingGoal.RecurringAmount, *saving.Amount)

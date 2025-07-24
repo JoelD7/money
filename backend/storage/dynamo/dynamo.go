@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"strings"
 	"time"
 
 	"github.com/JoelD7/money/backend/models"
@@ -35,24 +34,6 @@ func GenerateID(prefix string) string {
 	}
 
 	return prefix + string(b)
-}
-
-// BuildPeriodUser builds a combined string of period and username required to identify an item of certain period and user.
-func BuildPeriodUser(username, period string) *string {
-	p := fmt.Sprintf("%s:%s", period, username)
-	return &p
-}
-
-// BuildAmountKey builds the amount sort key, which is a combined string of the amount and the item ID.
-// Example -> Input: 1234.56, abc123 -> Output: 000001234.56:abc123
-func BuildAmountKey(amount float64, id string) string {
-	amountStr := fmt.Sprintf("%0.2f", amount)
-	return fmt.Sprintf("%012s:%s", amountStr, id)
-}
-
-// BuildNameKey builds the name sort key, which is a combined string of the name and the item ID.
-func BuildNameKey(name, id string) string {
-	return fmt.Sprintf("%s:%s", strings.ToLower(name), id)
 }
 
 // EncodePaginationKey encodes the last evaluated key returned by Dynamo in a string format to be used in the next query

@@ -47,9 +47,6 @@ func toPeriodModels(periods []periodEntity) []*models.Period {
 }
 
 func toPeriodEntity(period models.Period) periodEntity {
-	//start := models.ToTime(period.StartDate)
-	//end := models.ToTime(period.EndDate)
-
 	return periodEntity{
 		Username:    period.Username,
 		ID:          period.ID,

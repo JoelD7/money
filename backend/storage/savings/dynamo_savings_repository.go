@@ -23,14 +23,15 @@ const (
 )
 
 type DynamoRepository struct {
-	dynamoClient               *dynamodb.Client
-	tableName                  string
-	periodSavingIndex          string
-	savingGoalSavingIndex      string
-	usernameAmountIndex        string
-	usernameCreatedDateIndex   string
-	periodUserCreatedDateIndex string
-	periodUserAmountIndex      string
+	dynamoClient                     *dynamodb.Client
+	tableName                        string
+	periodSavingIndex                string
+	savingGoalSavingIndex            string
+	savingGoalCreatedDateSavingIndex string
+	usernameAmountIndex              string
+	usernameCreatedDateIndex         string
+	periodUserCreatedDateIndex       string
+	periodUserAmountIndex            string
 }
 
 func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
@@ -48,7 +49,7 @@ func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.Enviro
 	d.usernameCreatedDateIndex = envConfig.UsernameCreatedDateIndex
 	d.periodUserCreatedDateIndex = envConfig.PeriodUserCreatedDateIndex
 	d.periodUserAmountIndex = envConfig.PeriodUserAmountIndex
-
+	d.savingGoalCreatedDateSavingIndex = envConfig.SavingGoalCreatedDateSavingIndexName
 	return d, nil
 }
 
@@ -79,6 +80,10 @@ func validateParams(envConfig *models.EnvironmentConfiguration) error {
 
 	if envConfig.PeriodUserAmountIndex == "" {
 		return fmt.Errorf("period user amount index is required")
+	}
+
+	if envConfig.SavingGoalCreatedDateSavingIndexName == "" {
+		return fmt.Errorf("saving goal created date saving index is required")
 	}
 
 	return nil
@@ -216,7 +221,11 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 		input.IndexName = aws.String(d.periodUserAmountIndex)
 	}
 
-	//For the moment there is no combined sorting with the saving goal query param. If the need arises, I will add it.
+	if params.SavingGoalID != "" && params.SortBy == string(models.SortParamCreatedDate) {
+		keyConditionEx = expression.Name("saving_goal_id").Equal(expression.Value(params.SavingGoalID))
+		input.IndexName = aws.String(d.savingGoalCreatedDateSavingIndex)
+	}
+
 	if params.SavingGoalID != "" {
 		keyConditionEx = expression.Name("saving_goal_id").Equal(expression.Value(params.SavingGoalID))
 		input.IndexName = aws.String(d.savingGoalSavingIndex)
