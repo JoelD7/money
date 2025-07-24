@@ -262,7 +262,7 @@ func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager,
 }
 
 func validateSavingPeriod(ctx context.Context, saving *models.Saving, username string, p PeriodManager) error {
-	if saving.Period == nil {
+	if saving.PeriodID == nil {
 		return nil
 	}
 
@@ -285,7 +285,7 @@ func validateSavingPeriod(ctx context.Context, saving *models.Saving, username s
 	}
 
 	for _, period := range periods {
-		if *period.Name == *saving.Period {
+		if *period.Name == *saving.PeriodID {
 			return nil
 		}
 	}
