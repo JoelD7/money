@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"net/url"
@@ -41,6 +42,7 @@ func (e *E2ERequester) CreateSavingGoal(savingGoal *models.SavingGoal, t *testin
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Auth", "Bearer "+e.accessToken)
+	request.Header.Set("Idempotency-Key", uuid.NewString())
 
 	res, err := e.client.Do(request)
 	if err != nil {

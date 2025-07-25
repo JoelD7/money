@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/google/uuid"
 	"net/http"
 	"net/url"
 	"testing"
@@ -35,6 +36,7 @@ func (e *E2ERequester) CreatePeriod(period *models.Period, t *testing.T) (*model
 	}
 
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", uuid.NewString())
 	request.Header.Set("Auth", "Bearer "+e.accessToken)
 
 	res, err := e.client.Do(request)
