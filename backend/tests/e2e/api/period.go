@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -61,28 +62,10 @@ func (e *E2ERequester) CreatePeriod(period *models.Period, t *testing.T) (*model
 }
 
 func (e *E2ERequester) DeletePeriod(periodID string) (int, error) {
-	request, err := http.NewRequest(http.MethodDelete, e.baseUrl+periodsEndpoint+"/"+periodID, nil)
+	endpoint, err := url.JoinPath(e.baseUrl, periodsEndpoint, periodID)
 	if err != nil {
-		return 0, fmt.Errorf("period deletion request building failed: %w", err)
+		return 0, fmt.Errorf("period deletion endpoint building failed: %w", err)
 	}
 
-	request.Header.Set("Auth", "Bearer "+e.accessToken)
-
-	res, err := e.client.Do(request)
-	if err != nil {
-		return 0, fmt.Errorf("period deletion request failed: %w", err)
-	}
-
-	defer func() {
-		err := res.Body.Close()
-		if err != nil {
-			fmt.Printf("closing response body failed: %v\n", err)
-		}
-	}()
-
-	if res.StatusCode != http.StatusNoContent {
-		return res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
-	}
-
-	return res.StatusCode, nil
+	return e.DeleteResource(endpoint)
 }

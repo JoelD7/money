@@ -12,6 +12,8 @@ import (
 var (
 	loginEndpoint       = "/auth/login"
 	savingsEndpoint     = "/savings"
+	expensesEndpoint    = "/expenses"
+	usersEndpoint       = "/users"
 	savingGoalsEndpoint = "/savings/goals"
 	periodsEndpoint     = "/periods"
 )
@@ -91,4 +93,32 @@ func (e *E2ERequester) login() error {
 	e.accessToken = loginRes.AccessToken
 
 	return nil
+}
+
+func (e *E2ERequester) DeleteResource(endpoint string) (int, error) {
+	request, err := http.NewRequest(http.MethodDelete, endpoint, nil)
+	if err != nil {
+		return 0, fmt.Errorf("request building failed: %w", err)
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Auth", "Bearer "+e.accessToken)
+
+	res, err := e.client.Do(request)
+	if err != nil {
+		return 0, fmt.Errorf("request failed: %w", err)
+	}
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			fmt.Printf("closing response body failed: %v\n", err)
+		}
+	}()
+
+	if res.StatusCode != http.StatusNoContent {
+		return res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
+	}
+
+	return res.StatusCode, nil
 }
