@@ -125,7 +125,7 @@ func validateCreateIncomeBody(req *apigateway.Request) (*models.Income, error) {
 		return nil, models.ErrMissingName
 	}
 
-	if reqIncome.Period == nil {
+	if reqIncome.PeriodID == nil {
 		return nil, models.ErrMissingPeriod
 	}
 

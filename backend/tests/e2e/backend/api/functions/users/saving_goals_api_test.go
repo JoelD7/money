@@ -192,7 +192,7 @@ func TestGetSavingGoals(t *testing.T) {
 			saving := new(models.Saving)
 			saving.SavingGoalID = &goalID
 			saving.Amount = &amount
-			saving.Period = createdPeriod.Name
+			saving.PeriodID = createdPeriod.Name
 
 			createdSaving, statusCode, err := requester.CreateSaving(saving, t)
 			c.Equal(http.StatusCreated, statusCode)
@@ -267,7 +267,7 @@ func TestGetSavingGoals(t *testing.T) {
 		saving := new(models.Saving)
 		saving.SavingGoalID = &goalToUpdate
 		saving.Amount = &additionalAmount
-		saving.Period = createdPeriod.Name
+		saving.PeriodID = createdPeriod.Name
 
 		createdSaving, statusCode, err := requester.CreateSaving(saving, t)
 		c.Equal(http.StatusCreated, statusCode)

@@ -7,7 +7,7 @@ type Saving struct {
 	SavingGoalID   *string   `json:"saving_goal_id,omitempty"`
 	SavingGoalName string    `json:"saving_goal_name,omitempty"`
 	Username       string    `json:"username,omitempty"`
-	Period         *string   `json:"period,omitempty"`
+	PeriodID       *string   `json:"period_id,omitempty"`
 	PeriodUser     *string   `json:"-"`
 	CreatedDate    time.Time `json:"created_date,omitempty"`
 	UpdatedDate    time.Time `json:"updated_date,omitempty"`

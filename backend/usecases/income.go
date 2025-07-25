@@ -90,7 +90,7 @@ func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheMana
 }
 
 func validateIncomePeriod(ctx context.Context, username string, income *models.Income, pm PeriodManager) error {
-	if income.Period == nil {
+	if income.PeriodID == nil {
 		return nil
 	}
 
@@ -113,7 +113,7 @@ func validateIncomePeriod(ctx context.Context, username string, income *models.I
 	}
 
 	for _, period := range periods {
-		if period.ID == *income.Period {
+		if period.ID == *income.PeriodID {
 			return nil
 		}
 	}

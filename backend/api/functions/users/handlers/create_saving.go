@@ -126,7 +126,7 @@ func validateBody(req *apigateway.Request) (*models.Saving, error) {
 		return nil, models.ErrInvalidSavingAmount
 	}
 
-	if userSaving.Period == nil || (userSaving.Period != nil && *userSaving.Period == "") {
+	if userSaving.PeriodID == nil || (userSaving.PeriodID != nil && *userSaving.PeriodID == "") {
 		return nil, models.ErrMissingPeriod
 	}
 

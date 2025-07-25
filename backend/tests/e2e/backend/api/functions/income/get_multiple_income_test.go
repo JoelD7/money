@@ -125,7 +125,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 				IncomeID:   "IN1lVnB1tCaSpyQLDEUswM",
 				Amount:     aws.Float64(750),
 				Name:       aws.String("income 1"),
-				Period:     aws.String("2023-7"),
+				PeriodID:   aws.String("2023-7"),
 				PeriodUser: aws.String("2023-7:test@gmail.com"),
 			},
 			{
@@ -133,7 +133,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 				IncomeID:   "IN2lVnB1tCaSpyQLDEUswM",
 				Amount:     aws.Float64(600),
 				Name:       aws.String("income 2"),
-				Period:     aws.String("2023-7"),
+				PeriodID:   aws.String("2023-7"),
 				PeriodUser: aws.String("2023-7:test@gmail.com"),
 			},
 			{
@@ -141,7 +141,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 				IncomeID:   "IN3lVnB1tCaSpyQLDEUswM",
 				Amount:     aws.Float64(450),
 				Name:       aws.String("income 3"),
-				Period:     aws.String("2023-7"),
+				PeriodID:   aws.String("2023-7"),
 				PeriodUser: aws.String("2023-7:test@gmail.com"),
 			},
 		}
@@ -169,7 +169,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 				IncomeID:   "IN3lVnB1tCaSpyQLDEUswM",
 				Amount:     aws.Float64(450),
 				Name:       aws.String("income 3"),
-				Period:     aws.String("2023-7"),
+				PeriodID:   aws.String("2023-7"),
 				PeriodUser: aws.String("2023-7:test@gmail.com"),
 			},
 			{
@@ -177,7 +177,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 				IncomeID:   "IN2lVnB1tCaSpyQLDEUswM",
 				Amount:     aws.Float64(600),
 				Name:       aws.String("income 2"),
-				Period:     aws.String("2023-7"),
+				PeriodID:   aws.String("2023-7"),
 				PeriodUser: aws.String("2023-7:test@gmail.com"),
 			},
 			{
@@ -185,7 +185,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 				IncomeID:   "IN1lVnB1tCaSpyQLDEUswM",
 				Amount:     aws.Float64(750),
 				Name:       aws.String("income 1"),
-				Period:     aws.String("2023-7"),
+				PeriodID:   aws.String("2023-7"),
 				PeriodUser: aws.String("2023-7:test@gmail.com"),
 			},
 		}

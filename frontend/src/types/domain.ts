@@ -32,7 +32,7 @@ export const ExpenseSchema = z.object({
   notes: z.string().optional(),
   type: ExpenseTypeSchema.optional(),
   created_date: z.string(),
-  period: z.string(),
+  period_id: z.string(),
   update_date: z.string().optional(),
 });
 
@@ -113,7 +113,7 @@ export const IncomeSchema = z.object({
   income_id: z.string(),
   amount: z.number(),
   name: z.string(),
-  period: z.string(),
+  period_id: z.string(),
   notes: z.string().optional(),
   created_date: z.string(),
 });
@@ -133,7 +133,7 @@ export const SavingSchema = z.object({
   saving_goal_id: z.string().optional(),
   saving_goal_name: z.string().optional(),
   username: z.string(),
-  period: z.string(),
+  period_id: z.string(),
   created_date: z.string().optional(),
   updated_date: z.string().optional(),
   amount: z.number(),

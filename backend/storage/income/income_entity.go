@@ -14,7 +14,7 @@ type incomeEntity struct {
 	Notes       *string   `json:"notes,omitempty" dynamodbav:"notes"`
 	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
 	UpdatedDate time.Time `json:"updated_date,omitempty" dynamodbav:"updated_date"`
-	Period      *string   `json:"period,omitempty" dynamodbav:"period"`
+	PeriodID    *string   `json:"period_id,omitempty" dynamodbav:"period"`
 	PeriodUser  *string   `json:"period_user,omitempty" dynamodbav:"period_user"`
 	// AmountKey is a special attribute used to sort income by amount. It's composed of a padded-string of the amount
 	AmountKey string `json:"amount_key,omitempty" dynamodbav:"amount_key"`
@@ -30,7 +30,7 @@ func toIncomeModel(i incomeEntity) *models.Income {
 		Name:        i.Name,
 		CreatedDate: i.CreatedDate,
 		UpdatedDate: i.UpdatedDate,
-		Period:      i.Period,
+		PeriodID:    i.PeriodID,
 		Notes:       i.Notes,
 		PeriodUser:  i.PeriodUser,
 	}
@@ -53,7 +53,7 @@ func toIncomeEntity(i *models.Income) *incomeEntity {
 		Name:         i.Name,
 		CreatedDate:  i.CreatedDate,
 		UpdatedDate:  i.UpdatedDate,
-		Period:       i.Period,
+		PeriodID:     i.PeriodID,
 		Notes:        i.Notes,
 		PeriodUser:   i.PeriodUser,
 		AmountKey:    dynamo.BuildAmountKey(*i.Amount, i.IncomeID),

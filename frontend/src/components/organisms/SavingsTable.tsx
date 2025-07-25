@@ -114,7 +114,7 @@ export function SavingsTable({ savingGoalID }: SavingsTableProps) {
       return {
         id: saving.saving_id,
         amount: saving.amount,
-        period: saving.period,
+        period: saving.period_id,
         goal: saving.saving_goal_name,
         created_date: saving.created_date ? new Date(saving.created_date) : null,
       };

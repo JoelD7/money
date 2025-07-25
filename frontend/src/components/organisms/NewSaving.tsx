@@ -39,7 +39,7 @@ export function NewSaving({
   const showSavingGoalSelector: boolean = savingGoalId ? savingGoalId === "" : true;
   const validationSchema = yup.object({
     amount: yup.number().required("Amount is required").moreThan(0, "Amount is required"),
-    period: yup.string().required("Period is required"),
+    period_id: yup.string().required("Period is required"),
     saving_goal_id: yup.string().optional(),
   });
 
@@ -53,7 +53,7 @@ export function NewSaving({
       return getPeriodsQuery.data.pages
         .map((page) => page.periods)
         .flat()
-        .map((p) => p.name);
+        .map((p) => p.period);
     }
 
     return [];
@@ -118,7 +118,7 @@ export function NewSaving({
       saving_id: "",
       username: "",
       amount: amount as number,
-      period: period,
+      period_id: period,
       saving_goal_id: savingGoal,
     };
 

@@ -79,7 +79,7 @@ func generateRecurringSavings(ctx context.Context, username string, period *stri
 			Amount:       goal.RecurringAmount,
 			CreatedDate:  time.Now(),
 			SavingGoalID: &goal.SavingGoalID,
-			Period:       period,
+			PeriodID:     period,
 		}
 	}
 

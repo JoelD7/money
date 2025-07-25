@@ -214,8 +214,8 @@ func NewExpensesPeriodSetter(em ExpenseManager, pm PeriodManager) func(ctx conte
 		}
 
 		for _, expense := range expenses {
-			if expense.Period == "" {
-				expense.Period = period.ID
+			if expense.PeriodID == "" {
+				expense.PeriodID = period.ID
 			}
 		}
 
@@ -247,13 +247,13 @@ func setExpensesCategoryNames(user *models.User, expenses []*models.Expense) err
 }
 
 func validateExpensePeriod(ctx context.Context, expense *models.Expense, username string, p PeriodManager) error {
-	if expense.Period == "" {
+	if expense.PeriodID == "" {
 		return nil
 	}
 
 	var err error
 
-	_, err = p.GetPeriod(ctx, username, expense.Period)
+	_, err = p.GetPeriod(ctx, username, expense.PeriodID)
 	if errors.Is(err, models.ErrPeriodNotFound) {
 		return models.ErrInvalidPeriod
 	}
