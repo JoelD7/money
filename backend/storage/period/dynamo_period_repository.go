@@ -70,7 +70,7 @@ func validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, 
 }
 
 func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error) {
-	period.ID = *period.Name
+	period.ID = dynamo.GenerateID(periodPrefix)
 	periodEnt := toPeriodEntity(*period)
 
 	attrValue, err := attributevalue.MarshalMap(periodEnt)
@@ -313,6 +313,39 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	}
 
 	return toPeriodModels(periods), nextKey, nil
+}
+
+func (d *DynamoRepository) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {
+	batchKeys := make([]map[string]types.AttributeValue, 0, len(periods))
+
+	for _, period := range periods {
+		batchKeys = append(batchKeys, map[string]types.AttributeValue{
+			"username": &types.AttributeValueMemberS{Value: username},
+			"period":   &types.AttributeValueMemberS{Value: period},
+		})
+	}
+
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]types.KeysAndAttributes{
+			d.periodTableName: {
+				Keys: batchKeys,
+			},
+		},
+	}
+
+	result, err := d.dynamoClient.BatchGetItem(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	periodResult := make([]periodEntity, 0, len(result.Responses[d.periodTableName]))
+
+	err = attributevalue.UnmarshalListOfMaps(result.Responses[d.periodTableName], &periodResult)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal periods failed: %v", err)
+	}
+
+	return toPeriodModels(periodResult), nil
 }
 
 func (d *DynamoRepository) GetLastPeriod(ctx context.Context, username string) (*models.Period, error) {

@@ -87,7 +87,7 @@ func NewExpenseUpdater(em ExpenseManager, pm PeriodManager, um UserManager) func
 	}
 }
 
-func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username, expenseID string) (*models.Expense, error) {
+func NewExpenseGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 	return func(ctx context.Context, username, expenseID string) (*models.Expense, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
@@ -95,6 +95,11 @@ func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Contex
 		}
 
 		expense, err := em.GetExpense(ctx, username, expenseID)
+		if err != nil {
+			return nil, err
+		}
+
+		err = setExpensesPeriods(ctx, username, pm, expense)
 		if err != nil {
 			return nil, err
 		}
@@ -108,7 +113,7 @@ func NewExpenseGetter(em ExpenseManager, um UserManager) func(ctx context.Contex
 	}
 }
 
-func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+func NewExpensesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
@@ -120,6 +125,11 @@ func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Conte
 			return nil, "", err
 		}
 
+		err = setExpensesPeriods(ctx, username, pm, expenses...)
+		if err != nil {
+			return nil, "", err
+		}
+
 		err = setExpensesCategoryNames(user, expenses)
 		if err != nil {
 			return expenses, "", err
@@ -129,7 +139,30 @@ func NewExpensesGetter(em ExpenseManager, um UserManager) func(ctx context.Conte
 	}
 }
 
-func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+func setExpensesPeriods(ctx context.Context, username string, pm PeriodManager, expenses ...*models.Expense) error {
+	expensesPeriods := make([]string, 0, len(expenses))
+	for _, expense := range expenses {
+		expensesPeriods = append(expensesPeriods, expense.PeriodID)
+	}
+
+	periodResults, err := pm.BatchGetPeriods(ctx, username, expensesPeriods)
+	if err != nil {
+		return err
+	}
+
+	periodsByID := make(map[string]*models.Period, len(periodResults))
+	for _, period := range periodResults {
+		periodsByID[period.ID] = period
+	}
+
+	for _, expense := range expenses {
+		expense.PeriodName = *periodsByID[expense.PeriodID].Name
+	}
+
+	return nil
+}
+
+func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
@@ -141,23 +174,7 @@ func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager) func(ctx c
 			return nil, "", err
 		}
 
-		err = setExpensesCategoryNames(user, expenses)
-		if err != nil {
-			return expenses, "", err
-		}
-
-		return expenses, nextKey, nil
-	}
-}
-
-func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
-	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
-		user, err := um.GetUser(ctx, username)
-		if err != nil {
-			return nil, "", fmt.Errorf("%v", err)
-		}
-
-		expenses, nextKey, err := em.GetExpensesByPeriod(ctx, username, params)
+		err = setExpensesPeriods(ctx, username, pm, expenses...)
 		if err != nil {
 			return nil, "", err
 		}
@@ -171,7 +188,33 @@ func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager) func(ctx conte
 	}
 }
 
-func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
+		user, err := um.GetUser(ctx, username)
+		if err != nil {
+			return nil, "", fmt.Errorf("%v", err)
+		}
+
+		expenses, nextKey, err := em.GetExpensesByPeriod(ctx, username, params)
+		if err != nil {
+			return nil, "", err
+		}
+
+		err = setExpensesPeriods(ctx, username, pm, expenses...)
+		if err != nil {
+			return nil, "", err
+		}
+
+		err = setExpensesCategoryNames(user, expenses)
+		if err != nil {
+			return expenses, "", err
+		}
+
+		return expenses, nextKey, nil
+	}
+}
+
+func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
 		user, err := um.GetUser(ctx, username)
 		if err != nil {
@@ -179,6 +222,11 @@ func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager) f
 		}
 
 		expenses, nextKey, err := em.GetExpensesByPeriodAndCategories(ctx, username, params)
+		if err != nil {
+			return nil, "", err
+		}
+
+		err = setExpensesPeriods(ctx, username, pm, expenses...)
 		if err != nil {
 			return nil, "", err
 		}

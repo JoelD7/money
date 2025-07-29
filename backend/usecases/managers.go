@@ -81,6 +81,7 @@ type PeriodManager interface {
 	GetPeriod(ctx context.Context, username, period string) (*models.Period, error)
 	GetLastPeriod(ctx context.Context, username string) (*models.Period, error)
 	GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error)
+	BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error)
 	DeletePeriod(ctx context.Context, periodID, username string) error
 }
 
