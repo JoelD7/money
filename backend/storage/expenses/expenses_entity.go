@@ -17,7 +17,7 @@ type expenseEntity struct {
 	Name        string    `json:"name,omitempty" dynamodbav:"name"`
 	Notes       string    `json:"notes,omitempty" dynamodbav:"notes"`
 	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
-	PeriodID    string    `json:"period_id,omitempty" dynamodbav:"period"`
+	PeriodID    string    `json:"period_id,omitempty" dynamodbav:"period_id"`
 	PeriodUser  *string   `json:"period_user,omitempty" dynamodbav:"period_user"`
 	UpdateDate  time.Time `json:"update_date,omitempty" dynamodbav:"update_date"`
 	// AmountKey is a special attribute used to sort expenses by amount. It's composed of a padded-string of the amount

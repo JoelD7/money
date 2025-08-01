@@ -141,8 +141,14 @@ func NewExpensesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func
 
 func setExpensesPeriods(ctx context.Context, username string, pm PeriodManager, expenses ...*models.Expense) error {
 	expensesPeriods := make([]string, 0, len(expenses))
+	seen := make(map[string]struct{}, len(expenses))
+
 	for _, expense := range expenses {
+		if _, ok := seen[expense.PeriodID]; ok || expense.PeriodID == "" {
+			continue
+		}
 		expensesPeriods = append(expensesPeriods, expense.PeriodID)
+		seen[expense.PeriodID] = struct{}{}
 	}
 
 	periodResults, err := pm.BatchGetPeriods(ctx, username, expensesPeriods)
@@ -156,7 +162,11 @@ func setExpensesPeriods(ctx context.Context, username string, pm PeriodManager, 
 	}
 
 	for _, expense := range expenses {
-		expense.PeriodName = *periodsByID[expense.PeriodID].Name
+		p, ok := periodsByID[expense.PeriodID]
+		if !ok {
+			continue
+		}
+		expense.PeriodName = *p.Name
 	}
 
 	return nil
