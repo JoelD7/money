@@ -99,7 +99,7 @@ func NewExpenseGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(
 			return nil, err
 		}
 
-		err = setExpensesPeriods(ctx, username, pm, expense)
+		err = setEntitiesPeriods(ctx, username, pm, expense)
 		if err != nil {
 			return nil, err
 		}
@@ -125,7 +125,12 @@ func NewExpensesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func
 			return nil, "", err
 		}
 
-		err = setExpensesPeriods(ctx, username, pm, expenses...)
+		periodManipulator := make([]PeriodManipulator, len(expenses))
+		for i := 0; i < len(expenses); i++ {
+			periodManipulator[i] = expenses[i]
+		}
+
+		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}
@@ -137,39 +142,6 @@ func NewExpensesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func
 
 		return expenses, nextKey, nil
 	}
-}
-
-func setExpensesPeriods(ctx context.Context, username string, pm PeriodManager, expenses ...*models.Expense) error {
-	expensesPeriods := make([]string, 0, len(expenses))
-	seen := make(map[string]struct{}, len(expenses))
-
-	for _, expense := range expenses {
-		if _, ok := seen[expense.PeriodID]; ok || expense.PeriodID == "" {
-			continue
-		}
-		expensesPeriods = append(expensesPeriods, expense.PeriodID)
-		seen[expense.PeriodID] = struct{}{}
-	}
-
-	periodResults, err := pm.BatchGetPeriods(ctx, username, expensesPeriods)
-	if err != nil {
-		return err
-	}
-
-	periodsByID := make(map[string]*models.Period, len(periodResults))
-	for _, period := range periodResults {
-		periodsByID[period.ID] = period
-	}
-
-	for _, expense := range expenses {
-		p, ok := periodsByID[expense.PeriodID]
-		if !ok {
-			continue
-		}
-		expense.PeriodName = *p.Name
-	}
-
-	return nil
 }
 
 func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error) {
@@ -184,7 +156,12 @@ func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager, pm PeriodM
 			return nil, "", err
 		}
 
-		err = setExpensesPeriods(ctx, username, pm, expenses...)
+		periodManipulator := make([]PeriodManipulator, len(expenses))
+		for i := 0; i < len(expenses); i++ {
+			periodManipulator[i] = expenses[i]
+		}
+
+		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}
@@ -210,7 +187,12 @@ func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager, pm PeriodManag
 			return nil, "", err
 		}
 
-		err = setExpensesPeriods(ctx, username, pm, expenses...)
+		periodManipulator := make([]PeriodManipulator, len(expenses))
+		for i := 0; i < len(expenses); i++ {
+			periodManipulator[i] = expenses[i]
+		}
+
+		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}
@@ -236,7 +218,12 @@ func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager, p
 			return nil, "", err
 		}
 
-		err = setExpensesPeriods(ctx, username, pm, expenses...)
+		periodManipulator := make([]PeriodManipulator, len(expenses))
+		for i := 0; i < len(expenses); i++ {
+			periodManipulator[i] = expenses[i]
+		}
+
+		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}

@@ -24,3 +24,11 @@ type CategoryExpenseSummary struct {
 	Total      float64 `json:"total"`
 	Period     string  `json:"period,omitempty"`
 }
+
+func (e *Expense) GetPeriodID() string {
+	return e.PeriodID
+}
+
+func (e *Expense) SetPeriodName(name string) {
+	e.PeriodName = name
+}
