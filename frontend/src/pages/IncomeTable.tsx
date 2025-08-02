@@ -17,7 +17,7 @@ import {
   GridRowsProp,
   GridSortModel,
 } from "@mui/x-data-grid";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { v4 as uuidv4 } from "uuid";
@@ -129,6 +129,21 @@ export function IncomeTable() {
     }).then(() => {
       setPaginationModel(newModel);
     });
+  }
+
+  function handlePeriodsMenuScroll(e: React.UIEvent<HTMLDivElement, UIEvent>) {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (
+        scrollTop + clientHeight >= scrollHeight - 5 &&
+        !(getPeriodsQuery.isFetching || getPeriodsQuery.isFetchingNextPage)
+    ) {
+      getPeriodsQuery
+          .fetchNextPage()
+          .then(() => {})
+          .catch((e) => {
+            console.error("Error fetching more periods", e);
+          });
+    }
   }
 
   function getStartKey(newModel: GridPaginationModel): string | undefined {
@@ -270,6 +285,11 @@ export function IncomeTable() {
               labelId={labelId}
               id={"Period"}
               MenuProps={{
+                slotProps: {
+                  paper: {
+                    onScroll: handlePeriodsMenuScroll,
+                  },
+                },
                 PaperProps: {
                   sx: {
                     maxHeight: 150,
