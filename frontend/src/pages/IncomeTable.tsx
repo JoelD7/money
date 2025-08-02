@@ -10,7 +10,7 @@ import {
   Table,
 } from "../components";
 import { useGetIncome, useGetPeriodsInfinite, useGetUser } from "../queries";
-import { Income, IncomeList, User } from "../types";
+import {Income, IncomeList, Period, User} from "../types";
 import {
   GridColDef,
   GridPaginationModel,
@@ -63,12 +63,11 @@ export function IncomeTable() {
   const user: User | undefined = getUser.data;
 
   const getPeriodsQuery = useGetPeriodsInfinite();
-  const periods: string[] = (() => {
+  const periods: Period[] = (() => {
     if (getPeriodsQuery.data) {
       return getPeriodsQuery.data.pages
         .map((page) => page.periods)
         .flat()
-        .map((p) => p.period);
     }
 
     return [];
@@ -175,7 +174,7 @@ export function IncomeTable() {
         }).format(inc.amount),
         name: inc.name,
         notes: inc.notes ? inc.notes : "-",
-        period: inc.period_id,
+        period: inc.period_name,
         created_date: new Date(inc.created_date),
       };
     });
@@ -305,8 +304,8 @@ export function IncomeTable() {
               </MenuItem>
               {Array.isArray(periods) &&
                 periods.map((p) => (
-                  <MenuItem key={p} id={p} value={p}>
-                    {p}
+                  <MenuItem key={p.period_id} id={p.period_id} value={p.period_id}>
+                    {p.name}
                   </MenuItem>
                 ))}
             </Select>

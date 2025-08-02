@@ -94,7 +94,7 @@ export type AccessToken = z.infer<typeof AccessTokenSchema>;
 
 export const PeriodSchema = z.object({
   username: z.string(),
-  period: z.string(),
+  period_id: z.string(),
   name: z.string(),
   start_date: z.string(),
   end_date: z.string(),
@@ -115,6 +115,7 @@ export const IncomeSchema = z.object({
   amount: z.number(),
   name: z.string(),
   period_id: z.string(),
+  period_name: z.string(),
   notes: z.string().optional(),
   created_date: z.string(),
 });

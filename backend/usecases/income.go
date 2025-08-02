@@ -30,13 +30,23 @@ func NewIncomeCreator(im IncomeRepository, pm PeriodManager, cache ResourceCache
 	}
 }
 
-func NewIncomeGetter(im IncomeRepository) func(ctx context.Context, username, incomeID string) (*models.Income, error) {
+func NewIncomeGetter(im IncomeRepository, pm PeriodManager) func(ctx context.Context, username, incomeID string) (*models.Income, error) {
 	return func(ctx context.Context, username, incomeID string) (*models.Income, error) {
-		return im.GetIncome(ctx, username, incomeID)
+		income, err := im.GetIncome(ctx, username, incomeID)
+		if err != nil {
+			return nil, err
+		}
+
+		err = setEntitiesPeriods(ctx, username, pm, income)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't set periods for income: %w", err)
+		}
+
+		return income, nil
 	}
 }
 
-func NewIncomeByPeriodGetter(repository IncomeRepository, cache IncomePeriodCacheManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
+func NewIncomeByPeriodGetter(repository IncomeRepository, cache IncomePeriodCacheManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
 	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
 		incomePeriods, err := getIncomePeriods(ctx, username, repository, cache)
 		if err != nil {
@@ -46,6 +56,16 @@ func NewIncomeByPeriodGetter(repository IncomeRepository, cache IncomePeriodCach
 		income, nextKey, err := repository.GetIncomeByPeriod(ctx, username, params)
 		if err != nil {
 			return nil, "", nil, err
+		}
+
+		periodManipulator := make([]PeriodManipulator, len(income))
+		for i := 0; i < len(income); i++ {
+			periodManipulator[i] = income[i]
+		}
+
+		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("couldn't set periods for income: %w", err)
 		}
 
 		return income, nextKey, incomePeriods, nil
@@ -73,7 +93,7 @@ func getIncomePeriods(ctx context.Context, username string, repository IncomeRep
 	return incomePeriods, nil
 }
 
-func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
+func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
 	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, []string, error) {
 		incomePeriods, err := getIncomePeriods(ctx, username, repository, cache)
 		if err != nil {
@@ -83,6 +103,16 @@ func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheMana
 		income, nextKey, err := repository.GetAllIncome(ctx, username, params)
 		if err != nil {
 			return nil, "", nil, err
+		}
+
+		periodManipulator := make([]PeriodManipulator, len(income))
+		for i := 0; i < len(income); i++ {
+			periodManipulator[i] = income[i]
+		}
+
+		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		if err != nil {
+			return nil, "", nil, fmt.Errorf("couldn't set periods for income: %w", err)
 		}
 
 		return income, nextKey, incomePeriods, nil
