@@ -37,7 +37,7 @@ func NewIncomeGetter(im IncomeRepository, pm PeriodManager) func(ctx context.Con
 			return nil, err
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, income)
+		err = setEntitiesPeriods(ctx, pm, income)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't set periods for income: %w", err)
 		}
@@ -63,7 +63,7 @@ func NewIncomeByPeriodGetter(repository IncomeRepository, cache IncomePeriodCach
 			periodManipulator[i] = income[i]
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", nil, fmt.Errorf("couldn't set periods for income: %w", err)
 		}
@@ -110,7 +110,7 @@ func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheMana
 			periodManipulator[i] = income[i]
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", nil, fmt.Errorf("couldn't set periods for income: %w", err)
 		}

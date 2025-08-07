@@ -12,10 +12,17 @@ import (
 type PeriodHolder interface {
 	GetPeriodID() string
 	SetPeriodName(name string)
+	GetUsername() string
 }
 
-func setEntitiesPeriods(ctx context.Context, username string, pm PeriodManager, entitites ...PeriodHolder) error {
-	expensesPeriods := make([]string, 0, len(entitites))
+func setEntitiesPeriods(ctx context.Context, pm PeriodManager, entitites ...PeriodHolder) error {
+	if len(entitites) == 0 {
+		return nil
+	}
+
+	username := entitites[0].GetUsername()
+
+	entitiesPeriods := make([]string, 0, len(entitites))
 	seen := make(map[string]struct{}, len(entitites))
 	var periodID string
 
@@ -25,11 +32,11 @@ func setEntitiesPeriods(ctx context.Context, username string, pm PeriodManager, 
 		if _, ok := seen[periodID]; ok || periodID == "" {
 			continue
 		}
-		expensesPeriods = append(expensesPeriods, periodID)
+		entitiesPeriods = append(entitiesPeriods, periodID)
 		seen[periodID] = struct{}{}
 	}
 
-	periodResults, err := pm.BatchGetPeriods(ctx, username, expensesPeriods)
+	periodResults, err := pm.BatchGetPeriods(ctx, username, entitiesPeriods)
 	if err != nil {
 		return err
 	}

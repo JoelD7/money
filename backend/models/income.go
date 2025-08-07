@@ -26,3 +26,7 @@ func (i *Income) GetPeriodID() string {
 func (i *Income) SetPeriodName(name string) {
 	i.PeriodName = name
 }
+
+func (i *Income) GetUsername() string {
+	return i.Username
+}

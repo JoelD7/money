@@ -32,3 +32,7 @@ func (e *Expense) GetPeriodID() string {
 func (e *Expense) SetPeriodName(name string) {
 	e.PeriodName = name
 }
+
+func (e *Expense) GetUsername() string {
+	return e.Username
+}

@@ -99,7 +99,7 @@ func NewExpenseGetter(em ExpenseManager, um UserManager, pm PeriodManager) func(
 			return nil, err
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, expense)
+		err = setEntitiesPeriods(ctx, pm, expense)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func NewExpensesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func
 			periodManipulator[i] = expenses[i]
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}
@@ -161,7 +161,7 @@ func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager, pm PeriodM
 			periodManipulator[i] = expenses[i]
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}
@@ -192,7 +192,7 @@ func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager, pm PeriodManag
 			periodManipulator[i] = expenses[i]
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}
@@ -223,7 +223,7 @@ func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager, p
 			periodManipulator[i] = expenses[i]
 		}
 
-		err = setEntitiesPeriods(ctx, username, pm, periodManipulator...)
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
 		if err != nil {
 			return nil, "", err
 		}
