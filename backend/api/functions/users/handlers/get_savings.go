@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
@@ -25,6 +26,7 @@ type getSavingsRequest struct {
 	err            error
 	savingsRepo    savings.Repository
 	savingGoalRepo savingoal.Repository
+	periodRepo     period.Repository
 	*models.QueryParameters
 }
 
@@ -46,6 +48,12 @@ func (request *getSavingsRequest) init(ctx context.Context, envConfig *models.En
 		if err != nil {
 			return
 		}
+
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		if err != nil {
+			return
+		}
+
 		logger.SetHandler("get-savings")
 	})
 	request.startingTime = time.Now()
@@ -127,7 +135,7 @@ func (request *getSavingsRequest) routeToHandlers(ctx context.Context, req *apig
 }
 
 func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getSavings := usecases.NewSavingsGetter(request.savingsRepo, request.savingGoalRepo)
+	getSavings := usecases.NewSavingsGetter(request.savingsRepo, request.savingGoalRepo, request.periodRepo)
 
 	userSavings, nextKey, err := getSavings(ctx, request.username, request.QueryParameters)
 	if err != nil {
@@ -147,7 +155,7 @@ func (request *getSavingsRequest) getUserSavings(ctx context.Context, req *apiga
 }
 
 func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getSavingsByPeriod := usecases.NewSavingByPeriodGetter(request.savingsRepo, request.savingGoalRepo)
+	getSavingsByPeriod := usecases.NewSavingByPeriodGetter(request.savingsRepo, request.savingGoalRepo, request.periodRepo)
 
 	userSavings, nextKey, err := getSavingsByPeriod(ctx, request.username, request.QueryParameters)
 	if err != nil {
@@ -167,7 +175,7 @@ func (request *getSavingsRequest) getUserSavingsByPeriod(ctx context.Context, re
 }
 
 func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getSavingsBySavingGoal := usecases.NewSavingBySavingGoalGetter(request.savingsRepo, request.savingGoalRepo)
+	getSavingsBySavingGoal := usecases.NewSavingBySavingGoalGetter(request.savingsRepo, request.savingGoalRepo, request.periodRepo)
 
 	userSavings, nextKey, err := getSavingsBySavingGoal(ctx, request.QueryParameters)
 	if err != nil {
@@ -187,7 +195,7 @@ func (request *getSavingsRequest) getUserSavingsBySavingGoal(ctx context.Context
 }
 
 func (request *getSavingsRequest) getUserSavingsByPeriodAndSavingGoal(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getSavingsBySavingGoalAndPeriod := usecases.NewSavingBySavingGoalAndPeriodGetter(request.savingsRepo, request.savingGoalRepo)
+	getSavingsBySavingGoalAndPeriod := usecases.NewSavingBySavingGoalAndPeriodGetter(request.savingsRepo, request.savingGoalRepo, request.periodRepo)
 
 	userSavings, nextKey, err := getSavingsBySavingGoalAndPeriod(ctx, request.QueryParameters)
 	if err != nil {

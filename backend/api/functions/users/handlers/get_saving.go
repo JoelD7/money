@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/usecases"
@@ -28,6 +29,7 @@ type getSavingRequest struct {
 	err            error
 	savingsRepo    savings.Repository
 	savingGoalRepo savingoal.Repository
+	periodRepo     period.Repository
 }
 
 func (request *getSavingRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -40,6 +42,10 @@ func (request *getSavingRequest) init(ctx context.Context, envConfig *models.Env
 			return
 		}
 		request.savingGoalRepo, err = savingoal.NewDynamoRepository(dynamoClient, envConfig)
+		if err != nil {
+			return
+		}
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -95,7 +101,7 @@ func (request *getSavingRequest) process(ctx context.Context, req *apigateway.Re
 		return req.NewErrorResponse(err), nil
 	}
 
-	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.savingGoalRepo)
+	getSaving := usecases.NewSavingGetter(request.savingsRepo, request.savingGoalRepo, request.periodRepo)
 
 	saving, err := getSaving(ctx, username, savingID)
 	if errors.Is(err, models.ErrSavingGoalNameSettingFailed) {

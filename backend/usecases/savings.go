@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
+func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 	return func(ctx context.Context, username, savingID string) (*models.Saving, error) {
 		saving, err := sm.GetSaving(ctx, username, savingID)
 		if err != nil {
@@ -21,11 +21,16 @@ func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.
 			return saving, fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
+		err = setEntitiesPeriods(ctx, pm, saving)
+		if err != nil {
+			return nil, err
+		}
+
 		return saving, nil
 	}
 }
 
-func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
@@ -46,11 +51,21 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context
 			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
+		periodManipulator := make([]PeriodHolder, len(savings))
+		for i := 0; i < len(savings); i++ {
+			periodManipulator[i] = savings[i]
+		}
+
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
+		if err != nil {
+			return nil, "", err
+		}
+
 		return savings, nextKey, nil
 	}
 }
 
-func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
@@ -71,11 +86,21 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx 
 			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
+		periodManipulator := make([]PeriodHolder, len(savings))
+		for i := 0; i < len(savings); i++ {
+			periodManipulator[i] = savings[i]
+		}
+
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
+		if err != nil {
+			return nil, "", err
+		}
+
 		return savings, nextKey, nil
 	}
 }
 
-func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
@@ -95,11 +120,21 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager) func(
 			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
 		}
 
+		periodManipulator := make([]PeriodHolder, len(savings))
+		for i := 0; i < len(savings); i++ {
+			periodManipulator[i] = savings[i]
+		}
+
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
+		if err != nil {
+			return nil, "", err
+		}
+
 		return savings, nextKey, nil
 	}
 }
 
-func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
 	return func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
@@ -117,6 +152,16 @@ func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManag
 		err = setSavingGoalNames(ctx, sgm, savings[0].Username, savings)
 		if err != nil {
 			return savings, "", fmt.Errorf("%w: %v", models.ErrSavingGoalNameSettingFailed, err)
+		}
+
+		periodManipulator := make([]PeriodHolder, len(savings))
+		for i := 0; i < len(savings); i++ {
+			periodManipulator[i] = savings[i]
+		}
+
+		err = setEntitiesPeriods(ctx, pm, periodManipulator...)
+		if err != nil {
+			return nil, "", err
 		}
 
 		return savings, nextKey, nil
