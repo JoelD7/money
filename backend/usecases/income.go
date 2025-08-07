@@ -58,7 +58,7 @@ func NewIncomeByPeriodGetter(repository IncomeRepository, cache IncomePeriodCach
 			return nil, "", nil, err
 		}
 
-		periodManipulator := make([]PeriodManipulator, len(income))
+		periodManipulator := make([]PeriodHolder, len(income))
 		for i := 0; i < len(income); i++ {
 			periodManipulator[i] = income[i]
 		}
@@ -105,7 +105,7 @@ func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheMana
 			return nil, "", nil, err
 		}
 
-		periodManipulator := make([]PeriodManipulator, len(income))
+		periodManipulator := make([]PeriodHolder, len(income))
 		for i := 0; i < len(income); i++ {
 			periodManipulator[i] = income[i]
 		}

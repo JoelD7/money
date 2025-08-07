@@ -5,16 +5,16 @@ import (
 	"github.com/JoelD7/money/backend/models"
 )
 
-// PeriodManipulator is an interface that allows to get the period ID and set the period name.
+// PeriodHolder is an interface that describes entities that have a period.
 //
 // It was created with the purpose of abstracting away the process of setting period attributes to the entities that
 // have a period.
-type PeriodManipulator interface {
+type PeriodHolder interface {
 	GetPeriodID() string
 	SetPeriodName(name string)
 }
 
-func setEntitiesPeriods(ctx context.Context, username string, pm PeriodManager, entitites ...PeriodManipulator) error {
+func setEntitiesPeriods(ctx context.Context, username string, pm PeriodManager, entitites ...PeriodHolder) error {
 	expensesPeriods := make([]string, 0, len(entitites))
 	seen := make(map[string]struct{}, len(entitites))
 	var periodID string

@@ -125,7 +125,7 @@ func NewExpensesGetter(em ExpenseManager, um UserManager, pm PeriodManager) func
 			return nil, "", err
 		}
 
-		periodManipulator := make([]PeriodManipulator, len(expenses))
+		periodManipulator := make([]PeriodHolder, len(expenses))
 		for i := 0; i < len(expenses); i++ {
 			periodManipulator[i] = expenses[i]
 		}
@@ -156,7 +156,7 @@ func NewExpensesByCategoriesGetter(em ExpenseManager, um UserManager, pm PeriodM
 			return nil, "", err
 		}
 
-		periodManipulator := make([]PeriodManipulator, len(expenses))
+		periodManipulator := make([]PeriodHolder, len(expenses))
 		for i := 0; i < len(expenses); i++ {
 			periodManipulator[i] = expenses[i]
 		}
@@ -187,7 +187,7 @@ func NewExpensesByPeriodGetter(em ExpenseManager, um UserManager, pm PeriodManag
 			return nil, "", err
 		}
 
-		periodManipulator := make([]PeriodManipulator, len(expenses))
+		periodManipulator := make([]PeriodHolder, len(expenses))
 		for i := 0; i < len(expenses); i++ {
 			periodManipulator[i] = expenses[i]
 		}
@@ -218,7 +218,7 @@ func NewExpensesByPeriodAndCategoriesGetter(em ExpenseManager, um UserManager, p
 			return nil, "", err
 		}
 
-		periodManipulator := make([]PeriodManipulator, len(expenses))
+		periodManipulator := make([]PeriodHolder, len(expenses))
 		for i := 0; i < len(expenses); i++ {
 			periodManipulator[i] = expenses[i]
 		}
