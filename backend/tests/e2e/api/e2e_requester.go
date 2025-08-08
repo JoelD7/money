@@ -18,11 +18,18 @@ var (
 	periodsEndpoint     = "/periods"
 )
 
+type TestCleaner interface {
+	Cleanup(f func())
+	Logf(format string, args ...any)
+}
+
 // E2ERequester is a type that will be used to make requests to the backend. It's main purpose is to hold the access token.
 type E2ERequester struct {
 	accessToken string
 	baseUrl     string
 	client      *http.Client
+
+	Username string
 }
 
 type ErrorResponse struct {
@@ -37,8 +44,9 @@ type authResponse struct {
 
 func NewE2ERequester() (*E2ERequester, error) {
 	requester := &E2ERequester{
-		client:  &http.Client{},
-		baseUrl: env.GetString("BASE_URL", ""),
+		client:   &http.Client{},
+		baseUrl:  env.GetString("BASE_URL", ""),
+		Username: env.GetString("E2E_USER_USERNAME", "e2e_test@mail.com"),
 	}
 
 	err := requester.login()
@@ -51,10 +59,9 @@ func NewE2ERequester() (*E2ERequester, error) {
 
 func (e *E2ERequester) login() error {
 	//This user already exists in the DB. Was created with the sole purpose of using it for e2e tests.
-	username := env.GetString("E2E_USER_USERNAME", "e2e_test@mail.com")
 	password := env.GetString("E2E_USER_PASSWORD", "")
 
-	loginRequestBody := fmt.Sprintf(`{"username":"%s","password":"%s"}`, username, password)
+	loginRequestBody := fmt.Sprintf(`{"username":"%s","password":"%s"}`, e.Username, password)
 
 	request, err := http.NewRequest(http.MethodPost, e.baseUrl+loginEndpoint, bytes.NewReader([]byte(loginRequestBody)))
 	if err != nil {

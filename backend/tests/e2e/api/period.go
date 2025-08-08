@@ -14,14 +14,14 @@ func (e *E2ERequester) CreatePeriod(period *models.Period, t TestCleaner) (*mode
 	var createdPeriod models.Period
 
 	defer t.Cleanup(func() {
-		//if createdPeriod.ID == "" {
-		//	return
-		//}
-		//
-		//status, err := e.DeletePeriod(createdPeriod.ID)
-		//if status != http.StatusNoContent || err != nil {
-		//	t.Logf("Failed to delete period %s: %v", createdPeriod.ID, err)
-		//}
+		if createdPeriod.ID == "" {
+			return
+		}
+
+		status, err := e.DeletePeriod(createdPeriod.ID)
+		if status != http.StatusNoContent || err != nil {
+			t.Logf("Failed to delete period %s: %v", createdPeriod.ID, err)
+		}
 	})
 
 	requestBody, err := json.Marshal(period)
