@@ -433,7 +433,7 @@ func (d *DynamoRepository) CreateSaving(ctx context.Context, saving *models.Savi
 	saving.CreatedDate = time.Now()
 	savingEnt := toSavingEntity(saving)
 
-	periodUser := dynamo.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
+	periodUser := dynamo.BuildPeriodUser(savingEnt.Username, *savingEnt.PeriodID)
 	savingEnt.PeriodUser = periodUser
 
 	item, err := attributevalue.MarshalMap(savingEnt)
@@ -462,13 +462,39 @@ func (d *DynamoRepository) BatchCreateSavings(ctx context.Context, savings []*mo
 		saving.CreatedDate = time.Now()
 
 		entity := toSavingEntity(saving)
-		if entity.Period == nil {
+		if entity.PeriodID == nil {
 			logger.Error("saving_with_nil_period", nil, models.Any("saving_model", saving),
 				models.Any("saving_entity", entity))
 			continue
 		}
 
-		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, *entity.Period)
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, *entity.PeriodID)
+		entities = append(entities, entity)
+	}
+
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]types.WriteRequest{
+			d.tableName: getBatchWriteRequests(entities),
+		},
+	}
+
+	return dynamo.BatchWrite(ctx, d.dynamoClient, input)
+}
+
+func (d *DynamoRepository) BatchUpdateSavings(ctx context.Context, savings []*models.Saving) error {
+	entities := make([]*savingEntity, 0, len(savings))
+
+	for _, saving := range savings {
+		saving.UpdatedDate = time.Now()
+
+		entity := toSavingEntity(saving)
+		if entity.PeriodID == nil {
+			logger.Error("saving_with_nil_period", nil, models.Any("saving_model", saving),
+				models.Any("saving_entity", entity))
+			continue
+		}
+
+		entity.PeriodUser = dynamo.BuildPeriodUser(entity.Username, *entity.PeriodID)
 		entities = append(entities, entity)
 	}
 
@@ -504,8 +530,8 @@ func getBatchWriteRequests(entities []*savingEntity) []types.WriteRequest {
 func (d *DynamoRepository) UpdateSaving(ctx context.Context, saving *models.Saving) error {
 	savingEnt := toSavingEntity(saving)
 
-	if savingEnt.Period != nil {
-		periodUser := dynamo.BuildPeriodUser(savingEnt.Username, *savingEnt.Period)
+	if savingEnt.PeriodID != nil {
+		periodUser := dynamo.BuildPeriodUser(savingEnt.Username, *savingEnt.PeriodID)
 		savingEnt.PeriodUser = periodUser
 	}
 
@@ -567,7 +593,7 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 		return nil, err
 	}
 
-	period, err := attributevalue.Marshal(saving.Period)
+	period, err := attributevalue.Marshal(saving.PeriodID)
 	if err != nil {
 		return nil, err
 	}
@@ -585,7 +611,7 @@ func getAttributeValues(saving *savingEntity) (map[string]types.AttributeValue, 
 		m[":amount"] = amount
 	}
 
-	if saving.Period != nil {
+	if saving.PeriodID != nil {
 		m[":period"] = period
 		m[":period_user"] = periodUser
 	}

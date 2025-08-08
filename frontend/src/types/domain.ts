@@ -136,6 +136,7 @@ export const SavingSchema = z.object({
   saving_goal_name: z.string().optional(),
   username: z.string(),
   period_id: z.string(),
+  period_name: z.string().optional(),
   created_date: z.string().optional(),
   updated_date: z.string().optional(),
   amount: z.number(),

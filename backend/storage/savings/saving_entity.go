@@ -16,7 +16,7 @@ type savingEntity struct {
 	SavingID            string    `json:"saving_id,omitempty"  dynamodbav:"saving_id"`
 	SavingGoalID        *string   `json:"saving_goal_id,omitempty"  dynamodbav:"saving_goal_id"`
 	Username            string    `json:"username,omitempty"  dynamodbav:"username"`
-	Period              *string   `json:"period,omitempty"  dynamodbav:"period"`
+	PeriodID            *string   `json:"period_id,omitempty"  dynamodbav:"period_id,omitempty"`
 	PeriodUser          *string   `json:"period_user,omitempty"  dynamodbav:"period_user"`
 	CreatedDate         time.Time `json:"created_date,omitempty"  dynamodbav:"created_date"`
 	UpdatedDate         time.Time `json:"updated_date,omitempty"  dynamodbav:"updated_date"`
@@ -29,7 +29,7 @@ func toSavingEntity(s *models.Saving) *savingEntity {
 		SavingID:     s.SavingID,
 		SavingGoalID: s.SavingGoalID,
 		Username:     s.Username,
-		Period:       s.PeriodID,
+		PeriodID:     s.PeriodID,
 		PeriodUser:   s.PeriodUser,
 		CreatedDate:  s.CreatedDate,
 		UpdatedDate:  s.UpdatedDate,
@@ -52,7 +52,7 @@ func toSavingModel(s savingEntity) *models.Saving {
 		SavingID:     s.SavingID,
 		SavingGoalID: s.SavingGoalID,
 		Username:     s.Username,
-		PeriodID:     s.Period,
+		PeriodID:     s.PeriodID,
 		PeriodUser:   s.PeriodUser,
 		CreatedDate:  s.CreatedDate,
 		UpdatedDate:  s.UpdatedDate,

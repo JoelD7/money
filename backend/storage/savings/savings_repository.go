@@ -16,6 +16,7 @@ type Repository interface {
 	GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error)
 
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
+	BatchUpdateSavings(ctx context.Context, savings []*models.Saving) error
 
 	DeleteSaving(ctx context.Context, savingID, username string) error
 }
