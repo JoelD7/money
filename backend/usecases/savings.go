@@ -2,6 +2,7 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/logger"
@@ -307,33 +308,16 @@ func setSavingGoalNamesForSavingGoal(ctx context.Context, sgm SavingGoalManager,
 }
 
 func validateSavingPeriod(ctx context.Context, saving *models.Saving, username string, p PeriodManager) error {
-	if saving.PeriodID == nil {
+	if saving == nil || saving.PeriodID == nil {
 		return nil
 	}
 
-	periods := make([]*models.Period, 0)
-	curPeriods := make([]*models.Period, 0)
-	nextKey := ""
 	var err error
 
-	for {
-		curPeriods, nextKey, err = p.GetPeriods(ctx, username, nextKey, 50)
-		if err != nil {
-			return fmt.Errorf("check if saving period is valid failed: %v", err)
-		}
-
-		periods = append(periods, curPeriods...)
-
-		if nextKey == "" {
-			break
-		}
+	_, err = p.GetPeriod(ctx, username, *saving.PeriodID)
+	if errors.Is(err, models.ErrPeriodNotFound) {
+		return models.ErrInvalidPeriod
 	}
 
-	for _, period := range periods {
-		if *period.Name == *saving.PeriodID {
-			return nil
-		}
-	}
-
-	return models.ErrInvalidPeriod
+	return nil
 }
