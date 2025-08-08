@@ -120,33 +120,20 @@ func NewAllIncomeGetter(repository IncomeRepository, cache IncomePeriodCacheMana
 }
 
 func validateIncomePeriod(ctx context.Context, username string, income *models.Income, pm PeriodManager) error {
-	if income.PeriodID == nil {
+	if income == nil || income.PeriodID == nil {
 		return nil
 	}
 
-	periods := make([]*models.Period, 0)
-	curPeriods := make([]*models.Period, 0)
-	nextKey := ""
 	var err error
 
-	for {
-		curPeriods, nextKey, err = pm.GetPeriods(ctx, username, nextKey, 50)
-		if err != nil {
-			return fmt.Errorf("check if income period is valid failed: %v", err)
-		}
-
-		periods = append(periods, curPeriods...)
-
-		if nextKey == "" {
-			break
-		}
+	_, err = pm.GetPeriod(ctx, username, *income.PeriodID)
+	if errors.Is(err, models.ErrPeriodNotFound) {
+		return models.ErrInvalidPeriod
 	}
 
-	for _, period := range periods {
-		if period.ID == *income.PeriodID {
-			return nil
-		}
+	if err != nil {
+		return fmt.Errorf("check if expense period is valid failed: %v", err)
 	}
 
-	return models.ErrInvalidPeriod
+	return nil
 }
