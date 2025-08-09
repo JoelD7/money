@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -29,6 +30,7 @@ type GetExpensesRequest struct {
 
 	ExpensesRepo expenses.Repository
 	UserRepo     users.Repository
+	PeriodRepo   period.Repository
 
 	startingTime time.Time
 	err          error
@@ -45,6 +47,11 @@ func (request *GetExpensesRequest) init(ctx context.Context, envConfig *models.E
 		}
 
 		request.UserRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
+		if err != nil {
+			return
+		}
+
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -135,7 +142,7 @@ func (request *GetExpensesRequest) routeToHandlers(ctx context.Context, req *api
 }
 
 func (request *GetExpensesRequest) getByCategories(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpensesByCategory := usecases.NewExpensesByCategoriesGetter(request.ExpensesRepo, request.UserRepo)
+	getExpensesByCategory := usecases.NewExpensesByCategoriesGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
 	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.Username, request.QueryParameters)
 	if err != nil {
@@ -151,7 +158,7 @@ func (request *GetExpensesRequest) getByCategories(ctx context.Context, req *api
 }
 
 func (request *GetExpensesRequest) GetByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpensesByPeriod := usecases.NewExpensesByPeriodGetter(request.ExpensesRepo, request.UserRepo)
+	getExpensesByPeriod := usecases.NewExpensesByPeriodGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
 	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
@@ -167,7 +174,7 @@ func (request *GetExpensesRequest) GetByPeriod(ctx context.Context, req *apigate
 }
 
 func (request *GetExpensesRequest) getByCategoriesAndPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpensesByPeriodAndCategories := usecases.NewExpensesByPeriodAndCategoriesGetter(request.ExpensesRepo, request.UserRepo)
+	getExpensesByPeriodAndCategories := usecases.NewExpensesByPeriodAndCategoriesGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
 	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.Username, request.QueryParameters)
 	if err != nil {
@@ -183,7 +190,7 @@ func (request *GetExpensesRequest) getByCategoriesAndPeriod(ctx context.Context,
 }
 
 func (request *GetExpensesRequest) getAll(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getExpenses := usecases.NewExpensesGetter(request.ExpensesRepo, request.UserRepo)
+	getExpenses := usecases.NewExpensesGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
 	userExpenses, nextKey, err := getExpenses(ctx, request.Username, request.QueryParameters)
 	if err != nil {

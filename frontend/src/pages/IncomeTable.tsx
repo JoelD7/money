@@ -10,14 +10,14 @@ import {
   Table,
 } from "../components";
 import { useGetIncome, useGetPeriodsInfinite, useGetUser } from "../queries";
-import { Income, IncomeList, User } from "../types";
+import {Income, IncomeList, Period, User} from "../types";
 import {
   GridColDef,
   GridPaginationModel,
   GridRowsProp,
   GridSortModel,
 } from "@mui/x-data-grid";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
 import { v4 as uuidv4 } from "uuid";
@@ -63,12 +63,11 @@ export function IncomeTable() {
   const user: User | undefined = getUser.data;
 
   const getPeriodsQuery = useGetPeriodsInfinite();
-  const periods: string[] = (() => {
+  const periods: Period[] = (() => {
     if (getPeriodsQuery.data) {
       return getPeriodsQuery.data.pages
         .map((page) => page.periods)
         .flat()
-        .map((p) => p.period);
     }
 
     return [];
@@ -131,6 +130,21 @@ export function IncomeTable() {
     });
   }
 
+  function handlePeriodsMenuScroll(e: React.UIEvent<HTMLDivElement, UIEvent>) {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (
+        scrollTop + clientHeight >= scrollHeight - 5 &&
+        !(getPeriodsQuery.isFetching || getPeriodsQuery.isFetchingNextPage)
+    ) {
+      getPeriodsQuery
+          .fetchNextPage()
+          .then(() => {})
+          .catch((e) => {
+            console.error("Error fetching more periods", e);
+          });
+    }
+  }
+
   function getStartKey(newModel: GridPaginationModel): string | undefined {
     if (newModel.page === 0) {
       return undefined;
@@ -160,7 +174,7 @@ export function IncomeTable() {
         }).format(inc.amount),
         name: inc.name,
         notes: inc.notes ? inc.notes : "-",
-        period: inc.period_id,
+        period: inc.period_name,
         created_date: new Date(inc.created_date),
       };
     });
@@ -270,6 +284,11 @@ export function IncomeTable() {
               labelId={labelId}
               id={"Period"}
               MenuProps={{
+                slotProps: {
+                  paper: {
+                    onScroll: handlePeriodsMenuScroll,
+                  },
+                },
                 PaperProps: {
                   sx: {
                     maxHeight: 150,
@@ -285,8 +304,8 @@ export function IncomeTable() {
               </MenuItem>
               {Array.isArray(periods) &&
                 periods.map((p) => (
-                  <MenuItem key={p} id={p} value={p}>
-                    {p}
+                  <MenuItem key={p.period_id} id={p.period_id} value={p.period_id}>
+                    {p.name}
                   </MenuItem>
                 ))}
             </Select>

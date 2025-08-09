@@ -70,7 +70,7 @@ func validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, 
 }
 
 func (d *DynamoRepository) CreatePeriod(ctx context.Context, period *models.Period) (*models.Period, error) {
-	period.ID = *period.Name
+	period.ID = dynamo.GenerateID(periodPrefix)
 	periodEnt := toPeriodEntity(*period)
 
 	attrValue, err := attributevalue.MarshalMap(periodEnt)
@@ -315,6 +315,39 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	return toPeriodModels(periods), nextKey, nil
 }
 
+func (d *DynamoRepository) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {
+	batchKeys := make([]map[string]types.AttributeValue, 0, len(periods))
+
+	for _, period := range periods {
+		batchKeys = append(batchKeys, map[string]types.AttributeValue{
+			"username": &types.AttributeValueMemberS{Value: username},
+			"period":   &types.AttributeValueMemberS{Value: period},
+		})
+	}
+
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]types.KeysAndAttributes{
+			d.periodTableName: {
+				Keys: batchKeys,
+			},
+		},
+	}
+
+	result, err := d.dynamoClient.BatchGetItem(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+
+	periodResult := make([]periodEntity, 0, len(result.Responses[d.periodTableName]))
+
+	err = attributevalue.UnmarshalListOfMaps(result.Responses[d.periodTableName], &periodResult)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshal periods failed: %v", err)
+	}
+
+	return toPeriodModels(periodResult), nil
+}
+
 func (d *DynamoRepository) GetLastPeriod(ctx context.Context, username string) (*models.Period, error) {
 	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
 
@@ -361,35 +394,28 @@ func getPageSize(pageSize int) *int32 {
 }
 
 func (d *DynamoRepository) DeletePeriod(ctx context.Context, periodID, username string) error {
-	period, err := d.GetPeriod(ctx, username, periodID)
+	conditionExpression := expression.AttributeExists(expression.Name("period")).And(expression.AttributeExists(expression.Name("username")))
+
+	expr, err := expression.NewBuilder().WithCondition(conditionExpression).Build()
 	if err != nil {
-		return fmt.Errorf("could not get period to delete: %w", err)
+		return fmt.Errorf("build expression failed: %v", err)
 	}
 
-	input := &dynamodb.TransactWriteItemsInput{
-		TransactItems: []types.TransactWriteItem{
-			{
-				Delete: &types.Delete{
-					TableName: aws.String(d.periodTableName),
-					Key: map[string]types.AttributeValue{
-						"username": &types.AttributeValueMemberS{Value: username},
-						"period":   &types.AttributeValueMemberS{Value: periodID},
-					},
-				},
-			},
-			{
-				Delete: &types.Delete{
-					TableName: aws.String(d.uniquePeriodNameTableName),
-					Key: map[string]types.AttributeValue{
-						"name":     &types.AttributeValueMemberS{Value: *period.Name},
-						"username": &types.AttributeValueMemberS{Value: username},
-					},
-				},
-			},
+	input := &dynamodb.DeleteItemInput{
+		Key: map[string]types.AttributeValue{
+			"username": &types.AttributeValueMemberS{Value: username},
+			"period":   &types.AttributeValueMemberS{Value: periodID},
 		},
+		TableName:                 aws.String(d.periodTableName),
+		ConditionExpression:       expr.Condition(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
 	}
 
-	_, err = d.dynamoClient.TransactWriteItems(ctx, input)
+	_, err = d.dynamoClient.DeleteItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), conditionalFailedKeyword) {
+		return fmt.Errorf("%v: %w", err, models.ErrPeriodNotFound)
+	}
 
 	return err
 }

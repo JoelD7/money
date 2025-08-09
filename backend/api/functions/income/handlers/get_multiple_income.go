@@ -2,16 +2,18 @@ package handlers
 
 import (
 	"context"
+	"net/http"
+	"sync"
+	"time"
+
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
-	"net/http"
-	"sync"
-	"time"
 )
 
 var gmiRequest *GetMultipleIncomeRequest
@@ -25,6 +27,7 @@ type GetMultipleIncomeRequest struct {
 	PageSize     int
 	IncomeRepo   income.Repository
 	CacheManager cache.IncomePeriodCacheManager
+	PeriodRepo   period.Repository
 	*models.QueryParameters
 }
 
@@ -40,6 +43,11 @@ func (request *GetMultipleIncomeRequest) init(ctx context.Context, envConfig *mo
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.IncomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
+		if err != nil {
+			return
+		}
+
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -115,7 +123,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 		return req.NewErrorResponse(models.ErrMissingPeriod), nil
 	}
 
-	getIncomeByPeriod := usecases.NewIncomeByPeriodGetter(request.IncomeRepo, request.CacheManager)
+	getIncomeByPeriod := usecases.NewIncomeByPeriodGetter(request.IncomeRepo, request.CacheManager, request.PeriodRepo)
 
 	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, request.QueryParameters)
 	if err != nil {
@@ -134,7 +142,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 }
 
 func (request *GetMultipleIncomeRequest) getAllIncome(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	getAllIncome := usecases.NewAllIncomeGetter(request.IncomeRepo, request.CacheManager)
+	getAllIncome := usecases.NewAllIncomeGetter(request.IncomeRepo, request.CacheManager, request.PeriodRepo)
 
 	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.QueryParameters)
 	if err != nil {

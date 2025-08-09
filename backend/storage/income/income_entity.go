@@ -14,7 +14,7 @@ type incomeEntity struct {
 	Notes       *string   `json:"notes,omitempty" dynamodbav:"notes"`
 	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
 	UpdatedDate time.Time `json:"updated_date,omitempty" dynamodbav:"updated_date"`
-	PeriodID    *string   `json:"period_id,omitempty" dynamodbav:"period"`
+	PeriodID    *string   `json:"period_id,omitempty" dynamodbav:"period_id"`
 	PeriodUser  *string   `json:"period_user,omitempty" dynamodbav:"period_user"`
 	// AmountKey is a special attribute used to sort income by amount. It's composed of a padded-string of the amount
 	AmountKey string `json:"amount_key,omitempty" dynamodbav:"amount_key"`

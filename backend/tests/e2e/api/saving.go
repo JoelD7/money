@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/google/uuid"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -39,6 +41,7 @@ func (e *E2ERequester) CreateSaving(saving *models.Saving, t *testing.T) (*model
 	}
 
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Idempotency-Key", uuid.NewString())
 	request.Header.Set("Auth", "Bearer "+e.accessToken)
 
 	res, err := e.client.Do(request)
@@ -103,28 +106,10 @@ func (e *E2ERequester) GetSavings(params *models.QueryParameters) ([]*models.Sav
 }
 
 func (e *E2ERequester) DeleteSaving(savingID string) (int, error) {
-	request, err := http.NewRequest(http.MethodDelete, e.baseUrl+savingsEndpoint+"/"+savingID, nil)
+	endpoint, err := url.JoinPath(e.baseUrl, savingsEndpoint, savingID)
 	if err != nil {
-		return 0, fmt.Errorf("saving deletion request building failed: %w", err)
+		return 0, fmt.Errorf("saving deletion endpoint building failed: %w", err)
 	}
 
-	request.Header.Set("Auth", "Bearer "+e.accessToken)
-
-	res, err := e.client.Do(request)
-	if err != nil {
-		return 0, fmt.Errorf("saving deletion request failed: %w", err)
-	}
-
-	defer func() {
-		err := res.Body.Close()
-		if err != nil {
-			fmt.Printf("closing response body failed: %v\n", err)
-		}
-	}()
-
-	if res.StatusCode != http.StatusNoContent {
-		return res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
-	}
-
-	return res.StatusCode, nil
+	return e.DeleteResource(endpoint)
 }

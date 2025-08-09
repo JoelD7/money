@@ -8,7 +8,7 @@ type PeriodType string
 
 type Period struct {
 	Username    string    `json:"username,omitempty"`
-	ID          string    `json:"period,omitempty"`
+	ID          string    `json:"period_id,omitempty"`
 	Name        *string   `json:"name,omitempty"`
 	StartDate   time.Time `json:"start_date,omitempty"`
 	EndDate     time.Time `json:"end_date,omitempty"`

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/JoelD7/money/backend/models"
@@ -47,32 +48,12 @@ func (e *E2ERequester) GetMe(t *testing.T) (*models.User, error) {
 }
 
 func (e *E2ERequester) DeleteUser(username string, t *testing.T) (int, error) {
-	url := fmt.Sprintf("%s/users/%s", e.baseUrl, username)
-
-	request, err := http.NewRequest(http.MethodDelete, url, nil)
+	endpoint, err := url.JoinPath(e.baseUrl, usersEndpoint, username)
 	if err != nil {
-		return 0, fmt.Errorf("user deletion request building failed: %w", err)
+		return 0, fmt.Errorf("user deletion endpoint building failed: %w", err)
 	}
 
-	request.Header.Set("Auth", "Bearer "+e.accessToken)
-
-	res, err := e.client.Do(request)
-	if err != nil {
-		return 0, fmt.Errorf("user deletion request failed: %w", err)
-	}
-
-	defer func() {
-		err := res.Body.Close()
-		if err != nil {
-			fmt.Printf("closing response body failed: %v\n", err)
-		}
-	}()
-
-	if res.StatusCode != http.StatusNoContent {
-		return res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
-	}
-
-	return res.StatusCode, nil
+	return e.DeleteResource(endpoint)
 }
 
 func (e *E2ERequester) CreateCategory(category *models.Category, headers map[string]string, t *testing.T) (int, error) {

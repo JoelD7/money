@@ -8,6 +8,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -27,6 +28,7 @@ type getExpenseRequest struct {
 	err          error
 	expensesRepo expenses.Repository
 	userRepo     users.Repository
+	periodRepo   period.Repository
 }
 
 func (request *getExpenseRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -40,6 +42,11 @@ func (request *getExpenseRequest) init(ctx context.Context, envConfig *models.En
 		}
 
 		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
+		if err != nil {
+			return
+		}
+
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -94,7 +101,7 @@ func (request *getExpenseRequest) process(ctx context.Context, req *apigateway.R
 		return req.NewErrorResponse(err), nil
 	}
 
-	getExpense := usecases.NewExpenseGetter(request.expensesRepo, request.userRepo)
+	getExpense := usecases.NewExpenseGetter(request.expensesRepo, request.userRepo, request.periodRepo)
 
 	expense, err := getExpense(ctx, username, expenseID)
 	if err != nil {

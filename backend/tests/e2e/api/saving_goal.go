@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -40,6 +42,7 @@ func (e *E2ERequester) CreateSavingGoal(savingGoal *models.SavingGoal, t *testin
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Auth", "Bearer "+e.accessToken)
+	request.Header.Set("Idempotency-Key", uuid.NewString())
 
 	res, err := e.client.Do(request)
 	if err != nil {
@@ -100,31 +103,12 @@ func (e *E2ERequester) GetSavingGoal(savingGoalID string) (*models.SavingGoal, i
 }
 
 func (e *E2ERequester) DeleteSavingGoal(savingGoalID string) (int, error) {
-	request, err := http.NewRequest(http.MethodDelete, e.baseUrl+savingGoalsEndpoint+"/"+savingGoalID, nil)
+	endpoint, err := url.JoinPath(e.baseUrl, savingGoalsEndpoint, savingGoalID)
 	if err != nil {
-		return 0, fmt.Errorf("saving goal request building failed: %w", err)
+		return 0, fmt.Errorf("saving goal deletion endpoint building failed: %w", err)
 	}
 
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Auth", "Bearer "+e.accessToken)
-
-	res, err := e.client.Do(request)
-	if err != nil {
-		return 0, fmt.Errorf("saving goal request failed: %w", err)
-	}
-
-	defer func() {
-		err := res.Body.Close()
-		if err != nil {
-			fmt.Printf("closing response body failed: %v\n", err)
-		}
-	}()
-
-	if res.StatusCode != http.StatusNoContent {
-		return res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
-	}
-
-	return res.StatusCode, nil
+	return e.DeleteResource(endpoint)
 }
 
 func (e *E2ERequester) GetSavingGoals(sortBy, sortOrder, startKey string, pageSize int) ([]*models.SavingGoal, int, string, error) {

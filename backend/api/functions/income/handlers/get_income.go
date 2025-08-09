@@ -7,6 +7,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
 	"sync"
@@ -17,6 +18,7 @@ type incomeGetRequest struct {
 	startingTime time.Time
 	err          error
 	incomeRepo   income.Repository
+	periodRepo   period.Repository
 }
 
 var once sync.Once
@@ -28,6 +30,11 @@ func (request *incomeGetRequest) init(ctx context.Context, envConfig *models.Env
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.incomeRepo, err = income.NewDynamoRepository(dynamoClient, envConfig)
+		if err != nil {
+			return
+		}
+
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
 		if err != nil {
 			return
 		}
@@ -75,7 +82,7 @@ func (request *incomeGetRequest) process(ctx context.Context, req *apigateway.Re
 		return req.NewErrorResponse(err), nil
 	}
 
-	getIncome := usecases.NewIncomeGetter(request.incomeRepo)
+	getIncome := usecases.NewIncomeGetter(request.incomeRepo, request.periodRepo)
 
 	userIncome, err := getIncome(ctx, username, incomeID)
 	if err != nil {

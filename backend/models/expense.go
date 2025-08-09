@@ -14,6 +14,7 @@ type Expense struct {
 	Notes        string    `json:"notes,omitempty"`
 	CreatedDate  time.Time `json:"created_date,omitempty"`
 	PeriodID     string    `json:"period_id,omitempty"`
+	PeriodName   string    `json:"period_name,omitempty"`
 	PeriodUser   *string   `json:"period_user,omitempty"`
 	UpdateDate   time.Time `json:"update_date,omitempty"`
 }
@@ -22,4 +23,16 @@ type CategoryExpenseSummary struct {
 	CategoryID string  `json:"category_id"`
 	Total      float64 `json:"total"`
 	Period     string  `json:"period,omitempty"`
+}
+
+func (e *Expense) GetPeriodID() string {
+	return e.PeriodID
+}
+
+func (e *Expense) SetPeriodName(name string) {
+	e.PeriodName = name
+}
+
+func (e *Expense) GetUsername() string {
+	return e.Username
 }
