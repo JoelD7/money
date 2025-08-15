@@ -29,7 +29,6 @@ var (
 type DynamoRepository struct {
 	dynamoClient               *dynamodb.Client
 	periodTableName            string
-	uniquePeriodNameTableName  string
 	usernameEndDatePeriodIndex string
 }
 
@@ -434,15 +433,14 @@ func (d *DynamoRepository) DeletePeriod(ctx context.Context, periodID, username 
 }
 
 func (d *DynamoRepository) BatchDeletePeriods(ctx context.Context, periods []*models.Period) error {
-	periodWriteRequests, uniquePeriodWriteRequests, err := getBatchPeriodDeleteRequests(periods)
+	periodWriteRequests, _, err := getBatchPeriodDeleteRequests(periods)
 	if err != nil {
 		return err
 	}
 
 	input := &dynamodb.BatchWriteItemInput{
 		RequestItems: map[string][]types.WriteRequest{
-			d.periodTableName:           periodWriteRequests,
-			d.uniquePeriodNameTableName: uniquePeriodWriteRequests,
+			d.periodTableName: periodWriteRequests,
 		},
 	}
 
