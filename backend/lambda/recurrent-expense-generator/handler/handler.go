@@ -63,8 +63,7 @@ func (req *CronRequest) init(ctx context.Context) error {
 	var err error
 	once.Do(func() {
 		expensesRecurringTableName := env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-		periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
-		uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
+		envConfig := env.GetEnvConfig()
 
 		dynamoClient := dynamo.InitClient(ctx)
 		req.Repo, err = expenses_recurring.NewExpenseRecurringDynamoRepository(dynamoClient, expensesRecurringTableName)
@@ -72,16 +71,9 @@ func (req *CronRequest) init(ctx context.Context) error {
 			return
 		}
 
-		req.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, periodTableNameEnv, uniquePeriodTableNameEnv)
+		req.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
-		}
-
-		envConfig := &models.EnvironmentConfiguration{
-			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
-			ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
-			PeriodTable:            env.GetString("PERIOD_TABLE_NAME", ""),
-			UniquePeriodTable:      env.GetString("UNIQUE_PERIOD_TABLE_NAME", ""),
 		}
 
 		req.ExpensesRepo, err = expenses.NewDynamoRepository(dynamoClient, envConfig)

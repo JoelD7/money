@@ -51,7 +51,7 @@ func (request *GetExpensesRequest) init(ctx context.Context, envConfig *models.E
 			return
 		}
 
-		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

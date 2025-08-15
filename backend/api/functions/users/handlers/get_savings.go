@@ -49,7 +49,7 @@ func (request *getSavingsRequest) init(ctx context.Context, envConfig *models.En
 			return
 		}
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

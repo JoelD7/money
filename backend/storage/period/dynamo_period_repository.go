@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -28,42 +27,37 @@ var (
 )
 
 type DynamoRepository struct {
-	dynamoClient              *dynamodb.Client
-	periodTableName           string
-	uniquePeriodNameTableName string
+	dynamoClient               *dynamodb.Client
+	periodTableName            string
+	uniquePeriodNameTableName  string
+	usernameEndDatePeriodIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, periodTableName, uniquePeriodTableName string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
 
-	periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
-	uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-
-	err := validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, uniquePeriodTableNameEnv)
+	err := validateParams(envConfig)
 	if err != nil {
 		return nil, fmt.Errorf("initialize period dynamo repository failed: %v", err)
 	}
 
-	d.periodTableName = periodTableName
-	if d.periodTableName == "" {
-		d.periodTableName = periodTableNameEnv
-	}
-
-	d.uniquePeriodNameTableName = uniquePeriodTableName
-	if d.uniquePeriodNameTableName == "" {
-		d.uniquePeriodNameTableName = uniquePeriodTableNameEnv
-	}
+	d.periodTableName = envConfig.PeriodTable
+	d.usernameEndDatePeriodIndex = envConfig.UsernameEndDatePeriodIndex
 
 	return d, nil
 }
 
-func validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, uniquePeriodTableNameEnv string) error {
-	if periodTableName == "" && periodTableNameEnv == "" {
+func validateParams(envConfig *models.EnvironmentConfiguration) error {
+	if envConfig == nil {
+		return fmt.Errorf("environment configuration is required")
+	}
+
+	if envConfig.PeriodTable == "" {
 		return fmt.Errorf("period table name is required")
 	}
 
-	if uniquePeriodTableName == "" && uniquePeriodTableNameEnv == "" {
-		return fmt.Errorf("unique period table name is required")
+	if envConfig.UsernameEndDatePeriodIndex == "" {
+		return fmt.Errorf("username end date period index is required")
 	}
 
 	return nil
@@ -274,7 +268,6 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	}
 
 	var decodedStartKey map[string]types.AttributeValue
-
 	if startKey != "" {
 		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {

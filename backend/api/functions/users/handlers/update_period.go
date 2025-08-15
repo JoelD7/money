@@ -29,7 +29,7 @@ func (request *updatePeriodRequest) init(ctx context.Context, envConfig *models.
 	upOnce.Do(func() {
 		dynamoClient := dynamo.InitClient(ctx)
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

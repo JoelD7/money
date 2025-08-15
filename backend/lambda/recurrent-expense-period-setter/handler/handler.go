@@ -44,7 +44,7 @@ func (request *Request) init(ctx context.Context) error {
 			return
 		}
 
-		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

@@ -30,7 +30,7 @@ func (request *deletePeriodRequest) init(ctx context.Context, envConfig *models.
 		dynamoClient := dynamo.InitClient(ctx)
 		logger.SetHandler("delete-period")
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

@@ -74,8 +74,10 @@ func GetEnvConfig() *models.EnvironmentConfiguration {
 		IncomeTable:            GetString("INCOME_TABLE_NAME", ""),
 		PeriodUserIncomeIndex:  GetString("PERIOD_USER_INCOME_INDEX", ""),
 		InvalidTokenTable:      GetString("INVALID_TOKEN_TABLE_NAME", ""),
-		PeriodTable:            GetString("PERIOD_TABLE_NAME", ""),
-		UniquePeriodTable:      GetString("UNIQUE_PERIOD_TABLE_NAME", ""),
+
+		PeriodTable:                GetString("PERIOD_TABLE_NAME", ""),
+		UniquePeriodTable:          GetString("UNIQUE_PERIOD_TABLE_NAME", ""),
+		UsernameEndDatePeriodIndex: GetString("USERNAME_END_DATE_PERIOD_INDEX", ""),
 
 		SavingsTable:           GetString("SAVINGS_TABLE_NAME", ""),
 		PeriodSavingIndexName:  GetString("PERIOD_SAVING_INDEX_NAME", ""),
