@@ -84,7 +84,7 @@ func (e *E2ERequester) GetIncomes(params *models.QueryParameters) ([]*models.Inc
 		return nil, 0, fmt.Errorf("request building failed: %w", err)
 	}
 
-	addQueryParams(request, params)
+	addQueryParams(request, params, false)
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Auth", "Bearer "+e.accessToken)

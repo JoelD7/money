@@ -257,14 +257,15 @@ func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period strin
 	return toPeriodModel(periodStruct), nil
 }
 
-func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
-	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
-
-	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
-
-	expr, err := conditionBuilder.Build()
+func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
+	expr, err := buildGetPeriodsKeyConditionExpr(username, active)
 	if err != nil {
-		return nil, "", fmt.Errorf("build expression failed: %v", err)
+		return nil, "", err
+	}
+
+	var index *string
+	if active {
+		index = aws.String(d.usernameEndDatePeriodIndex)
 	}
 
 	var decodedStartKey map[string]types.AttributeValue
@@ -282,6 +283,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		ExpressionAttributeValues: expr.Values(),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(pageSize),
+		IndexName:                 index,
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -306,6 +308,24 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	}
 
 	return toPeriodModels(periods), nextKey, nil
+}
+
+func buildGetPeriodsKeyConditionExpr(username string, active bool) (expression.Expression, error) {
+	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
+
+	if active {
+		keyConditionExpression = expression.Key("username").Equal(expression.Value(username)).
+			And(expression.Key("end-date_period").GreaterThan(expression.Value(time.Now().Format(time.RFC3339))))
+	}
+
+	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
+
+	expr, err := conditionBuilder.Build()
+	if err != nil {
+		return expression.Expression{}, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	return expr, nil
 }
 
 func (d *DynamoRepository) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {

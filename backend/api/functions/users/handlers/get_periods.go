@@ -10,6 +10,7 @@ import (
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -26,6 +27,7 @@ type getPeriodsRequest struct {
 	startingTime time.Time
 	err          error
 	username     string
+	Active       bool
 
 	log        logger.LogAPI
 	periodRepo period.Repository
@@ -117,6 +119,11 @@ func (request *getPeriodsRequest) prepareRequest(req *apigateway.Request) error 
 		logger.Error("get_request_params_failed", err, req)
 
 		return err
+	}
+
+	val, _ := req.QueryStringParameters["active"]
+	if strings.EqualFold(val, "true") {
+		request.Active = true
 	}
 
 	return nil

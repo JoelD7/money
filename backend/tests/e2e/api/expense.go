@@ -82,7 +82,7 @@ func (e *E2ERequester) GetExpenses(params *models.QueryParameters) ([]*models.Ex
 		return nil, 0, fmt.Errorf("request building failed: %w", err)
 	}
 
-	addQueryParams(request, params)
+	addQueryParams(request, params, false)
 
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Auth", "Bearer "+e.accessToken)
@@ -112,7 +112,7 @@ func (e *E2ERequester) GetExpenses(params *models.QueryParameters) ([]*models.Ex
 	return expensesRes.Expenses, res.StatusCode, nil
 }
 
-func addQueryParams(request *http.Request, params *models.QueryParameters) {
+func addQueryParams(request *http.Request, params *models.QueryParameters, active bool) {
 	if params == nil {
 		return
 	}
@@ -146,6 +146,10 @@ func addQueryParams(request *http.Request, params *models.QueryParameters) {
 
 	if params.StartKey != "" {
 		q.Add("start_key", fmt.Sprintf("%s", params.StartKey))
+	}
+
+	if active {
+		q.Add("active", "true")
 	}
 
 	request.URL.RawQuery = q.Encode()
