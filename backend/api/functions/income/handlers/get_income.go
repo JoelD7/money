@@ -34,7 +34,7 @@ func (request *incomeGetRequest) init(ctx context.Context, envConfig *models.Env
 			return
 		}
 
-		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}

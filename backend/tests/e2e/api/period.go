@@ -10,6 +10,11 @@ import (
 	"net/url"
 )
 
+type PeriodsResponse struct {
+	Periods []*models.Period `json:"periods"`
+	NextKey string           `json:"next_key"`
+}
+
 func (e *E2ERequester) CreatePeriod(period *models.Period, t TestCleaner) (*models.Period, int, error) {
 	var createdPeriod models.Period
 
@@ -60,6 +65,47 @@ func (e *E2ERequester) CreatePeriod(period *models.Period, t TestCleaner) (*mode
 	}
 
 	return &createdPeriod, res.StatusCode, nil
+}
+
+func (e *E2ERequester) GetPeriods(active bool, params *models.QueryParameters) (*PeriodsResponse, int, error) {
+	endpoint, err := url.JoinPath(e.baseUrl, periodsEndpoint)
+	if err != nil {
+		return nil, 0, fmt.Errorf("periods request endpoint building failed: %w", err)
+	}
+
+	request, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, 0, fmt.Errorf("periods request building failed: %w", err)
+	}
+
+	addQueryParams(request, params, active)
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Auth", "Bearer "+e.accessToken)
+
+	res, err := e.client.Do(request)
+	if err != nil {
+		return nil, 0, fmt.Errorf("periods request failed: %w", err)
+	}
+
+	defer func() {
+		err := res.Body.Close()
+		if err != nil {
+			fmt.Printf("closing response body failed: %v\n", err)
+		}
+	}()
+
+	if res.StatusCode != http.StatusOK {
+		return nil, res.StatusCode, handleErrorResponse(res.StatusCode, res.Body)
+	}
+
+	var periodsRes PeriodsResponse
+	err = json.NewDecoder(res.Body).Decode(&periodsRes)
+	if err != nil {
+		return nil, res.StatusCode, fmt.Errorf("periods response decoding failed: %w", err)
+	}
+
+	return &periodsRes, res.StatusCode, nil
 }
 
 func (e *E2ERequester) DeletePeriod(periodID string) (int, error) {

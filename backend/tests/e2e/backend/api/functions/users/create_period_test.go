@@ -22,8 +22,6 @@ import (
 )
 
 var (
-	periodTableName       string
-	uniquePeriodTableName string
 	usersTableName        string
 	periodUserIncomeIndex string
 	incomeTableName       string
@@ -39,26 +37,10 @@ func TestMain(m *testing.M) {
 
 	logger.InitLogger(logger.ConsoleImplementation)
 
-	periodTableName = env.GetString("PERIOD_TABLE_NAME", "")
-	uniquePeriodTableName = env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
 	usersTableName = env.GetString("USERS_TABLE_NAME", "")
 	periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
 	incomeTableName = env.GetString("INCOME_TABLE_NAME", "")
-	envConfig = &models.EnvironmentConfiguration{
-		ExpensesTable:                        env.GetString("EXPENSES_TABLE_NAME", ""),
-		ExpensesRecurringTable:               env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
-		PeriodUserExpenseIndex:               env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
-		UsersTable:                           env.GetString("USERS_TABLE_NAME", ""),
-		SavingsTable:                         env.GetString("SAVINGS_TABLE_NAME", ""),
-		PeriodSavingIndexName:                env.GetString("PERIOD_SAVING_INDEX_NAME", ""),
-		SavingGoalSavingIndexName:            env.GetString("SAVING_GOAL_SAVING_INDEX_NAME", ""),
-		SavingGoalCreatedDateSavingIndexName: env.GetString("SAVING_GOAL_CREATED_DATE_SAVING_INDEX_NAME", ""),
-		SavingGoalsTable:                     env.GetString("SAVING_GOALS_TABLE_NAME", ""),
-		UsernameAmountIndex:                  env.GetString("USERNAME_AMOUNT_INDEX", ""),
-		UsernameCreatedDateIndex:             env.GetString("USERNAME_CREATED_DATE_INDEX", ""),
-		PeriodUserCreatedDateIndex:           env.GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
-		PeriodUserAmountIndex:                env.GetString("PERIOD_USER_AMOUNT_INDEX", ""),
-	}
+	envConfig = env.GetEnvConfig()
 
 	os.Exit(m.Run())
 }
@@ -84,7 +66,7 @@ func TestProcess(t *testing.T) {
 		ctx := context.Background()
 		dynamoClient := dynamo.InitClient(ctx)
 
-		periodRepo, err := period.NewDynamoRepository(dynamoClient, periodTableName, uniquePeriodTableName)
+		periodRepo, err := period.NewDynamoRepository(dynamoClient, envConfig)
 		c.Nil(err, "creating period repository failed")
 
 		req := &handlers.CreatePeriodRequest{

@@ -29,8 +29,10 @@ type EnvironmentConfiguration struct {
 	IncomeTable            string `json:"INCOME_TABLE_NAME"`
 	PeriodUserIncomeIndex  string `json:"PERIOD_USER_INCOME_INDEX"`
 	InvalidTokenTable      string `json:"INVALID_TOKEN_TABLE_NAME"`
-	PeriodTable            string `json:"PERIOD_TABLE_NAME"`
-	UniquePeriodTable      string `json:"UNIQUE_PERIOD_TABLE_NAME"`
+
+	PeriodTable                string `json:"PERIOD_TABLE_NAME"`
+	UniquePeriodTable          string `json:"UNIQUE_PERIOD_TABLE_NAME"`
+	UsernameEndDatePeriodIndex string `json:"USERNAME_END_DATE_PERIOD_INDEX"`
 
 	SavingsTable           string `json:"SAVINGS_TABLE_NAME"`
 	PeriodSavingIndexName  string `json:"PERIOD_SAVING_INDEX_NAME"`

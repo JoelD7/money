@@ -30,3 +30,7 @@ func BuildNameKey(name, id string) string {
 func BuildCreatedDateEntityIDKey(createdDate time.Time, id string) string {
 	return fmt.Sprintf("%s:%s", createdDate.Format(time.RFC3339Nano), id)
 }
+
+func BuildEndDatePeriodKey(period string, endDate time.Time) string {
+	return fmt.Sprintf("%s:%s", endDate.Format(time.RFC3339), period)
+}

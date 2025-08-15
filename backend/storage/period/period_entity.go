@@ -2,29 +2,23 @@ package period
 
 import (
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/storage/dynamo"
 	"time"
 )
 
 type periodEntity struct {
-	Username    string    `json:"username,omitempty" dynamodbav:"username"`
-	ID          string    `json:"period,omitempty" dynamodbav:"period"`
-	Name        *string   `json:"name,omitempty" dynamodbav:"name"`
-	StartDate   time.Time `json:"start_date,omitempty" dynamodbav:"start_date"`
-	EndDate     time.Time `json:"end_date,omitempty" dynamodbav:"end_date"`
-	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
-	UpdatedDate time.Time `json:"updated_date,omitempty" dynamodbav:"updated_date"`
-}
-
-type uniquePeriodNameEntity struct {
-	Name        string    `json:"name,omitempty" dynamodbav:"name"`
-	Username    string    `json:"username,omitempty" dynamodbav:"username"`
-	CreatedDate time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
+	Username              string    `json:"username,omitempty" dynamodbav:"username"`
+	ID                    string    `json:"period,omitempty" dynamodbav:"period"`
+	Name                  *string   `json:"name,omitempty" dynamodbav:"name"`
+	StartDate             time.Time `json:"start_date,omitempty" dynamodbav:"start_date"`
+	EndDate               time.Time `json:"end_date,omitempty" dynamodbav:"end_date"`
+	CreatedDate           time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
+	UpdatedDate           time.Time `json:"updated_date,omitempty" dynamodbav:"updated_date"`
+	UsernameEndDatePeriod *string   `json:"username_end_date_period,omitempty" dynamodbav:"username_end_date_period,omitempty"`
+	EndDatePeriod         string    `json:"end_date_period,omitempty" dynamodbav:"end-date_period"`
 }
 
 func toPeriodModel(p periodEntity) *models.Period {
-	//start := models.ToPeriodTime(p.StartDate)
-	//end := models.ToPeriodTime(p.EndDate)
-
 	return &models.Period{
 		Username:    p.Username,
 		ID:          p.ID,
@@ -48,12 +42,14 @@ func toPeriodModels(periods []periodEntity) []*models.Period {
 
 func toPeriodEntity(period models.Period) periodEntity {
 	return periodEntity{
-		Username:    period.Username,
-		ID:          period.ID,
-		Name:        period.Name,
-		StartDate:   period.StartDate,
-		EndDate:     period.EndDate,
-		CreatedDate: period.CreatedDate,
-		UpdatedDate: period.UpdatedDate,
+		Username:              period.Username,
+		ID:                    period.ID,
+		Name:                  period.Name,
+		StartDate:             period.StartDate,
+		EndDate:               period.EndDate,
+		CreatedDate:           period.CreatedDate,
+		UpdatedDate:           period.UpdatedDate,
+		UsernameEndDatePeriod: nil,
+		EndDatePeriod:         dynamo.BuildEndDatePeriodKey(period.ID, period.EndDate),
 	}
 }

@@ -140,9 +140,9 @@ func NewPeriodGetter(pm PeriodManager) func(ctx context.Context, username, perio
 	}
 }
 
-func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
-	return func(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
-		return pm.GetPeriods(ctx, username, startKey, pageSize)
+func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
+	return func(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
+		return pm.GetPeriods(ctx, username, startKey, pageSize, active)
 	}
 }
 

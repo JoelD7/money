@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/JoelD7/money/backend/models"
-	"github.com/JoelD7/money/backend/shared/env"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -28,42 +27,37 @@ var (
 )
 
 type DynamoRepository struct {
-	dynamoClient              *dynamodb.Client
-	periodTableName           string
-	uniquePeriodNameTableName string
+	dynamoClient               *dynamodb.Client
+	periodTableName            string
+	uniquePeriodNameTableName  string
+	usernameEndDatePeriodIndex string
 }
 
-func NewDynamoRepository(dynamoClient *dynamodb.Client, periodTableName, uniquePeriodTableName string) (*DynamoRepository, error) {
+func NewDynamoRepository(dynamoClient *dynamodb.Client, envConfig *models.EnvironmentConfiguration) (*DynamoRepository, error) {
 	d := &DynamoRepository{dynamoClient: dynamoClient}
 
-	periodTableNameEnv := env.GetString("PERIOD_TABLE_NAME", "")
-	uniquePeriodTableNameEnv := env.GetString("UNIQUE_PERIOD_TABLE_NAME", "")
-
-	err := validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, uniquePeriodTableNameEnv)
+	err := validateParams(envConfig)
 	if err != nil {
 		return nil, fmt.Errorf("initialize period dynamo repository failed: %v", err)
 	}
 
-	d.periodTableName = periodTableName
-	if d.periodTableName == "" {
-		d.periodTableName = periodTableNameEnv
-	}
-
-	d.uniquePeriodNameTableName = uniquePeriodTableName
-	if d.uniquePeriodNameTableName == "" {
-		d.uniquePeriodNameTableName = uniquePeriodTableNameEnv
-	}
+	d.periodTableName = envConfig.PeriodTable
+	d.usernameEndDatePeriodIndex = envConfig.UsernameEndDatePeriodIndex
 
 	return d, nil
 }
 
-func validateParams(periodTableName, uniquePeriodTableName, periodTableNameEnv, uniquePeriodTableNameEnv string) error {
-	if periodTableName == "" && periodTableNameEnv == "" {
+func validateParams(envConfig *models.EnvironmentConfiguration) error {
+	if envConfig == nil {
+		return fmt.Errorf("environment configuration is required")
+	}
+
+	if envConfig.PeriodTable == "" {
 		return fmt.Errorf("period table name is required")
 	}
 
-	if uniquePeriodTableName == "" && uniquePeriodTableNameEnv == "" {
-		return fmt.Errorf("unique period table name is required")
+	if envConfig.UsernameEndDatePeriodIndex == "" {
+		return fmt.Errorf("username end date period index is required")
 	}
 
 	return nil
@@ -263,18 +257,18 @@ func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period strin
 	return toPeriodModel(periodStruct), nil
 }
 
-func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int) ([]*models.Period, string, error) {
-	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
-
-	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
-
-	expr, err := conditionBuilder.Build()
+func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
+	expr, err := buildGetPeriodsKeyConditionExpr(username, active)
 	if err != nil {
-		return nil, "", fmt.Errorf("build expression failed: %v", err)
+		return nil, "", err
+	}
+
+	var index *string
+	if active {
+		index = aws.String(d.usernameEndDatePeriodIndex)
 	}
 
 	var decodedStartKey map[string]types.AttributeValue
-
 	if startKey != "" {
 		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
 		if err != nil {
@@ -289,6 +283,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		ExpressionAttributeValues: expr.Values(),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(pageSize),
+		IndexName:                 index,
 	}
 
 	result, err := d.dynamoClient.Query(ctx, input)
@@ -313,6 +308,24 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 	}
 
 	return toPeriodModels(periods), nextKey, nil
+}
+
+func buildGetPeriodsKeyConditionExpr(username string, active bool) (expression.Expression, error) {
+	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
+
+	if active {
+		keyConditionExpression = expression.Key("username").Equal(expression.Value(username)).
+			And(expression.Key("end-date_period").GreaterThan(expression.Value(time.Now().Format(time.RFC3339))))
+	}
+
+	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
+
+	expr, err := conditionBuilder.Build()
+	if err != nil {
+		return expression.Expression{}, fmt.Errorf("build expression failed: %v", err)
+	}
+
+	return expr, nil
 }
 
 func (d *DynamoRepository) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {

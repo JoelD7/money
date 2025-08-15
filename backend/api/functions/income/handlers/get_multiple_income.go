@@ -47,7 +47,7 @@ func (request *GetMultipleIncomeRequest) init(ctx context.Context, envConfig *mo
 			return
 		}
 
-		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig.PeriodTable, envConfig.UniquePeriodTable)
+		request.PeriodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
