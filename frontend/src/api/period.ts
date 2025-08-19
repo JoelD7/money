@@ -23,8 +23,8 @@ export async function getPeriod(period: string) {
   }
 }
 
-export async function getPeriods(startKey: string, pageSize: number = 10) {
-  const params = buildQueryParams(startKey, pageSize);
+export async function getPeriods(startKey: string, pageSize: number = 10, active: boolean = false) {
+  const params = buildQueryParams({ startKey, pageSize, active });
   let url = API_BASE_URL + "/periods";
 
   if (params.length > 0) {
