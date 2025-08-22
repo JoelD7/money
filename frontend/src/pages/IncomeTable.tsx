@@ -1,4 +1,3 @@
-import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import {
   BackgroundRefetchErrorSnackbar,
   Button,
@@ -7,20 +6,20 @@ import {
   Navbar,
   NewTransaction,
   PageTitle,
+  PeriodSelector,
   Table,
 } from "../components";
-import { useGetIncome, useGetPeriodsInfinite, useGetUser } from "../queries";
-import {Income, IncomeList, Period, User} from "../types";
+import { useGetIncome, useGetUser } from "../queries";
+import { Income, IncomeList, User } from "../types";
 import {
   GridColDef,
   GridPaginationModel,
   GridRowsProp,
   GridSortModel,
 } from "@mui/x-data-grid";
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
-import { v4 as uuidv4 } from "uuid";
 import { tableDateFormatter } from "../utils";
 import AddIcon from "@mui/icons-material/Add";
 
@@ -40,7 +39,6 @@ export function IncomeTable() {
     },
   };
 
-  const labelId: string = uuidv4();
   const noneSelectValue = "None";
 
   const incomeListErrSnackbar = {
@@ -61,17 +59,6 @@ export function IncomeTable() {
 
   const incomeList: IncomeList | undefined = getIncome.data;
   const user: User | undefined = getUser.data;
-
-  const getPeriodsQuery = useGetPeriodsInfinite();
-  const periods: Period[] = (() => {
-    if (getPeriodsQuery.data) {
-      return getPeriodsQuery.data.pages
-        .map((page) => page.periods)
-        .flat()
-    }
-
-    return [];
-  })();
 
   const columns: GridColDef[] = [
     { field: "amount", headerName: "Amount", width: 150 },
@@ -128,21 +115,6 @@ export function IncomeTable() {
     }).then(() => {
       setPaginationModel(newModel);
     });
-  }
-
-  function handlePeriodsMenuScroll(e: React.UIEvent<HTMLDivElement, UIEvent>) {
-    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (
-        scrollTop + clientHeight >= scrollHeight - 5 &&
-        !(getPeriodsQuery.isFetching || getPeriodsQuery.isFetchingNextPage)
-    ) {
-      getPeriodsQuery
-          .fetchNextPage()
-          .then(() => {})
-          .catch((e) => {
-            console.error("Error fetching more periods", e);
-          });
-    }
   }
 
   function getStartKey(newModel: GridPaginationModel): string | undefined {
@@ -276,40 +248,11 @@ export function IncomeTable() {
           </Button>
         </div>
         {/*Period selector*/}
-        <div className={"pb-2"}>
-          <FormControl sx={{ width: "150px" }}>
-            <InputLabel id={labelId}>Period</InputLabel>
-
-            <Select
-              labelId={labelId}
-              id={"Period"}
-              MenuProps={{
-                slotProps: {
-                  paper: {
-                    onScroll: handlePeriodsMenuScroll,
-                  },
-                },
-                PaperProps: {
-                  sx: {
-                    maxHeight: 150,
-                  },
-                },
-              }}
-              label={"Period"}
-              value={periods.length > 0 ? selectedPeriod : ""}
-              onChange={(e) => onSelectedPeriodChange(e.target.value)}
-            >
-              <MenuItem key={"None"} id={"None"} value={noneSelectValue}>
-                <em>None</em>
-              </MenuItem>
-              {Array.isArray(periods) &&
-                periods.map((p) => (
-                  <MenuItem key={p.period_id} id={p.period_id} value={p.period_id}>
-                    {p.name}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
+        <div className={"pb-2 w-64"}>
+          <PeriodSelector
+            period={selectedPeriod}
+            onPeriodChange={onSelectedPeriodChange}
+          />
         </div>
       </div>
 
