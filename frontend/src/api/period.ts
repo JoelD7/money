@@ -1,4 +1,4 @@
-import { Period, PeriodSchema, PeriodsSchema } from "../types";
+import { Period, PeriodSchema, PeriodsSchema, TransactionSearchParams } from "../types";
 import { keys } from "../utils/index.ts";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { AxiosResponse } from "axios";
@@ -23,8 +23,8 @@ export async function getPeriod(period: string) {
   }
 }
 
-export async function getPeriods(startKey: string, pageSize: number = 10, active: boolean = false) {
-  const params = buildQueryParams({ startKey, pageSize, active });
+export async function getPeriods(queryParams: TransactionSearchParams) {
+  const params = buildQueryParams(queryParams);
   let url = API_BASE_URL + "/periods";
 
   if (params.length > 0) {
