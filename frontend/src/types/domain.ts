@@ -115,7 +115,7 @@ export const IncomeSchema = z.object({
   amount: z.number(),
   name: z.string(),
   period_id: z.string(),
-  period_name: z.string(),
+  period_name: z.string().optional(),
   notes: z.string().optional(),
   created_date: z.string(),
 });

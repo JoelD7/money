@@ -48,15 +48,15 @@ export function buildQueryParams(queryParams: TransactionSearchParams): string[]
     params.push(`page_size=${pageSize}`);
   }
 
-  if (sortOrder !== "") {
+  if (sortOrder) {
     params.push(`sort_order=${sortOrder}`);
   }
 
-  if (sortBy !== "") {
+  if (sortBy) {
     params.push(`sort_by=${sortBy}`);
   }
 
-  if (savingGoalID !== "") {
+  if (savingGoalID) {
     params.push(`saving_goal_id=${savingGoalID}`);
   }
 

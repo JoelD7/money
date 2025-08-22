@@ -2,25 +2,23 @@ import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import React from "react";
 import { useGetPeriodsInfinite } from "../../queries";
 import { v4 as uuidv4 } from "uuid";
+import { Period } from "../../types";
 
 type PeriodSelectorProps = {
   period: string;
   onPeriodChange: (value: string) => void;
+  active?: boolean;
 };
 
-export function PeriodSelector({ period, onPeriodChange }: PeriodSelectorProps) {
+export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelectorProps) {
   const labelId: string = uuidv4();
 
-  const getPeriodsQuery = useGetPeriodsInfinite();
+  const getPeriodsQuery = useGetPeriodsInfinite({ active });
 
-  const periods: string[] = (() => {
+  const periods: Period[] = (() => {
     if (getPeriodsQuery.data) {
-      return getPeriodsQuery.data.pages
-        .map((page) => page.periods)
-        .flat()
-        .map((p) => p.name);
+      return getPeriodsQuery.data.pages.map((page) => page.periods).flat();
     }
-
     return [];
   })();
 
@@ -64,8 +62,8 @@ export function PeriodSelector({ period, onPeriodChange }: PeriodSelectorProps) 
       >
         {Array.isArray(periods) &&
           periods.map((p) => (
-            <MenuItem key={p} id={p} value={p}>
-              {p}
+            <MenuItem key={p.period_id} id={p.period_id} value={p.period_id}>
+              {p.name}
             </MenuItem>
           ))}
       </Select>

@@ -11,7 +11,7 @@ import { AxiosError } from "axios";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import { incomeKeys, queryKeys } from "../../queries";
-import { Dialog } from "../molecules";
+import {Dialog, PeriodSelector} from "../molecules";
 
 type NewIncomeProps = {
   onClose: () => void;
@@ -60,6 +60,7 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
   const [name, setName] = useState<string>("");
   const [date, setDate] = useState<Dayjs | null>(dayjs());
   const [notes, setNotes] = useState<string>("");
+  const[period, setPeriod] = useState<string>((user && user.current_period) ? user.current_period : "");
 
   const validationSchema = yup.object({
     name: yup.string().required("Name is required"),
@@ -75,7 +76,7 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
       name: name,
       created_date: date ? date.format("") : "",
       notes: notes,
-      period_id: (user && user.current_period) ? user.current_period : "",
+      period_id: period,
     };
 
     try {
@@ -101,6 +102,21 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
           <Grid xs={12}>
             <Typography variant={"h4"}>New Income</Typography>
             <Divider />
+          </Grid>
+
+          {/*Name*/}
+          <Grid xs={12}>
+            <TextField
+                margin={"none"}
+                name={"name"}
+                value={name}
+                fullWidth={true}
+                type={"text"}
+                label={"Name"}
+                variant={"outlined"}
+                required
+                onChange={(e) => setName(e.target.value)}
+            />
           </Grid>
 
           {/*Amount*/}
@@ -129,21 +145,6 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
             />
           </Grid>
 
-          {/*Name*/}
-          <Grid xs={6}>
-            <TextField
-              margin={"none"}
-              name={"name"}
-              value={name}
-              fullWidth={true}
-              type={"text"}
-              label={"Name"}
-              variant={"outlined"}
-              required
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Grid>
-
           {/*Notes*/}
           <Grid xs={6}>
             <TextField
@@ -159,6 +160,11 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
               size={"medium"}
               onChange={(e) => setNotes(e.target.value)}
             />
+          </Grid>
+
+          {/*Period selector*/}
+          <Grid xs={6}>
+            <PeriodSelector period={period} onPeriodChange={setPeriod} active />
           </Grid>
 
           <Grid xs={12} alignSelf={"end"}>
