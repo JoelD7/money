@@ -25,7 +25,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import dayjs, { Dayjs } from "dayjs";
-import { Dialog } from "../molecules";
+import {Dialog, PeriodSelector} from "../molecules";
 import { expensesQueryKeys } from "../../queries";
 import {PERIOD_STATS} from "../../queries/keys";
 
@@ -60,6 +60,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
   const [type, setType] = useState<string>("regular");
   const [recurringDay, setRecurringDay] = useState<number>(1);
   const [date, setDate] = useState<Dayjs | null>(dayjs());
+  const[period, setPeriod] = useState<string>((user && user.current_period) ? user.current_period : "");
 
   const queryClient = useQueryClient();
 
@@ -224,6 +225,8 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
                 />
               </div>
             )}
+
+            <PeriodSelector period={period} onPeriodChange={setPeriod} active />
 
             {/*Type*/}
             <>
