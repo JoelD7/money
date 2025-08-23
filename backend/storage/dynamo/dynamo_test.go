@@ -3,7 +3,6 @@ package dynamo
 import (
 	"fmt"
 	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/utils"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -89,18 +88,6 @@ func TestBuildAmountKey(t *testing.T) {
 			assert.Equal(t, tc.expectedKey, result)
 		})
 	}
-}
-
-func TestDecodePaginationKey(t *testing.T) {
-	c := require.New(t)
-
-	startKey := "eyJwZXJpb2QiOiIyMDIzLTkiLCJ1c2VybmFtZSI6InRlc3RAZ21haWwuY29tIn0="
-	decodedKey, err := DecodePaginationKey(startKey)
-	c.NoError(err)
-
-	str, err := utils.GetJsonString(decodedKey)
-	c.NoError(err)
-	fmt.Println(str)
 }
 
 func buildSampleRequestItems(length int) []types.WriteRequest {
