@@ -29,6 +29,7 @@ type QueryParameters struct {
 	SortBy       string
 	SortType     string
 	SavingGoalID string
+	Active       bool
 }
 
 func (qp *QueryParameters) ParseAsURLValues(query *url.Values) {
