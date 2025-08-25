@@ -25,7 +25,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
 import dayjs, { Dayjs } from "dayjs";
-import { Dialog } from "../molecules";
+import {Dialog, PeriodSelector} from "../molecules";
 import { expensesQueryKeys } from "../../queries";
 import {PERIOD_STATS} from "../../queries/keys";
 
@@ -60,6 +60,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
   const [type, setType] = useState<string>("regular");
   const [recurringDay, setRecurringDay] = useState<number>(1);
   const [date, setDate] = useState<Dayjs | null>(dayjs());
+  const[period, setPeriod] = useState<string>((user && user.current_period) ? user.current_period : "");
 
   const queryClient = useQueryClient();
 
@@ -169,63 +170,72 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
             />
           </Grid>
 
-          {/*Left side*/}
+          {/*Amount*/}
           <Grid xs={6}>
-            {/*Amount*/}
             <TextField
-              margin={"normal"}
-              sx={{ marginTop: "0px" }}
-              name={"amount"}
-              value={amount || ""}
-              fullWidth={true}
-              type={"number"}
-              label={"Amount"}
-              variant={"outlined"}
-              // required
-              onChange={(e) => setAmount(Number(e.target.value))}
-            />
-
-            {/*Date*/}
-            <DatePicker
-              label="Date"
-              sx={{ marginTop: "10px" }}
-              value={date}
-              onChange={(newDate) => setDate(newDate)}
-            />
-
-            {/*Notes*/}
-            <TextField
-              margin={"normal"}
-              name={"notes"}
-              value={notes}
-              multiline
-              minRows={3}
-              maxRows={6}
-              fullWidth={true}
-              type={"text"}
-              label={"Notes (optional)"}
-              variant={"outlined"}
-              size={"medium"}
-              onChange={(e) => setNotes(e.target.value)}
+                margin={"normal"}
+                sx={{ marginTop: "0px" }}
+                name={"amount"}
+                value={amount || ""}
+                fullWidth={true}
+                type={"number"}
+                label={"Amount"}
+                variant={"outlined"}
+                // required
+                onChange={(e) => setAmount(Number(e.target.value))}
             />
           </Grid>
 
-          {/*Right side*/}
+          {/*Category*/}
           <Grid xs={6}>
-            {/*Category*/}
             {user && user.categories && (
-              <div className={"mb-2"}>
-                <CategorySelect
-                  categories={user.categories}
-                  selected={category ? [category] : []}
-                  onSelectedUpdate={onCategoryChange}
-                  width={"400px"}
-                  label={"Category(optional)"}
-                />
-              </div>
+                <div className={"mb-2"}>
+                  <CategorySelect
+                      categories={user.categories}
+                      selected={category ? [category] : []}
+                      onSelectedUpdate={onCategoryChange}
+                      width={"400px"}
+                      label={"Category(optional)"}
+                  />
+                </div>
             )}
+          </Grid>
 
-            {/*Type*/}
+          {/*Date*/}
+          <Grid xs={6}>
+            <DatePicker
+                label="Date"
+                sx={{ width: "100%" }}
+                value={date}
+                onChange={(newDate) => setDate(newDate)}
+            />
+          </Grid>
+
+          {/*Period selector*/}
+          <Grid xs={6}>
+            <PeriodSelector period={period} onPeriodChange={setPeriod} active />
+          </Grid>
+
+          {/*Notes*/}
+          <Grid xs={6}>
+            <TextField
+                margin={"normal"}
+                name={"notes"}
+                value={notes}
+                multiline
+                minRows={3}
+                maxRows={6}
+                fullWidth={true}
+                type={"text"}
+                label={"Notes (optional)"}
+                variant={"outlined"}
+                size={"medium"}
+                onChange={(e) => setNotes(e.target.value)}
+            />
+          </Grid>
+
+          {/*Type*/}
+          <Grid xs={6}>
             <>
               <FormControl>
                 <FormLabel id="expense-type-radio-buttons-group-label">Type</FormLabel>

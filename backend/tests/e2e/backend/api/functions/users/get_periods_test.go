@@ -16,6 +16,7 @@ func TestGetPeriods(t *testing.T) {
 	requester, err := api.NewE2ERequester()
 	c.Nil(err)
 
+	//setup
 	now := time.Now()
 
 	//Create periods, 13 past, 7 within and 17 future
@@ -256,35 +257,49 @@ func TestGetPeriods(t *testing.T) {
 		c.NotNil(createdPeriod)
 	}
 
-	active := true
-	pageSize := 10
+	t.Run("Get active periods", func(t *testing.T) {
+		active := true
+		pageSize := 10
 
-	res, statusCode, err := requester.GetPeriods(active, &models.QueryParameters{PageSize: pageSize})
-	c.Nil(err)
-	c.Equal(http.StatusOK, statusCode)
-	c.NotNil(res)
-	c.NotEmpty(res.NextKey)
-	c.Len(res.Periods, pageSize)
-	c.True(arePeriodsSortedByEndDate(res.Periods, true))
-	c.True(arePeriodsActive(res.Periods))
+		res, statusCode, err := requester.GetPeriods(active, &models.QueryParameters{PageSize: pageSize})
+		c.Nil(err)
+		c.Equal(http.StatusOK, statusCode)
+		c.NotNil(res)
+		c.NotEmpty(res.NextKey)
+		c.Len(res.Periods, pageSize)
+		c.True(arePeriodsSortedByEndDate(res.Periods, true))
+		c.True(arePeriodsActive(res.Periods))
 
-	res, statusCode, err = requester.GetPeriods(active, &models.QueryParameters{PageSize: pageSize, StartKey: res.NextKey})
-	c.Nil(err)
-	c.Equal(http.StatusOK, statusCode)
-	c.NotNil(res)
-	c.NotEmpty(res.NextKey)
-	c.Len(res.Periods, pageSize)
-	c.True(arePeriodsSortedByEndDate(res.Periods, true))
-	c.True(arePeriodsActive(res.Periods))
+		res, statusCode, err = requester.GetPeriods(active, &models.QueryParameters{PageSize: pageSize, StartKey: res.NextKey})
+		c.Nil(err)
+		c.Equal(http.StatusOK, statusCode)
+		c.NotNil(res)
+		c.NotEmpty(res.NextKey)
+		c.Len(res.Periods, pageSize)
+		c.True(arePeriodsSortedByEndDate(res.Periods, true))
+		c.True(arePeriodsActive(res.Periods))
 
-	res, statusCode, err = requester.GetPeriods(active, &models.QueryParameters{PageSize: pageSize, StartKey: res.NextKey})
-	c.Nil(err)
-	c.Equal(http.StatusOK, statusCode)
-	c.NotNil(res)
-	c.Empty(res.NextKey) //This is the last page
-	c.Len(res.Periods, 4)
-	c.True(arePeriodsSortedByEndDate(res.Periods, true))
-	c.True(arePeriodsActive(res.Periods))
+		res, statusCode, err = requester.GetPeriods(active, &models.QueryParameters{PageSize: pageSize, StartKey: res.NextKey})
+		c.Nil(err)
+		c.Equal(http.StatusOK, statusCode)
+		c.NotNil(res)
+		c.Empty(res.NextKey) //This is the last page
+		c.Len(res.Periods, 4)
+		c.True(arePeriodsSortedByEndDate(res.Periods, true))
+		c.True(arePeriodsActive(res.Periods))
+	})
+
+	t.Run("Get all periods", func(t *testing.T) {
+		active := false
+		pageSize := 40
+
+		res, statusCode, err := requester.GetPeriods(active, &models.QueryParameters{PageSize: pageSize})
+		c.Nil(err)
+		c.Equal(http.StatusOK, statusCode)
+		c.NotNil(res)
+		c.Empty(res.NextKey)
+		c.Len(res.Periods, 37)
+	})
 }
 
 func arePeriodsSortedByEndDate(periods []*models.Period, asc bool) bool {

@@ -1,6 +1,6 @@
 import { AxiosError, AxiosResponse } from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { IdempotencyKVP } from "../types";
+import { IdempotencyKVP, TransactionSearchParams } from "../types";
 
 const BACKOFF_TIME_MS: number = 1000;
 export const MAX_RETRIES: number = 3;
@@ -36,13 +36,8 @@ export function redirectToLogin() {
   window.location.replace("/login");
 }
 
-export function buildQueryParams(
-  startKey: string = "",
-  pageSize: number = 10,
-  sortOrder: string = "",
-  sortBy: string = "",
-  savingGoalID: string = "",
-): string[] {
+export function buildQueryParams(queryParams: TransactionSearchParams): string[] {
+  const { startKey, pageSize, sortOrder, sortBy, active, savingGoalID } = queryParams;
   const params = [];
 
   if (startKey) {
@@ -53,16 +48,20 @@ export function buildQueryParams(
     params.push(`page_size=${pageSize}`);
   }
 
-  if (sortOrder !== "") {
+  if (sortOrder) {
     params.push(`sort_order=${sortOrder}`);
   }
 
-  if (sortBy !== "") {
+  if (sortBy) {
     params.push(`sort_by=${sortBy}`);
   }
 
-  if (savingGoalID !== "") {
+  if (savingGoalID) {
     params.push(`saving_goal_id=${savingGoalID}`);
+  }
+
+  if (active) {
+    params.push(`active=${active}`);
   }
 
   return params;

@@ -11,7 +11,7 @@ export async function getSavingGoals(
   sortOrder: string = "",
   sortBy: string = "",
 ) {
-  const params = buildQueryParams(startKey, pageSize, sortOrder, sortBy);
+  const params = buildQueryParams({ startKey, pageSize, sortOrder, sortBy });
   let url = API_BASE_URL + `/savings/goals`;
   if (params.length > 0) {
     url += `?${params.join("&")}`;

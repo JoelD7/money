@@ -36,7 +36,7 @@ func TestGetPeriods(t *testing.T) {
 	c := require.New(t)
 
 	now := time.Now()
-	Username := "e2e_test@gmail.com"
+	Username := "integration_test@gmail.com"
 	ctx := context.Background()
 
 	dynamoClient := dynamo.InitClient(ctx)
@@ -44,6 +44,7 @@ func TestGetPeriods(t *testing.T) {
 	periodRepo, err := period.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating period repository failed")
 
+	//setup
 	//Create periods, 13 past, 7 within and 17 future
 	periodsToCreate := []*models.Period{
 		// 13 Past Periods (StartDate and EndDate are before now)
@@ -281,29 +282,38 @@ func TestGetPeriods(t *testing.T) {
 		c.NotNil(createdPeriod)
 	}
 
-	active := true
-	pageSize := 10
+	t.Run("Get active periods", func(t *testing.T) {
+		active := true
+		pageSize := 10
 
-	periods, nextKey, err := periodRepo.GetPeriods(ctx, Username, "", pageSize, active)
-	c.Nil(err)
-	c.NotEmpty(nextKey)
-	c.Len(periods, pageSize)
-	c.True(arePeriodsSorted(periods, true))
-	c.True(arePeriodsActive(periods))
+		periods, nextKey, err := periodRepo.GetPeriods(ctx, Username, "", pageSize, active)
+		c.Nil(err)
+		c.NotEmpty(nextKey)
+		c.Len(periods, pageSize)
+		c.True(arePeriodsSorted(periods, true))
+		c.True(arePeriodsActive(periods))
 
-	periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, nextKey, pageSize, active)
-	c.Nil(err)
-	c.NotEmpty(nextKey)
-	c.Len(periods, pageSize)
-	c.True(arePeriodsSorted(periods, true))
-	c.True(arePeriodsActive(periods))
+		periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, nextKey, pageSize, active)
+		c.Nil(err)
+		c.NotEmpty(nextKey)
+		c.Len(periods, pageSize)
+		c.True(arePeriodsSorted(periods, true))
+		c.True(arePeriodsActive(periods))
 
-	periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, nextKey, pageSize, active)
-	c.Nil(err)
-	c.Empty(nextKey)
-	c.Len(periods, 4)
-	c.True(arePeriodsSorted(periods, true))
-	c.True(arePeriodsActive(periods))
+		periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, nextKey, pageSize, active)
+		c.Nil(err)
+		c.Empty(nextKey)
+		c.Len(periods, 4)
+		c.True(arePeriodsSorted(periods, true))
+		c.True(arePeriodsActive(periods))
+	})
+
+	t.Run("Get all periods", func(t *testing.T) {
+		pageSize := 40
+		periods, _, err := periodRepo.GetPeriods(ctx, Username, "", pageSize, false)
+		c.Nil(err)
+		c.Len(periods, 37)
+	})
 }
 
 func arePeriodsSorted(periods []*models.Period, asc bool) bool {

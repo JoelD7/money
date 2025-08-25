@@ -31,7 +31,13 @@ export async function getSavings({
   queryKey,
 }: QueryFunctionContext<ReturnType<(typeof savingsKeys)["list"]>>) {
   const { pageSize, startKey, sortOrder, sortBy, savingGoalID } = queryKey[0];
-  const params = buildQueryParams(startKey, pageSize, sortOrder, sortBy, savingGoalID);
+  const params = buildQueryParams({
+    startKey,
+    pageSize,
+    sortOrder,
+    sortBy,
+    savingGoalID,
+  });
 
   let url = API_BASE_URL + `/savings`;
   if (params.length > 0) {

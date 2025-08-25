@@ -249,6 +249,12 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 		}
 	}
 
+	var active bool
+	val, _ := req.QueryStringParameters["active"]
+	if strings.EqualFold(val, "true") {
+		active = true
+	}
+
 	return &models.QueryParameters{
 		Categories:   req.MultiValueQueryStringParameters["category"],
 		Period:       req.QueryStringParameters["period"],
@@ -257,6 +263,7 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 		SortBy:       req.QueryStringParameters["sort_by"],
 		SortType:     req.QueryStringParameters["sort_order"],
 		SavingGoalID: req.QueryStringParameters["saving_goal_id"],
+		Active:       active,
 	}, nil
 }
 

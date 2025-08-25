@@ -33,7 +33,7 @@ export const ExpenseSchema = z.object({
   type: ExpenseTypeSchema.optional(),
   created_date: z.string(),
   period_id: z.string(),
-  period_name : z.string(),
+  period_name : z.string().optional(),
   update_date: z.string().optional(),
 });
 
@@ -115,7 +115,7 @@ export const IncomeSchema = z.object({
   amount: z.number(),
   name: z.string(),
   period_id: z.string(),
-  period_name: z.string(),
+  period_name: z.string().optional(),
   notes: z.string().optional(),
   created_date: z.string(),
 });
