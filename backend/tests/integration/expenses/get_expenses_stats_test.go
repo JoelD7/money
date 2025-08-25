@@ -28,7 +28,7 @@ func TestGetExpensesStats(t *testing.T) {
 	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating expenses repository failed")
 
-	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
+	usersRepo, err := users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 	c.Nil(err, "creating users repository failed")
 
 	request := handlers.GetExpensesStatsRequest{

@@ -12,6 +12,7 @@ import (
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/income"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/tests/e2e/setup"
 	"github.com/aws/aws-lambda-go/events"
@@ -22,13 +23,7 @@ import (
 )
 
 var (
-	incomeTableName             string
-	periodUserIncomeIndex       string
-	usersTableName              string
-	periodUserNameIncomeIDIndex string
-	periodUserAmountIndex       string
-	periodUserCreatedDateIndex  string
-	usernameCreatedDateIndex    string
+	envConfig *models.EnvironmentConfiguration
 )
 
 func TestMain(m *testing.M) {
@@ -37,15 +32,9 @@ func TestMain(m *testing.M) {
 		panic(fmt.Errorf("loading environment failed: %v", err))
 	}
 
-	logger.InitLogger(logger.ConsoleImplementation)
+	envConfig = env.GetEnvConfig()
 
-	incomeTableName = env.GetString("INCOME_TABLE_NAME", "")
-	periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
-	usersTableName = env.GetString("USERS_TABLE_NAME", "")
-	periodUserNameIncomeIDIndex = env.GetString("PERIOD_USER_NAME_INCOME_ID_INDEX", "")
-	periodUserAmountIndex = env.GetString("PERIOD_USER_AMOUNT_INDEX", "")
-	periodUserCreatedDateIndex = env.GetString("PERIOD_USER_CREATED_DATE_INDEX", "")
-	usernameCreatedDateIndex = env.GetString("USERNAME_CREATED_DATE_INDEX", "")
+	logger.InitLogger(logger.ConsoleImplementation)
 
 	os.Exit(m.Run())
 }
@@ -56,26 +45,21 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	ctx := context.Background()
 	dynamoClient := dynamo.InitClient(ctx)
 
-	envConfig := &models.EnvironmentConfiguration{
-		IncomeTable:                 incomeTableName,
-		PeriodUserIncomeIndex:       periodUserIncomeIndex,
-		PeriodUserNameIncomeIDIndex: periodUserNameIncomeIDIndex,
-		PeriodUserAmountIndex:       periodUserAmountIndex,
-		PeriodUserCreatedDateIndex:  periodUserCreatedDateIndex,
-		UsernameCreatedDateIndex:    usernameCreatedDateIndex,
-	}
-
 	repo, err := income.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating income repository failed")
 
-	userRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
+	userRepo, err := users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 	c.Nil(err, "creating users repository failed")
+
+	periodRepo, err := period.NewDynamoRepository(dynamoClient, envConfig)
+	c.Nil(err, "creating period repository failed")
 
 	cacheManager := cache.NewRedisCache()
 
 	request := &handlers.GetMultipleIncomeRequest{
 		IncomeRepo:   repo,
 		CacheManager: cacheManager,
+		PeriodRepo:   periodRepo,
 		Username:     setup.Username,
 		PageSize:     10,
 		StartKey:     "",
@@ -202,10 +186,10 @@ func BenchmarkGetMultipleIncome(t *testing.B) {
 	ctx := context.Background()
 	dynamoClient := dynamo.InitClient(ctx)
 
-	repo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
+	repo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: envConfig.IncomeTable, PeriodUserIncomeIndex: envConfig.PeriodUserIncomeIndex})
 	c.Nil(err, "creating income repository failed")
 
-	userRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
+	userRepo, err := users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 	c.Nil(err, "creating users repository failed")
 
 	cacheManager := cache.NewRedisCache()
