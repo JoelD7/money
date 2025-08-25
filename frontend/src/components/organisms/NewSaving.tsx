@@ -1,8 +1,7 @@
-import { Dialog, ErrorSnackbar, PeriodSelector, SavingGoalSelector } from "../molecules";
+import { Dialog, PeriodSelector, SavingGoalSelector } from "../molecules";
 import { Box, Divider, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { FormEvent, useState } from "react";
-import { useGetPeriodsInfinite } from "../../queries";
 import { Saving, SnackAlert } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
@@ -30,8 +29,6 @@ export function NewSaving({ open, onClose, onAlert, savingGoalId }: NewSavingPro
   const [period, setPeriod] = useState<string>("");
   const [amount, setAmount] = useState<number | null>(null);
   const [savingGoal, setSavingGoal] = useState<string>(savingGoalId ? savingGoalId : "");
-
-  const getPeriodsQuery = useGetPeriodsInfinite();
 
   const queryClient = useQueryClient();
   const createSavingMutation = useMutation({
@@ -99,24 +96,8 @@ export function NewSaving({ open, onClose, onAlert, savingGoalId }: NewSavingPro
     setSavingGoal(savingGoalId);
   }
 
-  function showErrorSnackbar() {
-    if (getPeriodsQuery.isError && getPeriodsQuery.error.response) {
-      return getPeriodsQuery.error.response.status !== 404;
-    }
-
-    return getPeriodsQuery.isError;
-  }
-
   return (
     <Dialog open={open} onClose={onClose}>
-      {showErrorSnackbar() && (
-        <ErrorSnackbar
-          openProp={getPeriodsQuery.isError}
-          title={"Error fetching periods"}
-          message={getPeriodsQuery.error ? getPeriodsQuery.error.message : ""}
-        />
-      )}
-
       <Box
         component="form"
         onSubmit={createSaving}

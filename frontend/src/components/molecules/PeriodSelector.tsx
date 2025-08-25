@@ -3,6 +3,7 @@ import React from "react";
 import { useGetPeriodsInfinite } from "../../queries";
 import { v4 as uuidv4 } from "uuid";
 import { Period } from "../../types";
+import { ErrorSnackbar } from "./ErrorSnackbar.tsx";
 
 type PeriodSelectorProps = {
   period: string;
@@ -37,36 +38,54 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
     }
   }
 
-  return (
-    <FormControl sx={{ width: "100%" }}>
-      <InputLabel id={labelId}>Period</InputLabel>
+  function showErrorSnackbar() {
+    if (getPeriodsQuery.isError && getPeriodsQuery.error.response) {
+      return getPeriodsQuery.error.response.status !== 404;
+    }
 
-      <Select
-        labelId={labelId}
-        id={"Period"}
-        MenuProps={{
-          slotProps: {
-            paper: {
-              onScroll: handlePeriodsMenuScroll,
+    return getPeriodsQuery.isError;
+  }
+
+  return (
+    <>
+      {showErrorSnackbar() && (
+        <ErrorSnackbar
+          openProp={getPeriodsQuery.isError}
+          title={"Error fetching periods"}
+          message={getPeriodsQuery.error ? getPeriodsQuery.error.message : ""}
+        />
+      )}
+
+      <FormControl sx={{ width: "100%" }}>
+        <InputLabel id={labelId}>Period</InputLabel>
+
+        <Select
+          labelId={labelId}
+          id={"Period"}
+          MenuProps={{
+            slotProps: {
+              paper: {
+                onScroll: handlePeriodsMenuScroll,
+              },
             },
-          },
-          PaperProps: {
-            sx: {
-              maxHeight: 150,
+            PaperProps: {
+              sx: {
+                maxHeight: 150,
+              },
             },
-          },
-        }}
-        label={"Period"}
-        value={periods.length > 0 ? period : ""}
-        onChange={(e) => onPeriodChange(e.target.value)}
-      >
-        {Array.isArray(periods) &&
-          periods.map((p) => (
-            <MenuItem key={p.period_id} id={p.period_id} value={p.period_id}>
-              {p.name}
-            </MenuItem>
-          ))}
-      </Select>
-    </FormControl>
+          }}
+          label={"Period"}
+          value={periods.length > 0 ? period : ""}
+          onChange={(e) => onPeriodChange(e.target.value)}
+        >
+          {Array.isArray(periods) &&
+            periods.map((p) => (
+              <MenuItem key={p.period_id} id={p.period_id} value={p.period_id}>
+                {p.name}
+              </MenuItem>
+            ))}
+        </Select>
+      </FormControl>
+    </>
   );
 }
