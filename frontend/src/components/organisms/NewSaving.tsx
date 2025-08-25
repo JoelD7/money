@@ -130,7 +130,7 @@ export function NewSaving({ open, onClose, onAlert, savingGoalId }: NewSavingPro
 
           {/*Period*/}
           <Grid xs={6}>
-            <PeriodSelector period={period} onPeriodChange={setPeriod} />
+            <PeriodSelector period={period} onPeriodChange={setPeriod} active />
           </Grid>
 
           {/* Saving goal */}
