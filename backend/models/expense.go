@@ -36,3 +36,19 @@ func (e *Expense) SetPeriodName(name string) {
 func (e *Expense) GetUsername() string {
 	return e.Username
 }
+
+func (e *Expense) GetName() string {
+	if e.Name != nil {
+		return *e.Name
+	}
+
+	return ""
+}
+
+func (e *Expense) GetAmount() float64 {
+	if e.Amount != nil {
+		return *e.Amount
+	}
+
+	return 0
+}

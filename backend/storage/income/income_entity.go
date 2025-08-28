@@ -56,7 +56,7 @@ func toIncomeEntity(i *models.Income) *incomeEntity {
 		PeriodID:     i.PeriodID,
 		Notes:        i.Notes,
 		PeriodUser:   i.PeriodUser,
-		AmountKey:    dynamo.BuildAmountKey(*i.Amount, i.IncomeID),
-		NameIncomeID: dynamo.BuildNameKey(*i.Name, i.IncomeID),
+		AmountKey:    dynamo.BuildAmountKey(i.GetAmount(), i.IncomeID),
+		NameIncomeID: dynamo.BuildNameKey(i.GetName(), i.IncomeID),
 	}
 }

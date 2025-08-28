@@ -36,8 +36,8 @@ func toExpenseEntity(e *models.Expense) *expenseEntity {
 		CreatedDate:   e.CreatedDate,
 		PeriodID:      e.PeriodID,
 		UpdateDate:    e.UpdateDate,
-		AmountKey:     dynamo.BuildAmountKey(*e.Amount, e.ExpenseID),
-		NameExpenseID: dynamo.BuildNameKey(*e.Name, e.ExpenseID),
+		AmountKey:     dynamo.BuildAmountKey(e.GetAmount(), e.ExpenseID),
+		NameExpenseID: dynamo.BuildNameKey(e.GetName(), e.ExpenseID),
 	}
 
 	if e.Amount != nil {
