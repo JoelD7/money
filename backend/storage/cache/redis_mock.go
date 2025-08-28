@@ -57,3 +57,27 @@ func (r *redisMock) AddInvalidToken(ctx context.Context, username, token string,
 func (r *redisMock) DeleteInvalidToken(username string) {
 	delete(r.store, username)
 }
+
+func (r *redisMock) AddResource(ctx context.Context, key string, resource interface{}, ttl int64) error {
+	return nil
+}
+
+func (r *redisMock) GetResource(ctx context.Context, key string) (string, error) {
+	return "", nil
+}
+
+func (r *redisMock) SetTTL(ttl int64) {
+	return
+}
+
+func (r *redisMock) AddIncomePeriods(ctx context.Context, username string, periods []string) error {
+	return nil
+}
+
+func (r *redisMock) GetIncomePeriods(ctx context.Context, username string) ([]string, error) {
+	return nil, nil
+}
+
+func (r *redisMock) DeleteIncomePeriods(ctx context.Context, username string, periods ...string) error {
+	return nil
+}

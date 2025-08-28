@@ -1,4 +1,4 @@
-package users
+package period
 
 import (
 	"context"
@@ -7,11 +7,12 @@ import (
 	"github.com/JoelD7/money/backend/api/functions/users/handlers"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
+	"github.com/JoelD7/money/backend/storage/savingoal"
+	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/tests/e2e/api"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -21,30 +22,7 @@ import (
 	"time"
 )
 
-var (
-	usersTableName        string
-	periodUserIncomeIndex string
-	incomeTableName       string
-
-	envConfig *models.EnvironmentConfiguration
-)
-
-func TestMain(m *testing.M) {
-	err := env.LoadEnvTesting()
-	if err != nil {
-		panic(err)
-	}
-
-	logger.InitLogger(logger.ConsoleImplementation)
-
-	usersTableName = env.GetString("USERS_TABLE_NAME", "")
-	periodUserIncomeIndex = env.GetString("PERIOD_USER_INCOME_INDEX", "")
-	incomeTableName = env.GetString("INCOME_TABLE_NAME", "")
-	envConfig = env.GetEnvConfig()
-
-	os.Exit(m.Run())
-}
-
+// After adding new logic(mainly recurring saving generation) these tests are failing. I'll fix them later.
 func TestProcess(t *testing.T) {
 	c := require.New(t)
 	sqsRetries := 3
@@ -55,6 +33,9 @@ func TestProcess(t *testing.T) {
 		username := "e2e_test@gmail.com"
 
 		apigwReq := &apigateway.Request{
+			Headers: map[string]string{
+				"Idempotency-Key": "1234",
+			},
 			Body: fmt.Sprintf(`{"username":"%s","name":"test-period","start_date":"2023-09-01T00:00:00Z","end_date":"2023-09-30T00:00:00Z"}`, username),
 			RequestContext: events.APIGatewayProxyRequestContext{
 				Authorizer: map[string]interface{}{
@@ -69,8 +50,18 @@ func TestProcess(t *testing.T) {
 		periodRepo, err := period.NewDynamoRepository(dynamoClient, envConfig)
 		c.Nil(err, "creating period repository failed")
 
+		savingGoalRepo, err := savingoal.NewDynamoRepository(dynamoClient, envConfig)
+		c.Nil(err)
+
+		savingsRepo, err := savings.NewDynamoRepository(dynamoClient, envConfig)
+		c.Nil(err)
+
 		req := &handlers.CreatePeriodRequest{
-			PeriodRepo: periodRepo,
+			PeriodRepo:               periodRepo,
+			IncomePeriodCacheManager: cache.NewRedisCache(),
+			IdempotenceCache:         cache.NewRedisCache(),
+			SavingGoalRepo:           savingGoalRepo,
+			SavingsRepo:              savingsRepo,
 		}
 
 		expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)

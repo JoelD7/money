@@ -1,4 +1,4 @@
-package users
+package period
 
 import (
 	"context"
@@ -66,10 +66,10 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating expenses repository failed")
 
-	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
+	usersRepo, err := users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 	c.Nil(err, "creating users repository failed")
 
-	incomeRepo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
+	incomeRepo, err := income.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating income repository failed")
 
 	request := handlers.GetPeriodStatRequest{
@@ -153,10 +153,10 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 
 	dynamoClient := dynamo.InitClient(ctx)
 
-	usersRepo, err := users.NewDynamoRepository(dynamoClient, usersTableName)
+	usersRepo, err := users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
 	c.Nil(err, "creating users repository failed")
 
-	incomeRepo, err := income.NewDynamoRepository(dynamoClient, &models.EnvironmentConfiguration{IncomeTable: incomeTableName, PeriodUserIncomeIndex: periodUserIncomeIndex})
+	incomeRepo, err := income.NewDynamoRepository(dynamoClient, envConfig)
 	c.Nil(err, "creating income repository failed")
 
 	expensesRepo, err := expenses.NewDynamoRepository(dynamoClient, envConfig)

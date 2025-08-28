@@ -1,0 +1,20 @@
+[
+  {
+    "income_id": "id_1",
+    "username": "e2e_test@gmail.com",
+    "amount": 1000,
+    "period_id":  "2021-09"
+  },
+  {
+    "income_id":  "id_2",
+    "username": "e2e_test@gmail.com",
+    "amount": 1000,
+    "period_id":  "2021-09"
+  },
+  {
+    "income_id":  "id_3",
+    "username": "e2e_test@gmail.com",
+    "amount": 1000,
+    "period_id":  "2021-09"
+  }
+]
