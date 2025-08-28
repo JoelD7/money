@@ -5,8 +5,6 @@ import (
 	"github.com/JoelD7/money/backend/api/functions/expenses/handlers"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
-	"github.com/JoelD7/money/backend/shared/env"
-	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	expensesRecurring "github.com/JoelD7/money/backend/storage/expenses-recurring"
@@ -14,41 +12,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/stretchr/testify/require"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 )
 
 var (
 	expensesRecurringTableName string
-	usersTableName             string
-
-	envConfig *models.EnvironmentConfiguration
 )
-
-func TestMain(m *testing.M) {
-	err := env.LoadEnvTesting()
-	if err != nil {
-		panic(err)
-	}
-
-	logger.InitLogger(logger.ConsoleImplementation)
-
-	expensesRecurringTableName = env.GetString("EXPENSES_RECURRING_TABLE_NAME", "")
-	usersTableName = env.GetString("USERS_TABLE_NAME", "")
-	envConfig = &models.EnvironmentConfiguration{
-		ExpensesTable:                env.GetString("EXPENSES_TABLE_NAME", ""),
-		ExpensesRecurringTable:       env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
-		PeriodUserExpenseIndex:       env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
-		UsersTable:                   env.GetString("USERS_TABLE_NAME", ""),
-		PeriodUserCreatedDateIndex:   env.GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
-		UsernameCreatedDateIndex:     env.GetString("USERNAME_CREATED_DATE_INDEX", ""),
-		PeriodUserNameExpenseIDIndex: env.GetString("PERIOD_USER_NAME_EXPENSE_ID_INDEX", ""),
-		PeriodUserAmountIndex:        env.GetString("PERIOD_USER_AMOUNT_INDEX", ""),
-	}
-
-	os.Exit(m.Run())
-}
 
 func TestProcess(t *testing.T) {
 	c := require.New(t)

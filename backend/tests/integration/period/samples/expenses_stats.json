@@ -1,0 +1,145 @@
+[
+  {
+    "expense_id": "insurance premium",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_1",
+    "amount": 100,
+    "name": "Insurance Premium",
+    "notes": "Monthly insurance premium",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id": "2021-09"
+  },
+  {
+    "expense_id": "gym membership",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_1",
+    "amount": 50,
+    "name": "Gym Membership",
+    "notes": "Monthly gym membership",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "netflix subscription",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_1",
+    "amount": 12.99,
+    "name": "Netflix Subscription",
+    "notes": "Monthly Netflix subscription",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "spotify subscription",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_1",
+    "amount": 9.99,
+    "name": "Spotify Subscription",
+    "notes": "Monthly Spotify subscription",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "car insurance",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_2",
+    "amount": 75,
+    "name": "Car Insurance",
+    "notes": "Monthly car insurance premium",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "electricity bill",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_2",
+    "amount": 60,
+    "name": "Electricity Bill",
+    "notes": "Monthly electricity bill",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "internet bill",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_2",
+    "amount": 40,
+    "name": "Internet Bill",
+    "notes": "Monthly internet bill",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "water bill",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_2",
+    "amount": 30,
+    "name": "Water Bill",
+    "notes": "Monthly water bill",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "phone bill",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_2",
+    "amount": 25,
+    "name": "Phone Bill",
+    "notes": "Monthly phone bill",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "credit card payment",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_2",
+    "amount": 200,
+    "name": "Credit Card Payment",
+    "notes": "Monthly credit card payment",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "student loan",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_3",
+    "amount": 150,
+    "name": "Student Loan",
+    "notes": "Monthly student loan payment",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "rent payment",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_3",
+    "amount": 800,
+    "name": "Rent Payment",
+    "notes": "Monthly rent payment",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  },
+  {
+    "expense_id": "gas bill",
+    "username": "e2e_test@gmail.com",
+    "category_id": "category_id_3",
+    "amount": 20,
+    "name": "Gas Bill",
+    "notes": "Monthly gas bill",
+    "created_date": "0001-01-01T00:00:00Z",
+    "update_date": "0001-01-01T00:00:00Z",
+    "period_id":  "2021-09"
+  }
+]

@@ -30,3 +30,19 @@ func (i *Income) SetPeriodName(name string) {
 func (i *Income) GetUsername() string {
 	return i.Username
 }
+
+func (i *Income) GetName() string {
+	if i.Name != nil {
+		return *i.Name
+	}
+
+	return ""
+}
+
+func (i *Income) GetAmount() float64 {
+	if i.Amount != nil {
+		return *i.Amount
+	}
+
+	return 0
+}
