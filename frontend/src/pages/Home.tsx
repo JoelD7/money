@@ -128,7 +128,7 @@ export function Home() {
         {/*Chart, Current balance and expenses*/}
         <Grid xs={12} maxWidth={"1200px"}>
           <div>
-            <Grid container spacing={1}>
+            <Grid container spacing={2}>
               {/*Chart section*/}
               <Grid xs={12} lg={8}>
                 <ExpensesChart

@@ -8,11 +8,12 @@ import {
 } from "../../types";
 import { CircularProgress, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
-import { Button } from "../atoms";
+import {Button, FontAwesomeIcon} from "../atoms";
 import { Colors } from "../../assets";
 import { useGetPeriod, useGetPeriodStats } from "../../queries";
 import { utils } from "../../utils";
 import { ReactNode } from "react";
+import {faCalendar} from "@fortawesome/free-solid-svg-icons";
 
 type ExpensesChartProps = {
   user?: User;
@@ -108,13 +109,39 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
 
   return (
     <ExpensesChartContainer>
-      <Grid xs={12}>
+      <Grid xs={9}>
         <Typography variant="h4">{period ? period.name : ""}</Typography>
         <Typography color="gray.light">{getPeriodDates()}</Typography>
       </Grid>
 
+      <Grid xs={3}>
+        <div className={"flex justify-end"}>
+            <Button
+                size={"large"}
+                variant={"outlined"}
+                startIcon={<FontAwesomeIcon icon={faCalendar} />}
+                style={{
+                    color: Colors.GRAY_DARK,
+                    border: "1px solid gray",
+                    fontSize: "18px"
+                }}
+            >
+                Create period
+            </Button>
+        </div>
+      </Grid>
+
       {/*Chart and category summary*/}
-      <Grid xs={12} height={chartHeight}>
+      <Grid
+        xs={12}
+        height={chartHeight}
+        bgcolor={"white.main"}
+        borderRadius="1rem"
+        p="1rem"
+        boxShadow="3"
+        mt="1rem"
+        style={{ position: "relative", minHeight: "450px" }}
+      >
         <div className={"h-full"}>
           <Grid container height={"100%"}>
             {/*Chart*/}
@@ -242,12 +269,6 @@ function ExpensesChartContainer({ children }: ExpensesChartContainerProps) {
     <div>
       <Grid
         container
-        bgcolor={"white.main"}
-        borderRadius="1rem"
-        p="1rem"
-        boxShadow="3"
-        mt="1rem"
-        style={{ position: "relative", minHeight: "450px" }}
       >
         {children}
       </Grid>
