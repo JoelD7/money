@@ -8,12 +8,13 @@ import {
 } from "../../types";
 import { CircularProgress, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
-import {Button, FontAwesomeIcon} from "../atoms";
+import { Button, FontAwesomeIcon } from "../atoms";
 import { Colors } from "../../assets";
 import { useGetPeriod, useGetPeriodStats } from "../../queries";
 import { utils } from "../../utils";
-import { ReactNode } from "react";
-import {faCalendar} from "@fortawesome/free-solid-svg-icons";
+import {ReactNode, useState} from "react";
+import { faCalendar } from "@fortawesome/free-solid-svg-icons";
+import {NewPeriodDialog} from "./NewPeriodDialog.tsx";
 
 type ExpensesChartProps = {
   user?: User;
@@ -22,6 +23,8 @@ type ExpensesChartProps = {
 
 export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const RADIAN: number = Math.PI / 180;
+
+  const[open, setOpen] = useState(false)
 
   const getPeriod = useGetPeriod(user);
   const period: Period | undefined = getPeriod.data;
@@ -109,6 +112,8 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
 
   return (
     <ExpensesChartContainer>
+        <NewPeriodDialog open={open} onClose={()=> setOpen(false)} />
+
       <Grid xs={9}>
         <Typography variant="h4">{period ? period.name : ""}</Typography>
         <Typography color="gray.light">{getPeriodDates()}</Typography>
@@ -116,18 +121,18 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
 
       <Grid xs={3}>
         <div className={"flex justify-end"}>
-            <Button
-                size={"large"}
-                variant={"outlined"}
-                startIcon={<FontAwesomeIcon icon={faCalendar} />}
-                style={{
-                    color: Colors.GRAY_DARK,
-                    border: "1px solid gray",
-                    fontSize: "18px"
-                }}
-            >
-                Create period
-            </Button>
+          <Button
+            size={"large"}
+            variant={"outlined"}
+            startIcon={<FontAwesomeIcon icon={faCalendar} />}
+            onClick={()=> setOpen(true)}
+            style={{
+              color: Colors.GRAY_DARK,
+              border: "1px solid gray",
+            }}
+          >
+            Create period
+          </Button>
         </div>
       </Grid>
 
@@ -267,11 +272,7 @@ type ExpensesChartContainerProps = {
 function ExpensesChartContainer({ children }: ExpensesChartContainerProps) {
   return (
     <div>
-      <Grid
-        container
-      >
-        {children}
-      </Grid>
+      <Grid container>{children}</Grid>
     </div>
   );
 }
