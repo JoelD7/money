@@ -140,7 +140,7 @@ export function Home() {
               {/*New expense/income buttons, Current balance and expenses*/}
               <Grid xs={12} lg={4}>
                 <div>
-                  <Grid container mt={"1rem"} spacing={1}>
+                  <Grid container spacing={1}>
                     {/*Income*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <IncomeCard
