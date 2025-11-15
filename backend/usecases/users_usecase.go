@@ -24,7 +24,7 @@ func NewUserGetter(u UserManager, i IncomeRepository, e ExpenseManager) func(ctx
 			return nil, err
 		}
 
-		if user.CurrentPeriod == "" {
+		if user.GetCurrentPeriod() == "" {
 			return user, nil
 		}
 
@@ -38,14 +38,14 @@ func NewUserGetter(u UserManager, i IncomeRepository, e ExpenseManager) func(ctx
 
 		go func() {
 			defer wg.Done()
-			if userIncome, err = getAllIncomeForPeriod(ctx, user.Username, user.CurrentPeriod, i); err != nil {
+			if userIncome, err = getAllIncomeForPeriod(ctx, user.Username, user.GetCurrentPeriod(), i); err != nil {
 				errorCh <- err
 			}
 		}()
 
 		go func() {
 			defer wg.Done()
-			if userExpenses, err = getAllExpensesForPeriod(ctx, user.Username, user.CurrentPeriod, e); err != nil {
+			if userExpenses, err = getAllExpensesForPeriod(ctx, user.Username, user.GetCurrentPeriod(), e); err != nil {
 				errorCh <- err
 			}
 		}()
@@ -223,6 +223,12 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 		user.Categories = newCategories
 
 		return u.UpdateUser(ctx, user)
+	}
+}
+
+func NewUserPatcher(u UserManager) func(ctx context.Context, username string, user *models.User) error {
+	return func(ctx context.Context, username string, user *models.User) error {
+		return u.PatchUser(ctx, user)
 	}
 }
 

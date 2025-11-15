@@ -47,9 +47,9 @@ func TestHandlerSuccess(t *testing.T) {
 
 	t.Run("No remainder set", func(t *testing.T) {
 		mockedUser := users.GetDummyUser()
-		mockedUser.CurrentPeriod = ""
+		mockedUser.CurrentPeriod = stringPtr("")
 
-		err := usersMock.CreateUser(ctx, mockedUser)
+		_, err := usersMock.CreateUser(ctx, mockedUser)
 		c.NoError(err)
 
 		response, err := request.process(ctx, apigwRequest)
@@ -124,4 +124,8 @@ func TestHandlerFailed(t *testing.T) {
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
 	})
+}
+
+func stringPtr(s string) *string {
+	return &s
 }

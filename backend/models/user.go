@@ -11,7 +11,7 @@ type User struct {
 	UpdatedDate   time.Time   `json:"updated_date,omitempty"`
 	AccessToken   string      `json:"-"`
 	RefreshToken  string      `json:"-"`
-	CurrentPeriod string      `json:"current_period,omitempty"`
+	CurrentPeriod *string     `json:"current_period,omitempty"`
 	Remainder     float64     `json:"remainder"`
 }
 
@@ -21,6 +21,14 @@ type Category struct {
 	Budget   *float64 `json:"budget,omitempty"`
 	Color    *string  `json:"color,omitempty"`
 	Keywords []string `json:"keywords,omitempty"`
+}
+
+func (u *User) GetCurrentPeriod() string {
+	if u.CurrentPeriod != nil {
+		return *u.CurrentPeriod
+	}
+
+	return ""
 }
 
 func (u *User) GetKey() string {

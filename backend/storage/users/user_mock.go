@@ -24,6 +24,11 @@ type DynamoMock struct {
 	mockedUsers []*models.User
 }
 
+func (d *DynamoMock) PatchUser(ctx context.Context, user *models.User) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewDynamoMock() *DynamoMock {
 	return &DynamoMock{
 		mockedUsers: []*models.User{GetDummyUser()},
@@ -31,14 +36,14 @@ func NewDynamoMock() *DynamoMock {
 	}
 }
 
-func (d *DynamoMock) CreateUser(ctx context.Context, user *models.User) error {
+func (d *DynamoMock) CreateUser(ctx context.Context, u *models.User) (*models.User, error) {
 	if d.mockedErr != nil {
-		return d.mockedErr
+		return nil, d.mockedErr
 	}
 
-	d.mockedUsers = append(d.mockedUsers, user)
+	d.mockedUsers = append(d.mockedUsers, u)
 
-	return nil
+	return u, nil
 }
 
 func (d *DynamoMock) GetUser(ctx context.Context, username string) (*models.User, error) {
@@ -105,7 +110,7 @@ func GetDummyUser() *models.User {
 	return &models.User{
 		FullName:      "Joel",
 		Username:      "test@gmail.com",
-		CurrentPeriod: "2023-5",
+		CurrentPeriod: aws.String("2023-5"),
 		Password:      "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
 		AccessToken:   hashedDummyToken,
 		RefreshToken:  hashedDummyToken,

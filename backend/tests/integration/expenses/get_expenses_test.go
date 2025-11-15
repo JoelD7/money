@@ -58,7 +58,7 @@ func TestGetByPeriod(t *testing.T) {
 
 	testUser := &models.User{
 		Username:      username,
-		CurrentPeriod: periodID,
+		CurrentPeriod: stringPtr(periodID),
 	}
 
 	err = setup.CreateUser(ctx, usersRepo, testUser, t)

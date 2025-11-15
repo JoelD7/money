@@ -33,7 +33,7 @@ func TestGetLogDataAsBytes(t *testing.T) {
 			UpdatedDate:   time.Date(2025, 1, 5, 20, 40, 56, 0, time.UTC),
 			AccessToken:   "access-token-placeholder",
 			RefreshToken:  "refresh-token-placeholder",
-			CurrentPeriod: "2025-01",
+			CurrentPeriod: stringPtr("2025-01"),
 			Remainder:     1500.0,
 		}
 
@@ -105,4 +105,8 @@ func TestAddToContext(t *testing.T) {
 	l.AddToContext("object", nestedMap)
 	data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
 	c.Contains(string(data), expectedNestedMap)
+}
+
+func stringPtr(s string) *string {
+	return &s
 }
