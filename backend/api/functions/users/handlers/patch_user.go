@@ -66,15 +66,15 @@ func PatchUserHandler(ctx context.Context, envConfig *models.EnvironmentConfigur
 }
 
 func (request *patchUserRequest) process(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
-	username, err := apigateway.GetUsernameFromContext(req)
-	if err != nil {
-		request.err = err
-		logger.Error("get_user_email_from_context_failed", err, req)
+	username, ok := req.PathParameters["username"]
+	if !ok {
+		err := fmt.Errorf("missing username")
+		logger.Error("missing_username", err, req)
 
 		return req.NewErrorResponse(err), nil
 	}
 
-	err = validate.Email(username)
+	err := validate.Email(username)
 	if err != nil {
 		logger.Error("invalid_username", err, req)
 
