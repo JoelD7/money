@@ -110,6 +110,56 @@ func (d *DynamoRepository) UpdateUser(ctx context.Context, u *models.User) error
 	return err
 }
 
+func (d *DynamoRepository) PatchUser(ctx context.Context, user *models.User) error {
+	username, err := attributevalue.Marshal(user.Username)
+	if err != nil {
+		return fmt.Errorf("marshaling username key: %v", err)
+	}
+
+	updateExpression, attributeValues, err := getUpdateParams(user)
+	if err != nil {
+		return fmt.Errorf("get update params failed: %v", err)
+	}
+
+	input := &dynamodb.UpdateItemInput{
+		TableName: aws.String(d.tableName),
+		Key: map[string]types.AttributeValue{
+			"username": username,
+		},
+		ConditionExpression:       aws.String("attribute_exists(username)"),
+		UpdateExpression:          aws.String(updateExpression),
+		ExpressionAttributeValues: attributeValues,
+	}
+
+	_, err = d.dynamoClient.UpdateItem(ctx, input)
+	if err != nil && strings.Contains(err.Error(), "ConditionalCheckFailedException") {
+		return fmt.Errorf("%v: %w", err, models.ErrUserNotFound)
+	}
+
+	return fmt.Errorf("patching user: %w", err)
+}
+
+func getUpdateParams(user *models.User) (string, map[string]types.AttributeValue, error) {
+	m := make(map[string]types.AttributeValue)
+	updateAttrs := make([]string, 0)
+
+	val, err := attributevalue.Marshal(user.CurrentPeriod)
+	if err != nil {
+		return "", nil, fmt.Errorf("marshalling current_period attribute: %w", err)
+	}
+
+	if user.CurrentPeriod != nil {
+		m[":current_period"] = val
+		updateAttrs = append(updateAttrs, ":current_period")
+	}
+
+	if len(updateAttrs) == 0 {
+		return "", nil, fmt.Errorf("no attributes to update")
+	}
+
+	return fmt.Sprintf("SET %s", strings.Join(updateAttrs, ",")), m, nil
+}
+
 func (d *DynamoRepository) DeleteUser(ctx context.Context, username string) error {
 	userKey, err := attributevalue.Marshal(username)
 	if err != nil {
