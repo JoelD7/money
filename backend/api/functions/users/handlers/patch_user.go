@@ -9,6 +9,7 @@ import (
 	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/shared/validate"
 	"github.com/JoelD7/money/backend/storage/dynamo"
+	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/JoelD7/money/backend/usecases"
 	"net/http"
@@ -25,6 +26,7 @@ type patchUserRequest struct {
 	startingTime time.Time
 	err          error
 	userRepo     users.Repository
+	periodRepo   period.Repository
 }
 
 func (request *patchUserRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -34,6 +36,11 @@ func (request *patchUserRequest) init(ctx context.Context, envConfig *models.Env
 		dynamoClient := dynamo.InitClient(ctx)
 
 		request.userRepo, err = users.NewDynamoRepository(dynamoClient, envConfig.UsersTable)
+		if err != nil {
+			return
+		}
+
+		request.periodRepo, err = period.NewDynamoRepository(dynamoClient, envConfig)
 		if err != nil {
 			return
 		}
@@ -90,7 +97,7 @@ func (request *patchUserRequest) process(ctx context.Context, req *apigateway.Re
 
 	user.Username = username
 
-	patchUser := usecases.NewUserPatcher(request.userRepo)
+	patchUser := usecases.NewUserPatcher(request.userRepo, request.periodRepo)
 
 	err = patchUser(ctx, username, user)
 	if err != nil {

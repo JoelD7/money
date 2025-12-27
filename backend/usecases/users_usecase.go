@@ -226,8 +226,16 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 	}
 }
 
-func NewUserPatcher(u UserManager) func(ctx context.Context, username string, user *models.User) error {
+func NewUserPatcher(u UserManager, pm PeriodManager) func(ctx context.Context, username string, user *models.User) error {
 	return func(ctx context.Context, username string, user *models.User) error {
+
+		if user.GetCurrentPeriod() != "" {
+			_, err := pm.GetPeriod(ctx, username, user.GetCurrentPeriod())
+			if errors.Is(err, models.ErrPeriodNotFound) {
+				return err
+			}
+		}
+
 		return u.PatchUser(ctx, user)
 	}
 }
