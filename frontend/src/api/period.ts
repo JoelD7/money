@@ -61,7 +61,7 @@ export function createPeriod(period: Period) {
 
   const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(period, accessToken, "");
 
-  const p = axiosClient.post(API_BASE_URL + "/period", period, {
+  const p = axiosClient.post(API_BASE_URL + "/periods", period, {
     withCredentials: true,
     headers: {
       Auth: `Bearer ${accessToken}`,

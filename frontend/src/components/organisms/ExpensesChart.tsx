@@ -4,17 +4,18 @@ import {
   Period,
   PeriodStats,
   RechartsLabelProps,
+  SnackAlert,
   User,
 } from "../../types";
-import { CircularProgress, Typography } from "@mui/material";
+import { Alert, AlertTitle, capitalize, CircularProgress, Snackbar, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { Button, FontAwesomeIcon } from "../atoms";
 import { Colors } from "../../assets";
 import { useGetPeriod, useGetPeriodStats } from "../../queries";
 import { utils } from "../../utils";
-import {ReactNode, useState} from "react";
+import { ReactNode, useState } from "react";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
-import {NewPeriodDialog} from "./NewPeriodDialog.tsx";
+import { NewPeriodDialog } from "./NewPeriodDialog.tsx";
 
 type ExpensesChartProps = {
   user?: User;
@@ -24,7 +25,7 @@ type ExpensesChartProps = {
 export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const RADIAN: number = Math.PI / 180;
 
-  const[open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false)
 
   const getPeriod = useGetPeriod(user);
   const period: Period | undefined = getPeriod.data;
@@ -40,6 +41,12 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const summary: CategoryExpenseSummary[] = periodStats
     ? periodStats.category_expense_summary
     : [];
+
+  const [alert, setAlert] = useState<SnackAlert>({
+    open: false,
+    type: "success",
+    title: "",
+  });
 
   function getCustomLabel({
     cx,
@@ -112,7 +119,19 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
 
   return (
     <ExpensesChartContainer>
-        <NewPeriodDialog open={open} onClose={()=> setOpen(false)} />
+      <Snackbar
+        open={alert.open}
+        onClose={() => setAlert({ ...alert, open: false })}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert variant={"filled"} severity={alert.type}>
+          <AlertTitle>{capitalize(alert.type)}</AlertTitle>
+          {alert.title}
+        </Alert>
+      </Snackbar>
+
+      <NewPeriodDialog onAlert={(alert) => { if (alert) { setAlert(alert) } }} open={open} onClose={() => setOpen(false)} />
 
       <Grid xs={9}>
         <Typography variant="h4">{period ? period.name : ""}</Typography>
@@ -125,7 +144,7 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
             size={"large"}
             variant={"outlined"}
             startIcon={<FontAwesomeIcon icon={faCalendar} />}
-            onClick={()=> setOpen(true)}
+            onClick={() => setOpen(true)}
             style={{
               color: Colors.GRAY_DARK,
               border: "1px solid gray",
@@ -254,7 +273,7 @@ function Chart404Error() {
   return (
     <div className={"p-4"}>
       <Typography color={"darkGreen.main"} variant={"h4"}>
-        Your expenses will show here
+        Your expenses will appear here
       </Typography>
       <div className={"pt-4 md:max-w-sm"}>
         <p style={{ color: Colors.GRAY_DARK, fontSize: "18px" }}>
