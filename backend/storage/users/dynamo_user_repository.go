@@ -136,7 +136,11 @@ func (d *DynamoRepository) PatchUser(ctx context.Context, user *models.User) err
 		return fmt.Errorf("%v: %w", err, models.ErrUserNotFound)
 	}
 
-	return fmt.Errorf("patching user: %w", err)
+	if err != nil {
+		return fmt.Errorf("patching user: %w", err)
+	}
+
+	return nil
 }
 
 func getUpdateParams(user *models.User) (string, map[string]types.AttributeValue, error) {

@@ -88,6 +88,8 @@ func (request *patchUserRequest) process(ctx context.Context, req *apigateway.Re
 		return req.NewErrorResponse(err), nil
 	}
 
+	user.Username = username
+
 	patchUser := usecases.NewUserPatcher(request.userRepo)
 
 	err = patchUser(ctx, username, user)
