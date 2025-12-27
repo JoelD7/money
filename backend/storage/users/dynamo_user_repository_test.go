@@ -22,7 +22,7 @@ func TestGetUpdateParams(t *testing.T) {
 		expression, values, err := getUpdateParams(user)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "SET :current_period", expression)
+		assert.Equal(t, "SET current_period = :current_period", expression)
 
 		assert.Len(t, values, 1)
 		assert.Contains(t, values, ":current_period")
@@ -51,7 +51,7 @@ func TestGetUpdateParams(t *testing.T) {
 		expression, values, err := getUpdateParams(user)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "SET :current_period", expression)
+		assert.Equal(t, "SET current_period = :current_period", expression)
 		assert.Len(t, values, 1)
 		assert.Equal(t, expectedVal, values[":current_period"])
 	})

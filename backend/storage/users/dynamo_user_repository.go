@@ -150,7 +150,7 @@ func getUpdateParams(user *models.User) (string, map[string]types.AttributeValue
 
 	if user.CurrentPeriod != nil {
 		m[":current_period"] = val
-		updateAttrs = append(updateAttrs, ":current_period")
+		updateAttrs = append(updateAttrs, "current_period = :current_period")
 	}
 
 	if len(updateAttrs) == 0 {
