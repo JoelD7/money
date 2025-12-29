@@ -75,8 +75,6 @@ export function NewPeriodDialog({ open, onClose, onAlert }: NewPeriodDialogProps
       name: name,
       start_date: startDate ? startDate.format("") : "",
       end_date: endDate ? endDate.format("") : "",
-      created_date: "",
-      updated_date: "",
       period_id: "",
     };
 
