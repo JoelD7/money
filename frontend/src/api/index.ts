@@ -11,10 +11,12 @@ import {
   updateSavingGoal,
 } from "./saving_goals.ts";
 import { createSaving, getSavings, savingsKeys } from "./savings.ts";
+import { patchUser } from "./user.ts"
 
 const api = {
   signUp,
   getUser,
+  patchUser,
   login,
   logout,
   getExpenses,

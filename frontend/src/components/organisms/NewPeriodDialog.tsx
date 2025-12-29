@@ -15,13 +15,15 @@ import { FormEvent, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers";
 import { Button } from "../atoms";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
 import { AxiosError } from "axios";
-import { APIError, Period, SnackAlert } from "../../types";
+import { APIError, Period, SnackAlert, User } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import HelpIcon from "@mui/icons-material/Help";
+import { useGetUser } from "../../queries";
+import { USER } from "../../queries/keys";
 
 type NewPeriodDialogProps = {
   open: boolean;
@@ -34,13 +36,18 @@ export function NewPeriodDialog({ open, onClose, onAlert }: NewPeriodDialogProps
   const [endDate, setEndDate] = useState<Dayjs | null>(dayjs().add(1, "month"));
   const [name, setName] = useState("");
   const [isCurrent, setIsCurrent] = useState(true);
+  const getUser = useGetUser();
+  const user: User | undefined = getUser.data;
+
+  const queryClient = useQueryClient();
+
   const currentPeriodExplainer =
     "If you set this period as 'current', all expenses, savings and income will be " +
     "created with this as their period by default. The data on the home page will also be updated to reflect " +
     "the calculations based on this period.";
 
-  const newPeriodMu = useMutation({
-    mutationFn: api.createPeriod,
+  const patchUserMu = useMutation({
+    mutationFn: api.patchUser,
     onSuccess: () => {
       onAlert({
         open: true,
@@ -48,6 +55,30 @@ export function NewPeriodDialog({ open, onClose, onAlert }: NewPeriodDialogProps
         title: "Period created successfully",
       });
       onClose();
+
+      queryClient
+        .invalidateQueries({ queryKey: [USER] })
+        .then(null, (error) => {
+          console.error("Error invalidating users query", error);
+        });
+    },
+    onError: (error) => {
+      if (error) {
+        const err = error as AxiosError;
+        const responseError = err.response?.data as APIError;
+        onAlert({
+          open: true,
+          type: "error",
+          title: responseError.message as string,
+        });
+      }
+    },
+  });
+
+  const newPeriodMu = useMutation({
+    mutationFn: api.createPeriod,
+    onSuccess: (res) => {
+      updateUserCurrentPeriod(res.data.period_id as string);
     },
     onError: (error) => {
       if (error) {
@@ -81,6 +112,21 @@ export function NewPeriodDialog({ open, onClose, onAlert }: NewPeriodDialogProps
     try {
       validationSchema.validateSync(period);
       newPeriodMu.mutate(period);
+    } catch (e) {
+      const err = e as ValidationError;
+      onAlert({ open: true, type: "error", title: err.errors[0] });
+    }
+  }
+
+  function updateUserCurrentPeriod(periodID: string) {
+    const userToUpdate: User = {
+      username: user ? user.username : "",
+      remainder: 0,
+      current_period: periodID,
+    }
+
+    try {
+      patchUserMu.mutate(userToUpdate);
     } catch (e) {
       const err = e as ValidationError;
       onAlert({ open: true, type: "error", title: err.errors[0] });
