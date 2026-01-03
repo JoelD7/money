@@ -106,7 +106,7 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   if (getPeriodStats.isError && getPeriodStats.error.response?.status === 404) {
     return (
       <ExpensesChartContainer>
-        <div className="flex items-center justify-center z-10 rounded-xl">
+        <div className="bg-white-100 shadow-lg rounded-xl h-full flex items-center justify-center z-10">
           <Chart404Error />
         </div>
       </ExpensesChartContainer>
@@ -139,38 +139,40 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
 
       <NewPeriodDialog key={key} onAlert={(alert) => { if (alert) { setAlert(alert) } }} open={open} onClose={handleNewPeriodDialogClose} />
 
-      <Grid xs={9}>
-        <Typography variant="h4">{period ? period.name : ""}</Typography>
-        <Typography color="gray.light">{getPeriodDates()}</Typography>
-      </Grid>
+      <Grid container xs={12} alignItems="center">
+        <Grid xs={9}>
+          <Typography variant="h4">{period ? period.name : ""}</Typography>
+          <Typography color="gray.light">{getPeriodDates()}</Typography>
+        </Grid>
 
-      <Grid xs={3}>
-        <div className={"flex justify-end"}>
-          <Button
-            size={"large"}
-            variant={"outlined"}
-            startIcon={<FontAwesomeIcon icon={faCalendar} />}
-            onClick={() => setOpen(true)}
-            style={{
-              color: Colors.GRAY_DARK,
-              border: "1px solid gray",
-            }}
-          >
-            Create period
-          </Button>
-        </div>
+        <Grid xs={3}>
+          <div className={"flex justify-end"}>
+            <Button
+              size={"large"}
+              variant={"outlined"}
+              startIcon={<FontAwesomeIcon icon={faCalendar} />}
+              onClick={() => setOpen(true)}
+              style={{
+                color: Colors.GRAY_DARK,
+                border: "1px solid gray",
+              }}
+            >
+              Create period
+            </Button>
+          </div>
+        </Grid>
       </Grid>
 
       {/*Chart and category summary*/}
       <Grid
         xs={12}
-        height={chartHeight}
+        sx={{ flexGrow: 1 }}
         bgcolor={"white.main"}
         borderRadius="1rem"
         p="1rem"
         boxShadow="3"
         mt="1rem"
-        style={{ position: "relative", minHeight: "450px" }}
+        style={{ position: "relative", minHeight: chartHeight }}
       >
         <div className={"h-full"}>
           <Grid container height={"100%"}>
@@ -296,8 +298,8 @@ type ExpensesChartContainerProps = {
 
 function ExpensesChartContainer({ children }: ExpensesChartContainerProps) {
   return (
-    <div>
-      <Grid container>{children}</Grid>
+    <div className="h-full">
+      <Grid container height="100%" direction="column" wrap="nowrap">{children}</Grid>
     </div>
   );
 }

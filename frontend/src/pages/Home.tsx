@@ -75,8 +75,8 @@ export function Home() {
     return 0;
   }
 
-  function showPeriodStatsErr(): boolean{
-    if (getPeriodStats.isError && getPeriodStats.error.response){
+  function showPeriodStatsErr(): boolean {
+    if (getPeriodStats.isError && getPeriodStats.error.response) {
       return getPeriodStats.error.response.status !== 404
     }
 
@@ -139,8 +139,8 @@ export function Home() {
 
               {/*New expense/income buttons, Current balance and expenses*/}
               <Grid xs={12} lg={4}>
-                <div>
-                  <Grid container spacing={1}>
+                <div >
+                  <Grid container spacing={1} height={"100%"}>
                     {/*Income*/}
                     <Grid xs={12} hidden={!lgUp}>
                       <IncomeCard
@@ -167,23 +167,25 @@ export function Home() {
 
                     {/**New expense/income buttons*/}
                     <Grid xs={12}>
-                      <Button
-                        color={"secondary"}
-                        variant={"contained"}
-                        startIcon={<AddIcon />}
-                        onClick={() => setOpenNewExpense(true)}
-                      >
-                        New expense
-                      </Button>
+                      <div className="flex align-bottom h-full">
+                        <Button
+                          color={"secondary"}
+                          variant={"contained"}
+                          startIcon={<AddIcon />}
+                          onClick={() => setOpenNewExpense(true)}
+                        >
+                          New expense
+                        </Button>
 
-                      <Button
-                        sx={{ marginLeft: "1rem" }}
-                        variant={"contained"}
-                        startIcon={<AddIcon />}
-                        onClick={() => setOpenNewIncome(true)}
-                      >
-                        New income
-                      </Button>
+                        <Button
+                          sx={{ marginLeft: "1rem" }}
+                          variant={"contained"}
+                          startIcon={<AddIcon />}
+                          onClick={() => setOpenNewIncome(true)}
+                        >
+                          New income
+                        </Button>
+                      </div>
                     </Grid>
                   </Grid>
                 </div>
