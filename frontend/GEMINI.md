@@ -3,6 +3,12 @@
 ## Overview
 This is the frontend application for the "Money" project, built with React, TypeScript, and Vite. It serves as a personal finance management tool.
 
+## Guidelines
+When suggesting React or Typescript code you should:
+- Adhere to best practices to make the code readable, maintainable and avoiding performance issues. 
+- Provide the user with several alternatives highlighting the pros and cons of each
+
+
 ## Tech Stack
 
 ### Core
