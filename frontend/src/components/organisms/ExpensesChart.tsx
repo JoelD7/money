@@ -4,15 +4,18 @@ import {
   Period,
   PeriodStats,
   RechartsLabelProps,
+  SnackAlert,
   User,
 } from "../../types";
-import { CircularProgress, Typography } from "@mui/material";
+import { Alert, AlertTitle, capitalize, CircularProgress, Snackbar, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
-import { Button } from "../atoms";
+import { Button, FontAwesomeIcon } from "../atoms";
 import { Colors } from "../../assets";
 import { useGetPeriod, useGetPeriodStats } from "../../queries";
 import { utils } from "../../utils";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
+import { faCalendar } from "@fortawesome/free-solid-svg-icons";
+import { NewPeriodDialog } from "./NewPeriodDialog.tsx";
 
 type ExpensesChartProps = {
   user?: User;
@@ -21,6 +24,9 @@ type ExpensesChartProps = {
 
 export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const RADIAN: number = Math.PI / 180;
+
+  const [open, setOpen] = useState(false)
+  const [key, setKey] = useState<number>(0);
 
   const getPeriod = useGetPeriod(user);
   const period: Period | undefined = getPeriod.data;
@@ -36,6 +42,12 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const summary: CategoryExpenseSummary[] = periodStats
     ? periodStats.category_expense_summary
     : [];
+
+  const [alert, setAlert] = useState<SnackAlert>({
+    open: false,
+    type: "success",
+    title: "",
+  });
 
   function getCustomLabel({
     cx,
@@ -76,6 +88,11 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
     }).format(new Date(period.end_date))}`;
   }
 
+  function handleNewPeriodDialogClose() {
+    setKey(key + 1);
+    setOpen(false)
+  }
+
   if (getPeriodStats.isLoading || getPeriod.isLoading) {
     return (
       <ExpensesChartContainer>
@@ -89,7 +106,7 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   if (getPeriodStats.isError && getPeriodStats.error.response?.status === 404) {
     return (
       <ExpensesChartContainer>
-        <div className="flex items-center justify-center z-10 rounded-xl">
+        <div className="bg-white-100 shadow-lg rounded-xl h-full flex items-center justify-center z-10">
           <Chart404Error />
         </div>
       </ExpensesChartContainer>
@@ -108,13 +125,55 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
 
   return (
     <ExpensesChartContainer>
-      <Grid xs={12}>
-        <Typography variant="h4">{period ? period.name : ""}</Typography>
-        <Typography color="gray.light">{getPeriodDates()}</Typography>
+      <Snackbar
+        open={alert.open}
+        onClose={() => setAlert({ ...alert, open: false })}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert variant={"filled"} severity={alert.type}>
+          <AlertTitle>{capitalize(alert.type)}</AlertTitle>
+          {alert.title}
+        </Alert>
+      </Snackbar>
+
+      <NewPeriodDialog key={key} onAlert={(alert) => { if (alert) { setAlert(alert) } }} open={open} onClose={handleNewPeriodDialogClose} />
+
+      <Grid container xs={12} alignItems="center">
+        <Grid xs={9}>
+          <Typography variant="h4">{period ? period.name : ""}</Typography>
+          <Typography color="gray.light">{getPeriodDates()}</Typography>
+        </Grid>
+
+        <Grid xs={3}>
+          <div className={"flex justify-end"}>
+            <Button
+              size={"large"}
+              variant={"outlined"}
+              startIcon={<FontAwesomeIcon icon={faCalendar} />}
+              onClick={() => setOpen(true)}
+              style={{
+                color: Colors.GRAY_DARK,
+                border: "1px solid gray",
+              }}
+            >
+              Create period
+            </Button>
+          </div>
+        </Grid>
       </Grid>
 
       {/*Chart and category summary*/}
-      <Grid xs={12} height={chartHeight}>
+      <Grid
+        xs={12}
+        sx={{ flexGrow: 1 }}
+        bgcolor={"white.main"}
+        borderRadius="1rem"
+        p="1rem"
+        boxShadow="3"
+        mt="1rem"
+        style={{ position: "relative", minHeight: chartHeight }}
+      >
         <div className={"h-full"}>
           <Grid container height={"100%"}>
             {/*Chart*/}
@@ -222,7 +281,7 @@ function Chart404Error() {
   return (
     <div className={"p-4"}>
       <Typography color={"darkGreen.main"} variant={"h4"}>
-        Your expenses will show here
+        Your expenses will appear here
       </Typography>
       <div className={"pt-4 md:max-w-sm"}>
         <p style={{ color: Colors.GRAY_DARK, fontSize: "18px" }}>
@@ -239,18 +298,8 @@ type ExpensesChartContainerProps = {
 
 function ExpensesChartContainer({ children }: ExpensesChartContainerProps) {
   return (
-    <div>
-      <Grid
-        container
-        bgcolor={"white.main"}
-        borderRadius="1rem"
-        p="1rem"
-        boxShadow="3"
-        mt="1rem"
-        style={{ position: "relative", minHeight: "450px" }}
-      >
-        {children}
-      </Grid>
+    <div className="h-full">
+      <Grid container height="100%" direction="column" wrap="nowrap">{children}</Grid>
     </div>
   );
 }

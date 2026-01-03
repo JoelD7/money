@@ -1,12 +1,5 @@
 import { FormEvent, useState } from "react";
-import {
-  APIError,
-  Category,
-  Expense,
-  ExpenseType,
-  SnackAlert,
-  User,
-} from "../../types";
+import { APIError, Category, Expense, ExpenseType, SnackAlert, User } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import {
@@ -104,10 +97,7 @@ export function NewExpenseDialog({
 
   const validationSchema = yup.object({
     name: yup.string().required("Name is required"),
-    amount: yup
-      .number()
-      .required("Amount is required")
-      .moreThan(0, "Amount is required"),
+    amount: yup.number().required("Amount is required").moreThan(0, "Amount is required"),
     created_date: yup.date().required("Date is required"),
     category_id: yup.string().required("Category is required"),
     type: yup.string().oneOf(["regular", "recurring"]),
@@ -235,9 +225,7 @@ export function NewExpenseDialog({
             {/*Type*/}
             <>
               <FormControl>
-                <FormLabel id="expense-type-radio-buttons-group-label">
-                  Type
-                </FormLabel>
+                <FormLabel id="expense-type-radio-buttons-group-label">Type</FormLabel>
                 <RadioGroup
                   row
                   aria-labelledby="expense-type-radio-buttons-group-label"
@@ -257,17 +245,13 @@ export function NewExpenseDialog({
               </FormControl>
 
               <FormControl fullWidth disabled={type !== "recurring"}>
-                <InputLabel id="recurrent-expense-day-select-label">
-                  Every
-                </InputLabel>
+                <InputLabel id="recurrent-expense-day-select-label">Every</InputLabel>
                 <Select
                   labelId="recurrent-expense-day-select-label"
                   id="recurrent-expense-select"
                   value={recurringDay}
                   label="Day"
-                  startAdornment={
-                    <CalendarTodayIcon sx={{ marginRight: "10px" }} />
-                  }
+                  startAdornment={<CalendarTodayIcon sx={{ marginRight: "10px" }} />}
                   onChange={(e) => setRecurringDay(Number(e.target.value))}
                   MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }}
                 >

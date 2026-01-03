@@ -1,8 +1,14 @@
-import { Period, PeriodSchema, PeriodsSchema, TransactionSearchParams } from "../types";
+import {
+  IdempotencyKVP,
+  Period,
+  PeriodSchema,
+  PeriodsSchema,
+  TransactionSearchParams,
+} from "../types";
 import { keys } from "../utils/index.ts";
 import { API_BASE_URL, axiosClient } from "./money-api.ts";
 import { AxiosResponse } from "axios";
-import { buildQueryParams } from "./utils.ts";
+import { buildQueryParams, getIdempotencyKey, handleIdempotentRequest } from "./utils.ts";
 
 export async function getPeriod(period: string) {
   const res: AxiosResponse = await axiosClient.get<Period>(
@@ -47,4 +53,21 @@ export async function getPeriods(queryParams: TransactionSearchParams) {
 }
 
 // TODO: Update the current period in localstorage after creating a new one
-export function createPeriod() {}
+export function createPeriod(period: Period) {
+  let accessToken = localStorage.getItem(keys.ACCESS_TOKEN);
+  if (!accessToken) {
+    accessToken = "";
+  }
+
+  const idempotenceKVP: IdempotencyKVP = getIdempotencyKey(period, accessToken, "");
+
+  const p = axiosClient.post(API_BASE_URL + "/periods", period, {
+    withCredentials: true,
+    headers: {
+      Auth: `Bearer ${accessToken}`,
+      "Idempotency-Key": idempotenceKVP.idempotencyKey,
+    },
+  });
+
+  return handleIdempotentRequest(p, idempotenceKVP.encodedRequestBody);
+}

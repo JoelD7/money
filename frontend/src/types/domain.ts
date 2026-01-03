@@ -33,7 +33,7 @@ export const ExpenseSchema = z.object({
   type: ExpenseTypeSchema.optional(),
   created_date: z.string(),
   period_id: z.string(),
-  period_name : z.string().optional(),
+  period_name: z.string().optional(),
   update_date: z.string().optional(),
 });
 
@@ -98,8 +98,8 @@ export const PeriodSchema = z.object({
   name: z.string(),
   start_date: z.string(),
   end_date: z.string(),
-  created_date: z.string(),
-  updated_date: z.string(),
+  created_date: z.string().optional(),
+  updated_date: z.string().optional(),
 });
 
 export const PeriodsSchema = z.object({
