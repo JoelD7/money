@@ -26,6 +26,7 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const RADIAN: number = Math.PI / 180;
 
   const [open, setOpen] = useState(false)
+  const [key, setKey] = useState<number>(0);
 
   const getPeriod = useGetPeriod(user);
   const period: Period | undefined = getPeriod.data;
@@ -87,6 +88,11 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
     }).format(new Date(period.end_date))}`;
   }
 
+  function handleNewPeriodDialogClose() {
+    setKey(key + 1);
+    setOpen(false)
+  }
+
   if (getPeriodStats.isLoading || getPeriod.isLoading) {
     return (
       <ExpensesChartContainer>
@@ -131,7 +137,7 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
         </Alert>
       </Snackbar>
 
-      <NewPeriodDialog onAlert={(alert) => { if (alert) { setAlert(alert) } }} open={open} onClose={() => setOpen(false)} />
+      <NewPeriodDialog key={key} onAlert={(alert) => { if (alert) { setAlert(alert) } }} open={open} onClose={handleNewPeriodDialogClose} />
 
       <Grid xs={9}>
         <Typography variant="h4">{period ? period.name : ""}</Typography>
