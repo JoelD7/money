@@ -78,7 +78,16 @@ export function NewPeriodDialog({ open, onClose, onAlert }: NewPeriodDialogProps
   const newPeriodMu = useMutation({
     mutationFn: api.createPeriod,
     onSuccess: (res) => {
-      updateUserCurrentPeriod(res.data.period_id as string);
+      if (isCurrent) {
+        updateUserCurrentPeriod(res.data.period_id as string);
+      } else {
+        onAlert({
+          open: true,
+          type: "success",
+          title: "Period created successfully",
+        });
+        onClose();
+      }
     },
     onError: (error) => {
       if (error) {
