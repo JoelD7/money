@@ -95,3 +95,42 @@ func (qp *QueryParameters) ToURLParams() string {
 
 	return strings.Join(urlParams, "&")
 }
+
+type BaseQueryParameters struct {
+	StartKey string
+	PageSize int
+}
+
+type ExpenseQueryParameters struct {
+	BaseQueryParameters
+	Categories []string
+	Period     string
+	SortBy     string
+	SortType   string
+}
+
+type IncomeQueryParameters struct {
+	BaseQueryParameters
+	Period   string
+	SortBy   string
+	SortType string
+}
+
+type SavingQueryParameters struct {
+	BaseQueryParameters
+	Period       string
+	SavingGoalID string
+	SortBy       string
+	SortType     string
+}
+
+type SavingGoalQueryParameters struct {
+	BaseQueryParameters
+	SortBy   string
+	SortType string
+}
+
+type PeriodQueryParameters struct {
+	BaseQueryParameters
+	Active bool
+}

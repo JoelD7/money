@@ -140,9 +140,9 @@ func NewPeriodGetter(pm PeriodManager) func(ctx context.Context, username, perio
 	}
 }
 
-func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
-	return func(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
-		return pm.GetPeriods(ctx, username, startKey, pageSize, active)
+func NewPeriodsGetter(pm PeriodManager) func(ctx context.Context, username string, params *models.PeriodQueryParameters) ([]*models.Period, string, error) {
+	return func(ctx context.Context, username string, params *models.PeriodQueryParameters) ([]*models.Period, string, error) {
+		return pm.GetPeriods(ctx, username, params)
 	}
 }
 
@@ -168,7 +168,7 @@ func NewPeriodStatsGetter(em ExpenseManager, im IncomeRepository) func(ctx conte
 		go func() {
 			defer func() { wg.Done() }()
 
-			income, err := im.GetAllIncomeByPeriod(ctx, username, &models.QueryParameters{Period: periodID})
+			income, err := im.GetAllIncomeByPeriod(ctx, username, &models.IncomeQueryParameters{Period: periodID})
 			if err != nil {
 				errChan <- fmt.Errorf("couldn't get income for period: %w", err)
 				return
@@ -185,7 +185,7 @@ func NewPeriodStatsGetter(em ExpenseManager, im IncomeRepository) func(ctx conte
 		go func() {
 			defer func() { wg.Done() }()
 
-			expenses, err := em.GetAllExpensesByPeriod(ctx, username, &models.QueryParameters{Period: periodID})
+			expenses, err := em.GetAllExpensesByPeriod(ctx, username, &models.ExpenseQueryParameters{Period: periodID})
 			if err != nil {
 				errChan <- fmt.Errorf("couldn't get expenses for period: %w", err)
 				return

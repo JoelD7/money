@@ -256,20 +256,20 @@ func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period strin
 	return toPeriodModel(periodStruct), nil
 }
 
-func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
-	expr, err := buildGetPeriodsKeyConditionExpr(username, active)
+func (d *DynamoRepository) GetPeriods(ctx context.Context, username string, params *models.PeriodQueryParameters) ([]*models.Period, string, error) {
+	expr, err := buildGetPeriodsKeyConditionExpr(username, params.Active)
 	if err != nil {
 		return nil, "", err
 	}
 
 	var index *string
-	if active {
+	if params.Active {
 		index = aws.String(d.usernameEndDatePeriodIndex)
 	}
 
 	var decodedStartKey map[string]types.AttributeValue
-	if startKey != "" {
-		decodedStartKey, err = dynamo.DecodePaginationKey(startKey)
+	if params.StartKey != "" {
+		decodedStartKey, err = dynamo.DecodePaginationKey(params.StartKey)
 		if err != nil {
 			return nil, "", fmt.Errorf("%v: %w", err, models.ErrInvalidStartKey)
 		}
@@ -281,7 +281,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		ExclusiveStartKey:         decodedStartKey,
-		Limit:                     getPageSize(pageSize),
+		Limit:                     getPageSize(params.PageSize),
 		IndexName:                 index,
 	}
 
@@ -290,7 +290,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username, startKey st
 		return nil, "", err
 	}
 
-	if (result.Items == nil || len(result.Items) == 0) && startKey == "" {
+	if (result.Items == nil || len(result.Items) == 0) && params.StartKey == "" {
 		return nil, "", models.ErrPeriodsNotFound
 	}
 

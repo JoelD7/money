@@ -3,7 +3,9 @@ package handlers
 import (
 	"context"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/income"
+	periodRepo "github.com/JoelD7/money/backend/storage/period"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -20,8 +22,9 @@ func TestGetIncomeByPeriod(t *testing.T) {
 	incomeMock := income.NewDynamoMock()
 
 	request := &GetMultipleIncomeRequest{
-
-		IncomeRepo: incomeMock,
+		IncomeRepo:   incomeMock,
+		CacheManager: cache.NewRedisCacheMock(),
+		PeriodRepo:   periodRepo.NewDynamoMock(),
 	}
 
 	err := request.prepareRequest(apigwRequest)

@@ -127,7 +127,7 @@ func (d *DynamoRepository) GetSaving(ctx context.Context, username, savingID str
 	return toSavingModel(*savingEnt), nil
 }
 
-func (d *DynamoRepository) GetSavings(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavings(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	input, err := d.buildQueryInput(username, params)
 	if err != nil {
 		return nil, "", fmt.Errorf("building query input: %v", err)
@@ -161,7 +161,7 @@ func (d *DynamoRepository) GetSavings(ctx context.Context, username string, para
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) buildQueryInput(username string, params *models.QueryParameters) (*dynamodb.QueryInput, error) {
+func (d *DynamoRepository) buildQueryInput(username string, params *models.SavingQueryParameters) (*dynamodb.QueryInput, error) {
 	var err error
 
 	input := &dynamodb.QueryInput{
@@ -195,7 +195,7 @@ func (d *DynamoRepository) buildQueryInput(username string, params *models.Query
 	return input, nil
 }
 
-func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.ConditionBuilder {
+func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.SavingQueryParameters) expression.ConditionBuilder {
 	keyConditionEx := expression.Name("username").Equal(expression.Value(username))
 	periodUser := dynamo.BuildPeriodUser(username, params.Period)
 
@@ -234,7 +234,7 @@ func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username st
 	return keyConditionEx
 }
 
-func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	input, err := d.buildQueryInput(username, params)
 	if err != nil {
 		return nil, "", fmt.Errorf("building query input: %v", err)
@@ -268,7 +268,7 @@ func (d *DynamoRepository) GetSavingsByPeriod(ctx context.Context, username stri
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	input, err := d.buildQueryInput("", params)
 	if err != nil {
 		return nil, "", fmt.Errorf("building query input: %v", err)
@@ -302,7 +302,7 @@ func (d *DynamoRepository) GetSavingsBySavingGoal(ctx context.Context, params *m
 	return toSavingModels(*savings), nextKey, nil
 }
 
-func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (d *DynamoRepository) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	var decodedStartKey map[string]types.AttributeValue
 	var err error
 	var result *dynamodb.QueryOutput

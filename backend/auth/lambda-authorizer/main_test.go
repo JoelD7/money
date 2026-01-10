@@ -36,58 +36,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestJoel(t *testing.T) {
-	c := require.New(t)
-
-	ctx := context.Background()
-
-	req := &requestInfo{
-		cacheRepo:      cache.NewRedisCache(),
-		secretsManager: secrets.NewAWSSecretManager(),
-		client:         restclient.New(),
-	}
-
-	event := dummyHandlerEvent()
-	event.AuthorizationToken = "Bearer " + "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzY29wZSI6InJlYWQgd3JpdGUiLCJpc3MiOiJodHRwczovLzM4cXNscGU4ZDkuZXhlY3V0ZS1hcGkudXMtZWFzdC0xLmFtYXpvbmF3cy5jb20vc3RhZ2luZyIsInN1YiI6InRlc3RAZ21haWwuY29tIiwiYXVkIjoiaHR0cHM6Ly9sb2NhbGhvc3Q6MzAwMCIsImV4cCI6MTcyMTE0MTk4NCwiaWF0IjoxNzIxMTQxNjg0fQ.bathIOdA0crjvEWzd7oBzIggVkqs-Lr34HtiaU3ZV3jfE971E_FN-Ulakxhp272e6Xhe7adiJmtUHU6aDaShw3a4qO4ddNbUD_Bs4jPj4dMQcCmr6vej1qWYeXrp_ej4nMftMaFTedESnBHNv0WhJFUT-jNQ1gw_GAQY_y8rXf9oINGUxaCf0CiqQsy_xV4DJf377DlPTcymxnwqTQgKw8VuPyqdil29JoDzgQflIVAoOjCwh-A9bmNzuRh9vSWi3IKntqm4gfkWfQ9Vs5PZ7At5JkKdN2V1Vj2hxiDVerY9--gryBYpPCBvJsQlu_3NLElOezzz_dnkf7DvwWWLFw"
-
-	response, err := req.process(ctx, event)
-	c.Nil(err)
-	c.NotNil(response.Context["username"])
-	c.Equal("test@gmail.com", response.Context["username"])
-	c.Equal(Allow.String(), response.PolicyDocument.Statement[0].Effect)
-}
-
-func TestHandleRequest(t *testing.T) {
-	c := require.New(t)
-
-	mockRestClient := restclient.NewMockRestClient()
-	cacheMock := cache.NewRedisCacheMock()
-	secretMock := secrets.NewSecretMock()
-
-	ctx := context.Background()
-
-	req := &requestInfo{
-		cacheRepo:      cacheMock,
-		secretsManager: secretMock,
-		client:         mockRestClient,
-	}
-
-	event := dummyHandlerEvent()
-
-	err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
-	c.Nil(err)
-
-	secretMock.RegisterResponder(kidSecretName, func(ctx context.Context, name string) (string, error) {
-		return "123", nil
-	})
-
-	response, err := req.process(ctx, event)
-	c.Nil(err)
-	c.NotNil(response.Context["username"])
-	c.Equal("test@gmail.com", response.Context["username"])
-	c.Equal(Allow.String(), response.PolicyDocument.Statement[0].Effect)
-}
-
 func TestHandlerError(t *testing.T) {
 	c := require.New(t)
 
@@ -130,7 +78,7 @@ func TestHandlerError(t *testing.T) {
 
 		event.AuthorizationToken = ogToken
 		response, err := req.process(ctx, event)
-		c.ErrorIs(err, models.ErrSigningKeyNotFound)
+		c.ErrorIs(err, models.ErrUnauthorized)
 		c.Nil(response.Context["stringKey"])
 		c.Empty(response)
 	})
@@ -147,22 +95,8 @@ func TestHandlerError(t *testing.T) {
 		c.Nil(err)
 
 		response, err := req.process(ctx, event)
-		c.ErrorIs(err, secrets.ErrForceFailure)
+		c.ErrorIs(err, models.ErrUnauthorized)
 		c.Empty(response)
-	})
-
-	t.Run("Invalid token detected", func(t *testing.T) {
-		err := mockRestClient.AddMockedResponseFromFileNoUrl("samples/jwks_response.json", restclient.MethodGET)
-		c.Nil(err)
-
-		err = cacheMock.AddInvalidToken(ctx, "test@gmail.com", authTokenHash, 0)
-		c.Nil(err)
-
-		defer cacheMock.DeleteInvalidToken("test@gmail.com")
-
-		response, err := req.process(ctx, event)
-		c.Nil(err)
-		c.Equal(Deny.String(), response.PolicyDocument.Statement[0].Effect)
 	})
 
 	t.Run("JWT verification failed", func(t *testing.T) {

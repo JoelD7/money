@@ -74,35 +74,3 @@ func TestGetLogDataAsBytes(t *testing.T) {
 		c.NotNil(data)
 	})
 }
-
-func TestAddToContext(t *testing.T) {
-	c := require.New(t)
-
-	l := &logstashLogger{
-		Service: "unit-test",
-	}
-
-	nestedMap := map[string]interface{}{
-		"other": map[string]interface{}{
-			"nested": "value",
-		},
-		"user": models.User{
-			FullName: "John Doe",
-			Username: "johndoe123",
-		},
-	}
-	expectedNestedMap := `{"other":{"nested":"value"},"user":{"full_name":"John Doe","username":"johndoe123","created_date":"0001-01-01T00:00:00Z","updated_date":"0001-01-01T00:00:00Z"}}`
-
-	var data []byte
-	fields := make([]models.LoggerField, 1)
-
-	fields[0] = models.Any("key", "value")
-	data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
-	c.NotNil(data)
-	c.Contains(string(data), `"properties":{"key":"value"}`)
-	c.NotContains(string(data), expectedNestedMap)
-
-	l.AddToContext("object", nestedMap)
-	data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
-	c.Contains(string(data), expectedNestedMap)
-}

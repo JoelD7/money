@@ -26,7 +26,7 @@ type ExpensesResponse struct {
 
 type GetExpensesRequest struct {
 	Username string
-	*models.QueryParameters
+	*models.ExpenseQueryParameters
 
 	ExpensesRepo expenses.Repository
 	UserRepo     users.Repository
@@ -105,7 +105,7 @@ func (request *GetExpensesRequest) prepareRequest(req *apigateway.Request) error
 		return err
 	}
 
-	request.QueryParameters, err = req.GetQueryParameters()
+	request.ExpenseQueryParameters, err = req.GetExpenseQueryParameters()
 	if err != nil {
 		logger.Error("get_request_params_failed", err, req)
 
@@ -144,7 +144,7 @@ func (request *GetExpensesRequest) routeToHandlers(ctx context.Context, req *api
 func (request *GetExpensesRequest) getByCategories(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getExpensesByCategory := usecases.NewExpensesByCategoriesGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
-	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.Username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpensesByCategory(ctx, request.Username, request.ExpenseQueryParameters)
 	if err != nil {
 		logger.Error("get_expenses_by_category_failed", err, req)
 
@@ -160,7 +160,7 @@ func (request *GetExpensesRequest) getByCategories(ctx context.Context, req *api
 func (request *GetExpensesRequest) GetByPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getExpensesByPeriod := usecases.NewExpensesByPeriodGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
-	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.Username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpensesByPeriod(ctx, request.Username, request.ExpenseQueryParameters)
 	if err != nil {
 		logger.Error("get_expenses_by_period_failed", err, req)
 
@@ -176,7 +176,7 @@ func (request *GetExpensesRequest) GetByPeriod(ctx context.Context, req *apigate
 func (request *GetExpensesRequest) getByCategoriesAndPeriod(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getExpensesByPeriodAndCategories := usecases.NewExpensesByPeriodAndCategoriesGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
-	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.Username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpensesByPeriodAndCategories(ctx, request.Username, request.ExpenseQueryParameters)
 	if err != nil {
 		logger.Error("get_expenses_by_period_and_categories_failed", err, req)
 
@@ -192,7 +192,7 @@ func (request *GetExpensesRequest) getByCategoriesAndPeriod(ctx context.Context,
 func (request *GetExpensesRequest) getAll(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getExpenses := usecases.NewExpensesGetter(request.ExpensesRepo, request.UserRepo, request.PeriodRepo)
 
-	userExpenses, nextKey, err := getExpenses(ctx, request.Username, request.QueryParameters)
+	userExpenses, nextKey, err := getExpenses(ctx, request.Username, request.ExpenseQueryParameters)
 	if err != nil {
 		logger.Error("get_expenses_failed", err, req)
 

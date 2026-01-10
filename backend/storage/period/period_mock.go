@@ -69,7 +69,7 @@ func (d *DynamoMock) GetLastPeriod(ctx context.Context, username string) (*model
 	return defaultPeriod, nil
 }
 
-func (d *DynamoMock) GetPeriods(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error) {
+func (d *DynamoMock) GetPeriods(ctx context.Context, username string, params *models.PeriodQueryParameters) ([]*models.Period, string, error) {
 	if d.mockedErr != nil {
 		return nil, "", d.mockedErr
 	}
@@ -78,8 +78,7 @@ func (d *DynamoMock) GetPeriods(ctx context.Context, username, startKey string, 
 }
 
 func (d *DynamoMock) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {
-	//TODO implement me
-	panic("implement me")
+	return make([]*models.Period, 0), nil
 }
 
 func (d *DynamoMock) DeletePeriod(ctx context.Context, periodID, username string) error {

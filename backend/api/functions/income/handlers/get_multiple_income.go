@@ -28,7 +28,7 @@ type GetMultipleIncomeRequest struct {
 	IncomeRepo   income.Repository
 	CacheManager cache.IncomePeriodCacheManager
 	PeriodRepo   period.Repository
-	*models.QueryParameters
+	*models.IncomeQueryParameters
 }
 
 type MultipleIncomeResponse struct {
@@ -96,7 +96,7 @@ func (request *GetMultipleIncomeRequest) prepareRequest(req *apigateway.Request)
 
 	request.Username = username
 
-	request.QueryParameters, err = req.GetQueryParameters()
+	request.IncomeQueryParameters, err = req.GetIncomeQueryParameters()
 	if err != nil {
 		logger.Error("get_request_params_failed", err, req)
 
@@ -125,7 +125,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 
 	getIncomeByPeriod := usecases.NewIncomeByPeriodGetter(request.IncomeRepo, request.CacheManager, request.PeriodRepo)
 
-	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, request.QueryParameters)
+	userIncome, nextKey, incomePeriods, err := getIncomeByPeriod(ctx, request.Username, request.IncomeQueryParameters)
 	if err != nil {
 		request.err = err
 		logger.Error("get_income_by_period_failed", err, req)
@@ -144,7 +144,7 @@ func (request *GetMultipleIncomeRequest) GetIncomeByPeriod(ctx context.Context, 
 func (request *GetMultipleIncomeRequest) getAllIncome(ctx context.Context, req *apigateway.Request) (*apigateway.Response, error) {
 	getAllIncome := usecases.NewAllIncomeGetter(request.IncomeRepo, request.CacheManager, request.PeriodRepo)
 
-	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.QueryParameters)
+	userIncome, nextKey, incomePeriods, err := getAllIncome(ctx, request.Username, request.IncomeQueryParameters)
 	if err != nil {
 		request.err = err
 		logger.Error("get_all_income_failed", err, req)

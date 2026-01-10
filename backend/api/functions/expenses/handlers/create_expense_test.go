@@ -4,16 +4,30 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/expenses"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
 	"net/http"
+	"os"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(fmt.Errorf("loading environment failed: %v", err))
+	}
+
+	logger.InitLogger(logger.ConsoleImplementation)
+
+	os.Exit(m.Run())
+}
 
 func TestHandlerSuccess(t *testing.T) {
 	c := require.New(t)
@@ -21,14 +35,15 @@ func TestHandlerSuccess(t *testing.T) {
 	userMock := users.NewDynamoMock()
 	expensesMock := expenses.NewDynamoMock()
 	periodMock := period.NewDynamoMock()
+	cacheMock := cache.NewRedisCacheMock()
 
 	ctx := context.Background()
 
 	request := &createExpenseRequest{
-
-		userRepo:     userMock,
-		expensesRepo: expensesMock,
-		periodRepo:   periodMock,
+		userRepo:         userMock,
+		expensesRepo:     expensesMock,
+		periodRepo:       periodMock,
+		idempotenceCache: cacheMock,
 	}
 
 	apigwRequest := getCreateExpenseRequest(periodMock)
@@ -47,10 +62,10 @@ func TestHandlerFailure(t *testing.T) {
 	ctx := context.Background()
 
 	request := &createExpenseRequest{
-
-		userRepo:     userMock,
-		expensesRepo: expensesMock,
-		periodRepo:   periodMock,
+		idempotenceCache: cache.NewRedisCacheMock(),
+		userRepo:         userMock,
+		expensesRepo:     expensesMock,
+		periodRepo:       periodMock,
 	}
 
 	apigwRequest := getCreateExpenseRequest(periodMock)
@@ -79,7 +94,7 @@ func TestHandlerFailure(t *testing.T) {
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Contains(response.Body, models.ErrMissingName.Error())
+		c.Contains(response.Body, "Missing name")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
@@ -89,7 +104,7 @@ func TestHandlerFailure(t *testing.T) {
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Contains(response.Body, models.ErrMissingAmount.Error())
+		c.Contains(response.Body, "Missing amount")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
@@ -99,7 +114,7 @@ func TestHandlerFailure(t *testing.T) {
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Contains(response.Body, models.ErrInvalidAmount.Error())
+		c.Contains(response.Body, "Invalid amount")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
@@ -118,7 +133,7 @@ func TestHandlerFailure(t *testing.T) {
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 
 	t.Run("Missing period", func(t *testing.T) {
@@ -127,16 +142,19 @@ func TestHandlerFailure(t *testing.T) {
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Contains(response.Body, models.ErrMissingPeriod.Error())
+		c.Contains(response.Body, "Missing period")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 }
 
 func getCreateExpenseRequest(periodMock *period.DynamoMock) *apigateway.Request {
-	body := fmt.Sprintf(`{"amount":893,"name":"Jordan shopping","period":"%s"}`, periodMock.GetDefaultPeriod().ID)
+	body := fmt.Sprintf(`{"amount":893,"name":"Jordan shopping","period_id":"%s"}`, periodMock.GetDefaultPeriod().ID)
 
 	return &apigateway.Request{
 		Body: body,
+		Headers: map[string]string{
+			"Idempotency-Key": "123",
+		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"username": "test@gmail.com",

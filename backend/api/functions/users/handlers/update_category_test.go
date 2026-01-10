@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
@@ -123,7 +122,7 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(response.Body, models.ErrInvalidHexColor.Error())
+		c.Contains(response.Body, "Invalid hex color")
 	})
 
 	t.Run("Category name already exists", func(t *testing.T) {

@@ -31,14 +31,14 @@ func NewDynamoMock() *DynamoMock {
 	}
 }
 
-func (d *DynamoMock) CreateUser(ctx context.Context, user *models.User) error {
+func (d *DynamoMock) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	if d.mockedErr != nil {
-		return d.mockedErr
+		return nil, d.mockedErr
 	}
 
 	d.mockedUsers = append(d.mockedUsers, user)
 
-	return nil
+	return user, nil
 }
 
 func (d *DynamoMock) GetUser(ctx context.Context, username string) (*models.User, error) {

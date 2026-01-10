@@ -93,7 +93,7 @@ func TestProcess(t *testing.T) {
 	err = req.ProcessMessage(ctx, msg)
 	c.Nil(err)
 
-	result, _, err := req.ExpensesRepo.GetExpensesByPeriod(ctx, period.Username, &models.QueryParameters{Period: period.ID, PageSize: 20})
+	result, _, err := req.ExpensesRepo.GetExpensesByPeriod(ctx, period.Username, &models.ExpenseQueryParameters{Period: period.ID, BaseQueryParameters: models.BaseQueryParameters{PageSize: 20}})
 	c.Nil(err, "getting expenses by period failed")
 	c.Len(result, 18, fmt.Sprint("expected 18 expenses, got ", len(result)))
 }

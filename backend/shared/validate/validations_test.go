@@ -85,10 +85,10 @@ func TestSortBy_SavingGoals(t *testing.T) {
 			expected: models.ErrInvalidSortBy,
 		},
 		{
-			name:     "Invalid sort by - name",
+			name:     "Valid sort by - name",
 			input:    "name",
 			model:    SortByModelSavingGoals,
-			expected: models.ErrInvalidSortBy,
+			expected: nil,
 		},
 		{
 			name:     "Invalid sort by - random value",

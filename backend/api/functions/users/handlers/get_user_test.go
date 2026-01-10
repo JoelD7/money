@@ -49,7 +49,7 @@ func TestHandlerSuccess(t *testing.T) {
 		mockedUser := users.GetDummyUser()
 		mockedUser.CurrentPeriod = ""
 
-		err := usersMock.CreateUser(ctx, mockedUser)
+		_, err := usersMock.CreateUser(ctx, mockedUser)
 		c.NoError(err)
 
 		response, err := request.process(ctx, apigwRequest)

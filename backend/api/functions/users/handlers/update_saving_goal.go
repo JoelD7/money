@@ -23,7 +23,6 @@ type updateSavingGoalsRequest struct {
 	startingTime   time.Time
 	err            error
 	savingGoalRepo savingoal.Repository
-	queryParams    *models.QueryParameters
 }
 
 func (request *updateSavingGoalsRequest) init(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {

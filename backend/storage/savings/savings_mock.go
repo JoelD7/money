@@ -40,7 +40,7 @@ func (m *Mock) GetSaving(ctx context.Context, username, savingID string) (*model
 	return nil, models.ErrSavingNotFound
 }
 
-func (m *Mock) GetSavingsByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavingsByPeriod(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -56,7 +56,7 @@ func (m *Mock) GetSavingsByPeriod(ctx context.Context, username string, params *
 	return savings, "next_key", nil
 }
 
-func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -72,7 +72,7 @@ func (m *Mock) GetSavingsBySavingGoal(ctx context.Context, params *models.QueryP
 	return savings, "next_key", nil
 }
 
-func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -87,7 +87,7 @@ func (m *Mock) GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *mode
 	return savings, "next_key", nil
 }
 
-func (m *Mock) GetSavings(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func (m *Mock) GetSavings(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -137,6 +137,10 @@ func (m *Mock) DeleteSaving(ctx context.Context, savingID, email string) error {
 }
 
 func (m *Mock) BatchCreateSavings(ctx context.Context, savings []*models.Saving) error {
+	return nil
+}
+
+func (m *Mock) BatchUpdateSavings(ctx context.Context, savings []*models.Saving) error {
 	return nil
 }
 

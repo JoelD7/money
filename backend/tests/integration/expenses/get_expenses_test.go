@@ -70,7 +70,7 @@ func TestGetByPeriod(t *testing.T) {
 	apigwReq := new(apigateway.Request)
 
 	t.Run("Sorted by created_date - ASC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy: "created_date",
 			Period: periodID,
 		}
@@ -222,7 +222,7 @@ func TestGetByPeriod(t *testing.T) {
 	})
 
 	t.Run("Sorted by created_date - DESC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy:   "created_date",
 			SortType: "desc",
 			Period:   periodID,
@@ -375,7 +375,7 @@ func TestGetByPeriod(t *testing.T) {
 	})
 
 	t.Run("Sorted by name - ASC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy: "name",
 			Period: periodID,
 		}
@@ -526,7 +526,7 @@ func TestGetByPeriod(t *testing.T) {
 	})
 
 	t.Run("Sorted by amount - ASC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy: "amount",
 			Period: periodID,
 		}
