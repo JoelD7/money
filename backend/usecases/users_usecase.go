@@ -77,7 +77,12 @@ func NewUserGetter(u UserManager, i IncomeRepository, e ExpenseManager) func(ctx
 }
 
 func getAllExpensesForPeriod(ctx context.Context, username string, period string, e ExpenseManager) ([]*models.Expense, error) {
-	expenses, nextKey, err := e.GetExpensesByPeriod(ctx, username, &models.QueryParameters{Period: period, PageSize: 10})
+	expenses, nextKey, err := e.GetExpensesByPeriod(ctx, username, &models.ExpenseQueryParameters{
+		Period: period,
+		BaseQueryParameters: models.BaseQueryParameters{
+			PageSize: 10,
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get all user expenses failed: %w", err)
 	}
@@ -85,7 +90,13 @@ func getAllExpensesForPeriod(ctx context.Context, username string, period string
 	expensesPage := make([]*models.Expense, 0)
 
 	for nextKey != "" {
-		expensesPage, nextKey, err = e.GetExpensesByPeriod(ctx, username, &models.QueryParameters{Period: period, PageSize: 10, StartKey: nextKey})
+		expensesPage, nextKey, err = e.GetExpensesByPeriod(ctx, username, &models.ExpenseQueryParameters{
+			Period: period,
+			BaseQueryParameters: models.BaseQueryParameters{
+				PageSize: 10,
+				StartKey: nextKey,
+			},
+		})
 		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
 			return nil, fmt.Errorf("get all user expenses failed: %w", err)
 		}
@@ -97,7 +108,9 @@ func getAllExpensesForPeriod(ctx context.Context, username string, period string
 }
 
 func getAllIncomeForPeriod(ctx context.Context, username string, period string, i IncomeRepository) ([]*models.Income, error) {
-	income, nextKey, err := i.GetIncomeByPeriod(ctx, username, &models.QueryParameters{Period: period})
+	income, nextKey, err := i.GetIncomeByPeriod(ctx, username, &models.IncomeQueryParameters{
+		Period: period,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("get all user income failed: %w", err)
 	}
@@ -105,7 +118,12 @@ func getAllIncomeForPeriod(ctx context.Context, username string, period string, 
 	incomePage := make([]*models.Income, 0)
 
 	for nextKey != "" {
-		incomePage, nextKey, err = i.GetIncomeByPeriod(ctx, username, &models.QueryParameters{Period: period, StartKey: nextKey})
+		incomePage, nextKey, err = i.GetIncomeByPeriod(ctx, username, &models.IncomeQueryParameters{
+			Period: period,
+			BaseQueryParameters: models.BaseQueryParameters{
+				StartKey: nextKey,
+			},
+		})
 		if err != nil && !errors.Is(err, models.ErrNoMoreItemsToBeRetrieved) {
 			return nil, fmt.Errorf("get all user income failed: %w", err)
 		}
@@ -228,7 +246,7 @@ func NewCategoryUpdater(u UserManager) func(ctx context.Context, username, categ
 
 func validateCategoryName(newCategory *models.Category, userCategories []*models.Category) error {
 	for _, category := range userCategories {
-		if category.Name != nil && *category.Name == *newCategory.Name {
+		if newCategory.Name != nil && category.Name != nil && *category.Name == *newCategory.Name {
 			return models.ErrCategoryNameAlreadyExists
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/storage/expenses"
+	periodRepo "github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/stretchr/testify/require"
@@ -22,6 +23,7 @@ func TestGetExpensesSuccess(t *testing.T) {
 	request := &GetExpensesRequest{
 		ExpensesRepo: expensesMock,
 		UserRepo:     usersMock,
+		PeriodRepo:   periodRepo.NewDynamoMock(),
 	}
 
 	apigwRequest := getGetExpensesRequest()

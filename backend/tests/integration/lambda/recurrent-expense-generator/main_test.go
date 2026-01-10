@@ -108,7 +108,7 @@ func TestCron(t *testing.T) {
 	var userExpenses []*models.Expense
 
 	for _, tc := range testCases {
-		userExpenses, _, err = expensesRepo.GetExpenses(ctx, tc.username, &models.QueryParameters{PageSize: 100})
+		userExpenses, _, err = expensesRepo.GetExpenses(ctx, tc.username, &models.ExpenseQueryParameters{BaseQueryParameters: models.BaseQueryParameters{PageSize: 100}})
 		c.Nil(err, fmt.Sprintf("failed to get expenses for '%s'", tc.username))
 		expensesToDelete = append(expensesToDelete, userExpenses...)
 		c.Len(userExpenses, tc.expectedExpenses, fmt.Sprintf("expected %d expenses for '%s', got %d", tc.expectedExpenses, tc.username, len(userExpenses)))

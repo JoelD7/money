@@ -10,7 +10,7 @@ type Repository interface {
 	UpdatePeriod(ctx context.Context, period *models.Period) error
 	GetPeriod(ctx context.Context, username, period string) (*models.Period, error)
 	GetLastPeriod(ctx context.Context, username string) (*models.Period, error)
-	GetPeriods(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error)
+	GetPeriods(ctx context.Context, username string, params *models.PeriodQueryParameters) ([]*models.Period, string, error)
 	BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error)
 	DeletePeriod(ctx context.Context, periodID, username string) error
 	BatchDeletePeriods(ctx context.Context, periods []*models.Period) error

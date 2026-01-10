@@ -2,13 +2,27 @@ package expenses
 
 import (
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/env"
+	"github.com/JoelD7/money/backend/shared/logger"
 	"github.com/JoelD7/money/backend/tests/e2e/api"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/stretchr/testify/require"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 )
+
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(err)
+	}
+
+	logger.InitLogger(logger.ConsoleImplementation)
+
+	os.Exit(m.Run())
+}
 
 func TestCreateExpense(t *testing.T) {
 	c := require.New(t)

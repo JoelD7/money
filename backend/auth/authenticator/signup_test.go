@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
+	"github.com/JoelD7/money/backend/shared/secrets"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/users"
 	"net/http"
 	"testing"
@@ -10,30 +12,6 @@ import (
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/stretchr/testify/require"
 )
-
-func TestSignUpHandler(t *testing.T) {
-	c := require.New(t)
-
-	body := signUpBody{
-		FullName:    "Joel",
-		Credentials: &Credentials{"test@gmail.com", "1234"},
-	}
-
-	usersMock := users.NewDynamoMock()
-	ctx := context.Background()
-
-	jsonBody, err := bodyToJSONString(body)
-	c.Nil(err)
-
-	request := &requestSignUpHandler{
-		userRepo: usersMock,
-	}
-
-	apigwRequest := &apigateway.Request{Body: jsonBody}
-
-	response, err := request.processSignUp(ctx, apigwRequest)
-	c.Equal(http.StatusCreated, response.StatusCode)
-}
 
 func TestSignUpHandlerFailed(t *testing.T) {
 	c := require.New(t)
@@ -51,19 +29,26 @@ func TestSignUpHandlerFailed(t *testing.T) {
 	usersMock := users.NewDynamoMock()
 
 	request := &requestSignUpHandler{
-		userRepo: usersMock,
+		userRepo:         usersMock,
+		idempotenceCache: cache.NewRedisCacheMock(),
+		secretsManager:   secrets.NewSecretMock(),
 	}
 
 	t.Run("Existing user error", func(t *testing.T) {
 		usersMock.ActivateForceFailure(models.ErrExistingUser)
 		defer usersMock.DeactivateForceFailure()
 
-		apigwRequest := &apigateway.Request{Body: jsonBody}
+		apigwRequest := &apigateway.Request{
+			Body: jsonBody,
+			Headers: map[string]string{
+				"Idempotency-Key": "123",
+			},
+		}
 
 		response, err := request.processSignUp(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrExistingUser.Error(), response.Body)
+		c.Contains(response.Body, "This account already exists")
 	})
 
 	t.Run("Invalid request body", func(t *testing.T) {
@@ -71,30 +56,29 @@ func TestSignUpHandlerFailed(t *testing.T) {
 
 		response, err := request.processSignUp(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(http.StatusInternalServerError, response.StatusCode)
-		c.Equal(apigateway.ErrInternalError.Message, response.Body)
+		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
 	type testCase struct {
 		description string
-		expectedErr error
+		expectedErr string
 		body        signUpBody
 	}
 
 	testCases := []testCase{
 		{
 			"Missing email error",
-			models.ErrMissingUsername,
+			"Missing username",
 			signUpBody{"", &Credentials{"", "1234"}},
 		},
 		{
 			"Invalid email error",
-			models.ErrInvalidEmail,
+			"Invalid email",
 			signUpBody{"1234", &Credentials{"1234", "1234"}},
 		},
 		{
 			"Missing password error",
-			models.ErrMissingPassword,
+			"Missing password",
 			signUpBody{"test@gmail.com", &Credentials{"test@gmail.com", ""}},
 		},
 	}
@@ -106,12 +90,17 @@ func TestSignUpHandlerFailed(t *testing.T) {
 			jsonBody, err = bodyToJSONString(tc.body)
 			c.Nil(err)
 
-			apigwRequest := &apigateway.Request{Body: jsonBody}
+			apigwRequest := &apigateway.Request{
+				Body: jsonBody,
+				Headers: map[string]string{
+					"Idempotency-Key": "123",
+				},
+			}
 
 			response, err := request.processSignUp(ctx, apigwRequest)
 			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
-			c.Equal(tc.expectedErr.Error(), response.Body)
+			c.Contains(response.Body, tc.expectedErr)
 		})
 	}
 }

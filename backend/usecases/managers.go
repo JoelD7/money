@@ -12,13 +12,13 @@ type ExpenseManager interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
 	BatchCreateExpenses(ctx context.Context, expenses []*models.Expense) error
 
-	GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
+	GetExpenses(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByPeriod(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByCategory(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
 	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
-	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error)
+	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, error)
 
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	BatchUpdateExpenses(ctx context.Context, expenses []*models.Expense) error
@@ -54,9 +54,9 @@ type IncomeRepository interface {
 	CreateIncome(ctx context.Context, income *models.Income) (*models.Income, error)
 
 	GetIncome(ctx context.Context, username, incomeID string) (*models.Income, error)
-	GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
-	GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error)
-	GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error)
+	GetAllIncome(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, string, error)
+	GetIncomeByPeriod(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, string, error)
+	GetAllIncomeByPeriod(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, error)
 	GetAllIncomePeriods(ctx context.Context, username string) ([]string, error)
 }
 
@@ -80,7 +80,7 @@ type PeriodManager interface {
 	UpdatePeriod(ctx context.Context, period *models.Period) error
 	GetPeriod(ctx context.Context, username, period string) (*models.Period, error)
 	GetLastPeriod(ctx context.Context, username string) (*models.Period, error)
-	GetPeriods(ctx context.Context, username, startKey string, pageSize int, active bool) ([]*models.Period, string, error)
+	GetPeriods(ctx context.Context, username string, params *models.PeriodQueryParameters) ([]*models.Period, string, error)
 	BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error)
 	DeletePeriod(ctx context.Context, periodID, username string) error
 }
@@ -89,7 +89,7 @@ type SavingGoalManager interface {
 	CreateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error)
 	UpdateSavingGoal(ctx context.Context, savingGoal *models.SavingGoal) (*models.SavingGoal, error)
 	GetSavingGoal(ctx context.Context, username, savingGoalID string) (*models.SavingGoal, error)
-	GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error)
+	GetSavingGoals(ctx context.Context, username string, params *models.SavingGoalQueryParameters) ([]*models.SavingGoal, string, error)
 	DeleteSavingGoal(ctx context.Context, username, savingGoalID string) error
 	GetAllRecurringSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error)
 }
@@ -99,10 +99,10 @@ type SavingsManager interface {
 	BatchCreateSavings(ctx context.Context, savings []*models.Saving) error
 
 	GetSaving(ctx context.Context, username, savingID string) (*models.Saving, error)
-	GetSavings(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error)
-	GetSavingsByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error)
-	GetSavingsBySavingGoal(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error)
-	GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error)
+	GetSavings(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error)
+	GetSavingsByPeriod(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error)
+	GetSavingsBySavingGoal(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error)
+	GetSavingsBySavingGoalAndPeriod(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error)
 
 	UpdateSaving(ctx context.Context, saving *models.Saving) error
 

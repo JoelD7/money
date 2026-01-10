@@ -14,14 +14,29 @@ import (
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	err := env.LoadEnvTesting()
+	if err != nil {
+		panic(err)
+	}
+
+	logger.InitLogger(logger.ConsoleImplementation)
+
+	os.Exit(m.Run())
+}
+
 func TestGetAllExpensesBetweenDates(t *testing.T) {
 	logger.InitLogger(logger.ConsoleImplementation)
 	var (
 		envConfig = &models.EnvironmentConfiguration{
-			ExpensesTable:          env.GetString("EXPENSES_TABLE_NAME", ""),
-			ExpensesRecurringTable: env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
-			PeriodUserExpenseIndex: env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
-			UsersTable:             env.GetString("USERS_TABLE_NAME", ""),
+			ExpensesTable:                env.GetString("EXPENSES_TABLE_NAME", ""),
+			ExpensesRecurringTable:       env.GetString("EXPENSES_RECURRING_TABLE_NAME", ""),
+			PeriodUserExpenseIndex:       env.GetString("PERIOD_USER_EXPENSE_INDEX", ""),
+			UsersTable:                   env.GetString("USERS_TABLE_NAME", ""),
+			PeriodUserCreatedDateIndex:   env.GetString("PERIOD_USER_CREATED_DATE_INDEX", ""),
+			UsernameCreatedDateIndex:     env.GetString("USERNAME_CREATED_DATE_INDEX", ""),
+			PeriodUserNameExpenseIDIndex: env.GetString("PERIOD_USER_NAME_EXPENSE_ID_INDEX", ""),
+			PeriodUserAmountIndex:        env.GetString("PERIOD_USER_AMOUNT_INDEX", ""),
 		}
 	)
 
@@ -29,6 +44,7 @@ func TestGetAllExpensesBetweenDates(t *testing.T) {
 
 	dynamoClient := setup.InitDynamoClient()
 	expensesRepo, err := repository.NewDynamoRepository(dynamoClient, envConfig)
+	c.NoError(err)
 
 	expensesToCreate, err := loadExpenses()
 	c.Nil(err, "failed to load expenses")
