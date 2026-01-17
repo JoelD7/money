@@ -192,7 +192,7 @@ func TestGetSavingGoals(t *testing.T) {
 			saving := new(models.Saving)
 			saving.SavingGoalID = &goalID
 			saving.Amount = &amount
-			saving.PeriodID = createdPeriod.Name
+			saving.PeriodID = &createdPeriod.ID
 
 			createdSaving, statusCode, err := requester.CreateSaving(saving, t)
 			c.Equal(http.StatusCreated, statusCode)
@@ -219,6 +219,14 @@ func TestGetSavingGoals(t *testing.T) {
 	expectedProgress[createdGoals[2].GetSavingGoalID()] = createSavings(createdGoals[2].GetSavingGoalID(), []float64{250, 250, 250, 250}) // $1,000
 	expectedProgress[createdGoals[3].GetSavingGoalID()] = createSavings(createdGoals[3].GetSavingGoalID(), []float64{2000, 1500})         // $3,500
 	expectedProgress[createdGoals[4].GetSavingGoalID()] = createSavings(createdGoals[4].GetSavingGoalID(), []float64{100, 150, 200})      // $450
+
+	t.Cleanup(func() {
+		for _, goal := range createdGoals {
+			status, err := requester.DeleteSavingGoal(goal.SavingGoalID)
+			c.NoError(err)
+			c.Equal(http.StatusNoContent, status)
+		}
+	})
 
 	t.Run("Get all goals with default parameters", func(t *testing.T) {
 		goals, statusCode, nextKey, err := requester.GetSavingGoals("", "", "", 10)
@@ -267,7 +275,7 @@ func TestGetSavingGoals(t *testing.T) {
 		saving := new(models.Saving)
 		saving.SavingGoalID = &goalToUpdate
 		saving.Amount = &additionalAmount
-		saving.PeriodID = createdPeriod.Name
+		saving.PeriodID = &createdPeriod.ID
 
 		createdSaving, statusCode, err := requester.CreateSaving(saving, t)
 		c.Equal(http.StatusCreated, statusCode)

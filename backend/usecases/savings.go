@@ -31,8 +31,8 @@ func NewSavingGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager)
 	}
 }
 
-func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
 				"s_username":  username,
@@ -66,8 +66,8 @@ func NewSavingsGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager
 	}
 }
 
-func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, username string, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
 				"s_username":  username,
@@ -101,8 +101,8 @@ func NewSavingByPeriodGetter(sm SavingsManager, sgm SavingGoalManager, pm Period
 	}
 }
 
-func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
 				"i_page_size": params.PageSize,
@@ -135,8 +135,8 @@ func NewSavingBySavingGoalGetter(sm SavingsManager, sgm SavingGoalManager, pm Pe
 	}
 }
 
-func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
-	return func(ctx context.Context, params *models.QueryParameters) ([]*models.Saving, string, error) {
+func NewSavingBySavingGoalAndPeriodGetter(sm SavingsManager, sgm SavingGoalManager, pm PeriodManager) func(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
+	return func(ctx context.Context, params *models.SavingQueryParameters) ([]*models.Saving, string, error) {
 		if err := validatePageSize(params.PageSize); err != nil {
 			logger.Error("invalid_page_size_detected", err, models.Any("user_data", map[string]interface{}{
 				"i_page_size": params.PageSize,
@@ -265,7 +265,7 @@ func setSavingGoalNames(ctx context.Context, sgm SavingGoalManager, username str
 	savingGoalsMap := make(map[string]*models.SavingGoal)
 
 	//TODO: Handle pagination
-	savingGoals, _, err := sgm.GetSavingGoals(ctx, username, &models.QueryParameters{PageSize: 20})
+	savingGoals, _, err := sgm.GetSavingGoals(ctx, username, &models.SavingGoalQueryParameters{BaseQueryParameters: models.BaseQueryParameters{PageSize: 20}})
 	if err != nil {
 		return err
 	}

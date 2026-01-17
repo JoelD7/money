@@ -41,10 +41,7 @@ func (c *ConsoleLogger) Finish() error {
 	return nil
 }
 
-func (c *ConsoleLogger) AddToContext(key string, value interface{}) {
-	//TODO implement me
-	panic("implement me")
-}
+func (c *ConsoleLogger) AddToContext(key string, value interface{}) {}
 
 func (c *ConsoleLogger) SetHandler(handler string) {}
 

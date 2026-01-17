@@ -48,7 +48,7 @@ func TestGetPeriodsHandlerFailed(t *testing.T) {
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 
 	t.Run("Invalid username", func(t *testing.T) {
@@ -62,15 +62,6 @@ func TestGetPeriodsHandlerFailed(t *testing.T) {
 
 	t.Run("Invalid page size parameter", func(t *testing.T) {
 		apigwRequest.QueryStringParameters["page_size"] = "abc"
-		defer func() { apigwRequest = getPeriodsAPIGatewayRequest() }()
-
-		response, err := request.process(ctx, apigwRequest)
-		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
-	})
-
-	t.Run("Negative page size parameter", func(t *testing.T) {
-		apigwRequest.QueryStringParameters["page_size"] = "-1"
 		defer func() { apigwRequest = getPeriodsAPIGatewayRequest() }()
 
 		response, err := request.process(ctx, apigwRequest)

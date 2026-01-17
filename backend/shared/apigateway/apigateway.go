@@ -239,14 +239,9 @@ func GetUsernameFromContext(req *Request) (string, error) {
 }
 
 func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
-	pageSizeParam := 0
-	var err error
-
-	if req.QueryStringParameters["page_size"] != "" {
-		pageSizeParam, err = strconv.Atoi(req.QueryStringParameters["page_size"])
-		if err != nil {
-			return &models.QueryParameters{}, models.ErrInvalidPageSize
-		}
+	pageSizeParam, err := req.getPageSize()
+	if err != nil {
+		return &models.QueryParameters{}, err
 	}
 
 	var active bool
@@ -265,6 +260,107 @@ func (req *Request) GetQueryParameters() (*models.QueryParameters, error) {
 		SavingGoalID: req.QueryStringParameters["saving_goal_id"],
 		Active:       active,
 	}, nil
+}
+
+func (req *Request) GetExpenseQueryParameters() (*models.ExpenseQueryParameters, error) {
+	pageSizeParam, err := req.getPageSize()
+	if err != nil {
+		return &models.ExpenseQueryParameters{}, err
+	}
+
+	return &models.ExpenseQueryParameters{
+		BaseQueryParameters: models.BaseQueryParameters{
+			StartKey: req.QueryStringParameters["start_key"],
+			PageSize: pageSizeParam,
+		},
+		Categories: req.MultiValueQueryStringParameters["category"],
+		Period:     req.QueryStringParameters["period"],
+		SortBy:     req.QueryStringParameters["sort_by"],
+		SortType:   req.QueryStringParameters["sort_order"],
+	}, nil
+}
+
+func (req *Request) GetIncomeQueryParameters() (*models.IncomeQueryParameters, error) {
+	pageSizeParam, err := req.getPageSize()
+	if err != nil {
+		return &models.IncomeQueryParameters{}, err
+	}
+
+	return &models.IncomeQueryParameters{
+		BaseQueryParameters: models.BaseQueryParameters{
+			StartKey: req.QueryStringParameters["start_key"],
+			PageSize: pageSizeParam,
+		},
+		Period:   req.QueryStringParameters["period"],
+		SortBy:   req.QueryStringParameters["sort_by"],
+		SortType: req.QueryStringParameters["sort_order"],
+	}, nil
+}
+
+func (req *Request) GetSavingQueryParameters() (*models.SavingQueryParameters, error) {
+	pageSizeParam, err := req.getPageSize()
+	if err != nil {
+		return &models.SavingQueryParameters{}, err
+	}
+
+	return &models.SavingQueryParameters{
+		BaseQueryParameters: models.BaseQueryParameters{
+			StartKey: req.QueryStringParameters["start_key"],
+			PageSize: pageSizeParam,
+		},
+		Period:       req.QueryStringParameters["period"],
+		SavingGoalID: req.QueryStringParameters["saving_goal_id"],
+		SortBy:       req.QueryStringParameters["sort_by"],
+		SortType:     req.QueryStringParameters["sort_order"],
+	}, nil
+}
+
+func (req *Request) GetSavingGoalQueryParameters() (*models.SavingGoalQueryParameters, error) {
+	pageSizeParam, err := req.getPageSize()
+	if err != nil {
+		return &models.SavingGoalQueryParameters{}, err
+	}
+
+	return &models.SavingGoalQueryParameters{
+		BaseQueryParameters: models.BaseQueryParameters{
+			StartKey: req.QueryStringParameters["start_key"],
+			PageSize: pageSizeParam,
+		},
+		SortBy:   req.QueryStringParameters["sort_by"],
+		SortType: req.QueryStringParameters["sort_order"],
+	}, nil
+}
+
+func (req *Request) GetPeriodQueryParameters() (*models.PeriodQueryParameters, error) {
+	pageSizeParam, err := req.getPageSize()
+	if err != nil {
+		return &models.PeriodQueryParameters{}, err
+	}
+
+	var active bool
+	val, _ := req.QueryStringParameters["active"]
+	if strings.EqualFold(val, "true") {
+		active = true
+	}
+
+	return &models.PeriodQueryParameters{
+		BaseQueryParameters: models.BaseQueryParameters{
+			StartKey: req.QueryStringParameters["start_key"],
+			PageSize: pageSizeParam,
+		},
+		Active: active,
+	}, nil
+}
+
+func (req *Request) getPageSize() (int, error) {
+	if req.QueryStringParameters["page_size"] != "" {
+		pageSize, err := strconv.Atoi(req.QueryStringParameters["page_size"])
+		if err != nil {
+			return 0, models.ErrInvalidPageSize
+		}
+		return pageSize, nil
+	}
+	return 0, nil
 }
 
 // GetIdempotenceyKeyFromHeader returns the idempotency key value from the header. Call this function on controllers,

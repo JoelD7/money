@@ -280,27 +280,45 @@ func TestGetPeriods(t *testing.T) {
 		createdPeriod, err := periodRepo.CreatePeriod(ctx, period)
 		c.Nil(err)
 		c.NotNil(createdPeriod)
+		period.ID = createdPeriod.ID
 	}
+
+	t.Cleanup(func() {
+		err = periodRepo.BatchDeletePeriods(ctx, periodsToCreate)
+		c.NoError(err)
+	})
 
 	t.Run("Get active periods", func(t *testing.T) {
 		active := true
 		pageSize := 10
 
-		periods, nextKey, err := periodRepo.GetPeriods(ctx, Username, "", pageSize, active)
+		params := &models.PeriodQueryParameters{
+			BaseQueryParameters: models.BaseQueryParameters{
+				StartKey: "",
+				PageSize: pageSize,
+			},
+			Active: active,
+		}
+
+		periods, nextKey, err := periodRepo.GetPeriods(ctx, Username, params)
 		c.Nil(err)
 		c.NotEmpty(nextKey)
 		c.Len(periods, pageSize)
 		c.True(arePeriodsSorted(periods, true))
 		c.True(arePeriodsActive(periods))
 
-		periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, nextKey, pageSize, active)
+		params.StartKey = nextKey
+		params.PageSize = pageSize
+		periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, params)
 		c.Nil(err)
 		c.NotEmpty(nextKey)
 		c.Len(periods, pageSize)
 		c.True(arePeriodsSorted(periods, true))
 		c.True(arePeriodsActive(periods))
 
-		periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, nextKey, pageSize, active)
+		params.StartKey = nextKey
+		params.PageSize = pageSize
+		periods, nextKey, err = periodRepo.GetPeriods(ctx, Username, params)
 		c.Nil(err)
 		c.Empty(nextKey)
 		c.Len(periods, 4)
@@ -310,7 +328,14 @@ func TestGetPeriods(t *testing.T) {
 
 	t.Run("Get all periods", func(t *testing.T) {
 		pageSize := 40
-		periods, _, err := periodRepo.GetPeriods(ctx, Username, "", pageSize, false)
+		params := &models.PeriodQueryParameters{
+			BaseQueryParameters: models.BaseQueryParameters{
+				StartKey: "",
+				PageSize: pageSize,
+			},
+			Active: false,
+		}
+		periods, _, err := periodRepo.GetPeriods(ctx, Username, params)
 		c.Nil(err)
 		c.Len(periods, 37)
 	})

@@ -1,6 +1,7 @@
 package authenticator
 
 import (
+	"github.com/google/uuid"
 	"net/http"
 	"os"
 	"testing"
@@ -33,7 +34,8 @@ func TestSignUp(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		headers := map[string]string{
-			"Idempotency-Key": "1234",
+			//This is necessary to overwrite cache
+			"Idempotency-Key": uuid.NewString(),
 		}
 
 		statusCode, err := e2eRequester.SignUp(username, "John Doe", "password", headers, t)

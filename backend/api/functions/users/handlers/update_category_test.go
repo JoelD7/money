@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/storage/users"
 	"github.com/aws/aws-lambda-go/events"
@@ -24,6 +23,7 @@ func TestUpdateCategoryHandler(t *testing.T) {
 	}
 
 	apigwRequest := getUpdateCategoryRequest()
+	apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment_2","color":"#ff8733","budget":1000}`
 	response, err := req.process(ctx, apigwRequest)
 	c.Nil(err)
 	c.Equal(http.StatusOK, response.StatusCode)
@@ -48,7 +48,7 @@ func TestUpdateCategoryHandler(t *testing.T) {
 
 	t.Run("Update success without sending color", func(t *testing.T) {
 		apigwRequest = getUpdateCategoryRequest()
-		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment","budget":1000}`
+		apigwRequest.Body = `{"id":"CTGzJeEzCNz6HMTiPKwgPmj","name":"Entertainment_2","budget":1000}`
 
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
@@ -123,7 +123,7 @@ func TestUpdateCategoryHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(response.Body, models.ErrInvalidHexColor.Error())
+		c.Contains(response.Body, "Invalid hex color")
 	})
 
 	t.Run("Category name already exists", func(t *testing.T) {

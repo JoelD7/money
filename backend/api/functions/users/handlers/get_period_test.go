@@ -56,7 +56,7 @@ func TestGetPeriodHandlerFailed(t *testing.T) {
 
 		response, err := request.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 }
 

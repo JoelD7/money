@@ -3,6 +3,7 @@ package expenses
 import (
 	"context"
 	"encoding/json"
+	"github.com/JoelD7/money/backend/storage/period"
 	"net/http"
 	"os"
 	"testing"
@@ -47,22 +48,18 @@ func TestGetByPeriod(t *testing.T) {
 	usersRepo, err := users.NewDynamoRepository(dynamo.InitClient(ctx), envConfig.UsersTable)
 	c.NoError(err)
 
+	periodRepo, err := period.NewDynamoRepository(dynamo.InitClient(ctx), envConfig)
+	c.NoError(err)
+
 	username := "e2e_test@gmail.com"
 	periodID := "2021-09"
 
 	ger := &handlers.GetExpensesRequest{
-		ExpensesRepo: expensesRepo,
 		Username:     username,
+		ExpensesRepo: expensesRepo,
 		UserRepo:     usersRepo,
+		PeriodRepo:   periodRepo,
 	}
-
-	testUser := &models.User{
-		Username:      username,
-		CurrentPeriod: periodID,
-	}
-
-	err = setup.CreateUser(ctx, usersRepo, testUser, t)
-	c.Nil(err, "creating user failed")
 
 	_, err = setup.CreateExpensesEntries(ctx, expensesRepo, "", t)
 	c.Nil(err, "creating expenses failed")
@@ -70,7 +67,7 @@ func TestGetByPeriod(t *testing.T) {
 	apigwReq := new(apigateway.Request)
 
 	t.Run("Sorted by created_date - ASC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy: "created_date",
 			Period: periodID,
 		}
@@ -222,7 +219,7 @@ func TestGetByPeriod(t *testing.T) {
 	})
 
 	t.Run("Sorted by created_date - DESC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy:   "created_date",
 			SortType: "desc",
 			Period:   periodID,
@@ -375,7 +372,7 @@ func TestGetByPeriod(t *testing.T) {
 	})
 
 	t.Run("Sorted by name - ASC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy: "name",
 			Period: periodID,
 		}
@@ -526,7 +523,7 @@ func TestGetByPeriod(t *testing.T) {
 	})
 
 	t.Run("Sorted by amount - ASC", func(t *testing.T) {
-		ger.QueryParameters = &models.QueryParameters{
+		ger.ExpenseQueryParameters = &models.ExpenseQueryParameters{
 			SortBy: "amount",
 			Period: periodID,
 		}

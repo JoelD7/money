@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/storage/users"
@@ -25,14 +26,14 @@ func TestCreateSavingHandler(t *testing.T) {
 	dummyUser := users.GetDummyUser()
 	dummyUser.Username = "username"
 
-	err := userMock.CreateUser(ctx, dummyUser)
+	_, err := userMock.CreateUser(ctx, dummyUser)
 	c.NoError(err)
 
 	req := &createSavingRequest{
-
-		savingsRepo: savingsMock,
-		userRepo:    userMock,
-		periodRepo:  periodMock,
+		savingsRepo:      savingsMock,
+		userRepo:         userMock,
+		periodRepo:       periodMock,
+		idempotenceCache: cache.NewRedisCacheMock(),
 	}
 
 	apigwRequest := getDummyRequest(dummyUser.Username)
@@ -41,7 +42,7 @@ func TestCreateSavingHandler(t *testing.T) {
 	c.NoError(err)
 	c.Equal(http.StatusCreated, response.StatusCode)
 
-	userSavings, _, err := savingsMock.GetSavings(ctx, dummyUser.Username, "", 0)
+	userSavings, _, err := savingsMock.GetSavings(ctx, dummyUser.Username, &models.SavingQueryParameters{})
 	c.NoError(err)
 	c.Len(userSavings, 1)
 	c.Equal(dummyUser.Username, userSavings[0].Username)
@@ -56,10 +57,10 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 	ctx := context.Background()
 
 	req := &createSavingRequest{
-
-		userRepo:    userMock,
-		savingsRepo: savingsMock,
-		periodRepo:  periodMock,
+		idempotenceCache: cache.NewRedisCacheMock(),
+		userRepo:         userMock,
+		savingsRepo:      savingsMock,
+		periodRepo:       periodMock,
 	}
 
 	apigwRequest := getDummyRequest("")
@@ -92,7 +93,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(models.ErrMissingAmount.Error(), response.Body)
+		c.Contains(response.Body, "Missing amount")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
@@ -103,7 +104,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(models.ErrInvalidSavingAmount.Error(), response.Body)
+		c.Contains(response.Body, "Invalid amount")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 
@@ -113,7 +114,7 @@ func TestCreateSavingHandlerFailed(t *testing.T) {
 
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
-		c.Equal(models.ErrMissingPeriod.Error(), response.Body)
+		c.Contains(response.Body, "Missing period")
 		c.Equal(http.StatusBadRequest, response.StatusCode)
 	})
 }
@@ -126,11 +127,14 @@ func getDummyRequest(username string) *apigateway.Request {
 	}
 
 	return &apigateway.Request{
+		Headers: map[string]string{
+			"Idempotency-Key": "123",
+		},
 		RequestContext: events.APIGatewayProxyRequestContext{
 			Authorizer: map[string]interface{}{
 				"username": defaultUsername,
 			},
 		},
-		Body: `{"saving_goal_id":"SVG123","amount":250,"period":"2020-01"}`,
+		Body: `{"saving_goal_id":"SVG123","amount":250,"period_id":"2020-01"}`,
 	}
 }
