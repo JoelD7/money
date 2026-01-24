@@ -90,7 +90,7 @@ func setupGetPeriodStatsTest(ctx context.Context, c *require.Assertions, cleaner
 
 	testUser := &models.User{
 		Username:      username,
-		CurrentPeriod: periodID,
+		CurrentPeriod: stringPtr(periodID),
 	}
 
 	createdUser, err := usersRepo.CreateUser(ctx, testUser)
@@ -176,7 +176,7 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 	t.Run("Get all income failed", func(t *testing.T) {
 		testUser := &models.User{
 			Username:      username,
-			CurrentPeriod: periodID,
+			CurrentPeriod: stringPtr(periodID),
 		}
 
 		createdUser, err := usersRepo.CreateUser(ctx, testUser)
@@ -205,7 +205,7 @@ func TestGetPeriodStatsFailed(t *testing.T) {
 	t.Run("Get all expenses and all income failed", func(t *testing.T) {
 		testUser := &models.User{
 			Username:      username,
-			CurrentPeriod: periodID,
+			CurrentPeriod: stringPtr(periodID),
 		}
 
 		createdUser, err := usersRepo.CreateUser(ctx, testUser)

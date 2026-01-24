@@ -25,6 +25,7 @@ func main() {
 			r.Get("/", handlers.GetUserHandler)
 
 			r.Route("/{username}", func(r *router.Router) {
+				r.Patch("/", handlers.PatchUserHandler)
 				r.Delete("/", handlers.DeleteUserHandler)
 			})
 

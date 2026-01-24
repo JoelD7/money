@@ -127,7 +127,7 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}, headers ..
 	origin := req.Headers["origin"]
 
 	_, ok := allowedOriginsMap[origin]
-	if ok {
+	if ok || allowedOrigins == "*" {
 		stdHeaders["Access-Control-Allow-Origin"] = origin
 	}
 
@@ -144,6 +144,13 @@ func (req *Request) NewJSONResponse(statusCode int, body interface{}, headers ..
 		return &Response{
 			StatusCode: statusCode,
 			Body:       strData,
+			Headers:    stdHeaders,
+		}
+	}
+
+	if body == nil {
+		return &Response{
+			StatusCode: statusCode,
 			Headers:    stdHeaders,
 		}
 	}
