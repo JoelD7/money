@@ -24,6 +24,11 @@ type DynamoMock struct {
 	mockedUsers []*models.User
 }
 
+func (d *DynamoMock) PatchUser(ctx context.Context, user *models.User) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewDynamoMock() *DynamoMock {
 	return &DynamoMock{
 		mockedUsers: []*models.User{GetDummyUser()},
@@ -105,7 +110,7 @@ func GetDummyUser() *models.User {
 	return &models.User{
 		FullName:      "Joel",
 		Username:      "test@gmail.com",
-		CurrentPeriod: "2023-5",
+		CurrentPeriod: aws.String("2023-5"),
 		Password:      "$2a$10$.THF8QG33va8JTSIBz3lPuULaO6NiDb6yRmew63OtzujhVHbnZMFe",
 		AccessToken:   hashedDummyToken,
 		RefreshToken:  hashedDummyToken,

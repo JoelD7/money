@@ -34,7 +34,7 @@ func toUserEntity(u *models.User) *userEntity {
 		UpdatedDate:   u.UpdatedDate,
 		AccessToken:   u.AccessToken,
 		RefreshToken:  u.RefreshToken,
-		CurrentPeriod: u.CurrentPeriod,
+		CurrentPeriod: u.GetCurrentPeriod(),
 	}
 }
 
@@ -67,7 +67,7 @@ func toUserModel(u *userEntity) *models.User {
 		UpdatedDate:   u.UpdatedDate,
 		AccessToken:   u.AccessToken,
 		RefreshToken:  u.RefreshToken,
-		CurrentPeriod: u.CurrentPeriod,
+		CurrentPeriod: stringPtr(u.CurrentPeriod),
 	}
 }
 
@@ -88,4 +88,8 @@ func toCategoryModel(entityCategory *categoryEntity) *models.Category {
 		Budget: entityCategory.Budget,
 		Color:  entityCategory.Color,
 	}
+}
+
+func stringPtr(s string) *string {
+	return &s
 }

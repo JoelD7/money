@@ -33,7 +33,7 @@ func TestGetLogDataAsBytes(t *testing.T) {
 			UpdatedDate:   time.Date(2025, 1, 5, 20, 40, 56, 0, time.UTC),
 			AccessToken:   "access-token-placeholder",
 			RefreshToken:  "refresh-token-placeholder",
-			CurrentPeriod: "2025-01",
+			CurrentPeriod: stringPtr("2025-01"),
 			Remainder:     1500.0,
 		}
 
@@ -73,4 +73,9 @@ func TestGetLogDataAsBytes(t *testing.T) {
 		data = l.getLogDataAsBytes(infoLevel, "test_event", nil, fields)
 		c.NotNil(data)
 	})
+}
+
+
+func stringPtr(s string) *string {
+	return &s
 }

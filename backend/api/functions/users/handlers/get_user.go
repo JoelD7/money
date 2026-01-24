@@ -87,7 +87,7 @@ func (request *getUserRequest) process(ctx context.Context, req *apigateway.Requ
 	getUser := usecases.NewUserGetter(request.userRepo, request.incomeRepo, request.expensesRepo)
 
 	user, err := getUser(ctx, username)
-	if user != nil && user.CurrentPeriod == "" {
+	if user != nil && user.GetCurrentPeriod() == "" {
 		logger.Warning("user_has_no_period_set", nil, req)
 	}
 
