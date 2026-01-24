@@ -258,12 +258,7 @@ func (d *DynamoRepository) GetPeriod(ctx context.Context, username, period strin
 }
 
 func (d *DynamoRepository) GetPeriods(ctx context.Context, username string, params *models.PeriodQueryParameters) ([]*models.Period, string, error) {
-	expr, err := buildGetPeriodsKeyConditionExpr(username, params.Active)
-	if err != nil {
-		return nil, "", err
-	}
-
-	filterExpression, err := buildFilterExpression(params)
+	expr, err := buildQueryExpression(username, params)
 	if err != nil {
 		return nil, "", err
 	}
@@ -286,7 +281,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username string, para
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
-		FilterExpression:          filterExpression,
+		FilterExpression:          expr.Filter(),
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(params.PageSize),
 		IndexName:                 index,
@@ -316,15 +311,16 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username string, para
 	return toPeriodModels(periods), nextKey, nil
 }
 
-func buildGetPeriodsKeyConditionExpr(username string, active bool) (expression.Expression, error) {
-	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
-
-	if active {
-		keyConditionExpression = expression.Key("username").Equal(expression.Value(username)).
-			And(expression.Key("end-date_period").GreaterThan(expression.Value(time.Now().Format(time.RFC3339))))
+func buildQueryExpression(username string, params *models.PeriodQueryParameters) (expression.Expression, error) {
+	keyConditionExpression := buildKeyConditionExpression(username, params.Active)
+	filterExpression, err := buildFilterExpression(params)
+	if err != nil {
+		return expression.Expression{}, err
 	}
 
-	conditionBuilder := expression.NewBuilder().WithKeyCondition(keyConditionExpression)
+	conditionBuilder := expression.NewBuilder().
+		WithKeyCondition(keyConditionExpression).
+		WithFilter(filterExpression)
 
 	expr, err := conditionBuilder.Build()
 	if err != nil {
@@ -334,18 +330,23 @@ func buildGetPeriodsKeyConditionExpr(username string, active bool) (expression.E
 	return expr, nil
 }
 
-func buildFilterExpression(params *models.PeriodQueryParameters) (*string, error) {
-	if params.Name != "" {
-		filter := expression.Name("name").BeginsWith(params.Name)
-		expr, err := expression.NewBuilder().WithFilter(filter).Build()
-		if err != nil {
-			return nil, fmt.Errorf("building get periods filter expression: %w", err)
-		}
+func buildKeyConditionExpression(username string, active bool) expression.KeyConditionBuilder {
+	keyConditionExpression := expression.Key("username").Equal(expression.Value(username))
 
-		return expr.Filter(), nil
+	if active {
+		keyConditionExpression = expression.Key("username").Equal(expression.Value(username)).
+			And(expression.Key("end-date_period").GreaterThan(expression.Value(time.Now().Format(time.RFC3339))))
 	}
 
-	return nil, nil
+	return keyConditionExpression
+}
+
+func buildFilterExpression(params *models.PeriodQueryParameters) (expression.ConditionBuilder, error) {
+	if params.Name != "" {
+		return expression.Name("name").BeginsWith(params.Name), nil
+	}
+
+	return expression.ConditionBuilder{}, nil
 }
 
 func (d *DynamoRepository) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {
