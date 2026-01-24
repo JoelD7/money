@@ -15,6 +15,7 @@ import (
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/JoelD7/money/backend/tests/e2e/api"
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
@@ -22,19 +23,28 @@ import (
 	"time"
 )
 
-// After adding new logic(mainly recurring saving generation) these tests are failing. I'll fix them later.
 func TestProcess(t *testing.T) {
 	c := require.New(t)
 	sqsRetries := 3
 	delay := time.Second * 1
 	backoffFactor := 2
 
+	//Change this to true so that the test works
+	err := os.Setenv("ENABLE_MISSING_EXPENSE_PERIOD_QUEUE", "false")
+	c.NoError(err)
+	defer func() {
+		err = os.Setenv("ENABLE_MISSING_EXPENSE_PERIOD_QUEUE", "false")
+		c.NoError(err)
+	}()
+
 	t.Run("Set period to expenses without period", func(t *testing.T) {
 		username := "e2e_test@gmail.com"
+		periodIDToDelete := ""
 
 		apigwReq := &apigateway.Request{
 			Headers: map[string]string{
-				"Idempotency-Key": "1234",
+				//This way the period is always created and not cached
+				"Idempotency-Key": uuid.NewString(),
 			},
 			Body: fmt.Sprintf(`{"username":"%s","name":"test-period","start_date":"2023-09-01T00:00:00Z","end_date":"2023-09-30T00:00:00Z"}`, username),
 			RequestContext: events.APIGatewayProxyRequestContext{
@@ -74,17 +84,6 @@ func TestProcess(t *testing.T) {
 		err = expensesRepo.BatchCreateExpenses(ctx, expensesList)
 		c.Nil(err, "batch creating expenses failed")
 
-		t.Cleanup(func() {
-			err = expensesRepo.BatchDeleteExpenses(ctx, expensesList)
-			c.Nil(err, "batch deleting expenses failed")
-
-			p, err := req.PeriodRepo.GetLastPeriod(ctx, username)
-			c.Nil(err, "couldn't delete created period: getting last period failed")
-
-			err = req.PeriodRepo.DeletePeriod(ctx, p.ID, p.Username)
-			c.Nil(err, "deleting period failed")
-		})
-
 		res, err := req.Process(ctx, apigwReq)
 		c.Nil(err, "creating period failed")
 		c.Equal(http.StatusCreated, res.StatusCode)
@@ -93,13 +92,23 @@ func TestProcess(t *testing.T) {
 		err = json.Unmarshal([]byte(res.Body), &createdPeriod)
 		c.Nil(err, "unmarshalling created period failed")
 
+		t.Cleanup(func() {
+			err = expensesRepo.BatchDeleteExpenses(ctx, expensesList)
+			c.Nil(err, "batch deleting expenses failed")
+
+			err = req.PeriodRepo.DeletePeriod(ctx, periodIDToDelete, username)
+			c.Nil(err, "deleting period failed")
+		})
+
+		periodIDToDelete = createdPeriod.ID
+
 		var expensesInPeriod []*models.Expense
 
 		for i := 0; i < sqsRetries; i++ {
 			//Wait for SQS to process the message
 			time.Sleep(delay)
 
-			expensesInPeriod, _, err = expensesRepo.GetExpensesByPeriod(ctx, createdPeriod.Username, &models.QueryParameters{Period: createdPeriod.ID, PageSize: 20})
+			expensesInPeriod, _, err = expensesRepo.GetExpensesByPeriod(ctx, createdPeriod.Username, &models.ExpenseQueryParameters{Period: createdPeriod.ID, Categories: nil, SortBy: "", SortType: "", BaseQueryParameters: models.BaseQueryParameters{PageSize: 20}})
 			if expensesInPeriod != nil {
 				break
 			}

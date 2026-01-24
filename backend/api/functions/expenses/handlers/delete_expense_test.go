@@ -25,7 +25,7 @@ func TestDeleteHandlerSuccess(t *testing.T) {
 
 	response, err := request.process(ctx, apiRequest)
 	c.NoError(err)
-	c.Equal(http.StatusOK, response.StatusCode)
+	c.Equal(http.StatusNoContent, response.StatusCode)
 }
 
 func getDeleteExpenseRequest() *apigateway.Request {

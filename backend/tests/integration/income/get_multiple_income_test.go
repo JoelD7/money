@@ -63,6 +63,12 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 		Username:     setup.Username,
 		PageSize:     10,
 		StartKey:     "",
+		IncomeQueryParameters: &models.IncomeQueryParameters{
+			BaseQueryParameters: models.BaseQueryParameters{
+				PageSize: 10,
+				StartKey: "",
+			},
+		},
 	}
 
 	apigwRequest := &apigateway.Request{
@@ -92,7 +98,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	c.Len(response.Periods, 6)
 
 	t.Run("Sort by name  ASC", func(t *testing.T) {
-		request.QueryParameters = &models.QueryParameters{
+		request.IncomeQueryParameters = &models.IncomeQueryParameters{
 			SortBy: "name",
 			Period: "2023-7",
 		}
@@ -136,7 +142,7 @@ func TestGetMultipleIncomeHandler(t *testing.T) {
 	})
 
 	t.Run("Sort by amount  ASC", func(t *testing.T) {
-		request.QueryParameters = &models.QueryParameters{
+		request.IncomeQueryParameters = &models.IncomeQueryParameters{
 			SortBy: "amount",
 			Period: "2023-7",
 		}

@@ -13,3 +13,4 @@ export { Navbar } from "./Navbar";
 export { RecurringSaving } from "./RecurringSaving.tsx";
 export { GoalDetailCard } from "./GoalDetailCard";
 export { SavingsTable } from "./SavingsTable";
+export { NewPeriodDialog } from "./NewPeriodDialog";

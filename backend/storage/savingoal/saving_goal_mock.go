@@ -52,7 +52,7 @@ func (m *Mock) DeleteSavingGoal(ctx context.Context, username, savingGoalID stri
 	return nil
 }
 
-func (m *Mock) GetSavingGoals(ctx context.Context, username string, params *models.QueryParameters) ([]*models.SavingGoal, string, error) {
+func (m *Mock) GetSavingGoals(ctx context.Context, username string, params *models.SavingGoalQueryParameters) ([]*models.SavingGoal, string, error) {
 	if m.mockedErr != nil {
 		return nil, "", m.mockedErr
 	}
@@ -70,4 +70,8 @@ func (m *Mock) GetSavingGoals(ctx context.Context, username string, params *mode
 			Deadline:     &deadline,
 		},
 	}, "", nil
+}
+
+func (m *Mock) GetAllRecurringSavingGoals(ctx context.Context, username string) ([]*models.SavingGoal, error) {
+	return nil, nil
 }

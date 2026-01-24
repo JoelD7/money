@@ -1,7 +1,7 @@
 import { login, logout, signUp } from "./auth.ts";
 import { getUser } from "./money-api.ts";
 import { createExpense, getExpenses, getPeriodStats } from "./expenses.ts";
-import { getPeriod, getPeriods } from "./period.ts";
+import { createPeriod, getPeriod, getPeriods } from "./period.ts";
 import { createIncome, getIncomeList } from "./income.ts";
 import {
   createSavingGoal,
@@ -11,10 +11,12 @@ import {
   updateSavingGoal,
 } from "./saving_goals.ts";
 import { createSaving, getSavings, savingsKeys } from "./savings.ts";
+import { patchUser } from "./user.ts"
 
 const api = {
   signUp,
   getUser,
+  patchUser,
   login,
   logout,
   getExpenses,
@@ -31,6 +33,7 @@ const api = {
   createSaving,
   getSavingGoal,
   updateSavingGoal,
+  createPeriod,
   deleteSavingGoal,
 };
 

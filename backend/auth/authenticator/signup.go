@@ -42,7 +42,7 @@ func signUpHandler(ctx context.Context, envConfig *models.EnvironmentConfigurati
 	}
 	defer signUpRequest.finish()
 
-	return signUpRequest.processSignUp(ctx, request, envConfig)
+	return signUpRequest.processSignUp(ctx, request)
 }
 
 func (req *requestSignUpHandler) initSignUpHandler(ctx context.Context, envConfig *models.EnvironmentConfiguration) error {
@@ -70,7 +70,7 @@ func (req *requestSignUpHandler) finish() {
 	logger.LogLambdaTime(req.startingTime, req.err, recover())
 }
 
-func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request, envConfig *models.EnvironmentConfiguration) (*apigateway.Response, error) {
+func (req *requestSignUpHandler) processSignUp(ctx context.Context, request *apigateway.Request) (*apigateway.Response, error) {
 	idempotencyKey, err := request.GetIdempotenceyKeyFromHeader()
 	if err != nil {
 		req.err = err

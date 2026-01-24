@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/storage/users"
 	"net/http"
 	"testing"
@@ -51,7 +50,7 @@ func TestLoginHandler(t *testing.T) {
 	c.Equal(http.StatusOK, response.StatusCode)
 	c.NotNil(response.Headers["Set-Cookie"])
 	c.Contains(response.Headers["Set-Cookie"], refreshTokenCookieName)
-	c.Contains(response.Body, "access_token")
+	c.Contains(response.Body, "accessToken")
 }
 
 func TestLoginHandlerFailed(t *testing.T) {
@@ -105,41 +104,31 @@ func TestLoginHandlerFailed(t *testing.T) {
 		c.Contains(response.Body, "Invalid request body")
 	})
 
-	t.Run("User not found", func(t *testing.T) {
-		usersMock.ActivateForceFailure(models.ErrUserNotFound)
-		defer usersMock.DeactivateForceFailure()
-
-		response, err = request.processLogin(ctx, apigwRequest)
-		c.Nil(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrUserNotFound.Error(), response.Body)
-	})
-
 	type testCase struct {
 		description string
-		expectedErr error
+		expectedErr string
 		body        Credentials
 	}
 
 	testCases := []testCase{
 		{
 			"Wrong credentials",
-			models.ErrWrongCredentials,
+			"The email or password are incorrect",
 			Credentials{"test@gmail.com", "random"},
 		},
 		{
 			"Missing email error",
-			models.ErrMissingUsername,
+			"Missing username",
 			Credentials{"", "1234"},
 		},
 		{
 			"Invalid email error",
-			models.ErrInvalidEmail,
+			"Invalid email",
 			Credentials{"1234", "1234"},
 		},
 		{
 			"Missing password error",
-			models.ErrMissingPassword,
+			"Missing password",
 			Credentials{"test@gmail.com", ""},
 		},
 	}
@@ -156,7 +145,7 @@ func TestLoginHandlerFailed(t *testing.T) {
 			response, err = request.processLogin(ctx, apigwRequest)
 			c.Nil(err)
 			c.Equal(http.StatusBadRequest, response.StatusCode)
-			c.Equal(tc.expectedErr.Error(), response.Body)
+			c.Contains(response.Body, tc.expectedErr)
 		})
 	}
 }

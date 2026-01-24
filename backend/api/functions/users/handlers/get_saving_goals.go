@@ -25,7 +25,7 @@ type getSavingGoalsRequest struct {
 	err            error
 	savingGoalRepo savingoal.Repository
 	savingsRepo    savings.Repository
-	queryParams    *models.QueryParameters
+	queryParams    *models.SavingGoalQueryParameters
 }
 
 type SavingGoalsResponse struct {
@@ -69,7 +69,7 @@ func GetSavingGoalsHandler(ctx context.Context, envConfig *models.EnvironmentCon
 	}
 	defer getSavingGoalsReq.finish()
 
-	getSavingGoalsReq.queryParams, err = request.GetQueryParameters()
+	getSavingGoalsReq.queryParams, err = request.GetSavingGoalQueryParameters()
 	if err != nil {
 		logger.Error("get_query_parameters_failed", err, request)
 

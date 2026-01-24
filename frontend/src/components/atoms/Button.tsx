@@ -9,7 +9,7 @@ type CustomButtonProps = {
 } & ButtonProps;
 
 export const Button = forwardRef<HTMLButtonElement, CustomButtonProps>((props, ref) => {
-  const { sx, loading, variant, children, ...other } = props;
+  const { sx, loading, variant, size, children, ...other } = props;
   let styles: SxProps<Theme> | undefined = {
     textTransform: "capitalize",
     borderRadius: "10px",
@@ -22,6 +22,13 @@ export const Button = forwardRef<HTMLButtonElement, CustomButtonProps>((props, r
       "&.MuiButton-root": {
         backgroundColor: "#ffffff",
       },
+    };
+  }
+
+  if (size === "large") {
+    styles = {
+      ...styles,
+      fontSize: "18px",
     };
   }
 

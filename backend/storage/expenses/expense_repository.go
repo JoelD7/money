@@ -16,13 +16,13 @@ type Repository interface {
 	CreateExpense(ctx context.Context, expense *models.Expense) (*models.Expense, error)
 	BatchCreateExpenses(ctx context.Context, expenses []*models.Expense) error
 
-	GetExpenses(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
-	GetExpensesByCategory(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, string, error)
+	GetExpenses(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByPeriod(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByPeriodAndCategories(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
+	GetExpensesByCategory(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, string, error)
 	GetExpense(ctx context.Context, username, expenseID string) (*models.Expense, error)
 	GetAllExpensesBetweenDates(ctx context.Context, username, startDate, endDate string) ([]*models.Expense, error)
-	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Expense, error)
+	GetAllExpensesByPeriod(ctx context.Context, username string, params *models.ExpenseQueryParameters) ([]*models.Expense, error)
 
 	UpdateExpense(ctx context.Context, expense *models.Expense) error
 	BatchUpdateExpenses(ctx context.Context, expenses []*models.Expense) error

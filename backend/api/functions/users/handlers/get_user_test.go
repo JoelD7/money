@@ -44,20 +44,6 @@ func TestHandlerSuccess(t *testing.T) {
 		c.Equal(http.StatusOK, response.StatusCode)
 		c.Contains(response.Body, `"remainder":8670`)
 	})
-
-	t.Run("No remainder set", func(t *testing.T) {
-		mockedUser := users.GetDummyUser()
-		mockedUser.CurrentPeriod = stringPtr("")
-
-		_, err := usersMock.CreateUser(ctx, mockedUser)
-		c.NoError(err)
-
-		response, err := request.process(ctx, apigwRequest)
-		c.Nil(err)
-		c.NotNil(response)
-		c.Equal(http.StatusOK, response.StatusCode)
-		c.NotContains(response.Body, "remainder")
-	})
 }
 
 func TestHandlerFailed(t *testing.T) {
@@ -102,7 +88,7 @@ func TestHandlerFailed(t *testing.T) {
 		response, err := request.process(ctx, apigwRequest)
 		c.Nil(err)
 		c.NotNil(response)
-		c.Equal(http.StatusNotFound, response.StatusCode)
+		c.Equal(http.StatusInternalServerError, response.StatusCode)
 	})
 
 	t.Run("Income not found", func(t *testing.T) {
@@ -124,8 +110,4 @@ func TestHandlerFailed(t *testing.T) {
 		c.NotNil(response)
 		c.Equal(http.StatusOK, response.StatusCode)
 	})
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

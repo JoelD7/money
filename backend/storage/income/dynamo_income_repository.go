@@ -175,7 +175,7 @@ func (d *DynamoRepository) GetIncome(ctx context.Context, username, incomeID str
 	return toIncomeModel(incomeEnt), nil
 }
 
-func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
+func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, string, error) {
 	input, err := d.buildQueryInput(username, params, nil)
 	if err != nil {
 		return nil, "", err
@@ -209,7 +209,7 @@ func (d *DynamoRepository) GetIncomeByPeriod(ctx context.Context, username strin
 	return toIncomeModels(incomeEntities), nextKey, nil
 }
 
-func (d *DynamoRepository) GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
+func (d *DynamoRepository) GetAllIncome(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, string, error) {
 	input, err := d.buildQueryInput(username, params, nil)
 	if err != nil {
 		return nil, "", err
@@ -243,7 +243,7 @@ func (d *DynamoRepository) GetAllIncome(ctx context.Context, username string, pa
 	return toIncomeModels(incomeEntities), nextKey, nil
 }
 
-func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error) {
+func (d *DynamoRepository) GetAllIncomeByPeriod(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, error) {
 	input, err := d.buildQueryInput(username, params, nil)
 	if err != nil {
 		return nil, err
@@ -341,9 +341,9 @@ func (d *DynamoRepository) GetAllIncomePeriods(ctx context.Context, username str
 	return periods, nil
 }
 
-func (d *DynamoRepository) buildQueryInput(username string, params *models.QueryParameters, projection *expression.ProjectionBuilder) (*dynamodb.QueryInput, error) {
+func (d *DynamoRepository) buildQueryInput(username string, params *models.IncomeQueryParameters, projection *expression.ProjectionBuilder) (*dynamodb.QueryInput, error) {
 	if params == nil {
-		params = &models.QueryParameters{}
+		params = &models.IncomeQueryParameters{}
 	}
 
 	input := &dynamodb.QueryInput{
@@ -382,7 +382,7 @@ func (d *DynamoRepository) buildQueryInput(username string, params *models.Query
 
 // setQueryIndex sets the index to be used in the query based on the sorting and filter parameters. Returns a key
 // condition expression formed with the index's primary key.
-func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.QueryParameters) expression.KeyConditionBuilder {
+func (d *DynamoRepository) setQueryIndex(input *dynamodb.QueryInput, username string, params *models.IncomeQueryParameters) expression.KeyConditionBuilder {
 	keyConditionEx := expression.Key("username").Equal(expression.Value(username))
 
 	if params.Period != "" {

@@ -16,7 +16,7 @@ func (d *DynamoMock) BatchCreateIncome(ctx context.Context, incomes []*models.In
 	panic("implement me")
 }
 
-func (d *DynamoMock) GetAllIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, error) {
+func (d *DynamoMock) GetAllIncomeByPeriod(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -54,7 +54,7 @@ func (d *DynamoMock) GetIncome(ctx context.Context, username, incomeID string) (
 	return d.mockedIncome[0], nil
 }
 
-func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
+func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, string, error) {
 	if d.mockedErr != nil {
 		return nil, "", d.mockedErr
 	}
@@ -66,7 +66,7 @@ func (d *DynamoMock) GetIncomeByPeriod(ctx context.Context, username string, par
 	return d.mockedIncome, "", nil
 }
 
-func (d *DynamoMock) GetAllIncome(ctx context.Context, username string, params *models.QueryParameters) ([]*models.Income, string, error) {
+func (d *DynamoMock) GetAllIncome(ctx context.Context, username string, params *models.IncomeQueryParameters) ([]*models.Income, string, error) {
 	if d.mockedErr != nil {
 		return nil, "", d.mockedErr
 	}

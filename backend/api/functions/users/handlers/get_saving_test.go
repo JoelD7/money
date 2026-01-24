@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
+	periodRepo "github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savingoal"
 	"github.com/JoelD7/money/backend/storage/savings"
 	"github.com/aws/aws-lambda-go/events"
@@ -20,7 +21,7 @@ func TestGetSavingHandler(t *testing.T) {
 	ctx := context.Background()
 
 	req := &getSavingRequest{
-
+		periodRepo:     periodRepo.NewDynamoMock(),
 		savingsRepo:    savingsMock,
 		savingGoalRepo: savingoalMock,
 	}

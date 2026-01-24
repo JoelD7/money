@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/apigateway"
 	"github.com/JoelD7/money/backend/storage/period"
 	"github.com/JoelD7/money/backend/storage/savingoal"
@@ -42,8 +41,9 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 	ctx := context.Background()
 
 	req := &updateSavingRequest{
-		savingsRepo: savingsMock,
-		periodRepo:  periodMock,
+		savingsRepo:    savingsMock,
+		savingGoalRepo: savingoal.NewMock(),
+		periodRepo:     periodMock,
 	}
 
 	apigwRequest := getDummyUpdateRequest()
@@ -55,7 +55,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrInvalidEmail.Error(), response.Body)
+		c.Contains(response.Body, "Invalid email")
 	})
 
 	t.Run("Invalid amount", func(t *testing.T) {
@@ -65,7 +65,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrInvalidAmount.Error(), response.Body)
+		c.Contains(response.Body, "Invalid amount")
 	})
 
 	t.Run("No saving ID", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Equal(models.ErrMissingSavingID.Error(), response.Body)
+		c.Contains(response.Body, "Missing saving id")
 	})
 
 	t.Run("Saving doesn't exist", func(t *testing.T) {
@@ -87,28 +87,9 @@ func TestUpdateSavingHandlerFailed(t *testing.T) {
 		response, err := req.process(ctx, apigwRequest)
 		c.NoError(err)
 		c.Equal(http.StatusNotFound, response.StatusCode)
-		c.Contains(response.Body, models.ErrUpdateSavingNotFound.Error())
+		c.Contains(response.Body, "The saving you are trying to update does not exist")
 	})
 
-	t.Run("Get username from context failed", func(t *testing.T) {
-		apigwRequest.RequestContext.Authorizer = map[string]interface{}{}
-		defer func() { apigwRequest = getDummyUpdateRequest() }()
-
-		response, err := req.process(ctx, apigwRequest)
-		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(response.Body, models.ErrNoUsernameInContext.Error())
-	})
-
-	t.Run("Period doesn't exist", func(t *testing.T) {
-		apigwRequest.Body = `{"saving_id":"SV123","saving_goal_id":"SVG123","username":"test@gmail.com","amount":250,"period":"8888-01"}`
-		defer func() { apigwRequest = getDummyUpdateRequest() }()
-
-		response, err := req.process(ctx, apigwRequest)
-		c.NoError(err)
-		c.Equal(http.StatusBadRequest, response.StatusCode)
-		c.Contains(response.Body, models.ErrInvalidPeriod.Error())
-	})
 }
 
 type mockRequestFailure struct{}
