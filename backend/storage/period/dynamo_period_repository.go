@@ -3,6 +3,11 @@ package period
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/storage/dynamo"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,10 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"regexp"
-	"strings"
-	"time"
-	"unicode"
 )
 
 const (
@@ -262,6 +263,11 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username string, para
 		return nil, "", err
 	}
 
+	filterExpression, err := buildFilterExpression(params)
+	if err != nil {
+		return nil, "", err
+	}
+
 	var index *string
 	if params.Active {
 		index = aws.String(d.usernameEndDatePeriodIndex)
@@ -280,6 +286,7 @@ func (d *DynamoRepository) GetPeriods(ctx context.Context, username string, para
 		KeyConditionExpression:    expr.KeyCondition(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
+		FilterExpression:          filterExpression,
 		ExclusiveStartKey:         decodedStartKey,
 		Limit:                     getPageSize(params.PageSize),
 		IndexName:                 index,
@@ -325,6 +332,20 @@ func buildGetPeriodsKeyConditionExpr(username string, active bool) (expression.E
 	}
 
 	return expr, nil
+}
+
+func buildFilterExpression(params *models.PeriodQueryParameters) (*string, error) {
+	if params.Name != "" {
+		filter := expression.Name("name").BeginsWith(params.Name)
+		expr, err := expression.NewBuilder().WithFilter(filter).Build()
+		if err != nil {
+			return nil, fmt.Errorf("building get periods filter expression: %w", err)
+		}
+
+		return expr.Filter(), nil
+	}
+
+	return nil, nil
 }
 
 func (d *DynamoRepository) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {

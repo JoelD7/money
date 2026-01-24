@@ -133,4 +133,5 @@ type SavingGoalQueryParameters struct {
 type PeriodQueryParameters struct {
 	BaseQueryParameters
 	Active bool
+	Name   string
 }
