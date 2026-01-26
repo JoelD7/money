@@ -319,8 +319,11 @@ func buildQueryExpression(username string, params *models.PeriodQueryParameters)
 	}
 
 	conditionBuilder := expression.NewBuilder().
-		WithKeyCondition(keyConditionExpression).
-		WithFilter(filterExpression)
+		WithKeyCondition(keyConditionExpression)
+
+	if filterExpression != nil {
+		conditionBuilder = conditionBuilder.WithFilter(*filterExpression)
+	}
 
 	expr, err := conditionBuilder.Build()
 	if err != nil {
@@ -341,12 +344,13 @@ func buildKeyConditionExpression(username string, active bool) expression.KeyCon
 	return keyConditionExpression
 }
 
-func buildFilterExpression(params *models.PeriodQueryParameters) (expression.ConditionBuilder, error) {
+func buildFilterExpression(params *models.PeriodQueryParameters) (*expression.ConditionBuilder, error) {
 	if params.Name != "" {
-		return expression.Name("name").BeginsWith(params.Name), nil
+		filter := expression.Name("name").BeginsWith(params.Name)
+		return &filter, nil
 	}
 
-	return expression.ConditionBuilder{}, nil
+	return nil, nil
 }
 
 func (d *DynamoRepository) BatchGetPeriods(ctx context.Context, username string, periods []string) ([]*models.Period, error) {
