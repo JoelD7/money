@@ -350,12 +350,15 @@ func (req *Request) GetPeriodQueryParameters() (*models.PeriodQueryParameters, e
 		active = true
 	}
 
+	periodName, _ := req.QueryStringParameters["period_name"]
+
 	return &models.PeriodQueryParameters{
 		BaseQueryParameters: models.BaseQueryParameters{
 			StartKey: req.QueryStringParameters["start_key"],
 			PageSize: pageSizeParam,
 		},
 		Active: active,
+		Name:   periodName,
 	}, nil
 }
 
