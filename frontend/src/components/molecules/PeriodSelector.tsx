@@ -1,4 +1,4 @@
-import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
+import { Autocomplete, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
 import React from "react";
 import { useGetPeriodsInfinite } from "../../queries";
 import { v4 as uuidv4 } from "uuid";
@@ -23,7 +23,7 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
     return [];
   })();
 
-  function handlePeriodsMenuScroll(e: React.UIEvent<HTMLDivElement, UIEvent>) {
+  function handlePeriodsMenuScroll(e: React.UIEvent<HTMLUListElement, UIEvent>) {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
     if (
       scrollTop + clientHeight >= scrollHeight - 5 &&
@@ -56,36 +56,41 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
         />
       )}
 
-      <FormControl sx={{ width: "100%" }}>
-        <InputLabel id={labelId}>Period</InputLabel>
+      <Autocomplete
+        sx={{ width: "100%" }}
+        isOptionEqualToValue={(option, value) => option.name === value.name}
+        getOptionLabel={(option) => option.name}
+        onChange={(_, newValue) => {
+          if (newValue) {
+            console.log("newValue", newValue);
+          }
+        }}
+        options={periods}
+        loading={getPeriodsQuery.isFetching}
+        ListboxProps={{
+          sx: {
+            maxHeight: 150,
+          },
+          onScroll: handlePeriodsMenuScroll,
+        }}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Period"
 
-        <Select
-          labelId={labelId}
-          id={"Period"}
-          MenuProps={{
-            slotProps: {
-              paper: {
-                onScroll: handlePeriodsMenuScroll,
-              },
-            },
-            PaperProps: {
-              sx: {
-                maxHeight: 150,
-              },
-            },
-          }}
-          label={"Period"}
-          value={periods.length > 0 ? period : ""}
-          onChange={(e) => onPeriodChange(e.target.value)}
-        >
-          {Array.isArray(periods) &&
-            periods.map((p) => (
-              <MenuItem key={p.period_id} id={p.period_id} value={p.period_id}>
-                {p.name}
-              </MenuItem>
-            ))}
-        </Select>
-      </FormControl>
+            InputProps={{
+              ...params.InputProps,
+              endAdornment: (
+                <>
+                  {getPeriodsQuery.isFetching ? <CircularProgress color="inherit" size={20} /> : null}
+                  {params.InputProps.endAdornment}
+                </>
+              ),
+            }}
+          />
+        )}
+      />
+
     </>
   );
 }
