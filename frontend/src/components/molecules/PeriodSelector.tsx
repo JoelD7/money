@@ -31,7 +31,7 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
     ) {
       getPeriodsQuery
         .fetchNextPage()
-        .then(() => {})
+        .then(() => { })
         .catch((e) => {
           console.error("Error fetching more periods", e);
         });

@@ -1,8 +1,12 @@
 import {
+  Alert,
+  AlertTitle,
   Button,
+  capitalize,
   Divider,
   Drawer,
   IconButton,
+  Snackbar,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -21,9 +25,13 @@ import { setIsAuthenticated } from "../../store";
 import { useNavigate } from "@tanstack/react-router";
 import { useDispatch } from "react-redux";
 import api from "../../api";
-import { useMutation } from "@tanstack/react-query";
-import { Credentials, User } from "../../types";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { APIError, Credentials, SnackAlert, User } from "../../types";
 import { useGetUser } from "../../queries";
+import { PeriodSelector } from "../molecules";
+import { USER } from "../../queries/keys";
+import { AxiosError } from "axios";
+import { ValidationError } from "yup";
 
 type NavbarProps = {
   children?: ReactNode;
@@ -49,6 +57,13 @@ export function Navbar({ children }: NavbarProps) {
   };
 
   const [open, setOpen] = useState<boolean>(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [alert, setAlert] = useState<SnackAlert>({
+    open: false,
+    type: "success",
+    title: "",
+  });
+
   const theme = useTheme();
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
@@ -56,6 +71,7 @@ export function Navbar({ children }: NavbarProps) {
 
   const user: User | undefined = getUser.data;
 
+  const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -64,10 +80,39 @@ export function Navbar({ children }: NavbarProps) {
     onSuccess: () => {
       dispatch(setIsAuthenticated(false));
       navigate({ to: "/login" })
-        .then(() => {})
+        .then(() => { })
         .catch((err) => {
           console.error("Error navigating to /login", err);
         });
+    },
+  });
+
+  const patchUserMu = useMutation({
+    mutationFn: api.patchUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [USER] }).then(null, (error) => {
+        console.error("Error invalidating users query", error);
+      });
+    },
+    onError: (error) => {
+      if (!error) {
+        return
+      }
+
+      const err = error as AxiosError;
+      let title = "Error updating user's current period"
+      try {
+        const responseError = err.response?.data as APIError;
+        title = responseError.message as string
+      } catch (e) {
+        console.warn("Unexpected error type:", e)
+      }
+
+      setAlert({
+        open: true,
+        type: "error",
+        title: title,
+      });
     },
   });
 
@@ -102,7 +147,7 @@ export function Navbar({ children }: NavbarProps) {
     }
 
     navigate({ to: route })
-      .then(() => {})
+      .then(() => { })
       .catch((err) => {
         console.error("Error navigating to /income", err);
       });
@@ -111,14 +156,43 @@ export function Navbar({ children }: NavbarProps) {
   function goToSavings() {
     console.error("Navigating to /savings");
     navigate({ to: "/savings" })
-      .then(() => {})
+      .then(() => { })
       .catch((err) => {
         console.error("Error navigating to /savings", err);
       });
   }
 
+  function onSelectedPeriodChange(newPeriodID: string) {
+    setSelectedPeriod(newPeriodID);
+
+    const userToUpdate: User = {
+      username: user ? user.username : "",
+      remainder: 0,
+      current_period: newPeriodID,
+    };
+
+    try {
+      patchUserMu.mutate(userToUpdate);
+    } catch (e) {
+      const err = e as ValidationError;
+      setAlert({ open: true, type: "error", title: err.errors[0] });
+    }
+  }
+
   return (
     <>
+      <Snackbar
+        open={alert.open}
+        onClose={() => setAlert({ ...alert, open: false })}
+        autoHideDuration={6000}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert variant={"filled"} severity={alert.type}>
+          <AlertTitle>{capitalize(alert.type)}</AlertTitle>
+          {alert.title}
+        </Alert>
+      </Snackbar>
+
       {/* Mobile menubar */}
       <div
         className={
@@ -158,6 +232,17 @@ export function Navbar({ children }: NavbarProps) {
         >
           <div className="flex items-center p-4 justify-center w-full">
             <Logo variant="h5" />
+          </div>
+
+          <div className={"p-2 w-full"}>
+            <PeriodSelector
+              period={selectedPeriod}
+              onPeriodChange={onSelectedPeriodChange}
+            />
+          </div>
+
+          <div className="p-3">
+            <Divider />
           </div>
 
           <div className="pl-3">
@@ -235,6 +320,18 @@ export function Navbar({ children }: NavbarProps) {
         >
           <div className="flex items-center p-4 justify-center w-full">
             <Logo variant="h5" />
+          </div>
+
+          {/*Period selector*/}
+          <div className={"p-2 w-full"}>
+            <PeriodSelector
+              period={selectedPeriod}
+              onPeriodChange={onSelectedPeriodChange}
+            />
+          </div>
+
+          <div className="p-3">
+            <Divider />
           </div>
 
           <div className="pl-3">
