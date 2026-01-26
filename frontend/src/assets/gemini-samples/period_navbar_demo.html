@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navbar Period Selector Demo</title>
+    <style>
+        :root {
+            --green: #009821;
+            --green-dark: #024511;
+            --gray: #F4F4F5;
+            --gray-dark: #6F6F6F;
+            --white: #ffffff;
+            --white-dark: #e6e6e6;
+            --font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--gray);
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            width: 240px;
+            background-color: var(--white);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--green-dark);
+            margin-bottom: 30px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .logo svg {
+            width: 30px;
+            height: 30px;
+            fill: var(--green);
+        }
+
+        .nav-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+        }
+
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            color: var(--gray-dark);
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-align: left;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--gray);
+            color: var(--green-dark);
+        }
+
+        .nav-btn svg {
+            margin-right: 15px;
+            width: 24px;
+            height: 24px;
+            fill: currentColor;
+        }
+
+        .nav-btn.active {
+            color: var(--green-dark);
+            background-color: #e8f5e9;
+            font-weight: 500;
+        }
+
+        /* Period Selector Styles */
+        .period-selector-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .period-label {
+            font-size: 12px;
+            color: var(--gray-dark);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .combobox {
+            position: relative;
+            width: 100%;
+        }
+
+        .combobox-input {
+            width: 100%;
+            padding: 10px 35px 10px 10px; /* Right padding for icon */
+            box-sizing: border-box;
+            border: 1px solid var(--white-dark);
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--gray-dark);
+            outline: none;
+            cursor: text;
+        }
+
+        .combobox-input:focus {
+            border-color: var(--green);
+            border-width: 2px;
+            padding: 9px 34px 9px 9px; /* Adjust for border width */
+        }
+
+        .combobox-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            fill: var(--gray-dark);
+            width: 20px;
+            height: 20px;
+        }
+
+        .combobox-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border: 1px solid var(--white-dark);
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 4px;
+        }
+
+        .combobox-list.open {
+            display: block;
+        }
+
+        .combobox-option {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .combobox-option:hover {
+            background-color: var(--gray);
+        }
+
+        .combobox-option.selected {
+            background-color: #e8f5e9;
+            color: var(--green-dark);
+            font-weight: 500;
+        }
+
+        .divider {
+            height: 1px;
+            background-color: var(--white-dark);
+            margin: 10px 0;
+        }
+
+        /* Main Content Simulation */
+        .main-content {
+            flex-grow: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        h1 { margin: 0 0 10px 0; color: var(--green-dark); }
+        h2 { margin: 0 0 20px 0; font-weight: normal; color: var(--gray-dark); font-size: 18px; }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .period-badge {
+            display: inline-block;
+            background-color: var(--green);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <nav class="navbar">
+        <div class="logo">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.31-8.86c-1.77-.45-2.34-.94-2.34-1.67 0-.84.79-1.43 2.1-1.43 1.38 0 1.9.66 1.94 1.64h1.71c-.05-1.34-.87-2.57-2.49-2.97V5H10.9v1.69c-1.51.32-2.72 1.3-2.72 2.81 0 1.79 1.49 2.69 3.66 3.21 1.95.46 2.34 1.15 2.34 1.87 0 .53-.39 1.39-2.1 1.39-1.6 0-2.23-.72-2.32-1.64H8.04c.1 1.7 1.36 2.66 2.86 2.97V19h2.34v-1.67c1.52-.29 2.72-1.16 2.73-2.77-.01-2.2-1.9-2.96-3.66-3.42z"/></svg>
+            Money
+        </div>
+
+        <!-- Period Selector Component -->
+        <div class="period-selector-container">
+            <label class="period-label">Current Period</label>
+            <div class="combobox">
+                <input type="text" class="combobox-input" id="periodInput" placeholder="Select period..." autocomplete="off">
+                <svg class="combobox-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                <div class="combobox-list" id="periodList">
+                    <!-- Options injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="nav-items">
+            <button class="nav-btn active">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                Home
+            </button>
+            <button class="nav-btn">
+                <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                History
+            </button>
+            <button class="nav-btn">
+                <svg viewBox="0 0 24 24"><path d="M18 17H6v-2l1-1V9.5C7 6.36 9.24 3.9 12 3.24V2h2v1.24c2.76.66 5 3.12 5 6.26V14l1 1v2zM12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2z"/></svg>
+                Notifications
+            </button>
+            <button class="nav-btn">
+                <svg viewBox="0 0 24 24"><path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16z"/></svg>
+                Categories
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="card">
+            <h1>Financial Overview</h1>
+            <h2>
+                Viewing Data for: <span id="displayPeriodName" class="period-badge">January 2026</span>
+            </h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    <div style="color: var(--gray-dark); font-size: 14px;">Total Income</div>
+                    <div class="stat-value" style="color: var(--green);">$4,250.00</div>
+                </div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                    <div style="color: var(--gray-dark); font-size: 14px;">Total Expenses</div>
+                    <div class="stat-value" style="color: var(--gray-darker);">$1,205.50</div>
+                </div>
+            </div>
+            
+            <p style="margin-top: 20px; color: #666; line-height: 1.5;">
+                This dashboard automatically updates when you select a different period from the navbar on the left.
+                Try searching for "December" or "2025".
+            </p>
+        </div>
+    </main>
+
+    <script>
+        // Mock Data: 12 months of periods
+        const periods = [
+            { id: '2026-01', name: 'January 2026' },
+            { id: '2025-12', name: 'December 2025' },
+            { id: '2025-11', name: 'November 2025' },
+            { id: '2025-10', name: 'October 2025' },
+            { id: '2025-09', name: 'September 2025' },
+            { id: '2025-08', name: 'August 2025' },
+            { id: '2025-07', name: 'July 2025' },
+            { id: '2025-06', name: 'June 2025' },
+            { id: '2025-05', name: 'May 2025' },
+            { id: '2025-04', name: 'April 2025' },
+            { id: '2025-03', name: 'March 2025' },
+            { id: '2025-02', name: 'February 2025' }
+        ];
+
+        let selectedPeriod = periods[0];
+
+        // Elements
+        const input = document.getElementById('periodInput');
+        const list = document.getElementById('periodList');
+        const displayBadge = document.getElementById('displayPeriodName');
+
+        // Init
+        input.value = selectedPeriod.name;
+
+        function renderOptions(filterText = '') {
+            list.innerHTML = '';
+            const lowerFilter = filterText.toLowerCase();
+            
+            const filtered = periods.filter(p => 
+                p.name.toLowerCase().includes(lowerFilter)
+            );
+
+            if (filtered.length === 0) {
+                const noResult = document.createElement('div');
+                noResult.className = 'combobox-option';
+                noResult.textContent = 'No periods found';
+                noResult.style.color = '#999';
+                noResult.style.cursor = 'default';
+                list.appendChild(noResult);
+                return;
+            }
+
+            filtered.forEach(p => {
+                const div = document.createElement('div');
+                div.className = `combobox-option ${p.id === selectedPeriod.id ? 'selected' : ''}`;
+                div.textContent = p.name;
+                div.onclick = () => selectPeriod(p);
+                list.appendChild(div);
+            });
+        }
+
+        function selectPeriod(period) {
+            selectedPeriod = period;
+            input.value = period.name;
+            displayBadge.textContent = period.name;
+            list.classList.remove('open');
+            
+            // Simulation of Global State Update
+            console.log(`Global State Updated: Current Period is now ${period.id}`);
+            
+            // Visual feedback animation
+            displayBadge.style.transform = 'scale(1.1)';
+            setTimeout(() => displayBadge.style.transform = 'scale(1)', 200);
+        }
+
+        // Event Listeners
+        input.addEventListener('focus', () => {
+            renderOptions();
+            list.classList.add('open');
+            input.select(); // Auto-select text for easy replacement
+        });
+
+        input.addEventListener('input', (e) => {
+            renderOptions(e.target.value);
+            list.classList.add('open');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.combobox')) {
+                list.classList.remove('open');
+                // Reset input to selected value if user didn't make a choice
+                if (input.value !== selectedPeriod.name) {
+                    input.value = selectedPeriod.name;
+                }
+            }
+        });
+
+        // Initial render
+        renderOptions();
+
+    </script>
+</body>
+</html>

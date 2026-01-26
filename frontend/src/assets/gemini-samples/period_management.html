@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Period Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .card-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+
+<body class="h-full antialiased text-slate-900">
+
+    <div class="min-h-screen p-6 md:p-12">
+        <div class="max-w-7xl mx-auto space-y-10">
+
+            <!-- Header Section -->
+            <header class="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-8">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                            <i data-lucide="clock" class="w-6 h-6 text-white"></i>
+                        </div>
+                        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Financial Periods</h1>
+                    </div>
+                    <p class="text-slate-500 text-lg max-w-2xl leading-relaxed">
+                        Manage your budget timelines. Each period acts as a container for your income, expenses, and
+                        savings goals.
+                    </p>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="relative group">
+                        <i data-lucide="search"
+                            class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"></i>
+                        <input type="text" id="periodSearch" placeholder="Filter periods..."
+                            class="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all w-full md:w-64 shadow-sm">
+                    </div>
+                    <button
+                        class="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 shadow-sm transition-colors">
+                        <i data-lucide="filter" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="toggleModal('createModal')"
+                        class="hidden md:flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-md shadow-blue-200 active:scale-95">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Create
+                    </button>
+                </div>
+            </header>
+
+            <!-- Grid Layout -->
+            <main id="periodGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+                <!-- Primary Action Card (Fitts's Law) -->
+                <button onclick="toggleModal('createModal')"
+                    class="card-transition group relative flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-slate-300 bg-white/50 hover:border-blue-500 hover:bg-blue-50/50 hover:shadow-xl hover:-translate-y-1 min-h-[280px]">
+                    <div
+                        class="w-14 h-14 rounded-full bg-white shadow-md border border-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:text-blue-600 transition-all">
+                        <i data-lucide="plus" class="w-8 h-8 text-slate-400 group-hover:text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-700 group-hover:text-blue-700">Create New Period</h3>
+                    <p class="text-sm text-slate-400 mt-2 text-center max-w-[180px]">Set up a new budget cycle for the
+                        upcoming month</p>
+                </button>
+
+                <!-- Active Period Card -->
+                <div class="period-card card-transition group relative flex flex-col p-6 rounded-2xl border bg-white border-emerald-500 shadow-xl shadow-emerald-500/10 ring-1 ring-emerald-500 hover:-translate-y-1"
+                    data-name="October 2025">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-emerald-950">October 2025</h3>
+                            <p class="text-xs font-mono text-slate-400 mt-1 uppercase tracking-wider">ID: PER-2025-10
+                            </p>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase tracking-widest rounded-full ring-4 ring-emerald-50">Active</span>
+                    </div>
+
+                    <div class="flex-grow space-y-4">
+                        <div
+                            class="flex items-center gap-3 p-4 rounded-xl bg-emerald-50/50 border border-emerald-100/50 text-sm">
+                            <i data-lucide="calendar" class="w-5 h-5 text-emerald-600"></i>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-emerald-900 text-base">Oct 1 — Oct 31</span>
+                                <span class="text-xs text-emerald-600/70 font-medium">Fiscal Year 2025</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs px-1">
+                            <span class="text-slate-500 flex items-center gap-1.5 font-medium">
+                                <i data-lucide="receipt" class="w-3.5 h-3.5 text-slate-400"></i>
+                                14 Transactions
+                            </span>
+                            <span class="text-emerald-600 font-bold">Open for entry</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+                        <button
+                            class="text-slate-400 hover:text-slate-600 transition-colors p-2 hover:bg-slate-50 rounded-lg">
+                            <i data-lucide="more-horizontal" class="w-5 h-5"></i>
+                        </button>
+                        <button
+                            class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition-all active:scale-95 shadow-lg shadow-emerald-200">
+                            Manage
+                            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Past Period Card -->
+                <div class="period-card card-transition group relative flex flex-col p-6 rounded-2xl border bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl hover:-translate-y-1"
+                    data-name="September 2025">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+                                September 2025</h3>
+                            <p class="text-xs font-mono text-slate-400 mt-1 uppercase tracking-wider">ID: PER-2025-09
+                            </p>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-slate-100 text-slate-500 border border-slate-200 text-[10px] font-bold uppercase tracking-widest rounded-full">Closed</span>
+                    </div>
+
+                    <div class="flex-grow space-y-4">
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm">
+                            <i data-lucide="calendar" class="w-5 h-5 text-slate-400"></i>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-slate-700 text-base">Sep 1 — Sep 30</span>
+                                <span class="text-xs text-slate-400 font-medium">Fiscal Year 2025</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs px-1">
+                            <span class="text-slate-500 flex items-center gap-1.5 font-medium">
+                                <i data-lucide="receipt" class="w-3.5 h-3.5 text-slate-300"></i>
+                                42 Transactions
+                            </span>
+                            <span class="text-slate-400 font-medium italic">Read-only</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+                        <button
+                            class="text-slate-300 hover:text-slate-500 transition-colors p-2 hover:bg-slate-50 rounded-lg">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button
+                            class="flex items-center gap-2 px-4 py-2 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-100 transition-all active:scale-95">
+                            View Report
+                            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Repeat Past Card -->
+                <div class="period-card card-transition group relative flex flex-col p-6 rounded-2xl border bg-white border-slate-200 hover:border-slate-300 hover:shadow-xl hover:-translate-y-1"
+                    data-name="August 2025">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+                                August 2025</h3>
+                            <p class="text-xs font-mono text-slate-400 mt-1 uppercase tracking-wider">ID: PER-2025-08
+                            </p>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-slate-100 text-slate-500 border border-slate-200 text-[10px] font-bold uppercase tracking-widest rounded-full">Closed</span>
+                    </div>
+
+                    <div class="flex-grow space-y-4">
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm">
+                            <i data-lucide="calendar" class="w-5 h-5 text-slate-400"></i>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-slate-700 text-base">Aug 1 — Aug 31</span>
+                                <span class="text-xs text-slate-400 font-medium">Fiscal Year 2025</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs px-1">
+                            <span class="text-slate-500 flex items-center gap-1.5 font-medium">
+                                <i data-lucide="receipt" class="w-3.5 h-3.5 text-slate-300"></i>
+                                38 Transactions
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
+                        <button
+                            class="text-slate-300 hover:text-slate-500 transition-colors p-2 hover:bg-slate-50 rounded-lg">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </button>
+                        <button
+                            class="flex items-center gap-2 px-4 py-2 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-100 transition-all active:scale-95">
+                            View Report
+                            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </main>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden flex flex-col items-center justify-center py-24 text-center">
+                <div class="p-4 bg-slate-100 rounded-full mb-4 text-slate-300">
+                    <i data-lucide="search-x" class="w-12 h-12"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900">No matching periods</h3>
+                <p class="text-slate-500 mt-1">Try adjusting your search terms or filters.</p>
+                <button onclick="resetSearch()" class="mt-6 text-blue-600 font-bold hover:underline">Clear all
+                    filters</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Dialog (Hidden by Default) -->
+    <div id="createModal"
+        class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4">
+        <div
+            class="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="p-8 space-y-6">
+                <div class="flex justify-between items-start">
+                    <div class="space-y-1">
+                        <h2 class="text-2xl font-bold text-slate-900">New Period</h2>
+                        <p class="text-slate-500 text-sm">Define a new tracking window.</p>
+                    </div>
+                    <button onclick="toggleModal('createModal')"
+                        class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form class="space-y-5" onsubmit="event.preventDefault(); toggleModal('createModal');">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Period
+                            Name</label>
+                        <input type="text" placeholder="e.g. November 2025"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Start
+                                Date</label>
+                            <input type="date"
+                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-medium">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">End
+                                Date</label>
+                            <input type="date"
+                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-medium">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                        <button type="button" onclick="toggleModal('createModal')"
+                            class="flex-1 py-3 px-4 border border-slate-200 rounded-xl font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95">
+                            Create Period
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Search Filter Logic
+        const searchInput = document.getElementById('periodSearch');
+        const periodCards = document.querySelectorAll('.period-card');
+        const emptyState = document.getElementById('emptyState');
+        const periodGrid = document.getElementById('periodGrid');
+
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            let visibleCount = 0;
+
+            periodCards.forEach(card => {
+                const name = card.getAttribute('data-name').toLowerCase();
+                if (name.includes(term)) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            if (visibleCount === 0 && term !== "") {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        });
+
+        function resetSearch() {
+            searchInput.value = '';
+            periodCards.forEach(card => card.classList.remove('hidden'));
+            emptyState.classList.add('hidden');
+            searchInput.focus();
+        }
+
+        // Modal Management
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                document.body.style.overflow = '';
+            }
+        }
+    </script>
+</body>
+
+</html>
