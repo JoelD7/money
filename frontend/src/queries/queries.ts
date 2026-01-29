@@ -115,9 +115,15 @@ export function useGetPeriodsInfinite(queryParams?: TransactionSearchParams) {
     initialPageParam: "",
     staleTime: defaultStaleTime,
     getNextPageParam: (lastPage: PeriodList) => {
-      return lastPage.next_key !== "" ? lastPage.next_key : null;
+      if (lastPage) {
+        return lastPage.next_key !== "" ? lastPage.next_key : null;
+      }
+
+      return null
     },
-    queryFn: ({ pageParam }) => api.getPeriods({ ...queryParams, startKey: pageParam }),
+    queryFn: ({ pageParam }) => {
+      return api.getPeriods({ ...queryParams, startKey: pageParam })
+    },
     retry: queryRetryFn,
   });
 }

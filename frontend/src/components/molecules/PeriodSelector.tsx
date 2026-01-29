@@ -1,7 +1,8 @@
-import { Autocomplete, CircularProgress, FormControl, InputLabel, MenuItem, Select, TextField } from "@mui/material";
-import React from "react";
-import { useGetPeriodsInfinite } from "../../queries";
+import { Autocomplete, CircularProgress, TextField } from "@mui/material";
+import { useDebounce } from "@uidotdev/usehooks";
+import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { useGetPeriodsInfinite } from "../../queries";
 import { Period } from "../../types";
 import { ErrorSnackbar } from "./ErrorSnackbar.tsx";
 
@@ -13,8 +14,10 @@ type PeriodSelectorProps = {
 
 export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelectorProps) {
   const labelId: string = uuidv4();
+  const [searchPeriodName, setSearchPeriodName] = useState<string>("");
+  const debouncedSearch = useDebounce(searchPeriodName, 500);
 
-  const getPeriodsQuery = useGetPeriodsInfinite({ active });
+  const getPeriodsQuery = useGetPeriodsInfinite({ active, periodName: debouncedSearch });
 
   const periods: Period[] = (() => {
     if (getPeriodsQuery.data) {
@@ -58,8 +61,12 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
 
       <Autocomplete
         sx={{ width: "100%" }}
+        filterOptions={(x) => x}
         isOptionEqualToValue={(option, value) => option.name === value.name}
         getOptionLabel={(option) => option.name}
+        onInputChange={(_, newValue: string) => {
+          setSearchPeriodName(newValue)
+        }}
         onChange={(_, newValue) => {
           if (newValue) {
             console.log("newValue", newValue);

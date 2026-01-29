@@ -37,7 +37,7 @@ export function redirectToLogin() {
 }
 
 export function buildQueryParams(queryParams: TransactionSearchParams): string[] {
-  const { startKey, pageSize, sortOrder, sortBy, active, savingGoalID } = queryParams;
+  const { startKey, pageSize, sortOrder, sortBy, active, savingGoalID, periodName } = queryParams;
   const params = [];
 
   if (startKey) {
@@ -64,6 +64,10 @@ export function buildQueryParams(queryParams: TransactionSearchParams): string[]
     params.push(`active=${active}`);
   }
 
+  if (periodName && periodName !== "") {
+    params.push(`period_name=${periodName}`);
+  }
+
   return params;
 }
 
@@ -75,7 +79,7 @@ export function getIdempotencyKey(data: unknown, accessToken: string, username: 
   const encodedBody: string = window.btoa(encodeURIComponent(JSON.stringify(data)));
   let idempotencyKey: string | null = localStorage.getItem(encodedBody);
 
-  if (username === ""){
+  if (username === "") {
     username = getUsernameFromAccessToken(accessToken);
   }
 
@@ -107,24 +111,24 @@ function getUsernameFromAccessToken(accessToken: string): string {
 }
 
 export async function handleIdempotentRequest<T>(
-    promise: Promise<AxiosResponse<T>>,
-    idempotencyStorageKey: string,
+  promise: Promise<AxiosResponse<T>>,
+  idempotencyStorageKey: string,
 ): Promise<AxiosResponse<T>> {
   return promise
-      .then((res) => {
+    .then((res) => {
+      localStorage.removeItem(idempotencyStorageKey);
+      return res;
+    })
+    .catch((err) => {
+      const axiosError = err as AxiosError;
+      if (
+        axiosError.response &&
+        axiosError.response.status >= 400 &&
+        axiosError.response.status < 500
+      ) {
         localStorage.removeItem(idempotencyStorageKey);
-        return res;
-      })
-      .catch((err) => {
-        const axiosError = err as AxiosError;
-        if (
-            axiosError.response &&
-            axiosError.response.status >= 400 &&
-            axiosError.response.status < 500
-        ) {
-          localStorage.removeItem(idempotencyStorageKey);
-        }
+      }
 
-        return Promise.reject(err);
-      });
+      return Promise.reject(err);
+    });
 }

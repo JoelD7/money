@@ -39,6 +39,7 @@ export type TransactionSearchParams = {
   sortOrder?: string;
   active?: boolean;
   savingGoalID?: string;
+  periodName?: string;
 };
 
 export type PaginationModel = {
