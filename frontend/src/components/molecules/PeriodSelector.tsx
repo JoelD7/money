@@ -1,25 +1,23 @@
 import { Autocomplete, CircularProgress, TextField } from "@mui/material";
 import { useDebounce } from "@uidotdev/usehooks";
 import React, { useState } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { useGetPeriodsInfinite } from "../../queries";
 import { Period } from "../../types";
 import { ErrorSnackbar } from "./ErrorSnackbar.tsx";
 
 type PeriodSelectorProps = {
-  period: string;
-  onPeriodChange: (value: string) => void;
+  period: Period;
+  onPeriodChange: (period: Period) => void;
   active?: boolean;
 };
 
 export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelectorProps) {
-  const labelId: string = uuidv4();
   const [searchPeriodName, setSearchPeriodName] = useState<string>("");
   const debouncedSearch = useDebounce(searchPeriodName, 500);
 
   const getPeriodsQuery = useGetPeriodsInfinite({ active, periodName: debouncedSearch });
 
-  const periods: Period[] = (() => {
+  let periods: Period[] = (() => {
     if (getPeriodsQuery.data) {
       return getPeriodsQuery.data.pages.map((page) => page.periods).flat();
     }
@@ -61,19 +59,21 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
 
       <Autocomplete
         sx={{ width: "100%" }}
+        value={period}
         filterOptions={(x) => x}
         isOptionEqualToValue={(option, value) => option.name === value.name}
         getOptionLabel={(option) => option.name}
         onInputChange={(_, newValue: string) => {
-          setSearchPeriodName(newValue)
+          console.log(newValue);
+          setSearchPeriodName(newValue);
         }}
-        onChange={(_, newValue) => {
+        onChange={(_, newValue: Period | null) => {
           if (newValue) {
-            console.log("newValue", newValue);
+            onPeriodChange(newValue);
           }
         }}
         options={periods}
-        loading={getPeriodsQuery.isFetching}
+        loading={getPeriodsQuery.isLoading}
         ListboxProps={{
           sx: {
             maxHeight: 150,
@@ -84,12 +84,13 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
           <TextField
             {...params}
             label="Period"
-
             InputProps={{
               ...params.InputProps,
               endAdornment: (
                 <>
-                  {getPeriodsQuery.isFetching ? <CircularProgress color="inherit" size={20} /> : null}
+                  {getPeriodsQuery.isFetching ? (
+                    <CircularProgress color="inherit" size={20} />
+                  ) : null}
                   {params.InputProps.endAdornment}
                 </>
               ),
@@ -97,7 +98,6 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
           />
         )}
       />
-
     </>
   );
 }

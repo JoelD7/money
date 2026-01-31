@@ -88,14 +88,12 @@ export function useGetUser() {
   });
 }
 
-export function useGetPeriod(user?: User) {
-  const periodID =
-    user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
-
+export function useGetPeriod(periodID: string) {
   return useQuery({
     queryKey: [PERIOD],
     queryFn: () => api.getPeriod(periodID),
     staleTime: defaultStaleTime,
+    enabled: periodID !== "",
     retry: queryRetryFn,
   });
 }

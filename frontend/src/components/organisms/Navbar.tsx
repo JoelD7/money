@@ -1,3 +1,12 @@
+import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
+import HomeIcon from "@mui/icons-material/Home";
+import LabelIcon from "@mui/icons-material/Label";
+import LogoutIcon from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import NotificationImportantIcon from "@mui/icons-material/NotificationImportant";
+import SavingsIcon from "@mui/icons-material/Savings";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Alert,
   AlertTitle,
@@ -10,28 +19,16 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import HomeIcon from "@mui/icons-material/Home";
-import MenuIcon from "@mui/icons-material/Menu";
-import AccessTimeFilledIcon from "@mui/icons-material/AccessTimeFilled";
-import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
-import SavingsIcon from "@mui/icons-material/Savings";
-import NotificationImportantIcon from "@mui/icons-material/NotificationImportant";
-import LabelIcon from "@mui/icons-material/Label";
-import SettingsIcon from "@mui/icons-material/Settings";
-import LogoutIcon from "@mui/icons-material/Logout";
-import { ReactNode, useState } from "react";
-import { Logo } from "../atoms";
-import { setIsAuthenticated } from "../../store";
+import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useDispatch } from "react-redux";
+import { ReactNode, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import api from "../../api";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { APIError, Credentials, SnackAlert, User } from "../../types";
-import { useGetUser } from "../../queries";
+import { useGetPeriod, useGetUser } from "../../queries";
+import { setIsAuthenticated, setSelectedPeriod } from "../../store";
+import { Credentials, Period, SnackAlert, User } from "../../types";
+import { Logo } from "../atoms";
 import { PeriodSelector } from "../molecules";
-import { USER } from "../../queries/keys";
-import { AxiosError } from "axios";
-import { ValidationError } from "yup";
 
 type NavbarProps = {
   children?: ReactNode;
@@ -57,7 +54,15 @@ export function Navbar({ children }: NavbarProps) {
   };
 
   const [open, setOpen] = useState<boolean>(false);
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const selectedPeriod: Period = useSelector((state: any) => state.usersReducer.selectedPeriod);
+  const getPeriod = useGetPeriod(selectedPeriod ? selectedPeriod.period_id : "");
+  const period: Period = getPeriod.data ? getPeriod.data : {
+    period_id: selectedPeriod ? selectedPeriod.period_id : "",
+    name: "",
+    start_date: "",
+    end_date: "",
+    username: "",
+  };
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
     type: "success",
@@ -71,7 +76,6 @@ export function Navbar({ children }: NavbarProps) {
 
   const user: User | undefined = getUser.data;
 
-  const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -84,35 +88,6 @@ export function Navbar({ children }: NavbarProps) {
         .catch((err) => {
           console.error("Error navigating to /login", err);
         });
-    },
-  });
-
-  const patchUserMu = useMutation({
-    mutationFn: api.patchUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [USER] }).then(null, (error) => {
-        console.error("Error invalidating users query", error);
-      });
-    },
-    onError: (error) => {
-      if (!error) {
-        return
-      }
-
-      const err = error as AxiosError;
-      let title = "Error updating user's current period"
-      try {
-        const responseError = err.response?.data as APIError;
-        title = responseError.message as string
-      } catch (e) {
-        console.warn("Unexpected error type:", e)
-      }
-
-      setAlert({
-        open: true,
-        type: "error",
-        title: title,
-      });
     },
   });
 
@@ -162,21 +137,8 @@ export function Navbar({ children }: NavbarProps) {
       });
   }
 
-  function onSelectedPeriodChange(newPeriodID: string) {
-    setSelectedPeriod(newPeriodID);
-
-    const userToUpdate: User = {
-      username: user ? user.username : "",
-      remainder: 0,
-      current_period: newPeriodID,
-    };
-
-    try {
-      patchUserMu.mutate(userToUpdate);
-    } catch (e) {
-      const err = e as ValidationError;
-      setAlert({ open: true, type: "error", title: err.errors[0] });
-    }
+  function onSelectedPeriodChange(period: Period) {
+    dispatch(setSelectedPeriod(period));
   }
 
   return (

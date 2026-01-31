@@ -16,6 +16,7 @@ import { utils } from "../../utils";
 import { ReactNode, useState } from "react";
 import { faCalendar } from "@fortawesome/free-solid-svg-icons";
 import { NewPeriodDialog } from "./NewPeriodDialog.tsx";
+import { useSelector } from "react-redux";
 
 type ExpensesChartProps = {
   user?: User;
@@ -28,7 +29,9 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const [open, setOpen] = useState(false)
   const [key, setKey] = useState<number>(0);
 
-  const getPeriod = useGetPeriod(user);
+
+  const selectedPeriodID = useSelector((state: any) => state.usersReducer.selectedPeriodID);
+  const getPeriod = useGetPeriod(selectedPeriodID);
   const period: Period | undefined = getPeriod.data;
   const getPeriodStats = useGetPeriodStats(user);
   const periodStats: PeriodStats | undefined = utils.setAdditionalData(
