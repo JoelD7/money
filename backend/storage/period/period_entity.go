@@ -1,15 +1,18 @@
 package period
 
 import (
+	"strings"
+	"time"
+
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/storage/dynamo"
-	"time"
 )
 
 type periodEntity struct {
 	Username              string    `json:"username,omitempty" dynamodbav:"username"`
 	ID                    string    `json:"period,omitempty" dynamodbav:"period"`
 	Name                  *string   `json:"name,omitempty" dynamodbav:"name"`
+	LowerCaseName         string    `json:"lower_case_name,omitempty" dynamodbav:"lower_case_name"`
 	StartDate             time.Time `json:"start_date,omitempty" dynamodbav:"start_date"`
 	EndDate               time.Time `json:"end_date,omitempty" dynamodbav:"end_date"`
 	CreatedDate           time.Time `json:"created_date,omitempty" dynamodbav:"created_date"`
@@ -41,7 +44,7 @@ func toPeriodModels(periods []periodEntity) []*models.Period {
 }
 
 func toPeriodEntity(period models.Period) periodEntity {
-	return periodEntity{
+	entity := periodEntity{
 		Username:              period.Username,
 		ID:                    period.ID,
 		Name:                  period.Name,
@@ -52,4 +55,10 @@ func toPeriodEntity(period models.Period) periodEntity {
 		UsernameEndDatePeriod: nil,
 		EndDatePeriod:         dynamo.BuildEndDatePeriodKey(period.ID, period.EndDate),
 	}
+
+	if period.Name != nil {
+		entity.LowerCaseName = strings.ToLower(*period.Name)
+	}
+
+	return entity
 }

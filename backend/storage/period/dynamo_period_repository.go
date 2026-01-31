@@ -109,21 +109,14 @@ func (d *DynamoRepository) UpdatePeriod(ctx context.Context, period *models.Peri
 	}
 
 	periodExistsCond := expression.Name("period").AttributeExists()
-	periodNameNotTakenCond := expression.Name("name").AttributeNotExists().And(expression.Name("username").AttributeNotExists())
 
 	periodTableExpr, err := expression.NewBuilder().WithCondition(periodExistsCond).Build()
 	if err != nil {
 		return fmt.Errorf("building period table expression failed: %v", err)
 	}
 
-	uniquePeriodNameTableExpr, err := expression.NewBuilder().WithCondition(periodNameNotTakenCond).Build()
-	if err != nil {
-		return fmt.Errorf("building unique period name table expression failed: %v", err)
-	}
-
 	errByCondition := map[string]error{
-		*periodTableExpr.Condition():           models.ErrUpdatePeriodNotFound,
-		*uniquePeriodNameTableExpr.Condition(): models.ErrPeriodNameIsTaken,
+		*periodTableExpr.Condition(): models.ErrUpdatePeriodNotFound,
 	}
 
 	transactItems := []types.TransactWriteItem{
@@ -346,7 +339,7 @@ func buildKeyConditionExpression(username string, active bool) expression.KeyCon
 
 func buildFilterExpression(params *models.PeriodQueryParameters) (*expression.ConditionBuilder, error) {
 	if params.Name != "" {
-		filter := expression.Name("name").BeginsWith(params.Name)
+		filter := expression.Name("lower_case_name").BeginsWith(strings.ToLower(params.Name))
 		return &filter, nil
 	}
 
