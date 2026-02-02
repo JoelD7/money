@@ -1,4 +1,4 @@
-import { Autocomplete, CircularProgress, TextField } from "@mui/material";
+import { Autocomplete, AutocompleteInputChangeReason, CircularProgress, TextField } from "@mui/material";
 import { useDebounce } from "@uidotdev/usehooks";
 import React, { useState } from "react";
 import { useGetPeriodsInfinite } from "../../queries";
@@ -63,9 +63,10 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
         filterOptions={(x) => x}
         isOptionEqualToValue={(option, value) => option.name === value.name}
         getOptionLabel={(option) => option.name}
-        onInputChange={(_, newValue: string) => {
-          console.log(newValue);
-          setSearchPeriodName(newValue);
+        onInputChange={(_, newValue: string, reason: AutocompleteInputChangeReason) => {
+          if (reason !== "reset") {
+            setSearchPeriodName(newValue);
+          }
         }}
         onChange={(_, newValue: Period | null) => {
           if (newValue) {
