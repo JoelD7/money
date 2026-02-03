@@ -19,12 +19,13 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { ReactNode, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api";
-import { useGetPeriod, useGetUser } from "../../queries";
+import { expensesQueryKeys, incomeKeys, savingGoalKeys, savingsKeys, useGetPeriod, useGetUser } from "../../queries";
+import { PERIOD_STATS } from "../../queries/keys";
 import { setIsAuthenticated, setSelectedPeriod } from "../../store";
 import { Credentials, Period, SnackAlert, User } from "../../types";
 import { Logo } from "../atoms";
@@ -78,6 +79,7 @@ export function Navbar({ children }: NavbarProps) {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient()
 
   const logoutMutation = useMutation({
     mutationFn: api.logout,
@@ -139,6 +141,10 @@ export function Navbar({ children }: NavbarProps) {
 
   function onSelectedPeriodChange(period: Period) {
     dispatch(setSelectedPeriod(period));
+    const keys = [...incomeKeys.all, ...expensesQueryKeys.all, ...savingsKeys.all, ...savingGoalKeys.all, PERIOD_STATS];
+    queryClient.invalidateQueries({ queryKey: keys }).then(null, (e) => {
+      console.error("Error invalidating period related queries", e);
+    });
   }
 
   return (

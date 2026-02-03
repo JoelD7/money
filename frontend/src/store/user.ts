@@ -22,7 +22,7 @@ export const usersSlice = createSlice({
       }
     },
     setSelectedPeriod: (state: userState, action) => {
-      state.selectedPeriod = action.payload;
+      state.selectedPeriod = { ...action.payload };
     }
   },
 });

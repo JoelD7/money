@@ -52,6 +52,7 @@ export const expensesQueryKeys = {
 };
 
 const periodKeys = {
+  single: "period",
   all: [{ scope: "period" }] as const,
   list: (queryParams?: TransactionSearchParams) => {
     if (!queryParams) {
@@ -70,6 +71,28 @@ const periodKeys = {
     ];
   }
 }
+
+export const savingsKeys = {
+  all: [{ scope: "savings" }] as const,
+  list: (
+    pageSize?: number,
+    startKey?: string,
+    sortOrder?: string,
+    sortBy?: string,
+    savingGoalID?: string,
+  ) => {
+    return [
+      {
+        ...savingsKeys.all[0],
+        pageSize,
+        startKey,
+        sortOrder,
+        sortBy,
+        savingGoalID,
+      },
+    ];
+  },
+};
 
 export function useGetUser() {
   return useQuery({
@@ -90,7 +113,7 @@ export function useGetUser() {
 
 export function useGetPeriod(periodID: string) {
   return useQuery({
-    queryKey: [PERIOD],
+    queryKey: [periodKeys.single],
     queryFn: () => api.getPeriod(periodID),
     staleTime: defaultStaleTime,
     enabled: periodID !== "",
@@ -100,7 +123,7 @@ export function useGetPeriod(periodID: string) {
 
 export function useGetPeriods(startKey: string = "", pageSize: number = 10) {
   return useQuery({
-    queryKey: [PERIODS, startKey, pageSize],
+    queryKey: periodKeys.list({ startKey, pageSize }),
     queryFn: () => api.getPeriods({ startKey, pageSize }),
     staleTime: defaultStaleTime,
     retry: queryRetryFn,
@@ -188,7 +211,7 @@ export function useGetSavings(
   savingGoalID?: string,
 ) {
   return useQuery({
-    queryKey: api.savingsKeys.list(pageSize, startKey, sortOrder, sortBy, savingGoalID),
+    queryKey: savingsKeys.list(pageSize, startKey, sortOrder, sortBy, savingGoalID),
     queryFn: api.getSavings,
     staleTime: defaultStaleTime,
     retry: queryRetryFn,

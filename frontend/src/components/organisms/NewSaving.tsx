@@ -1,15 +1,14 @@
-import { Dialog, PeriodSelector, SavingGoalSelector } from "../molecules";
 import { Box, Divider, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormEvent, useState } from "react";
-import { Saving, SnackAlert } from "../../types";
 import * as yup from "yup";
 import { ValidationError } from "yup";
-import { Button } from "../atoms";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../api";
-import { savingsKeys } from "../../api/savings.ts";
-import { savingGoalKeys } from "../../queries/saving_goals.ts";
+import { savingGoalKeys, savingsKeys } from "../../queries";
+import { Period, Saving, SnackAlert } from "../../types";
+import { Button } from "../atoms";
+import { Dialog, PeriodSelector, SavingGoalSelector } from "../molecules";
 
 type NewSavingProps = {
   open: boolean;
@@ -26,7 +25,7 @@ export function NewSaving({ open, onClose, onAlert, savingGoalId }: NewSavingPro
     saving_goal_id: yup.string().optional(),
   });
 
-  const [period, setPeriod] = useState<string>("");
+  const [period, setPeriod] = useState<Period>();
   const [amount, setAmount] = useState<number | null>(null);
   const [savingGoal, setSavingGoal] = useState<string>(savingGoalId ? savingGoalId : "");
 
@@ -43,14 +42,14 @@ export function NewSaving({ open, onClose, onAlert, savingGoalId }: NewSavingPro
       onClose();
       queryClient
         .invalidateQueries({ queryKey: [...savingsKeys.all] })
-        .then(() => {})
+        .then(() => { })
         .catch((e) => {
           console.error("Error invalidating savings query", e);
         });
 
       queryClient
         .invalidateQueries({ queryKey: [...savingGoalKeys.all] })
-        .then(() => {})
+        .then(() => { })
         .catch((e) => {
           console.error("Error invalidating saving goals query", e);
         });
@@ -74,7 +73,7 @@ export function NewSaving({ open, onClose, onAlert, savingGoalId }: NewSavingPro
       saving_id: "",
       username: "",
       amount: amount as number,
-      period_id: period,
+      period_id: period?.period_id || "",
       saving_goal_id: savingGoal,
     };
 

@@ -30,8 +30,8 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const [key, setKey] = useState<number>(0);
 
 
-  const selectedPeriodID = useSelector((state: any) => state.usersReducer.selectedPeriodID);
-  const getPeriod = useGetPeriod(selectedPeriodID);
+  const selectedPeriod: Period = useSelector((state: any) => state.usersReducer.selectedPeriod);
+  const getPeriod = useGetPeriod(selectedPeriod.period_id);
   const period: Period | undefined = getPeriod.data;
   const getPeriodStats = useGetPeriodStats(user);
   const periodStats: PeriodStats | undefined = utils.setAdditionalData(

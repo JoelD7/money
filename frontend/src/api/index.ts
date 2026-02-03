@@ -10,7 +10,7 @@ import {
   getSavingGoals,
   updateSavingGoal,
 } from "./saving_goals.ts";
-import { createSaving, getSavings, savingsKeys } from "./savings.ts";
+import { createSaving, getSavings } from "./savings.ts";
 import { patchUser } from "./user.ts"
 
 const api = {
@@ -23,7 +23,6 @@ const api = {
   getPeriod,
   createExpense,
   getPeriodStats,
-  savingsKeys,
   createIncome,
   getIncomeList,
   getPeriods,

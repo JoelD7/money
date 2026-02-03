@@ -4,28 +4,7 @@ import { AxiosResponse } from "axios";
 import { IdempotencyKVP, Saving, SavingList, SavingsSchema } from "../types";
 import { keys } from "../utils/index.ts";
 import { QueryFunctionContext } from "@tanstack/react-query";
-
-export const savingsKeys = {
-  all: [{ scope: "savings" }] as const,
-  list: (
-    pageSize?: number,
-    startKey?: string,
-    sortOrder?: string,
-    sortBy?: string,
-    savingGoalID?: string,
-  ) => {
-    return [
-      {
-        ...savingsKeys.all[0],
-        pageSize,
-        startKey,
-        sortOrder,
-        sortBy,
-        savingGoalID,
-      },
-    ];
-  },
-};
+import { savingsKeys } from "../queries";
 
 export async function getSavings({
   queryKey,
