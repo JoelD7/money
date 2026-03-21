@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/JoelD7/money/backend/shared/uuid"
 	"github.com/JoelD7/money/backend/storage/cache"
 	"github.com/JoelD7/money/backend/storage/shared"
 	"github.com/JoelD7/money/backend/usecases"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/JoelD7/money/backend/models"
 	"github.com/JoelD7/money/backend/shared/env"
@@ -125,17 +126,15 @@ func (req *requestInfo) process(ctx context.Context, event events.APIGatewayCust
 		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
 	}
 
-	if err != nil {
-		logger.Error("token_verification_failed", err, req.getEventAsLoggerObject(event))
-
-		return events.APIGatewayCustomAuthorizerResponse{}, models.ErrUnauthorized
-	}
-
-	principalID := subject
-
-	resp := NewAuthorizerResponse(event.MethodArn, principalID)
-
+	resp := NewAuthorizerResponse(event.MethodArn, subject)
 	resp.AllowAllMethods()
+
+	if err != nil {
+		//Any token blacklist-checking error other than "invalid token" shouldn't prevent access to the application.
+		//I'm prioritizing availability over strict security. For this type of application it's fine.
+
+		logger.Error("token_verification_failed", err, req.getEventAsLoggerObject(event))
+	}
 
 	return resp.APIGatewayCustomAuthorizerResponse, nil
 }

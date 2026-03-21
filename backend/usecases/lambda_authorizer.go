@@ -77,10 +77,12 @@ func NewTokenVerifier(jwksGetter JWKSGetter, secretManager SecretManager, tokenC
 		err = compareAccessTokenAgainstBlacklistRedis(ctx, tokenCache, payload.Subject, token)
 		if errors.Is(err, models.ErrInvalidToken) {
 			logger.Warning("blacklisted_token_use_detected", err, models.Any("token", map[string]interface{}{"s_value": token}))
+
+			return "", err
 		}
 
 		if err != nil {
-			return "", err
+			return payload.Subject, err
 		}
 
 		return payload.Subject, nil
