@@ -2,7 +2,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import api from "../api";
 import { keys, utils } from "../utils";
 import { PeriodList, TransactionSearchParams, User } from "../types";
-import { INCOME, PERIOD, PERIOD_STATS, PERIODS, USER } from "./keys";
+import { INCOME, PERIOD_STATS, USER } from "./keys";
 import { defaultStaleTime, queryRetryFn } from "./common.ts";
 
 export const QUERY_RETRIES = 2;
@@ -69,8 +69,8 @@ const periodKeys = {
         ...queryParams,
       },
     ];
-  }
-}
+  },
+};
 
 export const savingsKeys = {
   all: [{ scope: "savings" }] as const,
@@ -111,12 +111,12 @@ export function useGetUser() {
   });
 }
 
-export function useGetPeriod(periodID: string) {
+export function useGetPeriod(periodID: string, enabled: boolean) {
   return useQuery({
     queryKey: [periodKeys.single],
     queryFn: () => api.getPeriod(periodID),
     staleTime: defaultStaleTime,
-    enabled: periodID !== "",
+    enabled: enabled,
     retry: queryRetryFn,
   });
 }
@@ -140,10 +140,10 @@ export function useGetPeriodsInfinite(queryParams?: TransactionSearchParams) {
         return lastPage.next_key !== "" ? lastPage.next_key : null;
       }
 
-      return null
+      return null;
     },
     queryFn: ({ pageParam }) => {
-      return api.getPeriods({ ...queryParams, startKey: pageParam })
+      return api.getPeriods({ ...queryParams, startKey: pageParam });
     },
     retry: queryRetryFn,
   });

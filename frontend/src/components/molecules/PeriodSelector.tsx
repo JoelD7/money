@@ -6,7 +6,7 @@ import { Period } from "../../types";
 import { ErrorSnackbar } from "./ErrorSnackbar.tsx";
 
 type PeriodSelectorProps = {
-  period: Period;
+  period?: Period;
   onPeriodChange: (period: Period) => void;
   active?: boolean;
 };
@@ -47,6 +47,14 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
     return getPeriodsQuery.isError;
   }
 
+  function getOptionLabel(option: Period) {
+    if (!option || periods.length === 0) {
+      return "";
+    }
+
+    return option.name;
+  }
+
   return (
     <>
       {showErrorSnackbar() && (
@@ -62,7 +70,7 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
         value={period}
         filterOptions={(x) => x}
         isOptionEqualToValue={(option, value) => option.name === value.name}
-        getOptionLabel={(option) => option.name}
+        getOptionLabel={(option) => getOptionLabel(option)}
         onInputChange={(_, newValue: string, reason: AutocompleteInputChangeReason) => {
           if (reason !== "reset") {
             setSearchPeriodName(newValue);

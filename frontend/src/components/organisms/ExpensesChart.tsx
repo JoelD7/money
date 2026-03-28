@@ -1,4 +1,11 @@
+import { faCalendar } from "@fortawesome/free-solid-svg-icons";
+import { Alert, AlertTitle, capitalize, CircularProgress, Snackbar, Typography } from "@mui/material";
+import Grid from "@mui/material/Unstable_Grid2";
+import { ReactNode, useState } from "react";
+import { useSelector } from "react-redux";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Colors } from "../../assets";
+import { useGetPeriod, useGetPeriodStats } from "../../queries";
 import {
   CategoryExpenseSummary,
   Period,
@@ -7,16 +14,9 @@ import {
   SnackAlert,
   User,
 } from "../../types";
-import { Alert, AlertTitle, capitalize, CircularProgress, Snackbar, Typography } from "@mui/material";
-import Grid from "@mui/material/Unstable_Grid2";
-import { Button, FontAwesomeIcon } from "../atoms";
-import { Colors } from "../../assets";
-import { useGetPeriod, useGetPeriodStats } from "../../queries";
 import { utils } from "../../utils";
-import { ReactNode, useState } from "react";
-import { faCalendar } from "@fortawesome/free-solid-svg-icons";
+import { Button, FontAwesomeIcon } from "../atoms";
 import { NewPeriodDialog } from "./NewPeriodDialog.tsx";
-import { useSelector } from "react-redux";
 
 type ExpensesChartProps = {
   user?: User;
@@ -30,9 +30,19 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
   const [key, setKey] = useState<number>(0);
 
 
-  const selectedPeriod: Period = useSelector((state: any) => state.usersReducer.selectedPeriod);
-  const getPeriod = useGetPeriod(selectedPeriod.period_id);
-  const period: Period | undefined = getPeriod.data;
+  const displayPeriod: Period | undefined = useSelector((state: any) => state.usersReducer.displayPeriod);
+
+  let periodID = "";
+  let isPeriodQueryEnabled = true
+
+  if (displayPeriod) {
+    periodID = displayPeriod.period_id;
+    isPeriodQueryEnabled = false
+  }
+
+
+  const getPeriod = useGetPeriod(periodID, isPeriodQueryEnabled);
+  const period: Period | undefined = getPeriodState();
   const getPeriodStats = useGetPeriodStats(user);
   const periodStats: PeriodStats | undefined = utils.setAdditionalData(
     getPeriodStats.data,
@@ -51,6 +61,14 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
     type: "success",
     title: "",
   });
+
+  function getPeriodState() {
+    if (displayPeriod && displayPeriod.period_id !== "") {
+      return displayPeriod;
+    }
+
+    return getPeriod.data
+  }
 
   function getCustomLabel({
     cx,
@@ -96,7 +114,11 @@ export function ExpensesChart({ user, chartHeight }: ExpensesChartProps) {
     setOpen(false)
   }
 
-  if (getPeriodStats.isLoading || getPeriod.isLoading) {
+  function showLoadingScreen() {
+    return getPeriodStats.isLoading || getPeriod.isLoading || period === undefined
+  }
+
+  if (showLoadingScreen()) {
     return (
       <ExpensesChartContainer>
         <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center z-10 rounded-xl">

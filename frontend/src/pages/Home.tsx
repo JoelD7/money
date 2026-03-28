@@ -2,7 +2,6 @@ import AddIcon from "@mui/icons-material/Add";
 import { Typography, useMediaQuery, useTheme } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { useState } from "react";
-import { useDispatch } from "react-redux";
 import {
   BackgroundRefetchErrorSnackbar,
   BalanceCard,
@@ -18,15 +17,13 @@ import {
   NewTransaction,
 } from "../components";
 import { useGetPeriodStats, useGetUser } from "../queries";
-import { setSelectedPeriod } from "../store/user.ts";
-import { Period, PeriodStats, User } from "../types";
+import { PeriodStats, User } from "../types";
 import { utils } from "../utils";
 import { Error } from "./Error.tsx";
 import { Loading } from "./Loading.tsx";
 
 export function Home() {
   const theme = useTheme();
-  const dispatch = useDispatch();
 
   const [openNewExpense, setOpenNewExpense] = useState<boolean>(false);
   const [openNewIncome, setOpenNewIncome] = useState<boolean>(false);
@@ -46,17 +43,6 @@ export function Home() {
   );
 
   const chartHeight: number = 350;
-
-  if (user) {
-    const period: Period = {
-      period_id: user.current_period ? user.current_period : "",
-      name: "",
-      start_date: "",
-      end_date: "",
-      username: "",
-    }
-    dispatch(setSelectedPeriod(period));
-  }
 
   function handleNewExpenseClose() {
     setOpenNewExpense(false);

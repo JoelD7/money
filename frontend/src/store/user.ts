@@ -3,8 +3,8 @@ import { Period, User } from "../types/domain.ts";
 
 type userState = {
   user?: User;
-  // selectedPeriod is the period about which all finances throughout the app are displayed
-  selectedPeriod?: Period
+  // displayPeriod is the period about which all finances throughout the app are displayed
+  displayPeriod?: Period
 };
 
 const defaultState: userState = {
@@ -17,17 +17,14 @@ export const usersSlice = createSlice({
   reducers: {
     setUser: (state: userState, action) => {
       state.user = action.payload
-      if (action.payload?.current_period) {
-        state.selectedPeriod = action.payload.current_period;
-      }
     },
-    setSelectedPeriod: (state: userState, action) => {
-      state.selectedPeriod = { ...action.payload };
+    setDisplayPeriod: (state: userState, action) => {
+      state.displayPeriod = { ...action.payload };
     }
   },
 });
 
 
-export const { setUser, setSelectedPeriod } = usersSlice.actions
+export const { setUser, setDisplayPeriod } = usersSlice.actions
 
 export default usersSlice.reducer

@@ -18,4 +18,3 @@ expenses-deploy:
 
 authenticator-deploy:
 	bash scripts/authenticator-deploy.sh
-

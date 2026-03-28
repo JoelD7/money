@@ -21,12 +21,12 @@ import {
 } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import api from "../../api";
 import { expensesQueryKeys, incomeKeys, savingGoalKeys, savingsKeys, useGetPeriod, useGetUser } from "../../queries";
 import { PERIOD_STATS } from "../../queries/keys";
-import { setIsAuthenticated, setSelectedPeriod } from "../../store";
+import { setDisplayPeriod, setIsAuthenticated } from "../../store";
 import { Credentials, Period, SnackAlert, User } from "../../types";
 import { Logo } from "../atoms";
 import { PeriodSelector } from "../molecules";
@@ -55,15 +55,7 @@ export function Navbar({ children }: NavbarProps) {
   };
 
   const [open, setOpen] = useState<boolean>(false);
-  const selectedPeriod: Period = useSelector((state: any) => state.usersReducer.selectedPeriod);
-  const getPeriod = useGetPeriod(selectedPeriod ? selectedPeriod.period_id : "");
-  const period: Period = getPeriod.data ? getPeriod.data : {
-    period_id: selectedPeriod ? selectedPeriod.period_id : "",
-    name: "",
-    start_date: "",
-    end_date: "",
-    username: "",
-  };
+  const displayPeriod: Period = useSelector((state: any) => state.usersReducer.displayPeriod);
   const [alert, setAlert] = useState<SnackAlert>({
     open: false,
     type: "success",
@@ -74,12 +66,25 @@ export function Navbar({ children }: NavbarProps) {
   const mdUp: boolean = useMediaQuery(theme.breakpoints.up("md"));
 
   const getUser = useGetUser();
-
   const user: User | undefined = getUser.data;
 
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const queryClient = useQueryClient()
+  const dispatch = useDispatch();
+
+  const curPeriodID: string = user && user.current_period ? user.current_period : "";
+  let isPeriodQueryEnabled = true
+  if (displayPeriod) {
+    isPeriodQueryEnabled = false
+  }
+
+  const getPeriod = useGetPeriod(curPeriodID, isPeriodQueryEnabled);
+
+  useEffect(() => {
+    if (getPeriod.data && (!displayPeriod || displayPeriod.period_id === "")) {
+      dispatch(setDisplayPeriod(getPeriod.data));
+    }
+  }, [displayPeriod, getPeriod.data, dispatch]);
 
   const logoutMutation = useMutation({
     mutationFn: api.logout,
@@ -139,8 +144,8 @@ export function Navbar({ children }: NavbarProps) {
       });
   }
 
-  function onSelectedPeriodChange(period: Period) {
-    dispatch(setSelectedPeriod(period));
+  function onDisplayPeriodChange(period: Period) {
+    dispatch(setDisplayPeriod(period));
     const keys = [...incomeKeys.all, ...expensesQueryKeys.all, ...savingsKeys.all, ...savingGoalKeys.all, PERIOD_STATS];
     queryClient.invalidateQueries({ queryKey: keys }).then(null, (e) => {
       console.error("Error invalidating period related queries", e);
@@ -204,8 +209,8 @@ export function Navbar({ children }: NavbarProps) {
 
           <div className={"p-2 w-full"}>
             <PeriodSelector
-              period={selectedPeriod}
-              onPeriodChange={onSelectedPeriodChange}
+              period={displayPeriod}
+              onPeriodChange={onDisplayPeriodChange}
             />
           </div>
 
@@ -293,8 +298,8 @@ export function Navbar({ children }: NavbarProps) {
           {/*Period selector*/}
           <div className={"p-2 w-full"}>
             <PeriodSelector
-              period={selectedPeriod}
-              onPeriodChange={onSelectedPeriodChange}
+              period={displayPeriod}
+              onPeriodChange={onDisplayPeriodChange}
             />
           </div>
 
