@@ -1,9 +1,9 @@
 #!/bin/bash
 set -o pipefail
 
-bash authenticator-deploy.sh &
-bash lambda-authorizer-deploy.sh &
-bash users-deploy.sh &
-bash expenses-deploy.sh &
-bash income-deploy.sh &
-bash recurrent-expense-period-setter-deploy.sh
+bash scripts/authenticator-deploy.sh &
+bash scripts/lambda-authorizer-deploy.sh &
+bash scripts/users-deploy.sh &
+bash scripts/expenses-deploy.sh &
+bash scripts/income-deploy.sh &
+bash scripts/recurrent-expense-period-setter-deploy.sh
