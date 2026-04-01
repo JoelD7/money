@@ -1,3 +1,13 @@
+import AddIcon from "@mui/icons-material/Add";
+import {
+  GridColDef,
+  GridPaginationModel,
+  GridRowsProp,
+  GridSortModel,
+} from "@mui/x-data-grid";
+import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import {
   BackgroundRefetchErrorSnackbar,
   Button,
@@ -9,19 +19,9 @@ import {
   PeriodSelector,
   Table,
 } from "../components";
-import { useGetIncome, useGetUser } from "../queries";
-import { Income, IncomeList, User } from "../types";
-import {
-  GridColDef,
-  GridPaginationModel,
-  GridRowsProp,
-  GridSortModel,
-} from "@mui/x-data-grid";
-import { useRef, useState } from "react";
-import { useLocation, useNavigate } from "@tanstack/react-router";
-import { GridValidRowModel } from "@mui/x-data-grid/models/gridRows";
+import { useGetIncome, useGetPeriod, useGetUser } from "../queries";
+import { Income, IncomeList, Period, User } from "../types";
 import { tableDateFormatter } from "../utils";
-import AddIcon from "@mui/icons-material/Add";
 
 export function IncomeTable() {
   const gridStyle = {
@@ -39,17 +39,24 @@ export function IncomeTable() {
     },
   };
 
-  const noneSelectValue = "None";
-
   const incomeListErrSnackbar = {
     open: true,
     title: "Error fetching income. Refresh the page to try again",
   };
 
   const location = useLocation();
+  const periodID = getCurrentPeriodFromURL();
+  const getPeriodQuery = useGetPeriod(periodID, periodID !== "")
+
   const [openNewIncome, setOpenNewIncome] = useState<boolean>(false);
   const [paginationModel, setPaginationModel] = useState(getPaginationFromURL());
-  const [selectedPeriod, setSelectedPeriod] = useState(getCurrentPeriodFromURL());
+  const [selectedPeriod, setSelectedPeriod] = useState<Period | undefined>(getPeriodQuery.data);
+
+  useEffect(() => {
+    if (getPeriodQuery.data) {
+      setSelectedPeriod(getPeriodQuery.data);
+    }
+  }, [])
 
   const navigate = useNavigate();
   const startKeysByPage = useRef<{ [page: number]: string }>({ 0: "" });
@@ -156,8 +163,8 @@ export function IncomeTable() {
     return false;
   }
 
-  function onSelectedPeriodChange(newPeriod: string) {
-    if (newPeriod === noneSelectValue) {
+  function onSelectedPeriodChange(newPeriod?: Period) {
+    if (!newPeriod) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { period, ...search } = location.search;
       navigate({
@@ -169,11 +176,11 @@ export function IncomeTable() {
         console.error("[money] - Navigating to /income failed: ", e);
       });
 
-      setSelectedPeriod("");
+      setSelectedPeriod(undefined);
       return;
     }
 
-    if (selectedPeriod === newPeriod) {
+    if (selectedPeriod?.period_id === newPeriod.period_id) {
       return;
     }
 
@@ -181,7 +188,7 @@ export function IncomeTable() {
       to: "/income",
       search: {
         ...location.search,
-        period: newPeriod,
+        period: newPeriod.period_id,
       },
     }).catch((e) => {
       console.error("[money] - Navigating to /income failed: ", e);

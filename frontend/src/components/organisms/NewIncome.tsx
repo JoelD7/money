@@ -1,4 +1,4 @@
-import { APIError, Income, SnackAlert, User } from "../../types";
+import { APIError, Income, Period, SnackAlert, User } from "../../types";
 import { Box, Divider, TextField, Typography } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
 import { FormEvent, useState } from "react";
@@ -11,7 +11,7 @@ import { AxiosError } from "axios";
 import * as yup from "yup";
 import { ValidationError } from "yup";
 import { incomeKeys, queryKeys } from "../../queries";
-import {Dialog, PeriodSelector} from "../molecules";
+import { Dialog, PeriodSelector } from "../molecules";
 
 type NewIncomeProps = {
   onClose: () => void;
@@ -60,7 +60,7 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
   const [name, setName] = useState<string>("");
   const [date, setDate] = useState<Dayjs | null>(dayjs());
   const [notes, setNotes] = useState<string>("");
-  const[period, setPeriod] = useState<string>((user && user.current_period) ? user.current_period : "");
+  const [period, setPeriod] = useState<Period>();
 
   const validationSchema = yup.object({
     name: yup.string().required("Name is required"),
@@ -76,7 +76,7 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
       name: name,
       created_date: date ? date.format("") : "",
       notes: notes,
-      period_id: period,
+      period_id: period ? period.period_id : "",
     };
 
     try {
@@ -107,15 +107,15 @@ export function NewIncome({ onClose, open, user, onAlert }: NewIncomeProps) {
           {/*Name*/}
           <Grid xs={12}>
             <TextField
-                margin={"none"}
-                name={"name"}
-                value={name}
-                fullWidth={true}
-                type={"text"}
-                label={"Name"}
-                variant={"outlined"}
-                required
-                onChange={(e) => setName(e.target.value)}
+              margin={"none"}
+              name={"name"}
+              value={name}
+              fullWidth={true}
+              type={"text"}
+              label={"Name"}
+              variant={"outlined"}
+              required
+              onChange={(e) => setName(e.target.value)}
             />
           </Grid>
 
