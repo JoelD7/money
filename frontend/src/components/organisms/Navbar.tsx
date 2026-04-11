@@ -73,15 +73,12 @@ export function Navbar({ children }: NavbarProps) {
   const dispatch = useDispatch();
 
   const curPeriodID: string = user && user.current_period ? user.current_period : "";
-  let isPeriodQueryEnabled = true
-  if (displayPeriod) {
-    isPeriodQueryEnabled = false
-  }
+  const isDisplayPeriodSet = !isEmptyObject(displayPeriod)
 
-  const getPeriod = useGetPeriod(curPeriodID, isPeriodQueryEnabled);
+  const getPeriod = useGetPeriod(curPeriodID, isDisplayPeriodSet);
 
   useEffect(() => {
-    if (getPeriod.data && (!displayPeriod || displayPeriod.period_id === "")) {
+    if (getPeriod.data && !isDisplayPeriodSet) {
       dispatch(setDisplayPeriod(getPeriod.data));
     }
   }, [displayPeriod, getPeriod.data, dispatch]);
@@ -97,6 +94,14 @@ export function Navbar({ children }: NavbarProps) {
         });
     },
   });
+
+  function isEmptyObject(obj: any) {
+    return (
+      obj &&
+      Object.keys(obj).length === 0 &&
+      obj.constructor === Object
+    );
+  }
 
   function logout() {
     let username = "";
@@ -144,7 +149,7 @@ export function Navbar({ children }: NavbarProps) {
       });
   }
 
-  function onDisplayPeriodChange(period: Period) {
+  function onDisplayPeriodChange(period?: Period) {
     dispatch(setDisplayPeriod(period));
     const keys = [...incomeKeys.all, ...expensesQueryKeys.all, ...savingsKeys.all, ...savingGoalKeys.all, PERIOD_STATS];
     queryClient.invalidateQueries({ queryKey: keys }).then(null, (e) => {

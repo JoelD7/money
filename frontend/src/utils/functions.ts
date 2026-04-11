@@ -1,5 +1,6 @@
 import {
   Category,
+  Period,
   PeriodStats,
   SavingGoal,
   TransactionSearchParams,
@@ -8,6 +9,7 @@ import {
 import { Colors } from "../assets";
 import { useLocation } from "@tanstack/react-router";
 import { CURRENT_PERIOD } from "./keys.ts"; // Sets category name and color to the categoryExpenseSummary object
+import { useSelector } from "react-redux";
 
 // Sets category name and color to the categoryExpenseSummary object
 export function setAdditionalData(
@@ -41,6 +43,7 @@ export function setAdditionalData(
 export function useTransactionsParams(): TransactionSearchParams {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
+  const displayPeriod: Period | undefined = useSelector((state: any) => state.usersReducer.displayPeriod);
 
   let categories: string[] = [];
   let param = params.get("categories");
@@ -68,7 +71,7 @@ export function useTransactionsParams(): TransactionSearchParams {
   if (param !== null) {
     period = param;
   } else {
-    period = localStorage.getItem(CURRENT_PERIOD) || "";
+    period = displayPeriod?.period_id || localStorage.getItem(CURRENT_PERIOD) || "";
   }
 
   let sortBy: string | undefined;
@@ -136,15 +139,15 @@ export function getMonthDifference(current: Date, deadline: Date): number {
  * @returns {Date} - The estimated deadline to reach the saving goal.
  */
 export function estimateDeadlineFromRecurringAmount(
-    recurringAmount: number,
-    savingGoal?: SavingGoal,
-    nowDate?: Date
+  recurringAmount: number,
+  savingGoal?: SavingGoal,
+  nowDate?: Date
 ): Date {
   if (!nowDate) nowDate = new Date();
   if (!savingGoal) return nowDate;
 
   const periodsToReachGoal = Math.ceil(
-      (savingGoal.target - savingGoal.progress) / recurringAmount,
+    (savingGoal.target - savingGoal.progress) / recurringAmount,
   );
 
   const newDeadline = nowDate;

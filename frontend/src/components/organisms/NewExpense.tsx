@@ -124,7 +124,7 @@ export function NewExpense({ onClose, open, onAlert, user }: NewExpenseProps) {
       category_id: category ? category.id : "",
       type: type as ExpenseType,
       created_date: date ? date.format("") : "",
-      period_id: (user && user.current_period) ? user.current_period : "",
+      period_id: period ? period.period_id : "",
     };
 
     try {

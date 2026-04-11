@@ -1,9 +1,10 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import api from "../api";
 import { keys, utils } from "../utils";
-import { PeriodList, TransactionSearchParams, User } from "../types";
+import { Period, PeriodList, TransactionSearchParams, User } from "../types";
 import { INCOME, PERIOD_STATS, USER } from "./keys";
 import { defaultStaleTime, queryRetryFn } from "./common.ts";
+import { useSelector } from "react-redux";
 
 export const QUERY_RETRIES = 2;
 
@@ -150,8 +151,13 @@ export function useGetPeriodsInfinite(queryParams?: TransactionSearchParams) {
 }
 
 export function useGetPeriodStats(user?: User) {
-  const periodID =
+  let periodID =
     user?.current_period || localStorage.getItem(keys.CURRENT_PERIOD) || "";
+
+  const displayPeriod: Period | undefined = useSelector((state: any) => state.usersReducer.displayPeriod);
+  if (displayPeriod) {
+    periodID = displayPeriod.period_id
+  }
 
   return useQuery({
     queryKey: [PERIOD_STATS, periodID],
@@ -165,10 +171,6 @@ export function useGetPeriodStats(user?: User) {
 export function useGetIncome() {
   // eslint-disable-next-line prefer-const
   let { pageSize, startKey, period, sortOrder, sortBy } = utils.useTransactionsParams();
-
-  if (!period) {
-    period = localStorage.getItem(keys.CURRENT_PERIOD) || "";
-  }
 
   return useQuery({
     queryKey: incomeKeys.list(pageSize, startKey, period, sortOrder, sortBy),

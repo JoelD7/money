@@ -5,10 +5,12 @@ type userState = {
   user?: User;
   // displayPeriod is the period about which all finances throughout the app are displayed
   displayPeriod?: Period
+  allPeriods: Period[]
 };
 
 const defaultState: userState = {
-
+  allPeriods: [],
+  displayPeriod: undefined
 }
 
 export const usersSlice = createSlice({
@@ -20,11 +22,14 @@ export const usersSlice = createSlice({
     },
     setDisplayPeriod: (state: userState, action) => {
       state.displayPeriod = { ...action.payload };
-    }
+    },
+    setAllPeriods: (state: userState, action) => {
+      state.allPeriods = action.payload;
+    },
   },
 });
 
 
-export const { setUser, setDisplayPeriod } = usersSlice.actions
+export const { setUser, setDisplayPeriod, setAllPeriods } = usersSlice.actions
 
 export default usersSlice.reducer
