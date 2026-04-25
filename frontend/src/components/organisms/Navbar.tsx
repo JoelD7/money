@@ -150,7 +150,12 @@ export function Navbar({ children }: NavbarProps) {
   }
 
   function onDisplayPeriodChange(period?: Period) {
+    if (!period) {
+      return;
+    }
+
     dispatch(setDisplayPeriod(period));
+
     const keys = [...incomeKeys.all, ...expensesQueryKeys.all, ...savingsKeys.all, ...savingGoalKeys.all, PERIOD_STATS];
     queryClient.invalidateQueries({ queryKey: keys }).then(null, (e) => {
       console.error("Error invalidating period related queries", e);

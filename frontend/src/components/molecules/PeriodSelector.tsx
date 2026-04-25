@@ -1,8 +1,8 @@
 import { Autocomplete, AutocompleteInputChangeReason, CircularProgress, TextField } from "@mui/material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetPeriodsInfinite } from "../../queries";
-import { setAllPeriods } from "../../store/user.ts";
+import { setAllPeriods } from "../../store";
 import { Period } from "../../types";
 import { ErrorSnackbar } from "./ErrorSnackbar.tsx";
 
@@ -19,18 +19,19 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
 
   const getPeriodsQuery = useGetPeriodsInfinite({ pageSize: 100, active });
   const allPeriods = useSelector((state: any) => state.usersReducer.allPeriods);
-  const periods: Period[] = (() => {
+
+  const periods: Period[] = useMemo(() => {
     if (getPeriodsQuery.data) {
       return getPeriodsQuery.data.pages.map((page) => page.periods).flat();
     }
     return [];
-  })();
+  }, [getPeriodsQuery.data]);
 
   useEffect(() => {
     if (shouldUpdateAllPeriods()) {
-      dispatch(setAllPeriods(periods))
+      dispatch(setAllPeriods(periods));
     }
-  }, [periods, dispatch, getPeriodsQuery.data]);
+  }, [periods, dispatch, allPeriods, active]);
 
   function shouldUpdateAllPeriods(): boolean {
     // When this flag is true, then we fetch ONLY the active periods from the server. We don't want to update the
@@ -39,13 +40,9 @@ export function PeriodSelector({ period, active, onPeriodChange }: PeriodSelecto
       return false
     }
 
-    if (!allPeriods) {
-      return true
-    }
-
-    return allPeriods.length === 0
+    return !allPeriods ||
       // This might mean that the user created a new period and we need to update the allPeriods state.
-      || allPeriods.length !== periods.length
+      allPeriods.length !== periods.length
   }
 
 
