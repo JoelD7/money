@@ -1,7 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import { Typography, useMediaQuery, useTheme } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   BackgroundRefetchErrorSnackbar,
   BalanceCard,
@@ -42,6 +42,20 @@ export function Home() {
     user,
   );
 
+  const totalPeriodExpenses: number = useMemo(
+    () => {
+      if (periodStats) {
+        return periodStats.category_expense_summary.reduce(
+          (acc, curr) => acc + curr.total,
+          0,
+        );
+      }
+
+      return 0;
+    },
+    [periodStats],
+  );
+
   const chartHeight: number = 350;
 
   function handleNewExpenseClose() {
@@ -64,16 +78,6 @@ export function Home() {
     return <Error />;
   }
 
-  function getPeriodTotalExpenses() {
-    if (periodStats) {
-      return periodStats.category_expense_summary.reduce(
-        (acc, curr) => acc + curr.total,
-        0,
-      );
-    }
-
-    return 0;
-  }
 
   function showPeriodStatsErr(): boolean {
     if (getPeriodStats.isError && getPeriodStats.error.response) {
@@ -113,7 +117,7 @@ export function Home() {
         <Grid xs={12} sm={4} hidden={lgUp}>
           <BalanceCard
             loading={getUser.isLoading}
-            remainder={user ? user.remainder : 0}
+            remainder={periodStats ? periodStats.total_income - totalPeriodExpenses : 0}
           />
         </Grid>
 
@@ -121,7 +125,7 @@ export function Home() {
         <Grid xs={12} sm={4} hidden={lgUp}>
           <ExpenseCard
             loading={getPeriodStats.isLoading}
-            expenses={getPeriodTotalExpenses()}
+            expenses={totalPeriodExpenses}
           />
         </Grid>
 
@@ -153,7 +157,7 @@ export function Home() {
                     <Grid xs={12} hidden={!lgUp}>
                       <BalanceCard
                         loading={getUser.isLoading}
-                        remainder={user ? user.remainder : 0}
+                        remainder={periodStats ? periodStats.total_income - totalPeriodExpenses : 0}
                       />
                     </Grid>
 
@@ -161,7 +165,7 @@ export function Home() {
                     <Grid xs={12} hidden={!lgUp}>
                       <ExpenseCard
                         loading={getPeriodStats.isLoading}
-                        expenses={getPeriodTotalExpenses()}
+                        expenses={totalPeriodExpenses}
                       />
                     </Grid>
 
