@@ -129,8 +129,8 @@ export function Navbar({ children }: NavbarProps) {
 
   function goToIncome() {
     let route = "/income";
-    if (user) {
-      route = `/income?period=${user.current_period}`;
+    if (displayPeriod) {
+      route = `/income?period=${displayPeriod.period_id}`;
     }
 
     navigate({ to: route })
